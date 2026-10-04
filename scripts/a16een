@@ -15,6 +15,12 @@ Desktop
   launcher                    Open the A16EEN application launcher
   dashboard                   Open the A16EEN control center
   overview                    Toggle Niri workspace overview
+  close                       Close the focused window
+  maximize                    Maximize the focused column
+  fullscreen                  Toggle fullscreen for the focused window
+  float                       Toggle floating for the focused window
+  center                      Center the focused column
+  workspace <1-9>             Focus a workspace
   restart-shell               Restart only the A16EEN Quickshell shell
 
 Session
@@ -31,6 +37,12 @@ Media / capture
   screenshot                  Open Niri's interactive screenshot UI
   screenshot-screen           Capture the focused screen
   screenshot-window           Capture the focused window
+
+Hardware
+  volume up|down|mute         Adjust or mute system volume
+  brightness up|down          Adjust screen brightness
+  media play|pause|toggle     Control the active media player
+  media next|previous         Skip to the next/previous track
 
 Maintenance
   update                      Check for and apply A16EEN updates
@@ -89,6 +101,16 @@ confirm_destructive() {
         y|Y|yes|Yes) ;;
         *) echo "Cancelled."; exit 0 ;;
     esac
+}
+
+validate_workspace() {
+    local workspace="$1"
+    if [[ ! "$workspace" =~ ^[1-9][0-9]*$ ]]; then
+        die "workspace must be a positive integer."
+    fi
+    if (( workspace > 99 )); then
+        die "workspace must be between 1 and 99."
+    fi
 }
 
 restart_shell() {
@@ -165,6 +187,72 @@ case "$command" in
     restart-shell|reload-shell)
         ensure_desktop_session
         restart_shell
+        ;;
+
+    close)
+        require_cmd niri
+        exec niri msg action close-window
+        ;;
+
+    maximize)
+        require_cmd niri
+        exec niri msg action maximize-column
+        ;;
+
+    fullscreen)
+        require_cmd niri
+        exec niri msg action fullscreen-window
+        ;;
+
+    float|floating)
+        require_cmd niri
+        exec niri msg action toggle-window-floating
+        ;;
+
+    center|center-column)
+        require_cmd niri
+        exec niri msg action center-column
+        ;;
+
+    workspace)
+        [[ $# -ge 1 ]] || die "usage: a16een workspace <1-99>"
+        validate_workspace "$1"
+        require_cmd niri
+        exec niri msg action focus-workspace "$1"
+        ;;
+
+    volume)
+        [[ $# -ge 1 ]] || die "usage: a16een volume up|down|mute"
+        require_cmd wpctl
+        case "$1" in
+            up) exec wpctl set-volume @DEFAULT_AUDIO_SINK@ 5%+ -l 1.0 ;;
+            down) exec wpctl set-volume @DEFAULT_AUDIO_SINK@ 5%- ;;
+            mute) exec wpctl set-mute @DEFAULT_AUDIO_SINK@ toggle ;;
+            *) die "usage: a16een volume up|down|mute" ;;
+        esac
+        ;;
+
+    brightness)
+        [[ $# -ge 1 ]] || die "usage: a16een brightness up|down"
+        require_cmd brightnessctl
+        case "$1" in
+            up) exec brightnessctl set +10% ;;
+            down) exec brightnessctl set 10%- ;;
+            *) die "usage: a16een brightness up|down" ;;
+        esac
+        ;;
+
+    media)
+        [[ $# -ge 1 ]] || die "usage: a16een media play|pause|toggle|next|previous"
+        require_cmd playerctl
+        case "$1" in
+            play) exec playerctl play ;;
+            pause) exec playerctl pause ;;
+            toggle) exec playerctl play-pause ;;
+            next) exec playerctl next ;;
+            previous|prev) exec playerctl previous ;;
+            *) die "usage: a16een media play|pause|toggle|next|previous" ;;
+        esac
         ;;
 
     lock)
