@@ -8,10 +8,9 @@ PanelWindow {
     required property var modelData
 
     screen: modelData
-    color: "transparent"
+    color: "#050608"
     aboveWindows: false
     exclusiveZone: 0
-    updatesEnabled: false
     WlrLayershell.layer: WlrLayer.Background
     WlrLayershell.namespace: "a16een-wallpaper"
 
@@ -24,17 +23,19 @@ PanelWindow {
 
     Image {
         anchors.fill: parent
-        source: Qt.resolvedUrl("../assets/wallpapers/default.webp")
+        source: Qt.resolvedUrl("../assets/wallpapers/default.png")
         fillMode: Image.PreserveAspectCrop
         asynchronous: true
         mipmap: true
         cache: true
+        visible: status === Image.Ready
+    }
 
-        Rectangle {
-            anchors.fill: parent
-            color: "#050608"
-            opacity: parent.status === Image.Ready ? 0.06 : 1.0
-        }
+    // A16EEN remains usable even when the optional wallpaper is missing.
+    Rectangle {
+        anchors.fill: parent
+        color: "#050608"
+        z: -1
     }
 
     Rectangle {
