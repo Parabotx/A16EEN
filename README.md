@@ -33,22 +33,24 @@ The project is being designed as a cohesive desktop product rather than a conven
 Put your default wallpaper here:
 
 ```
-quickshell/a16een/assets/wallpapers/default.webp
+quickshell/a16een/assets/wallpapers/default.png
 ```
 
 The installer copies it into the installed A16EEN shell tree. Use a high-resolution image; the shell preserves the aspect ratio and crops to fill the screen.
 
 ## One-command installation
 
-On a supported Arch Linux system, run:
+Install or update A16EEN from one terminal command:
+
+
 
 ```sh
 curl -fsSL https://raw.githubusercontent.com/Parabotx/A16EEN/main/install.sh | bash
 ```
 
-The bootstrap first installs Git from the official Arch repositories, clones the A16EEN repository into a temporary cache directory, and then runs the project installer.
+The bootstrap installs Git only when it is missing, keeps a persistent A16EEN source checkout under `~/.local/share/a16een/source`, and fast-forwards that checkout when a newer A16EEN commit exists. It does not reinstall an unchanged A16EEN checkout.
 
-The project installer installs the fixed A16EEN dependency set from the official Arch repositories, copies A16EEN's isolated configuration, installs the session launcher, and leaves the user's normal Niri configuration untouched.
+The project installer installs only missing A16EEN dependencies, backs up the previous A16EEN configuration before a revision change, deploys the new files, and leaves the user's normal Niri configuration untouched.
 
 Current automatic dependencies include:
 
@@ -71,7 +73,31 @@ bluez-utils
 nm-connection-editor
 ```
 
-Niri and Quickshell are currently available as official Arch packages. citeturn308398search4turn308398search8
+Niri and Quickshell are available as official Arch packages.
+
+## Updating
+
+The normal installer is also the updater:
+
+```sh
+curl -fsSL https://raw.githubusercontent.com/Parabotx/A16EEN/main/install.sh | bash
+```
+
+After installation, the shorter updater command is:
+
+```sh
+a16een-update
+```
+
+Updates are fast-forward-only. If the local A16EEN source has uncommitted changes, the updater stops instead of overwriting them. Previous A16EEN runtime configuration revisions are backed up under `~/.local/state/a16een/backups/`.
+
+Use:
+
+```sh
+a16een-doctor
+```
+
+to run read-only diagnostics, including Niri configuration validation.
 
 ## Manual installation from a clone
 
@@ -125,8 +151,8 @@ Niri is the first compositor target, not the final boundary of the project.
 
 ## Safety direction
 
-Application launching uses Quickshell's parsed `DesktopEntry.command` / `execute()` path rather than treating launcher text as a shell command. System actions use fixed executable argument lists, and destructive session actions require a second confirmation click. citeturn133947search0turn752734search2
+Application launching uses Quickshell's parsed desktop-entry command rather than treating launcher text as a shell command. System actions use fixed executable argument lists, and destructive session actions require a second confirmation click.
 
-The installer does not execute package names or commands supplied by the user. It uses a fixed repository URL and a fixed dependency list.
+The installer does not execute package names or commands supplied by the user. It uses a fixed repository URL and a fixed dependency list. It never deletes the user's normal Niri configuration.
 
 A16EEN is still early software. Keep your existing desktop session available as a fallback while testing new builds.
