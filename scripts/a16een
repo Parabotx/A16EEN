@@ -235,14 +235,14 @@ case "$command" in
         ;;
 
     workspace)
-        [[ $# -ge 1 ]] || die "usage: a16een workspace <1-99>"
+        [[ $# -eq 1 ]] || die "usage: a16een workspace <1-99>"
         validate_workspace "$1"
         require_cmd niri
         exec niri msg action focus-workspace "$1"
         ;;
 
     volume)
-        [[ $# -ge 1 ]] || die "usage: a16een volume up|down|mute"
+        [[ $# -eq 1 ]] || die "usage: a16een volume up|down|mute"
         require_cmd wpctl
         case "$1" in
             up) exec wpctl set-volume @DEFAULT_AUDIO_SINK@ 5%+ -l 1.0 ;;
@@ -253,7 +253,7 @@ case "$command" in
         ;;
 
     brightness)
-        [[ $# -ge 1 ]] || die "usage: a16een brightness up|down"
+        [[ $# -eq 1 ]] || die "usage: a16een brightness up|down"
         require_cmd brightnessctl
         case "$1" in
             up) exec brightnessctl set +10% ;;
@@ -263,7 +263,7 @@ case "$command" in
         ;;
 
     media)
-        [[ $# -ge 1 ]] || die "usage: a16een media play|pause|toggle|next|previous"
+        [[ $# -eq 1 ]] || die "usage: a16een media play|pause|toggle|next|previous"
         require_cmd playerctl
         case "$1" in
             play) exec playerctl play ;;
@@ -288,12 +288,14 @@ case "$command" in
         ;;
 
     reboot|restart)
+        require_no_args "$@"
         require_cmd systemctl
         confirm_destructive "reboot" "$assume_yes"
         exec systemctl reboot
         ;;
 
     poweroff|shutdown|power)
+        require_no_args "$@"
         require_cmd systemctl
         confirm_destructive "power off" "$assume_yes"
         exec systemctl poweroff
@@ -336,6 +338,7 @@ case "$command" in
         ;;
 
     rollback)
+        [[ $# -le 0 ]] || die "rollback takes no arguments other than --yes."
         [[ -x "$SOURCE_DIR/scripts/a16een-update" ]] || die "A16EEN source checkout is missing. Run the installer first."
         if [[ "$assume_yes" -eq 1 ]]; then
             exec "$SOURCE_DIR/scripts/a16een-update" --rollback --yes
