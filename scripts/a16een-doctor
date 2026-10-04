@@ -4,78 +4,260 @@ set -euo pipefail
 CONFIG_DIR="$HOME/.config/a16een"
 NIRI_CONFIG="$CONFIG_DIR/niri/config.kdl"
 QS_CONFIG="$CONFIG_DIR/quickshell/a16een"
-
-echo "A16EEN diagnostic"
-echo "================="
-echo
+STATE_DIR="${XDG_STATE_HOME:-$HOME/.local/state}/a16een"
+BACKUP_ROOT="$STATE_DIR/backups"
+PORTAL_CONF="$HOME/.config/xdg-desktop-portal/a16een-portals.conf"
 
 errors=0
+warnings=0
+
+ok()   { printf '  [OK]   %s\n' "$*"; }
+info() { printf '  [INFO] %s\n' "$*"; }
+warn() { printf '  [WARN] %s\n' "$*"; warnings=$((warnings + 1)); }
+fail() { printf '  [FAIL] %s\n' "$*"; errors=$((errors + 1)); }
 
 check_cmd() {
-    if command -v "$1" >/dev/null 2>&1; then
-        printf '  [OK] %-22s %s\n' "$1" "$(command -v "$1")"
+    local command_name="$1"
+    if command -v "$command_name" >/dev/null 2>&1; then
+        ok "$command_name -> $(command -v "$command_name")"
     else
-        printf '  [FAIL] %-20s missing\n' "$1"
-        errors=$((errors + 1))
+        fail "$command_name is missing"
     fi
 }
 
-echo "Required commands:"
+check_service() {
+    local service="$1"
+    local scope="${2:---system}"
+    if ! command -v systemctl >/dev/null 2>&1; then
+        warn "systemctl unavailable; cannot inspect $service"
+        return
+    fi
+
+    if systemctl "$scope" is-active --quiet "$service"; then
+        ok "$service is active"
+    elif systemctl "$scope" is-enabled --quiet "$service" 2>/dev/null; then
+        warn "$service is enabled but not currently active"
+    else
+        warn "$service is not active"
+    fi
+}
+
+echo "A16EEN FOUNDATION DOCTOR"
+echo "========================="
+echo
+
+echo "1. Session reliability"
 check_cmd niri-session
 check_cmd niri
 check_cmd qs
-check_cmd git
-check_cmd foot
-check_cmd fuzzel
-check_cmd wpctl
-check_cmd brightnessctl
-check_cmd playerctl
-check_cmd nmcli
-check_cmd bluetoothctl
-
-echo
-echo "A16EEN files:"
-if [ -f "$NIRI_CONFIG" ]; then
-    echo "  [OK] Niri config"
+if [[ "${XDG_CURRENT_DESKTOP:-}" == "A16EEN" ]]; then
+    ok "Running inside an A16EEN desktop session"
 else
-    echo "  [FAIL] Niri config: $NIRI_CONFIG"
-    errors=$((errors + 1))
+    info "Current session is not A16EEN; session-specific live checks will be informational"
 fi
-
-if [ -f "$QS_CONFIG/shell.qml" ]; then
-    echo "  [OK] Quickshell shell"
+if [[ -x /usr/local/bin/start-a16een ]]; then
+    ok "Installed A16EEN session launcher"
 else
-    echo "  [FAIL] Quickshell shell: $QS_CONFIG/shell.qml"
-    errors=$((errors + 1))
+    fail "Installed A16EEN session launcher is missing"
 fi
-
-if [ -f "$QS_CONFIG/assets/wallpapers/default.png" ]; then
-    echo "  [OK] Default PNG wallpaper"
+if [[ -x /usr/local/bin/a16een-shell ]]; then
+    ok "Installed A16EEN shell supervisor"
 else
-    echo "  [INFO] No default PNG wallpaper; A16EEN will use its built-in dark fallback."
+    fail "Installed A16EEN shell supervisor is missing"
 fi
 
 echo
-echo "Niri configuration:"
-if command -v niri >/dev/null 2>&1 && [ -f "$NIRI_CONFIG" ]; then
-    CHECK_FILE=$(mktemp)
-    trap 'rm -f "$CHECK_FILE"' EXIT INT TERM
-    if NIRI_CONFIG="$NIRI_CONFIG" niri validate >"$CHECK_FILE" 2>&1; then
-        echo "  [OK] Niri config validates"
+echo "2. Niri validation"
+if [[ -r "$NIRI_CONFIG" ]] && command -v niri >/dev/null 2>&1; then
+    if niri validate --config "$NIRI_CONFIG" >/tmp/a16een-doctor-niri.out 2>&1; then
+        ok "Niri configuration validates"
     else
-        echo "  [FAIL] Niri config failed validation"
-        cat "$CHECK_FILE"
-        errors=$((errors + 1))
+        fail "Niri configuration failed validation"
+        sed -n '1,80p' /tmp/a16een-doctor-niri.out
     fi
-    rm -f "$CHECK_FILE"
-    trap - EXIT INT TERM
+    rm -f /tmp/a16een-doctor-niri.out
+else
+    fail "A16EEN Niri configuration is missing or Niri is unavailable"
 fi
 
 echo
-if [ "$errors" -eq 0 ]; then
-    echo "A16EEN diagnostic completed successfully."
+echo "3. Multi-monitor"
+if command -v niri >/dev/null 2>&1 && niri msg outputs >/tmp/a16een-doctor-outputs.out 2>&1; then
+    ok "Niri output query is working"
+    info "Connected output report:"
+    sed -n '1,30p' /tmp/a16een-doctor-outputs.out | sed 's/^/      /'
+else
+    warn "Could not query live Niri outputs (run this check inside A16EEN)"
+fi
+rm -f /tmp/a16een-doctor-outputs.out
+
+echo
+echo "4. XWayland"
+check_cmd xwayland-satellite
+if [[ -r "$NIRI_CONFIG" ]] && grep -q 'xwayland-satellite' "$NIRI_CONFIG"; then
+    ok "Niri configuration leaves XWayland integration enabled"
+else
+    fail "A16EEN Niri configuration does not contain XWayland integration"
+fi
+
+echo
+echo "5. Portals"
+check_cmd xdg-desktop-portal
+check_cmd xdg-desktop-portal-gtk
+if [[ -f "$PORTAL_CONF" ]]; then
+    ok "A16EEN portal preference exists"
+else
+    warn "A16EEN portal preference is missing: $PORTAL_CONF"
+fi
+if [[ "${XDG_CURRENT_DESKTOP:-}" == "A16EEN" ]]; then
+    ok "XDG_CURRENT_DESKTOP=A16EEN"
+else
+    info "XDG_CURRENT_DESKTOP is '${XDG_CURRENT_DESKTOP:-unset}'"
+fi
+
+echo
+echo "6. Audio"
+check_cmd wpctl
+if command -v wpctl >/dev/null 2>&1 && wpctl status >/dev/null 2>&1; then
+    ok "PipeWire/WirePlumber session is reachable"
+else
+    warn "wpctl could not reach the audio session"
+fi
+if command -v systemctl >/dev/null 2>&1; then
+    check_service pipewire.service --user
+    check_service wireplumber.service --user
+fi
+
+echo
+echo "7. Bluetooth"
+check_cmd bluetoothctl
+if command -v systemctl >/dev/null 2>&1; then
+    check_service bluetooth.service --system
+fi
+if command -v bluetoothctl >/dev/null 2>&1; then
+    if bluetoothctl show >/tmp/a16een-doctor-bt.out 2>&1; then
+        if grep -qi 'Powered: yes' /tmp/a16een-doctor-bt.out; then
+            ok "Bluetooth controller is powered"
+        elif grep -qi 'Powered: no' /tmp/a16een-doctor-bt.out; then
+            warn "Bluetooth controller exists but is powered off"
+        else
+            warn "Bluetooth controller state could not be determined"
+        fi
+    else
+        warn "No usable Bluetooth controller was reported"
+    fi
+fi
+rm -f /tmp/a16een-doctor-bt.out
+
+echo
+echo "8. Network"
+check_cmd nmcli
+if command -v nmcli >/dev/null 2>&1; then
+    if nmcli general status >/tmp/a16een-doctor-network.out 2>&1; then
+        ok "NetworkManager is responding"
+        sed -n '1,6p' /tmp/a16een-doctor-network.out | sed 's/^/      /'
+    else
+        warn "NetworkManager is not responding"
+    fi
+fi
+rm -f /tmp/a16een-doctor-network.out
+
+echo
+echo "9. Brightness"
+check_cmd brightnessctl
+if command -v brightnessctl >/dev/null 2>&1; then
+    if brightnessctl -l >/tmp/a16een-doctor-brightness.out 2>&1; then
+        if grep -q 'Device' /tmp/a16een-doctor-brightness.out; then
+            ok "Brightness device detected"
+            sed -n '1,8p' /tmp/a16een-doctor-brightness.out | sed 's/^/      /'
+        else
+            warn "brightnessctl is installed but no brightness device was detected"
+        fi
+    else
+        warn "Could not query brightness devices"
+    fi
+fi
+rm -f /tmp/a16een-doctor-brightness.out
+
+echo
+echo "10. Lock / logout / reboot / power"
+check_cmd swaylock
+check_cmd loginctl
+check_cmd systemctl
+if command -v niri >/dev/null 2>&1; then
+    ok "Niri IPC is available for logout/session control"
+fi
+
+echo
+echo "11. Application compatibility"
+check_cmd xdg-open
+desktop_count=0
+for app_dir in     "$HOME/.local/share/applications"     "$HOME/.local/share/flatpak/exports/share/applications"     "/var/lib/flatpak/exports/share/applications"     "/usr/local/share/applications"     "/usr/share/applications"
+do
+    if [[ -d "$app_dir" ]]; then
+        count="$(find "$app_dir" -maxdepth 1 -type f -name '*.desktop' 2>/dev/null | wc -l)"
+        desktop_count=$((desktop_count + count))
+    fi
+done
+if (( desktop_count > 0 )); then
+    ok "$desktop_count desktop entries are discoverable through XDG application directories"
+else
+    warn "No .desktop applications were found in standard XDG application directories"
+fi
+if command -v flatpak >/dev/null 2>&1; then
+    info "Flatpak is installed; desktop-entry discovery remains available for Flatpak apps that export entries"
+else
+    info "Flatpak is not installed; A16EEN does not require it"
+fi
+if command -v xwayland-satellite >/dev/null 2>&1; then
+    ok "X11 application compatibility backend is installed"
+fi
+
+echo
+echo "12. Installer recovery"
+if [[ -d "$BACKUP_ROOT" ]]; then
+    ok "A16EEN backup directory exists: $BACKUP_ROOT"
+else
+    warn "No A16EEN backup directory exists yet; it will be created on the first revision-changing deployment"
+fi
+if [[ -x /usr/local/bin/a16een-update ]]; then
+    ok "A16EEN updater is installed"
+else
+    fail "A16EEN updater is missing"
+fi
+
+echo
+echo "13. Update / rollback"
+if [[ -d "$STATE_DIR" && -f "$STATE_DIR/installed-commit" ]]; then
+    ok "Installed revision is recorded: $(cat "$STATE_DIR/installed-commit")"
+else
+    warn "Installed revision record is missing"
+fi
+if [[ -d "$SOURCE_DIR/.git" ]]; then
+    ok "Persistent A16EEN source checkout exists"
+else
+    fail "Persistent A16EEN source checkout is missing"
+fi
+if [[ -x /usr/local/bin/a16een-update ]]; then
+    info "Use 'a16een-update --status' to inspect rollback availability"
+fi
+
+echo
+echo "14. A16EEN deployment"
+if [[ -r "$NIRI_CONFIG" ]]; then ok "A16EEN Niri config installed"; else fail "A16EEN Niri config missing"; fi
+if [[ -r "$QS_CONFIG/shell.qml" ]]; then ok "A16EEN Quickshell entry installed"; else fail "A16EEN Quickshell entry missing"; fi
+if [[ -r "$QS_CONFIG/assets/wallpapers/default.png" ]]; then
+    ok "Default PNG wallpaper installed"
+else
+    warn "Default PNG wallpaper is not installed; the shell will use its fallback"
+fi
+
+echo
+echo "========================="
+if (( errors == 0 )); then
+    echo "A16EEN doctor finished with $warnings warning(s) and no blocking errors."
     exit 0
 fi
 
-echo "A16EEN diagnostic found $errors issue(s)."
+echo "A16EEN doctor found $errors blocking error(s) and $warnings warning(s)."
 exit 1
