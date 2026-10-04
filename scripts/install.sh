@@ -27,6 +27,38 @@ bluez-utils
 nm-connection-editor
 "
 
+interactive=1
+for arg in "$@"; do
+    case "$arg" in
+        --non-interactive|-y) interactive=0 ;;
+        --help|-h)
+            echo "Usage: bash scripts/install.sh [--non-interactive]"
+            exit 0
+            ;;
+        *) echo "Unknown option: $arg" >&2; exit 1 ;;
+    esac
+done
+
+if [ "$interactive" -eq 1 ] && [ -t 0 ]; then
+    printf '\033[1;36m\nA16EEN SETUP\033[0m\n'
+    printf '%s\n' '──────────────────────────────────────────────'
+    printf '1) Install missing dependencies + deploy A16EEN\n'
+    printf '2) Deploy A16EEN without installing packages\n'
+    printf '3) Cancel\n'
+    printf 'Choose [1]: '
+    read -r choice
+    choice=${choice:-1}
+
+    case "$choice" in
+        1) ;;
+        2) SKIP_DEPS=1 ;;
+        3) echo "Cancelled."; exit 0 ;;
+        *) echo "Invalid choice."; exit 1 ;;
+    esac
+else
+    SKIP_DEPS=0
+fi
+
 echo "==> Checking A16EEN dependencies"
 
 if ! command -v pacman >/dev/null 2>&1; then
@@ -34,20 +66,35 @@ if ! command -v pacman >/dev/null 2>&1; then
     exit 1
 fi
 
-missing_packages=""
-for package in $PACKAGES; do
-    if ! pacman -Q "$package" >/dev/null 2>&1; then
-        missing_packages="$missing_packages $package"
-    fi
-done
+if [ "${SKIP_DEPS:-0}" != "1" ]; then
+    missing_packages=""
+    for package in $PACKAGES; do
+        if ! pacman -Q "$package" >/dev/null 2>&1; then
+            missing_packages="$missing_packages $package"
+        fi
+    done
 
-if [ -n "$missing_packages" ]; then
-    echo "==> Installing missing packages from the official Arch repositories"
-    # Only fixed package names from this project are passed to pacman.
-    # Existing packages are not reinstalled.
-    sudo pacman -S --needed --noconfirm $missing_packages
+    if [ -n "$missing_packages" ]; then
+        echo "==> Missing packages:"
+        printf '    %s\n' "$missing_packages"
+
+        if [ "$interactive" -eq 1 ]; then
+            printf "Install them now from the official Arch repositories? [Y/n]: "
+            read -r confirm
+            confirm=${confirm:-Y}
+            case "$confirm" in
+                Y|y|Yes|yes) ;;
+                *) echo "Dependency installation cancelled."; exit 1 ;;
+            esac
+        fi
+
+        # The package names come only from PACKAGES above; no user input is interpolated.
+        sudo pacman -S --needed $missing_packages
+    else
+        echo "==> All A16EEN dependencies are already installed."
+    fi
 else
-    echo "==> All A16EEN dependencies are already installed."
+    echo "==> Skipping dependency installation."
 fi
 
 SOURCE_COMMIT="unknown"
@@ -67,24 +114,39 @@ if [ -n "$INSTALLED_COMMIT" ] && [ "$INSTALLED_COMMIT" != "$SOURCE_COMMIT" ] && 
     BACKUP_DIR="$BACKUP_ROOT/$TIMESTAMP"
     mkdir -p "$BACKUP_DIR"
     cp -a "$CONFIG_DIR" "$BACKUP_DIR/config"
-    echo "==> Backed up previous A16EEN configuration to:"
+    echo "==> Backed up the previous A16EEN configuration."
     echo "    $BACKUP_DIR/config"
 fi
 
 if [ "$INSTALLED_COMMIT" = "$SOURCE_COMMIT" ]     && [ -f "$NIRI_DIR/config.kdl" ]     && [ -f "$QS_DIR/shell.qml" ]; then
-    echo "==> A16EEN files are already at this revision. Skipping file deployment."
+    echo "==> A16EEN is already deployed at this revision."
 else
-    echo "==> Deploying A16EEN shell and compositor configuration"
-    cp "$ROOT_DIR/niri/config.kdl" "$NIRI_DIR/config.kdl"
+    echo "==> Deploying A16EEN"
+
+    TMP_DEPLOY=$(mktemp -d)
+    cleanup_deploy() {
+        rm -rf "$TMP_DEPLOY"
+    }
+    trap cleanup_deploy EXIT INT TERM
+
+    mkdir -p "$TMP_DEPLOY/ui" "$TMP_DEPLOY/assets/wallpapers"
+    cp "$ROOT_DIR/niri/config.kdl" "$TMP_DEPLOY/config.kdl"
     cp "$ROOT_DIR/quickshell/a16een/shell.qml" "$QS_DIR/shell.qml"
-    cp "$ROOT_DIR/quickshell/a16een/ui/"*.qml "$QS_DIR/ui/"
+    cp "$ROOT_DIR/quickshell/a16een/ui/"*.qml "$TMP_DEPLOY/ui/"
+
+    # Only replace compositor config after the source file has been copied successfully.
+    cp "$TMP_DEPLOY/config.kdl" "$NIRI_DIR/config.kdl"
+    cp "$TMP_DEPLOY/ui/"*.qml "$QS_DIR/ui/"
 
     if [ -f "$ROOT_DIR/quickshell/a16een/assets/wallpapers/default.png" ]; then
         cp "$ROOT_DIR/quickshell/a16een/assets/wallpapers/default.png"             "$QS_DIR/assets/wallpapers/default.png"
     fi
+
+    rm -rf "$TMP_DEPLOY"
+    trap - EXIT INT TERM
 fi
 
-echo "$SOURCE_COMMIT" > "$STATE_DIR/installed-commit"
+printf '%s\n' "$SOURCE_COMMIT" > "$STATE_DIR/installed-commit"
 
 echo "==> Installing A16EEN session launcher, updater and diagnostics"
 sudo install -Dm755 "$ROOT_DIR/scripts/start-a16een" /usr/local/bin/start-a16een
@@ -96,4 +158,4 @@ echo
 echo "╭──────────────────────────────────────────────╮"
 echo "│           A16EEN installation complete       │"
 echo "╰──────────────────────────────────────────────╯"
-echo "Run 'a16een-update' whenever you want to pull the latest A16EEN release."
+echo "Run 'a16een-update' whenever you want to check for updates."
