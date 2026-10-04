@@ -24,7 +24,7 @@ PanelWindow {
     Image {
         anchors.fill: parent
         source: Qt.resolvedUrl("../assets/wallpapers/default.png")
-        fillMode: Image.PreserveAspectCrop
+        fillMode: Image.PreserveAspectFit
         asynchronous: true
         mipmap: true
         cache: true
