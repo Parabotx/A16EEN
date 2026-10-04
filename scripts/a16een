@@ -1,0 +1,263 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+SELF_NAME="a16een"
+SOURCE_DIR="${XDG_DATA_HOME:-$HOME/.local/share}/a16een/source"
+
+usage() {
+    cat <<'EOF'
+A16EEN command center
+
+Usage:
+  a16een <command> [options]
+
+Desktop
+  launcher                    Open the A16EEN application launcher
+  dashboard                   Open the A16EEN control center
+  overview                    Toggle Niri workspace overview
+  restart-shell               Restart only the A16EEN Quickshell shell
+
+Session
+  lock                        Lock the current session
+  logout                      Log out of A16EEN/Niri
+  reboot                      Reboot the system (confirmation required)
+  poweroff                    Power off the system (confirmation required)
+  shutdown                    Alias for poweroff
+  suspend                     Suspend the system
+  sleep                       Alias for suspend
+  hibernate                   Hibernate the system
+
+Media / capture
+  screenshot                  Open Niri's interactive screenshot UI
+  screenshot-screen           Capture the focused screen
+  screenshot-window           Capture the focused window
+
+Maintenance
+  update                      Check for and apply A16EEN updates
+  rollback                    Restore the latest known-good A16EEN revision
+  doctor                      Run A16EEN diagnostics
+  status                      Show A16EEN source/installation status
+
+Other
+  version                     Show A16EEN CLI version
+  help                        Show this help
+
+Options
+  --yes, -y                   Skip confirmation for reboot/poweroff
+  --help, -h                  Show command help
+
+Examples:
+  a16een launcher
+  a16een logout
+  a16een reboot
+  a16een screenshot-window
+  a16een doctor
+  a16een update
+EOF
+}
+
+die() {
+    printf 'A16EEN: %s\n' "$*" >&2
+    exit 1
+}
+
+require_cmd() {
+    command -v "$1" >/dev/null 2>&1 || die "required command '$1' was not found."
+}
+
+ensure_desktop_session() {
+    if [[ "${XDG_CURRENT_DESKTOP:-}" != "A16EEN" ]]; then
+        printf 'A16EEN: command may still work outside A16EEN, but desktop-only actions require an A16EEN session.\n' >&2
+    fi
+}
+
+confirm_destructive() {
+    local action="$1"
+    local assume_yes="$2"
+
+    if [[ "$assume_yes" -eq 1 ]]; then
+        return 0
+    fi
+
+    if [[ ! -t 0 ]]; then
+        die "$action requires confirmation. Re-run with --yes."
+    fi
+
+    printf 'A16EEN: %s the computer? [y/N] ' "$action"
+    read -r answer
+    case "$answer" in
+        y|Y|yes|Yes) ;;
+        *) echo "Cancelled."; exit 0 ;;
+    esac
+}
+
+restart_shell() {
+    local config_dir="${XDG_CONFIG_HOME:-$HOME/.config}/a16een/quickshell/a16een"
+    local found=0
+
+    if [[ ! -d "$config_dir" ]]; then
+        die "A16EEN Quickshell configuration is missing: $config_dir"
+    fi
+
+    for cmdline in /proc/[0-9]*/cmdline; do
+        [[ -r "$cmdline" ]] || continue
+
+        local pid="${cmdline#/proc/}"
+        pid="${pid%/cmdline}"
+        [[ "$pid" =~ ^[0-9]+$ ]] || continue
+
+        local args
+        args="$(tr '\0' ' ' < "$cmdline" 2>/dev/null || true)"
+
+        case "$args" in
+            *"qs -c $config_dir"*)
+                if kill -TERM "$pid" 2>/dev/null; then
+                    found=1
+                fi
+                ;;
+        esac
+    done
+
+    if [[ "$found" -eq 1 ]]; then
+        echo "A16EEN shell restart requested."
+    else
+        echo "A16EEN shell process was not found."
+        echo "Start/re-enter the A16EEN session to launch it."
+        return 1
+    fi
+}
+
+[[ $EUID -ne 0 ]] || die "run this command as your normal desktop user, not root."
+
+command="${1:-help}"
+shift || true
+
+assume_yes=0
+for arg in "$@"; do
+    case "$arg" in
+        --yes|-y) assume_yes=1 ;;
+        --help|-h)
+            usage
+            exit 0
+            ;;
+        *) die "unknown option '$arg'. Use 'a16een help'." ;;
+    esac
+done
+
+case "$command" in
+    launcher|app-launcher)
+        ensure_desktop_session
+        require_cmd qs
+        exec qs ipc call launcher toggle
+        ;;
+
+    dashboard|control-center|controls)
+        ensure_desktop_session
+        require_cmd qs
+        exec qs ipc call dashboard toggle
+        ;;
+
+    overview)
+        require_cmd niri
+        exec niri msg action toggle-overview
+        ;;
+
+    restart-shell|reload-shell)
+        ensure_desktop_session
+        restart_shell
+        ;;
+
+    lock)
+        require_cmd loginctl
+        exec loginctl lock-session
+        ;;
+
+    logout|log-out)
+        require_cmd niri
+        exec niri msg action quit
+        ;;
+
+    reboot|restart)
+        require_cmd systemctl
+        confirm_destructive "reboot" "$assume_yes"
+        exec systemctl reboot
+        ;;
+
+    poweroff|shutdown|power)
+        require_cmd systemctl
+        confirm_destructive "power off" "$assume_yes"
+        exec systemctl poweroff
+        ;;
+
+    suspend|sleep)
+        require_cmd systemctl
+        exec systemctl suspend
+        ;;
+
+    hibernate)
+        require_cmd systemctl
+        exec systemctl hibernate
+        ;;
+
+    screenshot)
+        require_cmd niri
+        exec niri msg action screenshot
+        ;;
+
+    screenshot-screen|screen-shot)
+        require_cmd niri
+        exec niri msg action screenshot-screen
+        ;;
+
+    screenshot-window|window-shot)
+        require_cmd niri
+        exec niri msg action screenshot-window
+        ;;
+
+    update)
+        [[ -x "$SOURCE_DIR/scripts/a16een-update" ]] || die "A16EEN source checkout is missing. Run the installer first."
+        exec "$SOURCE_DIR/scripts/a16een-update"
+        ;;
+
+    rollback)
+        [[ -x "$SOURCE_DIR/scripts/a16een-update" ]] || die "A16EEN source checkout is missing. Run the installer first."
+        if [[ "$assume_yes" -eq 1 ]]; then
+            exec "$SOURCE_DIR/scripts/a16een-update" --rollback --yes
+        else
+            exec "$SOURCE_DIR/scripts/a16een-update" --rollback
+        fi
+        ;;
+
+    doctor|diagnose)
+        if [[ -x /usr/local/bin/a16een-doctor ]]; then
+            exec /usr/local/bin/a16een-doctor
+        fi
+        [[ -x "$SOURCE_DIR/scripts/a16een-doctor" ]] || die "A16EEN doctor is not installed."
+        exec "$SOURCE_DIR/scripts/a16een-doctor"
+        ;;
+
+    status)
+        if [[ -x "$SOURCE_DIR/scripts/a16een-update" ]]; then
+            exec "$SOURCE_DIR/scripts/a16een-update" --status
+        fi
+        die "A16EEN update tools are not installed."
+        ;;
+
+    version)
+        echo "A16EEN CLI 0.1"
+        if command -v niri >/dev/null 2>&1; then
+            printf 'Niri: %s\n' "$(niri --version 2>/dev/null || echo unknown)"
+        fi
+        if command -v qs >/dev/null 2>&1; then
+            printf 'Quickshell: available\n'
+        fi
+        ;;
+
+    help|--help|-h)
+        usage
+        ;;
+
+    *)
+        die "unknown command '$command'. Use 'a16een help'."
+        ;;
+esac
