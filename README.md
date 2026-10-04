@@ -123,6 +123,32 @@ cd A16EEN
 bash scripts/install.sh
 ```
 
+## A16EEN terminal command
+
+A16EEN installs a unified `a16een` command for terminal control:
+
+```sh
+a16een launcher
+a16een dashboard
+a16een overview
+a16een lock
+a16een logout
+a16een reboot
+a16een poweroff
+a16een suspend
+a16een hibernate
+a16een screenshot
+a16een screenshot-screen
+a16een screenshot-window
+a16een restart-shell
+a16een update
+a16een rollback
+a16een doctor
+a16een status
+```
+
+Reboot and power-off require confirmation unless `--yes` / `-y` is explicitly supplied. Logout uses Niri's IPC action, which retains Niri's own confirmation behavior. Niri exposes compositor actions through `niri msg action`, including overview and screenshot actions. citeturn211117search1turn528102search0
+
 ## Keyboard controls
 
 ```
