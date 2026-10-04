@@ -52,9 +52,22 @@ prefer-no-csd
 
 screenshot-path "~/Pictures/Screenshots/A16EEN %Y-%m-%d %H-%M-%S.png"
 
-// A16EEN shell.
-// The path is intentionally inside the A16EEN-isolated XDG config tree.
-spawn-sh-at-startup "qs -c \"$XDG_CONFIG_HOME/quickshell/a16een\""
+// A16EEN shell supervisor.
+// It keeps the desktop shell replaceable and restarts it after recoverable crashes.
+spawn-sh-at-startup "a16een-shell"
+
+environment {
+    // A16EEN identifies itself without hijacking ~/.config for applications.
+    XDG_CURRENT_DESKTOP "A16EEN"
+    XDG_SESSION_DESKTOP "a16een"
+    DESKTOP_SESSION "a16een"
+}
+
+// Niri now integrates xwayland-satellite automatically. It starts it on demand
+// for X11 applications and restarts it if it dies.
+xwayland-satellite {
+    path "xwayland-satellite"
+}
 
 binds {
     // A16EEN UI
