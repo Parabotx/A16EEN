@@ -1,0 +1,14 @@
+# Local/editor files
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# Build/cache output
+target/
+dist/
+build/
+
+# Local Quickshell state
+.quickshell/
