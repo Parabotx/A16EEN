@@ -1,0 +1,6 @@
+[Desktop Entry]
+Name=A16EEN
+Comment=A16EEN desktop environment built on Niri
+Exec=start-a16een
+Type=Application
+DesktopNames=A16EEN
