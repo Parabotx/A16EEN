@@ -119,13 +119,18 @@ if [[ "$action" == "rollback" ]]; then
         exit 1
     fi
 
+    installed_commit="$current_source"
+    if [[ -f "$STATE_DIR/installed-commit" ]]; then
+        installed_commit="$(cat "$STATE_DIR/installed-commit")"
+    fi
+
     echo "A16EEN rollback"
     echo "==============="
     echo "Target revision: $target_commit"
     echo "Backup:          $latest_backup"
     echo
-    echo "This will move the local A16EEN checkout back to that revision and redeploy it."
-    echo "The normal installer backup mechanism will protect the currently deployed revision first."
+    echo "This will restore the latest known-good A16EEN runtime configuration."
+    echo "Recovery tools are left at the current revision so rollback remains available."
 
     if [[ "$confirm" -ne 1 ]]; then
         read -r -p "Continue? [y/N] " answer
@@ -135,10 +140,44 @@ if [[ "$action" == "rollback" ]]; then
         esac
     fi
 
-    git -C "$SOURCE_DIR" reset --hard "$target_commit"
-    exec bash "$SOURCE_DIR/scripts/install.sh" --non-interactive
-fi
+    rollback_stamp="$(date +%Y%m%d-%H%M%S)"
+    safety_backup="$BACKUP_ROOT/${rollback_stamp}-rollback-safety"
+    mkdir -p "$safety_backup"
 
+    if [[ -d "$HOME/.config/a16een" ]]; then
+        cp -a "$HOME/.config/a16een" "$safety_backup/config"
+    fi
+    printf '%s\n' "$installed_commit" > "$safety_backup/source-commit"
+
+    git -C "$SOURCE_DIR" reset --hard "$target_commit"
+
+    restore_dir="$(mktemp -d)"
+    trap 'rm -rf "$restore_dir"' EXIT INT TERM
+    cp -a "$latest_backup/config" "$restore_dir/config"
+
+    rm -rf "$HOME/.config/a16een"
+    mv "$restore_dir/config" "$HOME/.config/a16een"
+    rm -rf "$restore_dir"
+    trap - EXIT INT TERM
+
+    if command -v niri >/dev/null 2>&1 &&
+       [[ -r "$HOME/.config/a16een/niri/config.kdl" ]]; then
+        if ! niri validate --config "$HOME/.config/a16een/niri/config.kdl"; then
+            echo "Restored configuration failed Niri validation; restoring the pre-rollback state." >&2
+            rm -rf "$HOME/.config/a16een"
+            if [[ -d "$safety_backup/config" ]]; then
+                mv "$safety_backup/config" "$HOME/.config/a16een"
+            fi
+            git -C "$SOURCE_DIR" reset --hard "$installed_commit"
+            exit 1
+        fi
+    fi
+
+    printf '%s\n' "$target_commit" > "$STATE_DIR/installed-commit"
+    echo "Rollback completed."
+    echo "Re-enter A16EEN through your display manager to use the restored revision."
+    exit 0
+fi
 echo "==> Checking A16EEN for updates..."
 
 if [[ "$(git -C "$SOURCE_DIR" rev-parse --is-shallow-repository)" == "true" ]]; then
