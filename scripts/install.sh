@@ -79,7 +79,7 @@ if [ "${SKIP_DEPS:-0}" != "1" ]; then
         printf '    %s\n' "$missing_packages"
 
         if [ "$interactive" -eq 1 ]; then
-            printf "Install them now from the official Arch repositories? [Y/n]: "
+            printf "Install them with Arch's full-sync transaction (this may update other system packages too)? [Y/n]: "
             read -r confirm
             confirm=${confirm:-Y}
             case "$confirm" in
