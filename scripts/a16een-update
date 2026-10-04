@@ -49,4 +49,4 @@ else
     git -C "$SOURCE_DIR" merge --ff-only origin/main
 fi
 
-exec bash "$SOURCE_DIR/scripts/install.sh"
+exec bash "$SOURCE_DIR/scripts/install.sh" --non-interactive
