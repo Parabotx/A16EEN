@@ -42,6 +42,19 @@ The first milestone is deliberately small:
 4. Provide a minimal but visually intentional shell.
 5. Keep the architecture ready for a much larger desktop system.
 
+A16EEN stores its configuration under `~/.config/a16een/` so it does not replace an existing Niri configuration.
+
+## Install
+
+After cloning the repository:
+
+```sh
+cd A16EEN
+sh scripts/install.sh
+```
+
+The installer requires an existing working Niri and Quickshell installation.
+
 ## Long-term direction
 
 ```
