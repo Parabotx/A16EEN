@@ -172,3 +172,7 @@ Application launching uses the XDG desktop-entry index exposed by Quickshell. Th
 The installer does not execute package names or commands supplied by the user. On Arch, installing new packages through pacman is intentionally a full-sync operation because Arch does not support partial upgrades. It uses a fixed repository URL and a fixed dependency list. It never deletes the user's normal Niri configuration.
 
 A16EEN is still early software. Keep your existing desktop session available as a fallback while testing new builds.
+
+## Stage A — Foundation hardening
+
+Stage A is the gate for future feature work. The current repository includes session-environment isolation, staged Niri validation, resilient shell supervision, Niri's XWayland integration, portal setup, foundation diagnostics, configuration backups, and safe update/rollback tooling. The remaining Stage A work is live hardware and compatibility verification; see [docs/STAGE-A.md](docs/STAGE-A.md).
