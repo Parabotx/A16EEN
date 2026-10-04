@@ -133,6 +133,7 @@ ShellRoot {
         persistenceSupported: false
 
         onNotification: notification => {
+            if (root.latestNotification) root.latestNotification.tracked = false
             notification.tracked = true
             root.latestNotification = notification
             notificationTimer.restart()
