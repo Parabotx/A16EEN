@@ -71,6 +71,9 @@ xwayland-satellite {
 
 binds {
     // A16EEN UI
+    // A bare Super press cannot be bound safely in niri because Super is a modifier.
+    // Super+Space is the launcher shortcut; the floating dock also has a launcher button.
+    Mod+Space repeat=false { spawn-sh "qs ipc call launcher toggle"; }
     Mod+D repeat=false { spawn-sh "qs ipc call launcher toggle"; }
     Mod+P repeat=false { spawn-sh "qs ipc call dashboard toggle"; }
     Mod+O repeat=false { toggle-overview; }
