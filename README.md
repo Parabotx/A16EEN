@@ -1,78 +1,109 @@
 # A16EEN
 
-A16EEN is a from-scratch Linux desktop experience built around Niri + Quickshell.
+A16EEN is a from-scratch Linux desktop experience built around **Niri + Quickshell**.
 
-The goal is not to make another dotfile collection. A16EEN is intended to become a cohesive desktop product with its own visual language, shell, services, interactions, installer, and eventually a custom Wayland compositor.
+The project is being designed as a cohesive desktop product rather than a conventional dotfile collection. The shell, interactions, visual language, services, installer, and eventually the compositor are intended to belong to A16EEN.
 
 ## Foundation
 
 - **Niri** — Wayland compositor and window-management foundation
 - **Quickshell** — desktop shell/UI layer
-- **QML** — visual system and interactive components
+- **QML** — visual system
 - **Rust** — future system services and compositor work
-- **KDL** — Niri configuration
 - **Wayland** — display protocol
 
-## Repository layout
+## Current features
+
+- Full-screen A16EEN wallpaper layer on every monitor
+- Multi-monitor top bar
+- Live Niri workspace and focused-window state through the Niri JSON event stream
+- Application launcher backed by the system desktop-entry index
+- Keyboard-searchable application filtering
+- Application icons from the system icon theme
+- Dashboard with clock, system load, volume and battery widgets
+- Notification daemon integration with an A16EEN notification toast
+- PipeWire volume status
+- UPower battery status when available
+- Safe, isolated A16EEN configuration
+- Dedicated **A16EEN** Wayland session entry
+
+## Wallpaper
+
+Place your default wallpaper here:
 
 ```
-A16EEN/
-├── niri/
-│   └── config.kdl
-├── quickshell/
-│   └── shell.qml
-├── session/
-│   └── a16een.desktop
-├── scripts/
-│   ├── install.sh
-│   └── start-a16een
-├── docs/
-│   └── ARCHITECTURE.md
-├── themes/
-└── .gitignore
+quickshell/a16een/assets/wallpapers/default.webp
 ```
 
-## Current milestone
+The installer copies it to:
 
-The first milestone is deliberately small:
+```
+~/.config/a16een/quickshell/a16een/assets/wallpapers/default.webp
+```
 
-1. Boot into an A16EEN Wayland session.
-2. Start Niri with an A16EEN-owned configuration.
-3. Start the Quickshell layer automatically.
-4. Provide a minimal but visually intentional shell.
-5. Keep the architecture ready for a much larger desktop system.
+Use a high-resolution image. The shell uses `PreserveAspectCrop`, so it fills the screen without distortion.
 
-A16EEN stores its configuration under `~/.config/a16een/` so it does not replace an existing Niri configuration.
+## Keyboard controls
+
+```
+Super + D              Application launcher
+Super + P              A16EEN dashboard
+Super + O              Niri overview
+Super + Enter          Terminal
+Super + Q              Close window
+Super + H/J/K/L        Navigate
+Super + 1..5           Workspaces
+Super + Shift + 1..5   Move window to workspace
+```
+
+The keybindings are kept in `niri/config.kdl` and can evolve independently from the UI.
 
 ## Install
 
-After cloning the repository:
+A16EEN expects a working Niri and Quickshell installation.
+
+On Arch, the current Quickshell documentation lists a release package named `quickshell`; the `quickshell-git` AUR package tracks unreleased changes. citehttps://quickshell.org/docs/v0.3.1/guide/install-setup/
+
+Then:
 
 ```sh
+git clone https://github.com/Parabotx/A16EEN.git
 cd A16EEN
 sh scripts/install.sh
 ```
 
-The installer requires an existing working Niri and Quickshell installation.
+The installer only writes the A16EEN configuration under `~/.config/a16een` and installs the A16EEN session launcher under `/usr/local/bin` plus the session entry under `/usr/share/wayland-sessions`.
 
-## Long-term direction
+It does not overwrite `~/.config/niri/config.kdl`.
+
+## Architecture
 
 ```
-A16EEN Shell
-     │
- Quickshell
-     │
-    Niri
-     │
-  Smithay / future A16EEN compositor
-     │
-   Wayland
-     │
-   Linux
+A16EEN shell
+      │
+   Quickshell
+      │
+      Niri
+      │
+  Wayland / Linux
 ```
 
-Niri is the starting compositor, not the final boundary of the project.
+Long-term:
 
-## Status
+```
+A16EEN shell + services
+          │
+   A16EEN compositor
+          │
+        Smithay
+          │
+       Wayland
+          │
+        Linux
+```
 
-Early foundation — the architecture and visual system are intentionally expected to evolve rapidly.
+## Safety direction
+
+Application launching is performed through Quickshell's parsed desktop-entry API rather than passing launcher input into a shell command. The shell's fixed system probes use fixed executable arguments; there is no user-input-to-shell execution path in the launcher.
+
+A16EEN is still early software. Test it as a separate login session first and keep your existing Niri session available as a fallback.
