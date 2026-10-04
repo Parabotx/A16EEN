@@ -2,7 +2,7 @@
 set -eu
 
 ROOT_DIR=$(CDPATH= cd -- "$(dirname -- "$0")/.." && pwd)
-CONFIG_DIR="$HOME/.config"
+CONFIG_DIR="$HOME/.config/a16een"
 NIRI_DIR="$CONFIG_DIR/niri"
 QS_DIR="$CONFIG_DIR/quickshell/a16een"
 
@@ -21,12 +21,6 @@ if ! command -v qs >/dev/null 2>&1; then
 fi
 
 mkdir -p "$NIRI_DIR" "$QS_DIR"
-
-if [ -f "$NIRI_DIR/config.kdl" ]; then
-    backup="$NIRI_DIR/config.kdl.a16een-backup"
-    echo "==> Backing up existing Niri config to $backup"
-    cp "$NIRI_DIR/config.kdl" "$backup"
-fi
 
 cp "$ROOT_DIR/niri/config.kdl" "$NIRI_DIR/config.kdl"
 cp "$ROOT_DIR/quickshell/shell.qml" "$QS_DIR/shell.qml"
