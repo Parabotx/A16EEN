@@ -68,8 +68,20 @@ if [[ -z "$RUN_DIR" ]]; then
             exit 1
         fi
 
+        CURRENT_BRANCH=$(git -C "$SOURCE_DIR" branch --show-current)
+        if [[ "$CURRENT_BRANCH" != "$BRANCH" ]]; then
+            echo "A16EEN source checkout is on '$CURRENT_BRANCH', not '$BRANCH'."
+            echo "Refusing to switch branches automatically."
+            exit 1
+        fi
+
+        if [[ "$(git -C "$SOURCE_DIR" rev-parse --is-shallow-repository)" == "true" ]]; then
+            git -C "$SOURCE_DIR" fetch --unshallow origin "$BRANCH"
+        else
+            git -C "$SOURCE_DIR" fetch origin "$BRANCH"
+        fi
+
         echo "==> Checking for A16EEN updates..."
-        git -C "$SOURCE_DIR" fetch --depth 1 origin "$BRANCH"
 
         LOCAL_COMMIT="$(git -C "$SOURCE_DIR" rev-parse HEAD)"
         REMOTE_COMMIT="$(git -C "$SOURCE_DIR" rev-parse "origin/$BRANCH")"
@@ -82,9 +94,13 @@ if [[ -z "$RUN_DIR" ]]; then
         fi
     else
         echo "==> Cloning A16EEN..."
-        rm -rf "$SOURCE_DIR.tmp"
-        git clone --depth 1 --branch "$BRANCH" --single-branch "$REPO_URL" "$SOURCE_DIR.tmp"
-        mv "$SOURCE_DIR.tmp" "$SOURCE_DIR"
+        if [[ -e "$SOURCE_DIR" ]]; then
+            echo "A16EEN source path exists but is not a valid checkout: $SOURCE_DIR"
+            exit 1
+        fi
+        TEMP_SOURCE=$(mktemp -d "$DATA_ROOT/source.XXXXXX")
+        git clone --branch "$BRANCH" --single-branch "$REPO_URL" "$TEMP_SOURCE"
+        mv "$TEMP_SOURCE" "$SOURCE_DIR"
     fi
 
     RUN_DIR="$SOURCE_DIR"
