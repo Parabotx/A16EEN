@@ -42,8 +42,6 @@ The installer copies it into the installed A16EEN shell tree. Use a high-resolut
 
 Install or update A16EEN from one terminal command:
 
-
-
 ```sh
 curl -fL https://raw.githubusercontent.com/Parabotx/A16EEN/main/install.sh -o /tmp/a16een-install.sh && bash /tmp/a16een-install.sh && rm -f /tmp/a16een-install.sh
 ```
@@ -71,6 +69,9 @@ networkmanager
 bluez
 bluez-utils
 nm-connection-editor
+xdg-desktop-portal
+xdg-desktop-portal-gtk
+xdg-utils
 ```
 
 Niri and Quickshell are available as official Arch packages.
@@ -88,6 +89,21 @@ After installation, the shorter updater command is:
 ```sh
 a16een-update
 ```
+
+Inspect the current revision state and rollback availability:
+
+```sh
+a16een-update --status
+```
+
+Roll back to the latest known-good revision:
+
+```sh
+a16een-update --rollback
+```
+
+Use `-y` only when you intentionally want to skip the rollback confirmation.
+
 
 Updates are fast-forward-only. If the local A16EEN source has uncommitted changes, the updater stops instead of overwriting them. Previous A16EEN runtime configuration revisions are backed up under `~/.local/state/a16een/backups/`.
 
