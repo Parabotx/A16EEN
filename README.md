@@ -12,36 +12,74 @@ The project is being designed as a cohesive desktop product rather than a conven
 - **Rust** — future system services and compositor work
 - **Wayland** — display protocol
 
-## Current features
+## Current desktop features
 
-- Full-screen A16EEN wallpaper layer on every monitor
-- Multi-monitor top bar
-- Live Niri workspace and focused-window state through the Niri JSON event stream
-- Application launcher backed by the system desktop-entry index
-- Keyboard-searchable application filtering
-- Application icons from the system icon theme
-- Dashboard with clock, system load, volume and battery widgets
-- Notification daemon integration with an A16EEN notification toast
-- PipeWire volume status
-- UPower battery status when available
-- Safe, isolated A16EEN configuration
+- Full-screen wallpaper layer on every monitor
+- Multi-monitor A16EEN top bar
+- Live workspace and focused-window state from Niri's JSON event stream
+- Keyboard-searchable application launcher with system application icons
+- Dashboard with clock, system load, volume, battery, and media controls
+- MPRIS media controls for compatible players
+- Notification daemon integration
+- Network connection indicator
+- Bluetooth power indicator
+- Safe session controls with confirmation for reboot and power-off
+- Volume, microphone, media, and brightness keybindings
 - Dedicated **A16EEN** Wayland session entry
+- Isolated configuration under `~/.config/a16een/`
 
 ## Wallpaper
 
-Place your default wallpaper here:
+Put your default wallpaper here:
 
 ```
 quickshell/a16een/assets/wallpapers/default.webp
 ```
 
-The installer copies it to:
+The installer copies it into the installed A16EEN shell tree. Use a high-resolution image; the shell preserves the aspect ratio and crops to fill the screen.
+
+## One-command installation
+
+On a supported Arch Linux system, run:
+
+```sh
+curl -fsSL https://raw.githubusercontent.com/Parabotx/A16EEN/main/install.sh | bash
+```
+
+The bootstrap first installs Git from the official Arch repositories, clones the A16EEN repository into a temporary cache directory, and then runs the project installer.
+
+The project installer installs the fixed A16EEN dependency set from the official Arch repositories, copies A16EEN's isolated configuration, installs the session launcher, and leaves the user's normal Niri configuration untouched.
+
+Current automatic dependencies include:
 
 ```
-~/.config/a16een/quickshell/a16een/assets/wallpapers/default.webp
+niri
+quickshell
+foot
+fuzzel
+brightnessctl
+playerctl
+pipewire
+wireplumber
+upower
+swaylock
+xwayland-satellite
+xdg-desktop-portal-gtk
+networkmanager
+bluez
+bluez-utils
+nm-connection-editor
 ```
 
-Use a high-resolution image. The shell uses `PreserveAspectCrop`, so it fills the screen without distortion.
+Niri and Quickshell are currently available as official Arch packages. citeturn308398search4turn308398search8
+
+## Manual installation from a clone
+
+```sh
+git clone https://github.com/Parabotx/A16EEN.git
+cd A16EEN
+bash scripts/install.sh
+```
 
 ## Keyboard controls
 
@@ -49,32 +87,13 @@ Use a high-resolution image. The shell uses `PreserveAspectCrop`, so it fills th
 Super + D              Application launcher
 Super + P              A16EEN dashboard
 Super + O              Niri overview
-Super + Enter          Terminal
+Super + Return        Terminal
 Super + Q              Close window
 Super + H/J/K/L        Navigate
 Super + 1..5           Workspaces
-Super + Shift + 1..5   Move window to workspace
+Super + Shift + 1..5  Move window to workspace
+Super + Alt + L        Lock screen
 ```
-
-The keybindings are kept in `niri/config.kdl` and can evolve independently from the UI.
-
-## Install
-
-A16EEN expects a working Niri and Quickshell installation.
-
-On Arch, the current Quickshell documentation lists a release package named `quickshell`; the `quickshell-git` AUR package tracks unreleased changes.
-
-Then:
-
-```sh
-git clone https://github.com/Parabotx/A16EEN.git
-cd A16EEN
-sh scripts/install.sh
-```
-
-The installer only writes the A16EEN configuration under `~/.config/a16een` and installs the A16EEN session launcher under `/usr/local/bin` plus the session entry under `/usr/share/wayland-sessions`.
-
-It does not overwrite `~/.config/niri/config.kdl`.
 
 ## Architecture
 
@@ -102,8 +121,12 @@ A16EEN shell + services
         Linux
 ```
 
+Niri is the first compositor target, not the final boundary of the project.
+
 ## Safety direction
 
-Application launching is performed through Quickshell's parsed desktop-entry API rather than passing launcher input into a shell command. The shell's fixed system probes use fixed executable arguments; there is no user-input-to-shell execution path in the launcher.
+Application launching uses Quickshell's parsed `DesktopEntry.command` / `execute()` path rather than treating launcher text as a shell command. System actions use fixed executable argument lists, and destructive session actions require a second confirmation click. citeturn133947search0turn752734search2
 
-A16EEN is still early software. Test it as a separate login session first and keep your existing Niri session available as a fallback.
+The installer does not execute package names or commands supplied by the user. It uses a fixed repository URL and a fixed dependency list.
+
+A16EEN is still early software. Keep your existing desktop session available as a fallback while testing new builds.
