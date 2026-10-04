@@ -15,10 +15,10 @@ The project is being designed as a cohesive desktop product rather than a conven
 ## Current desktop features
 
 - Full-screen wallpaper layer on every monitor
-- Multi-monitor A16EEN top bar
-- Live workspace and focused-window state from Niri's JSON event stream
+- Multi-monitor floating A16EEN dock
+- Live workspace state from Niri's JSON event stream
 - Keyboard-searchable application launcher with system application icons
-- Dashboard with clock, system load, volume, battery, and media controls
+- Floating application launcher and dashboard with clock, system load, volume, battery, and media controls
 - MPRIS media controls for compatible players
 - Notification daemon integration
 - Network connection indicator
