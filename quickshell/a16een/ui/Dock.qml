@@ -194,14 +194,16 @@ PanelWindow {
                     width: 34
                     height: 30
                     radius: 10
-                    color: modelData === root.focusedWorkspaceId ? "#D7B56D1F" : "#FFFFFF05"
-                    border.width: modelData === root.focusedWorkspaceId ? 1 : 0
+                    property bool active: modelData === root.focusedWorkspaceId
+
+                    color: active ? "#D7B56D1F" : "#FFFFFF05"
+                    border.width: active ? 1 : 0
                     border.color: "#D7B56D55"
 
                     Text {
                         anchors.centerIn: parent
                         text: modelData
-                        color: parent.color === "#D7B56D1F" ? "#D7B56D" : "#737B88"
+                        color: parent.active ? "#D7B56D" : "#737B88"
                         font.pixelSize: 10
                         font.weight: Font.DemiBold
                     }
@@ -252,7 +254,7 @@ PanelWindow {
         Text {
             anchors.centerIn: parent
             text: parent.icon
-            color: parent.accent || parent.mouse.containsMouse ? "#D7B56D" : "#E1E4E9"
+            color: parent.accent || mouse.containsMouse ? "#D7B56D" : "#E1E4E9"
             font.pixelSize: parent.icon === "⌕" ? 24 : 18
             font.weight: Font.DemiBold
         }
