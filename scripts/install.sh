@@ -35,7 +35,7 @@ fi
 echo "==> Installing required packages from the official Arch repositories"
 # Arch does not support partial upgrades, so the package transaction uses -Syu.
 # The exact package list is fixed by this project; no user input is interpolated.
-sudo pacman -Syu --needed --noconfirm $PACKAGES
+sudo pacman -Syu --needed  $PACKAGES
 
 echo "==> Installing A16EEN shell files"
 mkdir -p "$NIRI_DIR" "$QS_DIR/ui" "$QS_DIR/assets/wallpapers"
