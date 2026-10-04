@@ -1,8 +1,11 @@
 #!/bin/sh
 set -eu
 
-# A16EEN is currently a Niri-based desktop session.
-# Keep its compositor configuration isolated from the user's normal Niri setup.
 export XDG_CONFIG_HOME="$HOME/.config/a16een"
+
+if ! command -v niri-session >/dev/null 2>&1; then
+    echo "A16EEN cannot start: niri-session was not found." >&2
+    exit 1
+fi
 
 exec niri-session
