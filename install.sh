@@ -50,4 +50,4 @@ echo "==> Downloading A16EEN from GitHub..."
 git clone --depth 1 --branch "$BRANCH" --single-branch "$REPO_URL" "$INSTALL_DIR"
 
 echo "==> Running A16EEN installer..."
-exec bash "$INSTALL_DIR/scripts/install.sh" "$@"
+bash "$INSTALL_DIR/scripts/install.sh" "$@"
