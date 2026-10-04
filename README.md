@@ -62,7 +62,7 @@ The keybindings are kept in `niri/config.kdl` and can evolve independently from 
 
 A16EEN expects a working Niri and Quickshell installation.
 
-On Arch, the current Quickshell documentation lists a release package named `quickshell`; the `quickshell-git` AUR package tracks unreleased changes. citehttps://quickshell.org/docs/v0.3.1/guide/install-setup/
+On Arch, the current Quickshell documentation lists a release package named `quickshell`; the `quickshell-git` AUR package tracks unreleased changes.
 
 Then:
 
