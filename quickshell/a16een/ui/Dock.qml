@@ -11,6 +11,11 @@ PanelWindow {
     property var workspaces: []
     property int focusedWorkspaceId: -1
 
+    readonly property int activeWorkspaceIndex: {
+        const active = root.workspaces.find(workspace => workspace.id === root.focusedWorkspaceId)
+        return active ? Number(active.idx || -1) : -1
+    }
+
     signal launcherRequested()
     signal dashboardRequested()
 
@@ -194,7 +199,7 @@ PanelWindow {
                     width: 34
                     height: 30
                     radius: 10
-                    property bool active: modelData === root.focusedWorkspaceId
+                    property bool active: modelData === root.activeWorkspaceIndex
 
                     color: active ? "#D7B56D1F" : "#FFFFFF05"
                     border.width: active ? 1 : 0
