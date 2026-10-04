@@ -1,0 +1,56 @@
+name: A16EEN Foundation Checks
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+permissions:
+  contents: read
+
+jobs:
+  shell-syntax:
+    name: Shell syntax and foundation invariants
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Validate shell scripts
+        run: |
+          set -euo pipefail
+          bash -n scripts/install.sh
+          bash -n scripts/start-a16een
+          bash -n scripts/a16een-shell
+          bash -n scripts/a16een-update
+          bash -n scripts/a16een-doctor
+
+      - name: Validate foundation files
+        run: |
+          set -euo pipefail
+
+          test -f niri/config.kdl
+          test -f quickshell/a16een/shell.qml
+          test -f quickshell/a16een/ui/Launcher.qml
+          test -f quickshell/a16een/ui/TopBar.qml
+          test -f quickshell/a16een/ui/Dashboard.qml
+          test -f quickshell/a16een/ui/NotificationToast.qml
+          test -f quickshell/a16een/assets/wallpapers/default.png
+          test -f xdg/xdg-desktop-portal/a16een-portals.conf
+
+          grep -q 'spawn-sh-at-startup "a16een-shell"' niri/config.kdl
+          grep -q 'xwayland-satellite' niri/config.kdl
+          grep -q 'xdg-desktop-portal' scripts/install.sh
+          grep -q 'a16een-shell' scripts/install.sh
+          grep -q 'a16een-update --rollback' README.md
+          grep -q 'NIRI_CONFIG' scripts/start-a16een
+          ! grep -q 'export XDG_CONFIG_HOME=' scripts/start-a16een
+
+      - name: Validate no legacy wallpaper reference
+        run: |
+          set -euo pipefail
+          if grep -RIn --exclude-dir=.git 'default\.webp' .; then
+            echo "Legacy default.webp reference found." >&2
+            exit 1
+          fi
