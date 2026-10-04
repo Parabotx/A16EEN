@@ -12,3 +12,7 @@ build/
 
 # Local Quickshell state
 .quickshell/
+
+
+# Quickshell generated editor configuration
+.qmlls.ini
