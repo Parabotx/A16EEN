@@ -45,10 +45,10 @@ Install or update A16EEN from one terminal command:
 
 
 ```sh
-curl -fsSL https://raw.githubusercontent.com/Parabotx/A16EEN/main/install.sh | bash
+curl -fL https://raw.githubusercontent.com/Parabotx/A16EEN/main/install.sh -o /tmp/a16een-install.sh && bash /tmp/a16een-install.sh && rm -f /tmp/a16een-install.sh
 ```
 
-The bootstrap installs Git only when it is missing, keeps a persistent A16EEN source checkout under `~/.local/share/a16een/source`, and fast-forwards that checkout when a newer A16EEN commit exists. It does not reinstall an unchanged A16EEN checkout.
+The bootstrap is interactive by default. It shows what it will do, asks before installing A16EEN's dependency set, keeps a persistent source checkout under `~/.local/share/a16een/source`, and fast-forwards that checkout when a newer A16EEN commit exists. It does not reinstall an unchanged A16EEN checkout. Use `--non-interactive` for automation.
 
 The project installer installs only missing A16EEN dependencies, backs up the previous A16EEN configuration before a revision change, deploys the new files, and leaves the user's normal Niri configuration untouched.
 
@@ -77,10 +77,10 @@ Niri and Quickshell are available as official Arch packages.
 
 ## Updating
 
-The normal installer is also the updater:
+The normal installer is also the updater. Running the command again checks GitHub and updates only when A16EEN changed:
 
 ```sh
-curl -fsSL https://raw.githubusercontent.com/Parabotx/A16EEN/main/install.sh | bash
+curl -fL https://raw.githubusercontent.com/Parabotx/A16EEN/main/install.sh -o /tmp/a16een-install.sh && bash /tmp/a16een-install.sh && rm -f /tmp/a16een-install.sh
 ```
 
 After installation, the shorter updater command is:
@@ -151,7 +151,7 @@ Niri is the first compositor target, not the final boundary of the project.
 
 ## Safety direction
 
-Application launching uses Quickshell's parsed desktop-entry command rather than treating launcher text as a shell command. System actions use fixed executable argument lists, and destructive session actions require a second confirmation click.
+Application launching uses the XDG desktop-entry index exposed by Quickshell. That means A16EEN can launch applications regardless of whether they came from pacman or another source, provided the application installs a valid `.desktop` entry in an XDG application directory. The desktop-entry specification defines those application directories through `$XDG_DATA_DIRS/applications/`. Quickshell exposes visible Application entries through `DesktopEntries.applications` and provides a parsed command plus `execute()` for launching them. Apps that do not install a desktop entry (for example a bare executable or unintegrated AppImage) are intentionally not auto-executed from arbitrary launcher text. citeturn964132search2turn105124search0turn105124search9 System actions use fixed executable argument lists, and destructive session actions require a second confirmation click.
 
 The installer does not execute package names or commands supplied by the user. It uses a fixed repository URL and a fixed dependency list. It never deletes the user's normal Niri configuration.
 
