@@ -103,6 +103,12 @@ confirm_destructive() {
     esac
 }
 
+require_no_args() {
+    if [[ $# -ne 0 ]]; then
+        die "this command does not accept extra arguments."
+    fi
+}
+
 validate_workspace() {
     local workspace="$1"
     if [[ ! "$workspace" =~ ^[1-9][0-9]*$ ]]; then
@@ -173,48 +179,57 @@ done
 
 case "$command" in
     launcher|app-launcher)
+        require_no_args "$@"
         ensure_desktop_session
         require_cmd qs
         exec qs ipc call launcher toggle
         ;;
 
     dashboard|control-center|controls)
+        require_no_args "$@"
         ensure_desktop_session
         require_cmd qs
         exec qs ipc call dashboard toggle
         ;;
 
     overview)
+        require_no_args "$@"
         require_cmd niri
         exec niri msg action toggle-overview
         ;;
 
     restart-shell|reload-shell)
+        require_no_args "$@"
         ensure_desktop_session
         restart_shell
         ;;
 
     close)
+        require_no_args "$@"
         require_cmd niri
         exec niri msg action close-window
         ;;
 
     maximize)
+        require_no_args "$@"
         require_cmd niri
         exec niri msg action maximize-column
         ;;
 
     fullscreen)
+        require_no_args "$@"
         require_cmd niri
         exec niri msg action fullscreen-window
         ;;
 
     float|floating)
+        require_no_args "$@"
         require_cmd niri
         exec niri msg action toggle-window-floating
         ;;
 
     center|center-column)
+        require_no_args "$@"
         require_cmd niri
         exec niri msg action center-column
         ;;
@@ -261,11 +276,13 @@ case "$command" in
         ;;
 
     lock)
+        require_no_args "$@"
         require_cmd loginctl
         exec loginctl lock-session
         ;;
 
     logout|log-out)
+        require_no_args "$@"
         require_cmd niri
         exec niri msg action quit
         ;;
@@ -283,31 +300,37 @@ case "$command" in
         ;;
 
     suspend|sleep)
+        require_no_args "$@"
         require_cmd systemctl
         exec systemctl suspend
         ;;
 
     hibernate)
+        require_no_args "$@"
         require_cmd systemctl
         exec systemctl hibernate
         ;;
 
     screenshot)
+        require_no_args "$@"
         require_cmd niri
         exec niri msg action screenshot
         ;;
 
     screenshot-screen|screen-shot)
+        require_no_args "$@"
         require_cmd niri
         exec niri msg action screenshot-screen
         ;;
 
     screenshot-window|window-shot)
+        require_no_args "$@"
         require_cmd niri
         exec niri msg action screenshot-window
         ;;
 
     update)
+        require_no_args "$@"
         [[ -x "$SOURCE_DIR/scripts/a16een-update" ]] || die "A16EEN source checkout is missing. Run the installer first."
         exec "$SOURCE_DIR/scripts/a16een-update"
         ;;
@@ -322,6 +345,7 @@ case "$command" in
         ;;
 
     doctor|diagnose)
+        require_no_args "$@"
         if [[ -x /usr/local/bin/a16een-doctor ]]; then
             exec /usr/local/bin/a16een-doctor
         fi
@@ -330,6 +354,7 @@ case "$command" in
         ;;
 
     status)
+        require_no_args "$@"
         if [[ -x "$SOURCE_DIR/scripts/a16een-update" ]]; then
             exec "$SOURCE_DIR/scripts/a16een-update" --status
         fi
@@ -337,6 +362,7 @@ case "$command" in
         ;;
 
     version)
+        require_no_args "$@"
         echo "A16EEN CLI 0.1"
         if command -v niri >/dev/null 2>&1; then
             printf 'Niri: %s\n' "$(niri --version 2>/dev/null || echo unknown)"
