@@ -25,6 +25,9 @@ networkmanager
 bluez
 bluez-utils
 nm-connection-editor
+xdg-desktop-portal
+xdg-desktop-portal-gtk
+xdg-utils
 "
 
 interactive=1
@@ -133,11 +136,16 @@ if [ -f "$STATE_DIR/installed-commit" ]; then
     INSTALLED_COMMIT=$(cat "$STATE_DIR/installed-commit")
 fi
 
-if [ -n "$INSTALLED_COMMIT" ] && [ "$INSTALLED_COMMIT" != "$SOURCE_COMMIT" ] && [ -d "$CONFIG_DIR" ]; then
+if [ "$INSTALLED_COMMIT" != "$SOURCE_COMMIT" ] && [ -d "$CONFIG_DIR" ]; then
     TIMESTAMP=$(date +%Y%m%d-%H%M%S)
     BACKUP_DIR="$BACKUP_ROOT/$TIMESTAMP"
     mkdir -p "$BACKUP_DIR"
     cp -a "$CONFIG_DIR" "$BACKUP_DIR/config"
+
+    if [ -n "$INSTALLED_COMMIT" ]; then
+        printf '%s\n' "$INSTALLED_COMMIT" > "$BACKUP_DIR/source-commit"
+    fi
+
     echo "==> Backed up the previous A16EEN configuration."
     echo "    $BACKUP_DIR/config"
 fi
@@ -155,15 +163,30 @@ else
 
     mkdir -p "$TMP_DEPLOY/ui" "$TMP_DEPLOY/assets/wallpapers"
     cp "$ROOT_DIR/niri/config.kdl" "$TMP_DEPLOY/config.kdl"
-    cp "$ROOT_DIR/quickshell/a16een/shell.qml" "$QS_DIR/shell.qml"
+    cp "$ROOT_DIR/quickshell/a16een/shell.qml" "$TMP_DEPLOY/shell.qml"
     cp "$ROOT_DIR/quickshell/a16een/ui/"*.qml "$TMP_DEPLOY/ui/"
 
-    # Only replace compositor config after the source file has been copied successfully.
+    if [ -f "$ROOT_DIR/quickshell/a16een/assets/wallpapers/default.png" ]; then
+        cp "$ROOT_DIR/quickshell/a16een/assets/wallpapers/default.png"             "$TMP_DEPLOY/assets/wallpapers/default.png"
+    fi
+
+    # Never install a new compositor config that Niri cannot parse.
+    if command -v niri >/dev/null 2>&1; then
+        if ! niri validate --config "$TMP_DEPLOY/config.kdl"; then
+            echo "==> A16EEN deployment stopped: Niri rejected the staged configuration." >&2
+            exit 1
+        fi
+    else
+        echo "WARNING: niri is not installed; skipping staged Niri validation." >&2
+    fi
+
+    # Replace only after every staged file was copied and the compositor config validated.
     cp "$TMP_DEPLOY/config.kdl" "$NIRI_DIR/config.kdl"
+    cp "$TMP_DEPLOY/shell.qml" "$QS_DIR/shell.qml"
     cp "$TMP_DEPLOY/ui/"*.qml "$QS_DIR/ui/"
 
-    if [ -f "$ROOT_DIR/quickshell/a16een/assets/wallpapers/default.png" ]; then
-        cp "$ROOT_DIR/quickshell/a16een/assets/wallpapers/default.png"             "$QS_DIR/assets/wallpapers/default.png"
+    if [ -f "$TMP_DEPLOY/assets/wallpapers/default.png" ]; then
+        cp "$TMP_DEPLOY/assets/wallpapers/default.png"             "$QS_DIR/assets/wallpapers/default.png"
     fi
 
     rm -rf "$TMP_DEPLOY"
@@ -172,11 +195,24 @@ fi
 
 printf '%s\n' "$SOURCE_COMMIT" > "$STATE_DIR/installed-commit"
 
-echo "==> Installing A16EEN session launcher, updater and diagnostics"
+echo "==> Installing A16EEN session launcher, shell supervisor, updater and diagnostics"
 sudo install -Dm755 "$ROOT_DIR/scripts/start-a16een" /usr/local/bin/start-a16een
+sudo install -Dm755 "$ROOT_DIR/scripts/a16een-shell" /usr/local/bin/a16een-shell
 sudo install -Dm755 "$ROOT_DIR/scripts/a16een-update" /usr/local/bin/a16een-update
 sudo install -Dm755 "$ROOT_DIR/scripts/a16een-doctor" /usr/local/bin/a16een-doctor
 sudo install -Dm644 "$ROOT_DIR/session/a16een.desktop" /usr/share/wayland-sessions/a16een.desktop
+
+# Install A16EEN's portal preference only when the user does not already have one.
+# This avoids overwriting portal choices made for another desktop/session.
+PORTAL_DIR="$HOME/.config/xdg-desktop-portal"
+PORTAL_CONF="$PORTAL_DIR/a16een-portals.conf"
+if [ ! -f "$PORTAL_CONF" ]; then
+    mkdir -p "$PORTAL_DIR"
+    cp "$ROOT_DIR/xdg/xdg-desktop-portal/a16een-portals.conf" "$PORTAL_CONF"
+    echo "==> Installed A16EEN XDG portal preference."
+else
+    echo "==> Preserved existing A16EEN portal preference."
+fi
 
 echo
 echo "╭──────────────────────────────────────────────╮"
