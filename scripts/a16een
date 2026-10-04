@@ -155,14 +155,19 @@ command="${1:-help}"
 shift || true
 
 assume_yes=0
-for arg in "$@"; do
-    case "$arg" in
-        --yes|-y) assume_yes=1 ;;
+while [[ $# -gt 0 ]]; do
+    case "$1" in
+        --yes|-y)
+            assume_yes=1
+            shift
+            ;;
         --help|-h)
             usage
             exit 0
             ;;
-        *) die "unknown option '$arg'. Use 'a16een help'." ;;
+        *)
+            break
+            ;;
     esac
 done
 
