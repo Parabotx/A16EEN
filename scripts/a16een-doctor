@@ -69,27 +69,33 @@ fi
 echo
 echo "2. Niri validation"
 if [[ -r "$NIRI_CONFIG" ]] && command -v niri >/dev/null 2>&1; then
-    if niri validate --config "$NIRI_CONFIG" >/tmp/a16een-doctor-niri.out 2>&1; then
+    check_file="$(mktemp)"
+    trap 'rm -f "$check_file"' EXIT INT TERM
+    if niri validate --config "$NIRI_CONFIG" >"$check_file" 2>&1; then
         ok "Niri configuration validates"
     else
         fail "Niri configuration failed validation"
-        sed -n '1,80p' /tmp/a16een-doctor-niri.out
+        sed -n '1,80p' "$check_file"
     fi
-    rm -f /tmp/a16een-doctor-niri.out
+    rm -f "$check_file"
+    trap - EXIT INT TERM
 else
     fail "A16EEN Niri configuration is missing or Niri is unavailable"
 fi
 
 echo
 echo "3. Multi-monitor"
-if command -v niri >/dev/null 2>&1 && niri msg outputs >/tmp/a16een-doctor-outputs.out 2>&1; then
+outputs_file="$(mktemp)"
+trap 'rm -f "$outputs_file"' EXIT INT TERM
+if command -v niri >/dev/null 2>&1 && niri msg outputs >"$outputs_file" 2>&1; then
     ok "Niri output query is working"
     info "Connected output report:"
-    sed -n '1,30p' /tmp/a16een-doctor-outputs.out | sed 's/^/      /'
+    sed -n '1,30p' "$outputs_file" | sed 's/^/      /'
 else
     warn "Could not query live Niri outputs (run this check inside A16EEN)"
 fi
-rm -f /tmp/a16een-doctor-outputs.out
+rm -f "$outputs_file"
+trap - EXIT INT TERM
 
 echo
 echo "4. XWayland"
@@ -135,10 +141,12 @@ if command -v systemctl >/dev/null 2>&1; then
     check_service bluetooth.service --system
 fi
 if command -v bluetoothctl >/dev/null 2>&1; then
-    if bluetoothctl show >/tmp/a16een-doctor-bt.out 2>&1; then
-        if grep -qi 'Powered: yes' /tmp/a16een-doctor-bt.out; then
+    bt_file="$(mktemp)"
+    trap 'rm -f "$bt_file"' EXIT INT TERM
+    if bluetoothctl show >"$bt_file" 2>&1; then
+        if grep -qi 'Powered: yes' "$bt_file"; then
             ok "Bluetooth controller is powered"
-        elif grep -qi 'Powered: no' /tmp/a16een-doctor-bt.out; then
+        elif grep -qi 'Powered: no' "$bt_file"; then
             warn "Bluetooth controller exists but is powered off"
         else
             warn "Bluetooth controller state could not be determined"
@@ -146,38 +154,45 @@ if command -v bluetoothctl >/dev/null 2>&1; then
     else
         warn "No usable Bluetooth controller was reported"
     fi
+    rm -f "$bt_file"
+    trap - EXIT INT TERM
 fi
-rm -f /tmp/a16een-doctor-bt.out
 
 echo
 echo "8. Network"
 check_cmd nmcli
 if command -v nmcli >/dev/null 2>&1; then
-    if nmcli general status >/tmp/a16een-doctor-network.out 2>&1; then
+    network_file="$(mktemp)"
+    trap 'rm -f "$network_file"' EXIT INT TERM
+    if nmcli general status >"$network_file" 2>&1; then
         ok "NetworkManager is responding"
-        sed -n '1,6p' /tmp/a16een-doctor-network.out | sed 's/^/      /'
+        sed -n '1,6p' "$network_file" | sed 's/^/      /'
     else
         warn "NetworkManager is not responding"
     fi
+    rm -f "$network_file"
+    trap - EXIT INT TERM
 fi
-rm -f /tmp/a16een-doctor-network.out
 
 echo
 echo "9. Brightness"
 check_cmd brightnessctl
 if command -v brightnessctl >/dev/null 2>&1; then
-    if brightnessctl -l >/tmp/a16een-doctor-brightness.out 2>&1; then
-        if grep -q 'Device' /tmp/a16een-doctor-brightness.out; then
+    brightness_file="$(mktemp)"
+    trap 'rm -f "$brightness_file"' EXIT INT TERM
+    if brightnessctl -l >"$brightness_file" 2>&1; then
+        if grep -q 'Device' "$brightness_file"; then
             ok "Brightness device detected"
-            sed -n '1,8p' /tmp/a16een-doctor-brightness.out | sed 's/^/      /'
+            sed -n '1,8p' "$brightness_file" | sed 's/^/      /'
         else
             warn "brightnessctl is installed but no brightness device was detected"
         fi
     else
         warn "Could not query brightness devices"
     fi
+    rm -f "$brightness_file"
+    trap - EXIT INT TERM
 fi
-rm -f /tmp/a16een-doctor-brightness.out
 
 echo
 echo "10. Lock / logout / reboot / power"
