@@ -214,12 +214,6 @@ ShellRoot {
 
             volumeProcess.running = false
             volumeProcess.running = true
-
-            networkProcess.running = false
-            networkProcess.running = true
-
-            bluetoothProcess.running = false
-            bluetoothProcess.running = true
         }
     }
 
