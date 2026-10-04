@@ -43,19 +43,18 @@ Likely language:
 
 ## 4. Configuration
 
-User configuration should eventually live separately from the shipped defaults.
-
-Target:
+A16EEN keeps its current runtime configuration isolated:
 
 ```
 ~/.config/a16een/
-├── theme/
-├── shell/
-├── services/
-└── user.conf
+├── niri/
+│   └── config.kdl
+└── quickshell/
+    └── a16een/
+        └── shell.qml
 ```
 
-The repository should contain sane defaults and upgrade-safe migration paths.
+User configuration should eventually live separately from shipped defaults.
 
 ## 5. Future compositor
 
