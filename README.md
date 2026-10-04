@@ -50,7 +50,7 @@ curl -fL https://raw.githubusercontent.com/Parabotx/A16EEN/main/install.sh -o /t
 
 The bootstrap is interactive by default. It shows what it will do, asks before installing A16EEN's dependency set, keeps a persistent source checkout under `~/.local/share/a16een/source`, and fast-forwards that checkout when a newer A16EEN commit exists. It does not reinstall an unchanged A16EEN checkout. Use `--non-interactive` for automation.
 
-The project installer installs only missing A16EEN dependencies, backs up the previous A16EEN configuration before a revision change, deploys the new files, and leaves the user's normal Niri configuration untouched.
+When dependencies are missing, the project installer uses Arch's normal full-sync transaction (`pacman -Syu --needed`) instead of performing a partial package upgrade. If the transaction fails because a mirror/database is temporarily out of sync, the interactive installer offers one forced database refresh and retry. Existing dependencies are not reinstalled.
 
 Current automatic dependencies include:
 
@@ -153,6 +153,6 @@ Niri is the first compositor target, not the final boundary of the project.
 
 Application launching uses the XDG desktop-entry index exposed by Quickshell. That means A16EEN can launch applications regardless of whether they came from pacman or another source, provided the application installs a valid `.desktop` entry in an XDG application directory. The desktop-entry specification defines those application directories through `$XDG_DATA_DIRS/applications/`. Quickshell exposes visible Application entries through `DesktopEntries.applications` and provides a parsed command plus `execute()` for launching them. Apps that do not install a desktop entry (for example a bare executable or unintegrated AppImage) are intentionally not auto-executed from arbitrary launcher text. citeturn964132search2turn105124search0turn105124search9 System actions use fixed executable argument lists, and destructive session actions require a second confirmation click.
 
-The installer does not execute package names or commands supplied by the user. It uses a fixed repository URL and a fixed dependency list. It never deletes the user's normal Niri configuration.
+The installer does not execute package names or commands supplied by the user. On Arch, installing new packages through pacman is intentionally a full-sync operation because Arch does not support partial upgrades. It uses a fixed repository URL and a fixed dependency list. It never deletes the user's normal Niri configuration.
 
 A16EEN is still early software. Keep your existing desktop session available as a fallback while testing new builds.
