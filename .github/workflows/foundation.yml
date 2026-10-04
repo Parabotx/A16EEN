@@ -33,13 +33,16 @@ jobs:
           test -f niri/config.kdl
           test -f quickshell/a16een/shell.qml
           test -f quickshell/a16een/ui/Launcher.qml
-          test -f quickshell/a16een/ui/TopBar.qml
+          test -f quickshell/a16een/ui/Dock.qml
           test -f quickshell/a16een/ui/Dashboard.qml
           test -f quickshell/a16een/ui/NotificationToast.qml
           test -f quickshell/a16een/assets/wallpapers/default.png
           test -f xdg/xdg-desktop-portal/a16een-portals.conf
 
           grep -q 'spawn-sh-at-startup "a16een-shell"' niri/config.kdl
+          grep -q 'Mod+Space repeat=false { spawn-sh "qs ipc call launcher toggle"; }' niri/config.kdl
+          grep -q 'Dock {' quickshell/a16een/shell.qml
+          ! grep -q 'TopBar {' quickshell/a16een/shell.qml
           grep -q 'xwayland-satellite' niri/config.kdl
           grep -q 'Mod+Return { spawn "foot"; }' niri/config.kdl
           grep -q 'XF86AudioPlay allow-when-locked=true { spawn "playerctl" "play-pause"; }' niri/config.kdl
