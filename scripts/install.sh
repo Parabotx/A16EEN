@@ -214,6 +214,36 @@ else
     echo "==> Preserved existing A16EEN portal preference."
 fi
 
+# If A16EEN is already running, restart only its Quickshell process after
+# deployment. This is especially important when a revision adds or removes QML
+# component files, which a live hot-reload may not register reliably.
+if [ "${XDG_CURRENT_DESKTOP:-}" = "A16EEN" ]; then
+    CONFIG_SHELL_DIR="${XDG_CONFIG_HOME:-$HOME/.config}/a16een/quickshell/a16een"
+    RESTARTED_SHELL=0
+
+    for cmdline in /proc/[0-9]*/cmdline; do
+        [ -r "$cmdline" ] || continue
+        PID="${cmdline#/proc/}"
+        PID="${PID%/cmdline}"
+        case "$PID" in
+            ''|*[!0-9]*) continue ;;
+        esac
+
+        ARGS="$(tr '\0' ' ' < "$cmdline" 2>/dev/null || true)"
+        case "$ARGS" in
+            *"qs -c $CONFIG_SHELL_DIR"*)
+                if kill -TERM "$PID" 2>/dev/null; then
+                    RESTARTED_SHELL=1
+                fi
+                ;;
+        esac
+    done
+
+    if [ "$RESTARTED_SHELL" -eq 1 ]; then
+        echo "==> Restarted the A16EEN Quickshell shell."
+    fi
+fi
+
 echo
 echo "╭──────────────────────────────────────────────╮"
 echo "│           A16EEN installation complete       │"
