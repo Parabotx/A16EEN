@@ -2,6 +2,32 @@
 set -euo pipefail
 
 SOURCE_DIR="${XDG_DATA_HOME:-$HOME/.local/share}/a16een/source"
+STATE_DIR="${XDG_STATE_HOME:-$HOME/.local/state}/a16een"
+BACKUP_ROOT="$STATE_DIR/backups"
+
+action="update"
+confirm=0
+
+usage() {
+    cat <<'EOF'
+Usage:
+  a16een-update                 Check for and apply the latest A16EEN revision
+  a16een-update --status        Show installed/source revision state
+  a16een-update --rollback      Restore the most recent known-good A16EEN revision
+  a16een-update --rollback -y   Roll back without the confirmation prompt
+  a16een-update --help
+EOF
+}
+
+for arg in "$@"; do
+    case "$arg" in
+        --rollback) action="rollback" ;;
+        --status) action="status" ;;
+        --yes|-y) confirm=1 ;;
+        --help|-h) usage; exit 0 ;;
+        *) echo "Unknown option: $arg" >&2; usage >&2; exit 1 ;;
+    esac
+done
 
 if [[ $EUID -eq 0 ]]; then
     echo "Run a16een-update as your normal desktop user, not root."
@@ -21,7 +47,7 @@ fi
 
 CURRENT_BRANCH="$(git -C "$SOURCE_DIR" branch --show-current)"
 if [[ "$CURRENT_BRANCH" != "main" ]]; then
-    echo "A16EEN source checkout is on '$CURRENT_BRANCH'; refusing to switch branches."
+    echo "A16EEN source checkout is on '$CURRENT_BRANCH'; refusing to modify it."
     exit 1
 fi
 
@@ -29,6 +55,88 @@ if [[ -n "$(git -C "$SOURCE_DIR" status --porcelain)" ]]; then
     echo "A16EEN source contains local changes; refusing to overwrite them."
     git -C "$SOURCE_DIR" status --short
     exit 1
+fi
+
+current_source="$(git -C "$SOURCE_DIR" rev-parse HEAD)"
+installed=""
+if [[ -f "$STATE_DIR/installed-commit" ]]; then
+    installed="$(cat "$STATE_DIR/installed-commit")"
+fi
+
+if [[ "$action" == "status" ]]; then
+    echo "A16EEN status"
+    echo "============="
+    echo "Source revision:    $current_source"
+    if [[ -n "$installed" ]]; then
+        echo "Installed revision: $installed"
+    else
+        echo "Installed revision: not recorded"
+    fi
+
+    if [[ "$current_source" == "$installed" && -n "$installed" ]]; then
+        echo "State:              deployed and matching source"
+    else
+        echo "State:              source and deployed revision differ"
+    fi
+
+    latest_backup=""
+    if [[ -d "$BACKUP_ROOT" ]]; then
+        while IFS= read -r candidate; do
+            if [[ -f "$candidate/source-commit" && -f "$candidate/config/niri/config.kdl" ]]; then
+                latest_backup="$candidate"
+            fi
+        done < <(find "$BACKUP_ROOT" -mindepth 1 -maxdepth 1 -type d -print | sort)
+    fi
+
+    if [[ -n "$latest_backup" ]]; then
+        echo "Rollback target:    $(cat "$latest_backup/source-commit")"
+        echo "Rollback backup:    $latest_backup"
+    else
+        echo "Rollback target:    none available"
+    fi
+    exit 0
+fi
+
+if [[ "$action" == "rollback" ]]; then
+    latest_backup=""
+    if [[ -d "$BACKUP_ROOT" ]]; then
+        while IFS= read -r candidate; do
+            if [[ -f "$candidate/source-commit" && -f "$candidate/config/niri/config.kdl" ]]; then
+                latest_backup="$candidate"
+            fi
+        done < <(find "$BACKUP_ROOT" -mindepth 1 -maxdepth 1 -type d -print | sort)
+    fi
+
+    if [[ -z "$latest_backup" ]]; then
+        echo "No A16EEN rollback backup is available."
+        exit 1
+    fi
+
+    target_commit="$(cat "$latest_backup/source-commit")"
+    if ! git -C "$SOURCE_DIR" cat-file -e "$target_commit^{commit}" 2>/dev/null; then
+        echo "The rollback commit is not available in the local Git history:"
+        echo "  $target_commit"
+        exit 1
+    fi
+
+    echo "A16EEN rollback"
+    echo "==============="
+    echo "Target revision: $target_commit"
+    echo "Backup:          $latest_backup"
+    echo
+    echo "This will move the local A16EEN checkout back to that revision and redeploy it."
+    echo "The normal installer backup mechanism will protect the currently deployed revision first."
+
+    if [[ "$confirm" -ne 1 ]]; then
+        read -r -p "Continue? [y/N] " answer
+        case "$answer" in
+            y|Y|yes|Yes) ;;
+            *) echo "Rollback cancelled."; exit 0 ;;
+        esac
+    fi
+
+    git -C "$SOURCE_DIR" reset --hard "$target_commit"
+    exec bash "$SOURCE_DIR/scripts/install.sh" --non-interactive
 fi
 
 echo "==> Checking A16EEN for updates..."
@@ -39,11 +147,11 @@ else
     git -C "$SOURCE_DIR" fetch origin main
 fi
 
-LOCAL_COMMIT="$(git -C "$SOURCE_DIR" rev-parse HEAD)"
-REMOTE_COMMIT="$(git -C "$SOURCE_DIR" rev-parse origin/main)"
+current_source="$(git -C "$SOURCE_DIR" rev-parse HEAD)"
+remote_commit="$(git -C "$SOURCE_DIR" rev-parse origin/main)"
 
-if [[ "$LOCAL_COMMIT" == "$REMOTE_COMMIT" ]]; then
-    echo "A16EEN is already up to date."
+if [[ "$current_source" == "$remote_commit" ]]; then
+    echo "A16EEN source is already up to date."
 else
     echo "==> Applying A16EEN update..."
     git -C "$SOURCE_DIR" merge --ff-only origin/main
