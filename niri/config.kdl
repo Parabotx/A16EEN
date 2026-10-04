@@ -1,5 +1,5 @@
-// A16EEN — initial Niri foundation
-// Keep compositor behavior here. UI belongs in Quickshell.
+// A16EEN — active desktop foundation
+// Compositor behavior stays here. Visual UI lives in Quickshell.
 
 input {
     keyboard {
@@ -23,9 +23,15 @@ layout {
         proportion 0.5
     }
 
+    preset-column-widths {
+        proportion 0.33333
+        proportion 0.5
+        proportion 0.66667
+    }
+
     focus-ring {
         width 3
-        active-color "#E8D7A8"
+        active-gradient from="#D7B56D" to="#F3E6C2" angle=45
         inactive-color "#383C45"
     }
 
@@ -46,15 +52,20 @@ prefer-no-csd
 
 screenshot-path "~/Pictures/Screenshots/A16EEN %Y-%m-%d %H-%M-%S.png"
 
-// Start the A16EEN shell.
-spawn-sh-at-startup "qs -c ~/.config/quickshell/a16een"
+// A16EEN shell.
+// The path is intentionally inside the A16EEN-isolated XDG config tree.
+spawn-sh-at-startup "qs -c "$XDG_CONFIG_HOME/quickshell/a16een""
 
-// Core applications. These are intentionally lightweight defaults.
 binds {
-    Mod+Return { spawn "foot"; }
-    Mod+D { spawn "fuzzel"; }
+    // A16EEN UI
+    Mod+D repeat=false { spawn-sh "qs ipc call launcher toggle"; }
+    Mod+P repeat=false { spawn-sh "qs ipc call dashboard toggle"; }
     Mod+O repeat=false { toggle-overview; }
 
+    // Applications
+    Mod+Return { spawn "foot"; }
+
+    // Window navigation
     Mod+Q repeat=false { close-window; }
 
     Mod+Left { focus-column-left; }
@@ -72,13 +83,15 @@ binds {
     Mod+Ctrl+Up { move-window-up; }
     Mod+Ctrl+Down { move-window-down; }
 
+    // Layout
     Mod+F { maximize-column; }
     Mod+Shift+F { fullscreen-window; }
     Mod+V { toggle-window-floating; }
-
     Mod+R { switch-preset-column-width; }
+    Mod+Shift+R { switch-preset-column-width-back; }
     Mod+C { center-column; }
 
+    // Workspaces
     Mod+1 { focus-workspace 1; }
     Mod+2 { focus-workspace 2; }
     Mod+3 { focus-workspace 3; }
@@ -91,14 +104,15 @@ binds {
     Mod+Shift+4 { move-column-to-workspace 4; }
     Mod+Shift+5 { move-column-to-workspace 5; }
 
+    // Media / volume
     XF86AudioRaiseVolume allow-when-locked=true {
-        spawn-sh "wpctl set-volume @DEFAULT_AUDIO_SINK@ 5%+ -l 1.0"
+        spawn "wpctl" "set-volume" "@DEFAULT_AUDIO_SINK@" "5%+" "-l" "1.0"
     }
     XF86AudioLowerVolume allow-when-locked=true {
-        spawn-sh "wpctl set-volume @DEFAULT_AUDIO_SINK@ 5%-"
+        spawn "wpctl" "set-volume" "@DEFAULT_AUDIO_SINK@" "5%-"
     }
     XF86AudioMute allow-when-locked=true {
-        spawn-sh "wpctl set-mute @DEFAULT_AUDIO_SINK@ toggle"
+        spawn "wpctl" "set-mute" "@DEFAULT_AUDIO_SINK@" "toggle"
     }
 
     XF86MonBrightnessUp allow-when-locked=true {
@@ -108,9 +122,11 @@ binds {
         spawn "brightnessctl" "set" "10%-"
     }
 
+    // Screenshots
     Print { screenshot; }
     Ctrl+Print { screenshot-screen; }
     Alt+Print { screenshot-window; }
 
+    // Session
     Mod+Shift+E { quit; }
 }
