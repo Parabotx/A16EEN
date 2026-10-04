@@ -1,0 +1,78 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+CONFIG_DIR="$HOME/.config/a16een"
+NIRI_CONFIG="$CONFIG_DIR/niri/config.kdl"
+QS_CONFIG="$CONFIG_DIR/quickshell/a16een"
+
+echo "A16EEN diagnostic"
+echo "================="
+echo
+
+errors=0
+
+check_cmd() {
+    if command -v "$1" >/dev/null 2>&1; then
+        printf '  [OK] %-22s %s\n' "$1" "$(command -v "$1")"
+    else
+        printf '  [FAIL] %-20s missing\n' "$1"
+        errors=$((errors + 1))
+    fi
+}
+
+echo "Required commands:"
+check_cmd niri-session
+check_cmd niri
+check_cmd qs
+check_cmd git
+check_cmd foot
+check_cmd fuzzel
+check_cmd wpctl
+check_cmd brightnessctl
+check_cmd playerctl
+check_cmd nmcli
+check_cmd bluetoothctl
+
+echo
+echo "A16EEN files:"
+if [ -f "$NIRI_CONFIG" ]; then
+    echo "  [OK] Niri config"
+else
+    echo "  [FAIL] Niri config: $NIRI_CONFIG"
+    errors=$((errors + 1))
+fi
+
+if [ -f "$QS_CONFIG/shell.qml" ]; then
+    echo "  [OK] Quickshell shell"
+else
+    echo "  [FAIL] Quickshell shell: $QS_CONFIG/shell.qml"
+    errors=$((errors + 1))
+fi
+
+if [ -f "$QS_CONFIG/assets/wallpapers/default.png" ]; then
+    echo "  [OK] Default PNG wallpaper"
+else
+    echo "  [INFO] No default PNG wallpaper; A16EEN will use its built-in dark fallback."
+fi
+
+echo
+echo "Niri configuration:"
+if command -v niri >/dev/null 2>&1 && [ -f "$NIRI_CONFIG" ]; then
+    if NIRI_CONFIG="$NIRI_CONFIG" niri validate >/tmp/a16een-niri-check.$$ 2>&1; then
+        echo "  [OK] Niri config validates"
+    else
+        echo "  [FAIL] Niri config failed validation"
+        cat /tmp/a16een-niri-check.$$
+        errors=$((errors + 1))
+    fi
+    rm -f /tmp/a16een-niri-check.$$
+fi
+
+echo
+if [ "$errors" -eq 0 ]; then
+    echo "A16EEN diagnostic completed successfully."
+    exit 0
+fi
+
+echo "A16EEN diagnostic found $errors issue(s)."
+exit 1
