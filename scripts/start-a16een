@@ -2,5 +2,7 @@
 set -eu
 
 # A16EEN is currently a Niri-based desktop session.
-# The installer places the A16EEN Niri config in ~/.config/niri/config.kdl.
+# Keep its compositor configuration isolated from the user's normal Niri setup.
+export XDG_CONFIG_HOME="$HOME/.config/a16een"
+
 exec niri-session
