@@ -73,18 +73,18 @@ PanelWindow {
     Rectangle {
         anchors.fill: parent
         color: "#000000"
-        opacity: root.opened ? 0.48 : 0
+        opacity: root.opened ? 0.20 : 0
     }
 
     Rectangle {
         id: card
         z: 2
-        width: Math.min(780, parent.width - 48)
-        height: Math.min(720, parent.height - 96)
-        anchors.horizontalCenter: parent.horizontalCenter
-        anchors.top: parent.top
-        anchors.topMargin: 70
-        radius: 26
+        width: Math.min(470, parent.width - 118)
+        height: Math.min(560, parent.height - 76)
+        anchors.left: parent.left
+        anchors.leftMargin: 104
+        anchors.verticalCenter: parent.verticalCenter
+        radius: 23
         color: root.cardColor
         border.width: 1
         border.color: root.cardBorder
@@ -107,8 +107,8 @@ PanelWindow {
 
         ColumnLayout {
             anchors.fill: parent
-            anchors.margins: 20
-            spacing: 14
+            anchors.margins: 16
+            spacing: 10
 
             RowLayout {
                 Layout.fillWidth: true
@@ -123,7 +123,7 @@ PanelWindow {
                 }
 
                 Text {
-                    text: "APPLICATIONS"
+                    text: "QUICK LAUNCH"
                     color: root.secondaryText
                     font.pixelSize: 9
                     font.letterSpacing: 1.8
@@ -131,7 +131,7 @@ PanelWindow {
                 }
 
                 Text {
-                    text: DesktopEntries.applications.values.length + " AVAILABLE"
+                    text: DesktopEntries.applications.values.length + " APPS"
                     color: "#5C6470"
                     font.pixelSize: 9
                     font.letterSpacing: 0.7
@@ -140,7 +140,7 @@ PanelWindow {
 
             Rectangle {
                 Layout.fillWidth: true
-                implicitHeight: 56
+                implicitHeight: 52
                 radius: 15
                 color: "#FFFFFF09"
                 border.width: 1
@@ -164,7 +164,7 @@ PanelWindow {
                         color: root.primaryText
                         selectionColor: "#D7B56D55"
                         selectedTextColor: root.primaryText
-                        font.pixelSize: 16
+                        font.pixelSize: 14
                         clip: true
                         focus: root.opened
                         activeFocusOnPress: true
@@ -215,7 +215,7 @@ PanelWindow {
             }
 
             Text {
-                text: root.searchText.length ? "APPLICATIONS / FILTERED" : "APPLICATIONS"
+                text: root.searchText.length ? "MATCHES" : "INSTALLED APPLICATIONS"
                 color: root.secondaryText
                 font.pixelSize: 9
                 font.letterSpacing: 2
@@ -226,7 +226,7 @@ PanelWindow {
                 Layout.fillWidth: true
                 Layout.fillHeight: true
                 clip: true
-                spacing: 6
+                spacing: 5
                 currentIndex: count > 0 ? 0 : -1
 
                 model: ScriptModel {
@@ -243,13 +243,13 @@ PanelWindow {
                         ].filter(value => value).join(" ").toLowerCase()
 
                         return haystack.includes(q)
-                    })
+                    }).sort((a, b) => (a.name || "").localeCompare(b.name || ""))
                 }
 
                 delegate: Rectangle {
                     id: appRow
                     width: appList.width
-                    height: 68
+                    height: 58
                     radius: 15
                     color: ListView.isCurrentItem ? "#D7B56D16" : "#FFFFFF06"
                     border.width: ListView.isCurrentItem ? 1 : 0
@@ -265,8 +265,8 @@ PanelWindow {
 
                         IconImage {
                             Layout.alignment: Qt.AlignVCenter
-                            implicitWidth: 40
-                            implicitHeight: 40
+                            implicitWidth: 34
+                            implicitHeight: 34
                             source: Quickshell.iconPath(
                                 appRow.entry.icon,
                                 "application-x-executable"
@@ -280,7 +280,7 @@ PanelWindow {
                             Text {
                                 text: appRow.entry.name
                                 color: root.primaryText
-                                font.pixelSize: 13
+                                font.pixelSize: 12
                                 font.weight: Font.DemiBold
                                 elide: Text.ElideRight
                                 Layout.fillWidth: true
@@ -291,7 +291,7 @@ PanelWindow {
                                     ? "Terminal application"
                                     : (appRow.entry.genericName || appRow.entry.comment || "Application")
                                 color: root.secondaryText
-                                font.pixelSize: 10
+                                font.pixelSize: 9
                                 elide: Text.ElideRight
                                 Layout.fillWidth: true
                             }
@@ -355,10 +355,10 @@ PanelWindow {
                 }
 
                 Text {
-                    text: "ENTER TO OPEN  •  ↑↓ TO NAVIGATE  •  DESKTOP-ENTRY AWARE"
+                    text: "ENTER TO OPEN  •  ↑↓ NAVIGATE  •  INSTALLED APPS ONLY"
                     color: root.secondaryText
                     font.pixelSize: 9
-                    font.letterSpacing: 0.9
+                    font.letterSpacing: 0.7
                     Layout.fillWidth: true
                 }
             }
