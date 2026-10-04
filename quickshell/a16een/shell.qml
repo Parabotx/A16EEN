@@ -268,16 +268,20 @@ ShellRoot {
     Variants {
         model: Quickshell.screens
 
-        TopBar {
+        Dock {
             modelData: modelData
             workspaces: root.workspaces
             focusedWorkspaceId: root.focusedWorkspaceId
-            activeTitle: root.computedActiveTitle
-            systemLoad: root.systemLoad
-            volumePercent: root.volumePercent
-            volumeMuted: root.volumeMuted
-            networkLabel: root.networkLabel
-            bluetoothLabel: root.bluetoothLabel
+
+            onLauncherRequested: {
+                root.launcherOpen = !root.launcherOpen
+                if (root.launcherOpen) root.dashboardOpen = false
+            }
+
+            onDashboardRequested: {
+                root.dashboardOpen = !root.dashboardOpen
+                if (root.dashboardOpen) root.launcherOpen = false
+            }
         }
     }
 
