@@ -30,12 +30,26 @@ Rectangle {
             Layout.fillWidth: true
             implicitHeight: 28
 
-            Text {
-                text: "SESSION"
-                color: "#8D94A3"
-                font.pixelSize: 9
-                font.letterSpacing: 1.6
+            Item {
                 Layout.fillWidth: true
+                Layout.fillHeight: true
+
+                Text {
+                    anchors.left: parent.left
+                    anchors.verticalCenter: parent.verticalCenter
+                    text: "SESSION"
+                    color: "#8D94A3"
+                    font.pixelSize: 9
+                    font.letterSpacing: 1.6
+                }
+
+                MouseArea {
+                    anchors.fill: parent
+                    onClicked: {
+                        root.confirmAction = ""
+                        root.open = !root.open
+                    }
+                }
             }
 
             Text {
@@ -45,14 +59,6 @@ Rectangle {
                 font.letterSpacing: 1.0
             }
 
-            MouseArea {
-                Layout.fillWidth: true
-                Layout.fillHeight: true
-                onClicked: {
-                    root.confirmAction = ""
-                    root.open = !root.open
-                }
-            }
         }
 
         RowLayout {
