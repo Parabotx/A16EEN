@@ -24,6 +24,18 @@ PanelWindow {
     Image {
         anchors.fill: parent
         source: Qt.resolvedUrl("../assets/wallpapers/default.png")
+        fillMode: Image.PreserveAspectCrop
+        asynchronous: true
+        mipmap: true
+        cache: true
+        opacity: 0.16
+        visible: status === Image.Ready
+    }
+
+    // The primary layer never crops the supplied artwork.
+    Image {
+        anchors.fill: parent
+        source: Qt.resolvedUrl("../assets/wallpapers/default.png")
         fillMode: Image.PreserveAspectFit
         asynchronous: true
         mipmap: true
