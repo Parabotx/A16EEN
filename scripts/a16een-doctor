@@ -58,14 +58,17 @@ fi
 echo
 echo "Niri configuration:"
 if command -v niri >/dev/null 2>&1 && [ -f "$NIRI_CONFIG" ]; then
-    if NIRI_CONFIG="$NIRI_CONFIG" niri validate >/tmp/a16een-niri-check.$$ 2>&1; then
+    CHECK_FILE=$(mktemp)
+    trap 'rm -f "$CHECK_FILE"' EXIT INT TERM
+    if NIRI_CONFIG="$NIRI_CONFIG" niri validate >"$CHECK_FILE" 2>&1; then
         echo "  [OK] Niri config validates"
     else
         echo "  [FAIL] Niri config failed validation"
-        cat /tmp/a16een-niri-check.$$
+        cat "$CHECK_FILE"
         errors=$((errors + 1))
     fi
-    rm -f /tmp/a16een-niri-check.$$
+    rm -f "$CHECK_FILE"
+    trap - EXIT INT TERM
 fi
 
 echo
