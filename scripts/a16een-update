@@ -196,4 +196,34 @@ else
     git -C "$SOURCE_DIR" merge --ff-only origin/main
 fi
 
-exec bash "$SOURCE_DIR/scripts/install.sh" --non-interactive
+if ! bash "$SOURCE_DIR/scripts/install.sh" --non-interactive; then
+    exit $?
+fi
+
+# A16EEN updates may add/remove QML component files. Quickshell supports reloads,
+# but starting a fresh process is the safest way to refresh the QML type registry.
+# Only terminate the exact A16EEN Quickshell command; do not touch other shells.
+if [[ "${XDG_CURRENT_DESKTOP:-}" == "A16EEN" ]]; then
+    config_dir="${XDG_CONFIG_HOME:-$HOME/.config}/a16een/quickshell/a16een"
+    restarted=0
+
+    for cmdline in /proc/[0-9]*/cmdline; do
+        [[ -r "$cmdline" ]] || continue
+        pid="${cmdline#/proc/}"
+        pid="${pid%/cmdline}"
+        [[ "$pid" =~ ^[0-9]+$ ]] || continue
+
+        args="$(tr '\0' ' ' < "$cmdline" 2>/dev/null || true)"
+        case "$args" in
+            *"qs -c $config_dir"*)
+                if kill -TERM "$pid" 2>/dev/null; then
+                    restarted=1
+                fi
+                ;;
+        esac
+    done
+
+    if (( restarted )); then
+        echo "==> Restarted the A16EEN Quickshell shell to apply the new UI."
+    fi
+fi
