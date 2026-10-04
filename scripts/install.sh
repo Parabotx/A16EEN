@@ -20,10 +20,18 @@ if ! command -v qs >/dev/null 2>&1; then
     exit 1
 fi
 
-mkdir -p "$NIRI_DIR" "$QS_DIR"
+mkdir -p "$NIRI_DIR" "$QS_DIR/ui" "$QS_DIR/assets/wallpapers"
 
 cp "$ROOT_DIR/niri/config.kdl" "$NIRI_DIR/config.kdl"
-cp "$ROOT_DIR/quickshell/shell.qml" "$QS_DIR/shell.qml"
+cp "$ROOT_DIR/quickshell/a16een/shell.qml" "$QS_DIR/shell.qml"
+cp "$ROOT_DIR/quickshell/a16een/ui/"*.qml "$QS_DIR/ui/"
+
+if [ -f "$ROOT_DIR/quickshell/a16een/assets/wallpapers/default.webp" ]; then
+    cp "$ROOT_DIR/quickshell/a16een/assets/wallpapers/default.webp"         "$QS_DIR/assets/wallpapers/default.webp"
+else
+    echo "==> Wallpaper not installed yet (optional)"
+    echo "    Add: quickshell/a16een/assets/wallpapers/default.webp"
+fi
 
 echo "==> Installing A16EEN session launcher and login entry"
 sudo install -Dm755 "$ROOT_DIR/scripts/start-a16een" /usr/local/bin/start-a16een
