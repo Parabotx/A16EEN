@@ -213,7 +213,7 @@ ShellRoot {
 
         stdout: StdioCollector {
             onStreamFinished: {
-                const line = text.trim().split("\\n").find(value => value.length)
+                const line = text.trim().split("\n").find(value => value.length)
                 if (!line) {
                     root.networkLabel = "OFFLINE"
                     return
@@ -231,7 +231,7 @@ ShellRoot {
 
         stdout: StdioCollector {
             onStreamFinished: {
-                const match = text.match(/Powered:\\s*(yes|no)/i)
+                const match = text.match(/Powered:\s*(yes|no)/i)
                 root.bluetoothLabel = match && match[1].toLowerCase() === "yes" ? "BT ON" : "BT OFF"
             }
         }
