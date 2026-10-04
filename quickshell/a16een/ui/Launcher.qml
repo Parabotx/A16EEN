@@ -11,12 +11,14 @@ PanelWindow {
     required property var modelData
     property bool opened: false
     property string searchText: ""
+    property string launchError: ""
 
     property color cardColor: "#0B0D12F5"
     property color cardBorder: "#FFFFFF18"
     property color primaryText: "#F5F2EA"
     property color secondaryText: "#8D94A3"
     property color accent: "#D7B56D"
+    property color errorAccent: "#E88F8F"
 
     screen: modelData
     color: "transparent"
@@ -34,26 +36,71 @@ PanelWindow {
     WlrLayershell.namespace: "a16een-launcher"
     WlrLayershell.keyboardFocus: root.opened ? WlrKeyboardFocus.OnDemand : WlrKeyboardFocus.None
 
+    function launch(entry) {
+        root.launchError = ""
+
+        if (!entry) {
+            root.launchError = "No application selected."
+            return false
+        }
+
+        if (!entry.command || entry.command.length === 0) {
+            root.launchError = entry.name + " does not provide a launch command."
+            return false
+        }
+
+        try {
+            if (entry.runInTerminal) {
+                // Respect desktop entries that explicitly request a terminal.
+                Quickshell.execDetached({
+                    command: ["foot", "--", ...entry.command],
+                    workingDirectory: entry.workingDirectory || undefined
+                })
+            } else {
+                // Uses the parsed desktop-entry command and its working directory.
+                entry.execute()
+            }
+
+            root.opened = false
+            return true
+        } catch (error) {
+            root.launchError = "Couldn't launch " + entry.name + ". Check the app installation."
+            console.error("A16EEN launcher:", entry.name, error)
+            return false
+        }
+    }
+
     Rectangle {
         anchors.fill: parent
         color: "#000000"
-        opacity: root.opened ? 0.42 : 0
+        opacity: root.opened ? 0.48 : 0
     }
 
     Rectangle {
         id: card
-        width: Math.min(760, parent.width - 48)
-        height: Math.min(680, parent.height - 120)
+        z: 2
+        width: Math.min(780, parent.width - 48)
+        height: Math.min(720, parent.height - 96)
         anchors.horizontalCenter: parent.horizontalCenter
         anchors.top: parent.top
-        anchors.topMargin: 76
-        radius: 24
+        anchors.topMargin: 70
+        radius: 26
         color: root.cardColor
         border.width: 1
         border.color: root.cardBorder
 
-        Behavior on scale { NumberAnimation { duration: 180; easing.type: Easing.OutCubic } }
-        Behavior on opacity { NumberAnimation { duration: 140 } }
+        Behavior on scale {
+            NumberAnimation {
+                duration: 180
+                easing.type: Easing.OutCubic
+            }
+        }
+
+        Behavior on opacity {
+            NumberAnimation {
+                duration: 140
+            }
+        }
 
         scale: root.opened ? 1.0 : 0.96
         opacity: root.opened ? 1.0 : 0.0
@@ -65,67 +112,104 @@ PanelWindow {
 
             RowLayout {
                 Layout.fillWidth: true
-                spacing: 12
+                spacing: 10
 
-                Rectangle {
+                Text {
+                    text: "A16"
+                    color: root.accent
+                    font.pixelSize: 12
+                    font.weight: Font.DemiBold
+                    font.letterSpacing: 1.5
+                }
+
+                Text {
+                    text: "APPLICATIONS"
+                    color: root.secondaryText
+                    font.pixelSize: 9
+                    font.letterSpacing: 1.8
                     Layout.fillWidth: true
-                    implicitHeight: 54
-                    radius: 15
-                    color: "#FFFFFF09"
-                    border.width: 1
-                    border.color: "#FFFFFF12"
+                }
 
-                    RowLayout {
-                        anchors.fill: parent
-                        anchors.leftMargin: 15
-                        anchors.rightMargin: 15
+                Text {
+                    text: DesktopEntries.applications.values.length + " AVAILABLE"
+                    color: "#5C6470"
+                    font.pixelSize: 9
+                    font.letterSpacing: 0.7
+                }
+            }
 
-                        Text {
-                            text: "⌕"
-                            color: root.accent
-                            font.pixelSize: 23
-                            Layout.alignment: Qt.AlignVCenter
+            Rectangle {
+                Layout.fillWidth: true
+                implicitHeight: 56
+                radius: 15
+                color: "#FFFFFF09"
+                border.width: 1
+                border.color: "#FFFFFF12"
+
+                RowLayout {
+                    anchors.fill: parent
+                    anchors.leftMargin: 15
+                    anchors.rightMargin: 15
+
+                    Text {
+                        text: "⌕"
+                        color: root.accent
+                        font.pixelSize: 23
+                        Layout.alignment: Qt.AlignVCenter
+                    }
+
+                    TextInput {
+                        id: search
+                        Layout.fillWidth: true
+                        color: root.primaryText
+                        selectionColor: "#D7B56D55"
+                        selectedTextColor: root.primaryText
+                        font.pixelSize: 16
+                        clip: true
+                        focus: root.opened
+                        activeFocusOnPress: true
+                        text: root.searchText
+                        onTextChanged: {
+                            root.searchText = text
+                            appList.currentIndex = appList.count > 0 ? 0 : -1
+                            root.launchError = ""
                         }
 
-                        TextInput {
-                            id: search
-                            Layout.fillWidth: true
-                            color: root.primaryText
-                            selectionColor: "#D7B56D55"
-                            selectedTextColor: root.primaryText
-                            font.pixelSize: 16
-                            clip: true
-                            focus: root.opened
-                            activeFocusOnPress: true
-                            text: root.searchText
-                            onTextChanged: {
-                                root.searchText = text
-                                appList.currentIndex = 0
-                            }
-                            Keys.onEscapePressed: root.opened = false
-                            Keys.onReturnPressed: {
-                                if (appList.currentItem && appList.currentItem.entry) {
-                                    appList.currentItem.entry.execute()
-                                    root.opened = false
-                                }
-                            }
-                            Keys.onDownPressed: {
-                                appList.currentIndex = Math.min(appList.count - 1, appList.currentIndex + 1)
-                            }
-                            Keys.onUpPressed: {
-                                appList.currentIndex = Math.max(0, appList.currentIndex - 1)
-                            }
+                        Keys.onEscapePressed: root.opened = false
 
-                            Component.onCompleted: if (root.opened) forceActiveFocus()
+                        Keys.onReturnPressed: {
+                            if (appList.currentItem && appList.currentItem.entry) {
+                                root.launch(appList.currentItem.entry)
+                            }
                         }
 
-                        Text {
-                            text: "ESC"
-                            color: root.secondaryText
-                            font.pixelSize: 9
-                            font.letterSpacing: 1.2
-                            Layout.alignment: Qt.AlignVCenter
+                        Keys.onDownPressed: {
+                            if (appList.count > 0) {
+                                appList.currentIndex = Math.min(
+                                    appList.count - 1,
+                                    appList.currentIndex + 1
+                                )
+                            }
                         }
+
+                        Keys.onUpPressed: {
+                            if (appList.count > 0) {
+                                appList.currentIndex = Math.max(
+                                    0,
+                                    appList.currentIndex - 1
+                                )
+                            }
+                        }
+
+                        Component.onCompleted: if (root.opened) forceActiveFocus()
+                    }
+
+                    Text {
+                        text: "ESC"
+                        color: root.secondaryText
+                        font.pixelSize: 9
+                        font.letterSpacing: 1.2
+                        Layout.alignment: Qt.AlignVCenter
                     }
                 }
             }
@@ -143,17 +227,21 @@ PanelWindow {
                 Layout.fillHeight: true
                 clip: true
                 spacing: 6
-                currentIndex: 0
+                currentIndex: count > 0 ? 0 : -1
+
                 model: ScriptModel {
+                    objectProp: "id"
                     values: [...DesktopEntries.applications.values].filter(entry => {
                         if (!root.searchText.length) return true
-                        const q = root.searchText.toLowerCase()
+
+                        const q = root.searchText.toLowerCase().trim()
                         const haystack = [
                             entry.name,
                             entry.genericName,
                             entry.comment,
                             ...(entry.keywords || [])
                         ].filter(value => value).join(" ").toLowerCase()
+
                         return haystack.includes(q)
                     })
                 }
@@ -179,7 +267,10 @@ PanelWindow {
                             Layout.alignment: Qt.AlignVCenter
                             implicitWidth: 40
                             implicitHeight: 40
-                            source: Quickshell.iconPath(appRow.entry.icon, "application-x-executable")
+                            source: Quickshell.iconPath(
+                                appRow.entry.icon,
+                                "application-x-executable"
+                            )
                         }
 
                         ColumnLayout {
@@ -196,7 +287,9 @@ PanelWindow {
                             }
 
                             Text {
-                                text: appRow.entry.genericName || appRow.entry.comment || "Application"
+                                text: appRow.entry.runInTerminal
+                                    ? "Terminal application"
+                                    : (appRow.entry.genericName || appRow.entry.comment || "Application")
                                 color: root.secondaryText
                                 font.pixelSize: 10
                                 elide: Text.ElideRight
@@ -215,10 +308,7 @@ PanelWindow {
                         anchors.fill: parent
                         hoverEnabled: true
                         onEntered: appList.currentIndex = index
-                        onClicked: {
-                            appRow.entry.execute()
-                            root.opened = false
-                        }
+                        onClicked: root.launch(appRow.entry)
                     }
                 }
 
@@ -228,6 +318,28 @@ PanelWindow {
                     color: root.secondaryText
                     font.pixelSize: 12
                     horizontalAlignment: Text.AlignHCenter
+                    width: appList.width
+                }
+            }
+
+            Rectangle {
+                Layout.fillWidth: true
+                visible: root.launchError.length > 0
+                implicitHeight: 42
+                radius: 12
+                color: "#E88F8F12"
+                border.width: 1
+                border.color: "#E88F8F35"
+
+                Text {
+                    anchors.fill: parent
+                    anchors.leftMargin: 12
+                    anchors.rightMargin: 12
+                    verticalAlignment: Text.AlignVCenter
+                    text: root.launchError
+                    color: root.errorAccent
+                    font.pixelSize: 10
+                    elide: Text.ElideRight
                 }
             }
 
@@ -243,22 +355,25 @@ PanelWindow {
                 }
 
                 Text {
-                    text: "SEARCH • ENTER TO OPEN"
+                    text: "ENTER TO OPEN  •  ↑↓ TO NAVIGATE  •  DESKTOP-ENTRY AWARE"
                     color: root.secondaryText
                     font.pixelSize: 9
-                    font.letterSpacing: 1.1
+                    font.letterSpacing: 0.9
+                    Layout.fillWidth: true
                 }
             }
         }
     }
 
     MouseArea {
+        z: 1
         anchors.fill: parent
-        z: -1
         onClicked: root.opened = false
     }
 
     onOpenedChanged: {
+        root.launchError = ""
+
         if (opened) {
             Qt.callLater(() => search.forceActiveFocus())
         } else {
