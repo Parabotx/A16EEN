@@ -86,9 +86,10 @@ fi
 
 echo "$SOURCE_COMMIT" > "$STATE_DIR/installed-commit"
 
-echo "==> Installing A16EEN session launcher and updater"
+echo "==> Installing A16EEN session launcher, updater and diagnostics"
 sudo install -Dm755 "$ROOT_DIR/scripts/start-a16een" /usr/local/bin/start-a16een
 sudo install -Dm755 "$ROOT_DIR/scripts/a16een-update" /usr/local/bin/a16een-update
+sudo install -Dm755 "$ROOT_DIR/scripts/a16een-doctor" /usr/local/bin/a16een-doctor
 sudo install -Dm644 "$ROOT_DIR/session/a16een.desktop" /usr/share/wayland-sessions/a16een.desktop
 
 echo
