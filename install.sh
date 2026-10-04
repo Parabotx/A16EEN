@@ -41,7 +41,7 @@ if ! command -v sudo >/dev/null 2>&1; then
 fi
 
 echo "==> Installing Git from the official Arch repositories..."
-sudo pacman -Syu --needed --noconfirm git
+sudo pacman -Syu --needed  git
 
 rm -rf "$INSTALL_DIR"
 mkdir -p "$(dirname "$INSTALL_DIR")"
