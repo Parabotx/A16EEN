@@ -20,7 +20,7 @@ if ! command -v qs >/dev/null 2>&1; then
     exit 1
 fi
 
-mkdir -p "$NIRI_DIR" "$QS_DIR" "$HOME/.local/bin"
+mkdir -p "$NIRI_DIR" "$QS_DIR"
 
 if [ -f "$NIRI_DIR/config.kdl" ]; then
     backup="$NIRI_DIR/config.kdl.a16een-backup"
@@ -30,18 +30,10 @@ fi
 
 cp "$ROOT_DIR/niri/config.kdl" "$NIRI_DIR/config.kdl"
 cp "$ROOT_DIR/quickshell/shell.qml" "$QS_DIR/shell.qml"
-cp "$ROOT_DIR/scripts/start-a16een" "$HOME/.local/bin/start-a16een"
-chmod +x "$HOME/.local/bin/start-a16een"
 
-echo "==> Installing login-session entry"
-
-if [ "$(id -u)" -eq 0 ]; then
-    install -Dm644 "$ROOT_DIR/session/a16een.desktop" /usr/share/wayland-sessions/a16een.desktop
-else
-    echo "Login-session entry requires administrator privileges."
-    sudo install -Dm644 "$ROOT_DIR/session/a16een.desktop" /usr/share/wayland-sessions/a16een.desktop
-    sudo install -Dm755 "$ROOT_DIR/scripts/start-a16een" /usr/local/bin/start-a16een
-fi
+echo "==> Installing A16EEN session launcher and login entry"
+sudo install -Dm755 "$ROOT_DIR/scripts/start-a16een" /usr/local/bin/start-a16een
+sudo install -Dm644 "$ROOT_DIR/session/a16een.desktop" /usr/share/wayland-sessions/a16een.desktop
 
 echo
 echo "A16EEN foundation installed."
