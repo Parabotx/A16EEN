@@ -131,12 +131,25 @@ A16EEN installs a unified `a16een` command for terminal control:
 a16een launcher
 a16een dashboard
 a16een overview
+a16een close
+a16een maximize
+a16een fullscreen
+a16een float
+a16een center
+a16een workspace 2
 a16een lock
 a16een logout
 a16een reboot
 a16een poweroff
 a16een suspend
 a16een hibernate
+a16een volume up
+a16een volume down
+a16een volume mute
+a16een brightness up
+a16een brightness down
+a16een media toggle
+a16een media next
 a16een screenshot
 a16een screenshot-screen
 a16een screenshot-window
@@ -147,7 +160,7 @@ a16een doctor
 a16een status
 ```
 
-Reboot and power-off require confirmation unless `--yes` / `-y` is explicitly supplied. Logout uses Niri's IPC action, which retains Niri's own confirmation behavior. Niri exposes compositor actions through `niri msg action`, including overview and screenshot actions. citeturn211117search1turn528102search0
+Reboot and power-off require confirmation unless `--yes` / `-y` is explicitly supplied. Logout uses Niri's IPC action, which retains Niri's own confirmation behavior. The CLI keeps desktop actions behind fixed commands and arguments rather than accepting arbitrary shell input.
 
 ## Keyboard controls
 
