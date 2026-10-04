@@ -54,7 +54,7 @@ screenshot-path "~/Pictures/Screenshots/A16EEN %Y-%m-%d %H-%M-%S.png"
 
 // A16EEN shell.
 // The path is intentionally inside the A16EEN-isolated XDG config tree.
-spawn-sh-at-startup "qs -c "$XDG_CONFIG_HOME/quickshell/a16een""
+spawn-sh-at-startup "qs -c \"$XDG_CONFIG_HOME/quickshell/a16een\""
 
 binds {
     // A16EEN UI
