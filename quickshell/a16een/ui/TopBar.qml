@@ -14,6 +14,8 @@ PanelWindow {
     property real systemLoad: 0
     property int volumePercent: 0
     property bool volumeMuted: false
+    property string networkLabel: "OFFLINE"
+    property string bluetoothLabel: "BT OFF"
 
     property color panelColor: "#0B0D12E8"
     property color panelBorder: "#FFFFFF16"
