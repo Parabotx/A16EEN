@@ -88,8 +88,32 @@ if [ "${SKIP_DEPS:-0}" != "1" ]; then
             esac
         fi
 
+        # Arch is a rolling-release distribution: package installation is performed
+        # as a full sync + upgrade so A16EEN does not create a partial-upgrade state.
         # The package names come only from PACKAGES above; no user input is interpolated.
-        sudo pacman -S --needed $missing_packages
+        if ! sudo pacman -Syu --needed $missing_packages; then
+            echo
+            echo "The first package transaction failed."
+            echo "This can happen when a mirror is temporarily out of sync with its database."
+
+            if [ "$interactive" -eq 1 ] && [ -t 0 ]; then
+                printf "Force-refresh the Arch package databases and retry? [Y/n]: "
+                read -r retry
+                retry=${retry:-Y}
+                case "$retry" in
+                    Y|y|Yes|yes)
+                        sudo pacman -Syyu --needed $missing_packages
+                        ;;
+                    *)
+                        echo "Dependency installation cancelled."
+                        exit 1
+                        ;;
+                esac
+            else
+                echo "Run `sudo pacman -Syyu` once to refresh mirror databases, then run A16EEN again."
+                exit 1
+            fi
+        fi
     else
         echo "==> All A16EEN dependencies are already installed."
     fi
