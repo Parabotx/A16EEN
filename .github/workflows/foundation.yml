@@ -25,6 +25,7 @@ jobs:
           bash -n scripts/a16een-shell
           bash -n scripts/a16een-update
           bash -n scripts/a16een-doctor
+          bash -n scripts/a16een
 
       - name: Validate foundation files
         run: |
@@ -38,6 +39,7 @@ jobs:
           test -f quickshell/a16een/ui/NotificationToast.qml
           test -f quickshell/a16een/assets/wallpapers/default.png
           test -f xdg/xdg-desktop-portal/a16een-portals.conf
+          test -f scripts/a16een
 
           grep -q 'spawn-sh-at-startup "a16een-shell"' niri/config.kdl
           grep -q 'import "ui" as A16UI' quickshell/a16een/shell.qml
@@ -54,6 +56,9 @@ jobs:
           grep -q 'a16een-update --rollback' README.md
           grep -q 'NIRI_CONFIG' scripts/start-a16een
           ! grep -q 'export XDG_CONFIG_HOME=' scripts/start-a16een
+          grep -q "a16een logout" README.md
+          grep -q "a16een reboot" README.md
+          grep -q "a16een volume up" README.md
 
       - name: Validate no legacy wallpaper reference
         run: |
