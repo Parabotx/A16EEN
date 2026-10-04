@@ -139,6 +139,10 @@ PanelWindow {
                 }
             }
 
+            MediaCard {
+                Layout.fillWidth: true
+            }
+
             Text {
                 text: "QUICK ACTIONS"
                 color: "#8D94A3"
@@ -156,6 +160,10 @@ PanelWindow {
                 ActionCard { label: "SUPER + O"; description: "Workspace overview" }
                 ActionCard { label: "SUPER + RETURN"; description: "Terminal" }
                 ActionCard { label: "SUPER + Q"; description: "Close window" }
+            }
+
+            PowerActions {
+                Layout.fillWidth: true
             }
 
             Item { Layout.fillHeight: true }
