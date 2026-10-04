@@ -40,8 +40,9 @@ jobs:
           test -f xdg/xdg-desktop-portal/a16een-portals.conf
 
           grep -q 'spawn-sh-at-startup "a16een-shell"' niri/config.kdl
+          grep -q 'import "ui" as A16UI' quickshell/a16een/shell.qml
           grep -q 'Mod+Space repeat=false { spawn-sh "qs ipc call launcher toggle"; }' niri/config.kdl
-          grep -q 'Dock {' quickshell/a16een/shell.qml
+          grep -q 'A16UI.Dock {' quickshell/a16een/shell.qml
           ! grep -q 'TopBar {' quickshell/a16een/shell.qml
           grep -q 'xwayland-satellite' niri/config.kdl
           grep -q 'Mod+Return { spawn "foot"; }' niri/config.kdl
