@@ -7,6 +7,7 @@ import Quickshell.Wayland
 import Quickshell.Services.Notifications
 import Quickshell.Services.UPower
 import qs.ui
+import "ui" as A16UI
 
 ShellRoot {
     id: root
@@ -234,7 +235,7 @@ ShellRoot {
     Variants {
         model: Quickshell.screens
 
-        Dock {
+        A16UI.Dock {
             modelData: modelData
             workspaces: root.workspaces
             focusedWorkspaceId: root.focusedWorkspaceId
