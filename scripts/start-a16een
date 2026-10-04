@@ -1,11 +1,35 @@
 #!/bin/sh
 set -eu
 
-export XDG_CONFIG_HOME="$HOME/.config/a16een"
+# Keep normal application configuration in ~/.config.
+# A16EEN's compositor and shell configs live in their own namespace.
+A16EEN_CONFIG_DIR="$HOME/.config/a16een"
+NIRI_CONFIG="$A16EEN_CONFIG_DIR/niri/config.kdl"
+QUICKSHELL_CONFIG="$A16EEN_CONFIG_DIR/quickshell/a16een"
+
+export NIRI_CONFIG
+export XDG_CURRENT_DESKTOP="A16EEN"
+export XDG_SESSION_DESKTOP="a16een"
+export DESKTOP_SESSION="a16een"
 
 if ! command -v niri-session >/dev/null 2>&1; then
     echo "A16EEN cannot start: niri-session was not found." >&2
+    echo "Run the A16EEN installer/doctor from another session." >&2
     exit 1
 fi
 
+if [ ! -r "$NIRI_CONFIG" ]; then
+    echo "A16EEN cannot start: Niri config is missing:" >&2
+    echo "  $NIRI_CONFIG" >&2
+    exit 1
+fi
+
+if [ ! -d "$QUICKSHELL_CONFIG" ]; then
+    echo "A16EEN cannot start: Quickshell configuration is missing:" >&2
+    echo "  $QUICKSHELL_CONFIG" >&2
+    exit 1
+fi
+
+# niri-session imports the session environment into systemd/D-Bus when it
+# starts the main compositor session.
 exec niri-session
