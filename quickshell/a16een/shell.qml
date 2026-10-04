@@ -24,9 +24,6 @@ ShellRoot {
     property real systemLoad: 0
     property int volumePercent: 0
     property bool volumeMuted: false
-    property string networkLabel: "OFFLINE"
-    property string bluetoothLabel: "BT OFF"
-
     property var latestNotification: null
 
     readonly property var primaryScreen: Quickshell.screens.length > 0 ? Quickshell.screens[0] : null
@@ -202,37 +199,6 @@ ShellRoot {
                 const match = output.match(/Volume:\s*([0-9.]+)/)
                 if (match) root.volumePercent = Math.round(Number(match[1]) * 100)
                 root.volumeMuted = /\[MUTED\]/.test(output)
-            }
-        }
-    }
-
-    Process {
-        id: networkProcess
-
-        command: ["nmcli", "-t", "-f", "STATE,CONNECTION,TYPE", "connection", "show", "--active"]
-
-        stdout: StdioCollector {
-            onStreamFinished: {
-                const line = text.trim().split("\n").find(value => value.length)
-                if (!line) {
-                    root.networkLabel = "OFFLINE"
-                    return
-                }
-                const pieces = line.split(":")
-                root.networkLabel = pieces.length > 1 && pieces[1].length ? pieces[1] : "CONNECTED"
-            }
-        }
-    }
-
-    Process {
-        id: bluetoothProcess
-
-        command: ["bluetoothctl", "show"]
-
-        stdout: StdioCollector {
-            onStreamFinished: {
-                const match = text.match(/Powered:\s*(yes|no)/i)
-                root.bluetoothLabel = match && match[1].toLowerCase() === "yes" ? "BT ON" : "BT OFF"
             }
         }
     }
