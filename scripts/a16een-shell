@@ -1,0 +1,59 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+CONFIG_DIR="${A16EEN_CONFIG_DIR:-$HOME/.config/a16een}"
+QUICKSHELL_DIR="${A16EEN_QUICKSHELL_DIR:-$CONFIG_DIR/quickshell/a16een}"
+STATE_DIR="${XDG_STATE_HOME:-$HOME/.local/state}/a16een"
+LOG_DIR="$STATE_DIR/logs"
+LOG_FILE="$LOG_DIR/shell.log"
+
+mkdir -p "$LOG_DIR"
+
+if ! command -v qs >/dev/null 2>&1; then
+    printf '%s\n' "A16EEN shell cannot start: 'qs' was not found." >&2
+    exit 1
+fi
+
+if [[ ! -d "$QUICKSHELL_DIR" ]]; then
+    printf '%s\n' "A16EEN shell cannot start: missing Quickshell config: $QUICKSHELL_DIR" >&2
+    exit 1
+fi
+
+# Quickshell is intentionally supervised separately from Niri. A shell crash
+# should not take the compositor or the user's windows down with it.
+attempt=0
+backoff=1
+
+while true; do
+    timestamp="$(date '+%Y-%m-%d %H:%M:%S')"
+    printf '[%s] starting Quickshell (attempt %d)\n' "$timestamp" "$((attempt + 1))" >>"$LOG_FILE"
+
+    set +e
+    qs -c "$QUICKSHELL_DIR" >>"$LOG_FILE" 2>&1
+    status=$?
+    set -e
+
+    timestamp="$(date '+%Y-%m-%d %H:%M:%S')"
+    printf '[%s] Quickshell exited with status %d\n' "$timestamp" "$status" >>"$LOG_FILE"
+
+    # A clean exit is treated as intentional. Do not spin.
+    if [[ $status -eq 0 ]]; then
+        exit 0
+    fi
+
+    attempt=$((attempt + 1))
+
+    # Protect the machine from a broken QML/config revision turning into a
+    # tight restart loop. Five retries are enough to recover transient faults;
+    # after that the compositor remains usable without the shell.
+    if (( attempt >= 5 )); then
+        printf '[%s] giving up after %d failed starts; Niri remains usable.\n' \
+            "$timestamp" "$attempt" >>"$LOG_FILE"
+        exit "$status"
+    fi
+
+    sleep "$backoff"
+    if (( backoff < 8 )); then
+        backoff=$((backoff * 2))
+    fi
+done
