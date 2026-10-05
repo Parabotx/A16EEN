@@ -18,7 +18,7 @@ The project is being designed as a cohesive desktop product rather than a conven
 - Multi-monitor floating A16EEN dock
 - Live workspace state from Niri's JSON event stream
 - Keyboard-searchable application launcher with system application icons
-- Floating application launcher and dashboard with clock, system load, volume, battery, and media controls
+- Centered white application launcher with searchable grid and system application icons
 - MPRIS media controls for compatible players
 - Notification daemon integration
 - Network connection indicator
@@ -180,11 +180,13 @@ Reboot and power-off require confirmation unless `--yes` / `-y` is explicitly su
 ## Keyboard controls
 
 ```
-Super + D              Application launcher
+Super + /              Application launcher
 Super + P              A16EEN dashboard
 Super + O              Niri overview
-Super + Return        Terminal
-Super + Q              Close window
+Super + Return         Terminal
+Super + X              Close window
+Super + F              Fullscreen
+Super + M              Maximize column
 Super + H/J/K/L        Navigate
 Super + 1..5           Workspaces
 Super + Shift + 1..5  Move window to workspace
