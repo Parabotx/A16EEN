@@ -117,7 +117,7 @@ ShellRoot {
         function exit(): void {
             const active = ToplevelManager.activeToplevel
             if (active && active.fullscreen)
-                active.fullscreen = false
+                Quickshell.execDetached(["niri", "msg", "action", "fullscreen-window"])
         }
     }
 
