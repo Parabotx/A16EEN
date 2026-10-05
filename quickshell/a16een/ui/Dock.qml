@@ -12,11 +12,11 @@ PanelWindow {
 
     signal launcherRequested()
 
-    // Clean white A16EEN dock with a blue interface language.
+    // Clean white A16EEN dock with a monochrome workspace language.
     readonly property color dockBackground: "#FFFFFF"
-    readonly property color dockBorder: "#DCE5F2"
-    readonly property color iconColor: "#2F6FED"
-    readonly property color hoverBackground: "#EDF4FF"
+    readonly property color dockBorder: "#E5E7EB"
+    readonly property color iconColor: "#111111"
+    readonly property color hoverBackground: "#F3F4F6"
     readonly property string searchIcon: Qt.resolvedUrl("../assets/icons/search.svg")
 
     property bool edgeRevealed: false
@@ -42,8 +42,8 @@ PanelWindow {
         return !!current && current.id === root.focusedWorkspaceId
     }
 
-    function focusWorkspace(index) {
-        Quickshell.execDetached(["niri", "msg", "action", "focus-workspace", String(index)])
+    function focusWorkspace(name) {
+        Quickshell.execDetached(["niri", "msg", "action", "focus-workspace", name])
     }
 
     function revealDock() {
@@ -120,7 +120,7 @@ PanelWindow {
             anchors.leftMargin: 6
             anchors.top: parent.top
             anchors.topMargin: 44
-            color: "#2F6FED26"
+            color: "#1111111A"
         }
 
         Column {
@@ -154,13 +154,6 @@ PanelWindow {
                     onClicked: root.launcherRequested()
                 }
 
-            }
-
-            Rectangle {
-                width: 20
-                height: 1
-                anchors.horizontalCenter: parent.horizontalCenter
-                color: root.dockBorder
             }
 
             Rectangle {
@@ -198,7 +191,7 @@ PanelWindow {
                     onExited: root.scheduleHide()
                     hoverEnabled: true
                     cursorShape: Qt.PointingHandCursor
-                    onClicked: root.focusWorkspace(1)
+                    onClicked: root.focusWorkspace("home")
                 }
             }
 
@@ -237,7 +230,7 @@ PanelWindow {
                     onExited: root.scheduleHide()
                     hoverEnabled: true
                     cursorShape: Qt.PointingHandCursor
-                    onClicked: root.focusWorkspace(2)
+                    onClicked: root.focusWorkspace("code")
                 }
             }
 
@@ -276,7 +269,7 @@ PanelWindow {
                     onExited: root.scheduleHide()
                     hoverEnabled: true
                     cursorShape: Qt.PointingHandCursor
-                    onClicked: root.focusWorkspace(3)
+                    onClicked: root.focusWorkspace("web")
                 }
             }
 
@@ -315,7 +308,7 @@ PanelWindow {
                     onExited: root.scheduleHide()
                     hoverEnabled: true
                     cursorShape: Qt.PointingHandCursor
-                    onClicked: root.focusWorkspace(4)
+                    onClicked: root.focusWorkspace("comms")
                 }
             }
 
@@ -354,7 +347,7 @@ PanelWindow {
                     onExited: root.scheduleHide()
                     hoverEnabled: true
                     cursorShape: Qt.PointingHandCursor
-                    onClicked: root.focusWorkspace(5)
+                    onClicked: root.focusWorkspace("studio")
                 }
             }
 
@@ -393,7 +386,7 @@ PanelWindow {
                     onExited: root.scheduleHide()
                     hoverEnabled: true
                     cursorShape: Qt.PointingHandCursor
-                    onClicked: root.focusWorkspace(6)
+                    onClicked: root.focusWorkspace("music")
                 }
             }
         }
