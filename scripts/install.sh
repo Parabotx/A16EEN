@@ -7,6 +7,9 @@ STATE_DIR="$HOME/.local/state/a16een"
 NIRI_DIR="$CONFIG_DIR/niri"
 QS_DIR="$CONFIG_DIR/quickshell/a16een"
 BACKUP_ROOT="$STATE_DIR/backups"
+USER_IMAGE_DIR="${XDG_DATA_HOME:-$HOME/.local/share}/a16een/assets/images"
+USER_WALLPAPER_DIR="$USER_IMAGE_DIR/wallpapers"
+WALLPAPER_STATE="$STATE_DIR/wallpaper"
 
 PACKAGES="
 niri
@@ -29,6 +32,11 @@ curl
 xdg-desktop-portal
 xdg-desktop-portal-gtk
 xdg-utils
+inter-font
+ttf-lato
+adobe-source-sans-fonts
+ttf-roboto
+ttf-roboto-mono
 "
 
 interactive=1
@@ -130,7 +138,31 @@ if command -v git >/dev/null 2>&1 && git -C "$ROOT_DIR" rev-parse HEAD >/dev/nul
     SOURCE_COMMIT=$(git -C "$ROOT_DIR" rev-parse HEAD)
 fi
 
-mkdir -p "$NIRI_DIR" "$QS_DIR/ui" "$QS_DIR/assets/wallpapers" "$BACKUP_ROOT"
+mkdir -p "$NIRI_DIR" "$QS_DIR/ui" "$QS_DIR/assets/wallpapers" "$BACKUP_ROOT" "$USER_WALLPAPER_DIR"
+
+# User-managed wallpapers live outside the installed source/runtime tree.
+# Seed the persistent collection once; never overwrite user-provided images.
+if [ ! -f "$USER_WALLPAPER_DIR/default.png" ] && [ -f "$ROOT_DIR/quickshell/a16een/assets/wallpapers/default.png" ]; then
+    cp "$ROOT_DIR/quickshell/a16een/assets/wallpapers/default.png" "$USER_WALLPAPER_DIR/default.png"
+fi
+
+SELECTED_WALLPAPER=""
+if [ -f "$WALLPAPER_STATE" ]; then
+    SELECTED_WALLPAPER=$(cat "$WALLPAPER_STATE")
+fi
+case "$SELECTED_WALLPAPER" in
+    ''|*/*|..)
+        SELECTED_WALLPAPER=""
+        ;;
+esac
+if [ -n "$SELECTED_WALLPAPER" ] && [ ! -f "$USER_WALLPAPER_DIR/$SELECTED_WALLPAPER" ]; then
+    SELECTED_WALLPAPER=""
+fi
+if [ -z "$SELECTED_WALLPAPER" ] && [ -f "$USER_WALLPAPER_DIR/default.png" ]; then
+    SELECTED_WALLPAPER="default.png"
+    printf '%s
+' "$SELECTED_WALLPAPER" > "$WALLPAPER_STATE"
+fi
 
 INSTALLED_COMMIT=""
 if [ -f "$STATE_DIR/installed-commit" ]; then
@@ -168,8 +200,10 @@ else
     cp "$ROOT_DIR/quickshell/a16een/ui/"*.qml "$TMP_DEPLOY/ui/"
     cp "$ROOT_DIR/quickshell/a16een/assets/icons/"*.svg "$TMP_DEPLOY/assets/icons/"
 
-    if [ -f "$ROOT_DIR/quickshell/a16een/assets/wallpapers/default.png" ]; then
-        cp "$ROOT_DIR/quickshell/a16een/assets/wallpapers/default.png"             "$TMP_DEPLOY/assets/wallpapers/default.png"
+    if [ -n "$SELECTED_WALLPAPER" ] && [ -f "$USER_WALLPAPER_DIR/$SELECTED_WALLPAPER" ]; then
+        cp "$USER_WALLPAPER_DIR/$SELECTED_WALLPAPER" "$TMP_DEPLOY/assets/wallpapers/default.png"
+    elif [ -f "$ROOT_DIR/quickshell/a16een/assets/wallpapers/default.png" ]; then
+        cp "$ROOT_DIR/quickshell/a16een/assets/wallpapers/default.png" "$TMP_DEPLOY/assets/wallpapers/default.png"
     fi
 
     # Never install a new compositor config that Niri cannot parse.
@@ -215,6 +249,7 @@ echo "==> Installing A16EEN session launcher, shell supervisor, updater and diag
 sudo install -Dm755 "$ROOT_DIR/scripts/start-a16een" /usr/local/bin/start-a16een
 sudo install -Dm755 "$ROOT_DIR/scripts/a16een-shell" /usr/local/bin/a16een-shell
 sudo install -Dm755 "$ROOT_DIR/scripts/a16een" /usr/local/bin/a16een
+sudo install -Dm755 "$ROOT_DIR/scripts/a16een-wallpaper" /usr/local/bin/a16een-wallpaper
 sudo install -Dm755 "$ROOT_DIR/scripts/a16een-icons" /usr/local/bin/a16een-icons
 sudo install -Dm755 "$ROOT_DIR/scripts/a16een-update" /usr/local/bin/a16een-update
 sudo install -Dm755 "$ROOT_DIR/scripts/a16een-doctor" /usr/local/bin/a16een-doctor
@@ -279,3 +314,4 @@ echo "╭───────────────────────�
 echo "│           A16EEN installation complete       │"
 echo "╰──────────────────────────────────────────────╯"
 echo "Run 'a16een-update' whenever you want to check for updates."
+echo "User wallpapers: $USER_WALLPAPER_DIR"
