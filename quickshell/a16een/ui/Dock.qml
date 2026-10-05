@@ -1,5 +1,4 @@
 import QtQuick
-import QtQuick.Layouts
 import Quickshell
 import Quickshell.Wayland
 
@@ -7,6 +6,7 @@ PanelWindow {
     id: root
 
     required property var modelData
+    required property var workspaces
 
     signal launcherRequested()
 
@@ -14,18 +14,23 @@ PanelWindow {
     readonly property color dockBorder: "#E5E7EB"
     readonly property color iconColor: "#111827"
     readonly property color hoverBackground: "#F1F3F5"
+    readonly property color activeBackground: "#E8EAED"
+
+    readonly property var workspaceDefinitions: [
+        { name: "home", label: "Home", icon: Qt.resolvedUrl("../assets/icons/house.svg") },
+        { name: "code", label: "Development", icon: Qt.resolvedUrl("../assets/icons/code-2.svg") },
+        { name: "web", label: "Web", icon: Qt.resolvedUrl("../assets/icons/globe.svg") },
+        { name: "comms", label: "Communication", icon: Qt.resolvedUrl("../assets/icons/messages-square.svg") },
+        { name: "studio", label: "Studio", icon: Qt.resolvedUrl("../assets/icons/sparkles.svg") }
+    ]
 
     readonly property string searchIcon: Qt.resolvedUrl("../assets/icons/search.svg")
-    readonly property string terminalIcon: Qt.resolvedUrl("../assets/icons/terminal.svg")
-    readonly property string browserIcon: Qt.resolvedUrl("../assets/icons/globe.svg")
-    readonly property string filesIcon: Qt.resolvedUrl("../assets/icons/folder.svg")
-    readonly property string codeIcon: Qt.resolvedUrl("../assets/icons/code-2.svg")
 
     screen: modelData
     color: "transparent"
     aboveWindows: true
     exclusiveZone: 0
-    implicitWidth: 86
+    implicitWidth: 66
 
     anchors {
         right: true
@@ -36,70 +41,51 @@ PanelWindow {
     WlrLayershell.layer: WlrLayer.Overlay
     WlrLayershell.namespace: "a16een-dock"
 
-    function findApplication(keywords) {
-        const apps = DesktopEntries.applications.values || []
-
-        return apps.find(entry => {
-            const haystack = [
-                entry.name,
-                entry.genericName,
-                entry.comment,
-                ...(entry.keywords || []),
-                entry.id
-            ].filter(value => value).join(" ").toLowerCase()
-
-            return keywords.some(keyword => haystack.includes(keyword.toLowerCase()))
-        }) || null
+    function workspaceIsFocused(name) {
+        const current = root.workspaces.find(workspace => workspace.name === name)
+        return !!current && current.is_focused === true
     }
 
-    function launch(entry, fallbackCommand) {
-        try {
-            if (entry) {
-                entry.execute()
-            } else if (fallbackCommand) {
-                Quickshell.execDetached(fallbackCommand)
-            }
-        } catch (error) {
-            console.error("A16EEN dock launch failed:", error)
-        }
+    function focusWorkspace(name) {
+        Quickshell.execDetached(["niri", "msg", "action", "focus-workspace", name])
     }
 
     Rectangle {
         id: dock
         anchors.right: parent.right
-        anchors.rightMargin: 12
+        anchors.rightMargin: 10
         anchors.verticalCenter: parent.verticalCenter
 
-        width: 56
-        height: 278
-        radius: 22
+        width: 44
+        height: 222
+        radius: 18
         color: root.dockBackground
         border.width: 1
         border.color: root.dockBorder
 
         Rectangle {
             anchors.fill: parent
-            anchors.margins: -4
-            radius: 26
-            color: "#18000000"
+            anchors.margins: -3
+            radius: 21
+            color: "#16000000"
             z: -1
         }
 
         Column {
             anchors.centerIn: parent
-            spacing: 6
+            spacing: 4
 
             // Launcher
             Rectangle {
-                width: 38
-                height: 38
-                radius: 13
+                width: 32
+                height: 32
+                radius: 11
                 color: launcherMouse.containsMouse ? root.hoverBackground : "transparent"
 
                 Image {
                     anchors.centerIn: parent
-                    width: 20
-                    height: 20
+                    width: 17
+                    height: 17
                     source: root.searchIcon
                     fillMode: Image.PreserveAspectFit
                     asynchronous: true
@@ -117,11 +103,11 @@ PanelWindow {
 
                 Rectangle {
                     visible: launcherMouse.containsMouse
-                    x: -118
+                    x: -112
                     anchors.verticalCenter: parent.verticalCenter
-                    width: 108
-                    height: 30
-                    radius: 10
+                    width: 102
+                    height: 28
+                    radius: 9
                     color: "#111827"
                     z: 10
 
@@ -136,178 +122,76 @@ PanelWindow {
             }
 
             Rectangle {
-                width: 26
+                width: 20
                 height: 1
                 anchors.horizontalCenter: parent.horizontalCenter
                 color: root.dockBorder
             }
 
-            // Terminal
-            Rectangle {
-                width: 38
-                height: 38
-                radius: 13
-                color: terminalMouse.containsMouse ? root.hoverBackground : "transparent"
+            Repeater {
+                model: root.workspaceDefinitions
 
-                Image {
-                    anchors.centerIn: parent
-                    width: 21
-                    height: 21
-                    source: root.terminalIcon
-                    fillMode: Image.PreserveAspectFit
-                    asynchronous: true
-                    mipmap: true
-                    smooth: true
-                }
+                delegate: Rectangle {
+                    required property var modelData
 
-                MouseArea {
-                    id: terminalMouse
-                    anchors.fill: parent
-                    hoverEnabled: true
-                    cursorShape: Qt.PointingHandCursor
-                    onClicked: root.launch(
-                        root.findApplication(["foot", "terminal", "console"]),
-                        ["foot"]
-                    )
-                }
-            }
+                    width: 32
+                    height: 32
+                    radius: 11
+                    color: root.workspaceIsFocused(modelData.name)
+                        ? root.activeBackground
+                        : (workspaceMouse.containsMouse ? root.hoverBackground : "transparent")
 
-            // Browser
-            Rectangle {
-                id: browserButton
-                width: 38
-                height: 38
-                radius: 13
-                color: browserMouse.containsMouse ? root.hoverBackground : "transparent"
+                    border.width: root.workspaceIsFocused(modelData.name) ? 1 : 0
+                    border.color: "#D6D9DE"
 
-                readonly property var browserApp: root.findApplication([
-                    "firefox",
-                    "mozilla firefox",
-                    "chromium",
-                    "brave",
-                    "google chrome",
-                    "microsoft edge",
-                    "web browser"
-                ])
-
-                Image {
-                    id: browserImage
-                    anchors.centerIn: parent
-                    width: 21
-                    height: 21
-                    source: browserButton.browserApp && browserButton.browserApp.icon
-                        ? Quickshell.iconPath(browserButton.browserApp.icon, "web-browser")
-                        : root.browserIcon
-                    fillMode: Image.PreserveAspectFit
-                    asynchronous: true
-                    mipmap: true
-                    smooth: true
-
-                    onStatusChanged: {
-                        if (status === Image.Error)
-                            source = root.browserIcon
+                    Image {
+                        anchors.centerIn: parent
+                        width: 17
+                        height: 17
+                        source: modelData.icon
+                        fillMode: Image.PreserveAspectFit
+                        asynchronous: true
+                        mipmap: true
+                        smooth: true
                     }
-                }
 
-                MouseArea {
-                    id: browserMouse
-                    anchors.fill: parent
-                    hoverEnabled: true
-                    enabled: !!browserButton.browserApp
-                    cursorShape: enabled ? Qt.PointingHandCursor : Qt.ArrowCursor
-                    onClicked: root.launch(browserButton.browserApp)
-                }
-            }
-
-            // File manager
-            Rectangle {
-                id: filesButton
-                width: 38
-                height: 38
-                radius: 13
-                color: filesMouse.containsMouse ? root.hoverBackground : "transparent"
-
-                readonly property var filesApp: root.findApplication([
-                    "thunar",
-                    "nautilus",
-                    "dolphin",
-                    "pcmanfm",
-                    "nemo",
-                    "file manager",
-                    "files"
-                ])
-
-                Image {
-                    id: filesImage
-                    anchors.centerIn: parent
-                    width: 21
-                    height: 21
-                    source: filesButton.filesApp && filesButton.filesApp.icon
-                        ? Quickshell.iconPath(filesButton.filesApp.icon, "folder")
-                        : root.filesIcon
-                    fillMode: Image.PreserveAspectFit
-                    asynchronous: true
-                    mipmap: true
-                    smooth: true
-
-                    onStatusChanged: {
-                        if (status === Image.Error)
-                            source = root.filesIcon
+                    Rectangle {
+                        visible: root.workspaceIsFocused(modelData.name)
+                        width: 3
+                        height: 16
+                        radius: 2
+                        anchors.right: parent.right
+                        anchors.rightMargin: 2
+                        anchors.verticalCenter: parent.verticalCenter
+                        color: root.iconColor
                     }
-                }
 
-                MouseArea {
-                    id: filesMouse
-                    anchors.fill: parent
-                    hoverEnabled: true
-                    enabled: !!filesButton.filesApp
-                    cursorShape: enabled ? Qt.PointingHandCursor : Qt.ArrowCursor
-                    onClicked: root.launch(filesButton.filesApp)
-                }
-            }
-
-            // Code editor
-            Rectangle {
-                id: codeButton
-                width: 38
-                height: 38
-                radius: 13
-                color: codeMouse.containsMouse ? root.hoverBackground : "transparent"
-
-                readonly property var codeApp: root.findApplication([
-                    "visual studio code",
-                    "code",
-                    "vscodium",
-                    "zed",
-                    "codium"
-                ])
-
-                Image {
-                    id: codeImage
-                    anchors.centerIn: parent
-                    width: 21
-                    height: 21
-                    source: codeButton.codeApp && codeButton.codeApp.icon
-                        ? Quickshell.iconPath(codeButton.codeApp.icon, "text-editor")
-                        : root.codeIcon
-                    fillMode: Image.PreserveAspectFit
-                    asynchronous: true
-                    mipmap: true
-                    smooth: true
-
-                    onStatusChanged: {
-                        if (status === Image.Error)
-                            source = root.codeIcon
+                    MouseArea {
+                        id: workspaceMouse
+                        anchors.fill: parent
+                        hoverEnabled: true
+                        cursorShape: Qt.PointingHandCursor
+                        onClicked: root.focusWorkspace(modelData.name)
                     }
-                }
 
-                MouseArea {
-                    id: codeMouse
-                    anchors.fill: parent
-                    hoverEnabled: true
-                    enabled: !!codeButton.codeApp
-                    cursorShape: enabled ? Qt.PointingHandCursor : Qt.ArrowCursor
-                    onClicked: root.launch(codeButton.codeApp)
+                    Rectangle {
+                        visible: workspaceMouse.containsMouse
+                        x: -114
+                        anchors.verticalCenter: parent.verticalCenter
+                        width: 104
+                        height: 28
+                        radius: 9
+                        color: "#111827"
+                        z: 10
+
+                        Text {
+                            anchors.centerIn: parent
+                            text: modelData.label
+                            color: "#FFFFFF"
+                            font.pixelSize: 9
+                            font.weight: Font.DemiBold
+                        }
+                    }
                 }
             }
         }
