@@ -6,7 +6,7 @@ import Quickshell.Io
 import Quickshell.Wayland
 import Quickshell.Services.Notifications
 import Quickshell.Services.UPower
-import "ui" as A16UI
+import qs.ui
 
 ShellRoot {
     id: root
@@ -220,7 +220,7 @@ ShellRoot {
     Variants {
         model: Quickshell.screens
 
-        A16UI.Wallpaper {
+        Wallpaper {
             modelData: modelData
         }
     }
@@ -228,7 +228,7 @@ ShellRoot {
     Variants {
         model: Quickshell.screens
 
-        A16UI.Dock {
+        Dock {
             modelData: modelData
             workspaces: root.workspaces
             focusedWorkspaceId: root.focusedWorkspaceId
@@ -245,14 +245,14 @@ ShellRoot {
         }
     }
 
-    A16UI.Launcher {
+    Launcher {
         modelData: root.primaryScreen
         opened: root.launcherOpen
         searchText: root.searchText
         onSearchTextChanged: root.searchText = searchText
     }
 
-    A16UI.Dashboard {
+    Dashboard {
         modelData: root.primaryScreen
         opened: root.dashboardOpen
         activeTitle: root.computedActiveTitle
@@ -261,7 +261,7 @@ ShellRoot {
         volumeMuted: root.volumeMuted
     }
 
-    A16UI.NotificationToast {
+    NotificationToast {
         modelData: root.primaryScreen
         notification: root.latestNotification
     }
