@@ -43,7 +43,7 @@ jobs:
           test -f quickshell/a16een/assets/icons/terminal.svg
           test -f quickshell/a16een/assets/icons/globe.svg
           test -f quickshell/a16een/assets/icons/folder.svg
-          test -f quickshell/a16een/assets/icons/code-2.svg
+          test -f quickshell/a16een/assets/icons/code.svg
           test -f quickshell/a16een/assets/icons/house.svg
           test -f quickshell/a16een/assets/icons/messages-square.svg
           test -f quickshell/a16een/assets/icons/sparkles.svg
@@ -88,22 +88,20 @@ jobs:
           ! grep -q 'text: "Applications"' quickshell/a16een/ui/Dock.qml
           ! grep -q 'launcherMouse.containsMouse ? root.hoverBackground' quickshell/a16een/ui/Dock.qml
           grep -q 'GridView {' quickshell/a16een/ui/Launcher.qml
-          grep -q 'gridColumns: 5' quickshell/a16een/ui/Launcher.qml
+          grep -q 'cellWidth: 88' quickshell/a16een/ui/Launcher.qml
           grep -q 'cellHeight: 72' quickshell/a16een/ui/Launcher.qml
           grep -q 'text: appTile.entry.name' quickshell/a16een/ui/Launcher.qml
           ! grep -q 'QUICK LAUNCH' quickshell/a16een/ui/Launcher.qml
           grep -q 'width: 500' quickshell/a16een/ui/Launcher.qml
           grep -q 'height: 380' quickshell/a16een/ui/Launcher.qml
-          grep -q 'cellWidth: width > 0 ? width / gridColumns : 84' quickshell/a16een/ui/Launcher.qml
           grep -q 'text: appTile.entry.name' quickshell/a16een/ui/Launcher.qml
-          grep -q 'property bool hovered: appMouse.containsMouse' quickshell/a16een/ui/Launcher.qml
-          grep -q 'HoverHandler {' quickshell/a16een/ui/Launcher.qml
+          grep -q 'acceptedButtons: Qt.NoButton' quickshell/a16een/ui/Launcher.qml
           grep -q 'TextInput {' quickshell/a16een/ui/Launcher.qml
           grep -q 'Quickshell.iconPath' quickshell/a16een/ui/Launcher.qml
           ! grep -q 'QUICK LAUNCH' quickshell/a16een/ui/Launcher.qml
           ! grep -q 'appGrid.columns' quickshell/a16een/ui/Launcher.qml
           ! grep -q 'search.svg' quickshell/a16een/ui/Launcher.qml
-          grep -q 'Layout.preferredWidth: 320' quickshell/a16een/ui/Launcher.qml
+          grep -q 'Layout.preferredWidth: 300' quickshell/a16een/ui/Launcher.qml
           grep -q 'height: 36' quickshell/a16een/ui/Launcher.qml
           grep -q 'xwayland-satellite' niri/config.kdl
           grep -q 'Mod+Return { spawn "foot"; }' niri/config.kdl
