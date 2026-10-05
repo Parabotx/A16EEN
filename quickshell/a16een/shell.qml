@@ -228,7 +228,8 @@ ShellRoot {
             onStreamFinished: {
                 try {
                     const payload = JSON.parse(text.trim())
-                    const window = payload.FocusedWindow || payload.window || (payload.id !== undefined ? payload : null)
+                    const response = payload.Ok || payload
+                    const window = response.FocusedWindow || response.window || (response.id !== undefined ? response : null)
 
                     if (window) {
                         root.focusedWindowId = window.id ?? -1
