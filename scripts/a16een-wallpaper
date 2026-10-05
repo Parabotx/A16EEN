@@ -2,7 +2,9 @@
 set -euo pipefail
 
 CONFIG_DIR="${XDG_CONFIG_HOME:-$HOME/.config}/a16een"
+SOURCE_DIR="${XDG_DATA_HOME:-$HOME/.local/share}/a16een/source"
 BUILTIN_DIR="$CONFIG_DIR/quickshell/a16een/assets/wallpapers"
+LEGACY_BUILTIN_DIR="$SOURCE_DIR"
 STATE_DIR="${XDG_STATE_HOME:-$HOME/.local/state}/a16een"
 STATE_FILE="$STATE_DIR/wallpaper"
 USER_WALLPAPER_DIR="$HOME/Pictures/a16een"
@@ -30,17 +32,16 @@ Built-in A16EEN wallpapers:
 Personal wallpapers:
   ~/Pictures/a16een/
 
-Supported static image formats:
+Static image formats:
   PNG, JPG, JPEG, WEBP, BMP, TIFF, TGA, SVG, PPM, PGM, PBM, XPM, XBM
 
-Animated wallpaper/video support will be added separately.
+Animated wallpapers and short-video backgrounds are reserved for a later stage.
 EOF
 }
 
 is_supported() {
     local name="$1"
-    local lower="${name,,}"
-    case "$lower" in
+    case "${name,,}" in
         *.png|*.jpg|*.jpeg|*.webp|*.bmp|*.tif|*.tiff|*.tga|*.svg|*.ppm|*.pgm|*.pbm|*.xpm|*.xbm)
             return 0
             ;;
@@ -50,10 +51,13 @@ is_supported() {
     esac
 }
 
+display_name() {
+    local name="$1"
+    printf '%s\n' "${name%.*}"
+}
+
 read_state() {
-    local source filename
-    source=""
-    filename=""
+    local source="" filename=""
 
     if [ -f "$STATE_FILE" ]; then
         IFS=$'\t' read -r source filename < "$STATE_FILE" || true
@@ -72,13 +76,10 @@ read_state() {
 }
 
 write_state() {
-    local source="$1"
-    local filename="$2"
-
-    printf '%s\t%s\n' "$source" "$filename" > "$STATE_FILE"
+    printf '%s\t%s\n' "$1" "$2" > "$STATE_FILE"
 }
 
-resolve_source_dir() {
+source_dir() {
     case "$1" in
         builtin) printf '%s\n' "$BUILTIN_DIR" ;;
         custom) printf '%s\n' "$USER_WALLPAPER_DIR" ;;
@@ -86,14 +87,25 @@ resolve_source_dir() {
     esac
 }
 
-find_file_in_source() {
+find_wallpaper() {
     local source="$1"
     local filename="$2"
     local dir
-    dir="$(resolve_source_dir "$source")" || return 1
+
+    dir="$(source_dir "$source")"
 
     if [ -f "$dir/$filename" ] && is_supported "$filename"; then
         printf '%s\n' "$dir/$filename"
+        return 0
+    fi
+
+    # Compatibility for the wallpapers already downloaded to the source
+    # checkout root before the dedicated repository folder was used.
+    if [ "$source" = "builtin" ] &&
+       [ "$dir" = "$BUILTIN_DIR" ] &&
+       [ -f "$LEGACY_BUILTIN_DIR/$filename" ] &&
+       is_supported "$filename"; then
+        printf '%s\n' "$LEGACY_BUILTIN_DIR/$filename"
         return 0
     fi
 
@@ -101,11 +113,10 @@ find_file_in_source() {
 }
 
 current_entry() {
-    local state source filename
-    state="$(read_state)"
-    IFS=$'\t' read -r source filename <<< "$state"
+    local source filename
+    IFS=$'\t' read -r source filename < <(read_state)
 
-    if ! find_file_in_source "$source" "$filename" >/dev/null 2>&1; then
+    if ! find_wallpaper "$source" "$filename" >/dev/null 2>&1; then
         source="builtin"
         filename="default.png"
         write_state "$source" "$filename"
@@ -114,36 +125,55 @@ current_entry() {
     printf '%s\t%s\n' "$source" "$filename"
 }
 
-collect_entries() {
-    local source dir file relative name display_name
+collect_builtin_entries() {
+    local file name display
 
-    for source in builtin custom; do
-        dir="$(resolve_source_dir "$source")"
-
-        while IFS= read -r -d "" file; do
-            relative="${file#"$dir"/}"
-            name="${file##*/}"
-            if is_supported "$name"; then
-                display_name="${name%.*}"
-                printf "%s\t%s\t%s\t%s\n" "$source" "$relative" "$display_name" "$file"
+    while IFS= read -r -d '' file; do
+        name="${file##*/}"
+        is_supported "$name" || continue
+        display="$(display_name "$name")"
+        printf '%s\t%s\t%s\t%s\n' "builtin" "$name" "$display" "$file"
+    done < <(
+        {
+            find "$BUILTIN_DIR" -maxdepth 1 -type f -print0
+            if [ -d "$LEGACY_BUILTIN_DIR" ]; then
+                find "$LEGACY_BUILTIN_DIR" -maxdepth 1 -type f -print0
             fi
-        done < <(find "$dir" -type f -print0 | LC_ALL=C sort -z -f)
-    done
+        } | while IFS= read -r -d '' file; do printf '%s\0' "$file"; done | LC_ALL=C sort -zu -f
+    )
 }
+
+collect_custom_entries() {
+    local file name display
+
+    while IFS= read -r -d '' file; do
+        name="${file##*/}"
+        is_supported "$name" || continue
+        display="$(display_name "$name")"
+        printf '%s\t%s\t%s\t%s\n' "custom" "$name" "$display" "$file"
+    done < <(find "$USER_WALLPAPER_DIR" -maxdepth 1 -type f -print0 | LC_ALL=C sort -zu -f)
+}
+
+collect_entries() {
+    collect_builtin_entries
+    collect_custom_entries
+}
+
 catalog() {
-    local current source filename row_source row_path row_display row_abs_path selected
+    local source filename row_source row_filename row_display row_path selected
 
-    current="$(current_entry)"
-    IFS=$'\t' read -r source filename <<< "$current"
+    IFS=$'\t' read -r source filename < <(current_entry)
 
-    while IFS=$'\t' read -r row_source row_path row_display row_abs_path; do
+    while IFS=$'\t' read -r row_source row_filename row_display row_path; do
         selected="0"
-        if [ "$row_source" = "$source" ] && [ "$row_path" = "$filename" ]; then
+        if [ "$row_source" = "$source" ] && [ "$row_filename" = "$filename" ]; then
             selected="1"
         fi
-        printf "%s\t%s\t%s\t%s\t%s\n" "$row_source" "$row_path" "$row_display" "$row_abs_path" "$selected"
+
+        printf '%s\t%s\t%s\t%s\t%s\n'             "$row_source" "$row_filename" "$row_display" "$row_path" "$selected"
     done < <(collect_entries)
 }
+
 restart_shell() {
     if command -v a16een >/dev/null 2>&1; then
         a16een restart-shell >/dev/null 2>&1 || true
@@ -152,304 +182,8 @@ restart_shell() {
 
 validate_filename() {
     case "$1" in
-        ""|/*|../*|*/../*|..|*/..|*
-
-set_wallpaper() {
-    local source="$1"
-    local filename="$2"
-    local path
-
-    validate_filename "$filename"
-
-    path="$(find_file_in_source "$source" "$filename" 2>/dev/null || true)"
-    if [ -z "$path" ]; then
-        echo "A16EEN: wallpaper not found: $filename" >&2
-        exit 1
-    fi
-
-    write_state "$source" "$filename"
-    echo "A16EEN: wallpaper set to $filename"
-    restart_shell
-}
-
-set_by_filename() {
-    local filename="$1"
-    local builtin_path custom_path
-
-    validate_filename "$filename"
-
-    builtin_path="$(find_file_in_source builtin "$filename" 2>/dev/null || true)"
-    custom_path="$(find_file_in_source custom "$filename" 2>/dev/null || true)"
-
-    if [ -n "$builtin_path" ] && [ -n "$custom_path" ]; then
-        echo "A16EEN: '$filename' exists in both wallpaper folders; use 'set builtin <filename>' or 'set custom <filename>'." >&2
-        exit 1
-    fi
-
-    if [ -n "$builtin_path" ]; then
-        set_wallpaper builtin "$filename"
-        return
-    fi
-
-    if [ -n "$custom_path" ]; then
-        set_wallpaper custom "$filename"
-        return
-    fi
-
-    echo "A16EEN: wallpaper not found: $filename" >&2
-    exit 1
-}
-
-relative_wallpaper() {
-    local direction="$1"
-    local current source filename
-    local -a sources=()
-    local -a names=()
-    local row_source row_name row_path
-    local i current_index=-1 total target
-
-    current="$(current_entry)"
-    IFS=$'\t' read -r source filename <<< "$current"
-
-    while IFS=$'\t' read -r row_source row_name row_path; do
-        sources+=("$row_source")
-        names+=("$row_name")
-    done < <(collect_entries)
-
-    total=${#names[@]}
-    [ "$total" -gt 0 ] || {
-        echo "A16EEN: no wallpapers found." >&2
-        exit 1
-    }
-
-    for ((i = 0; i < total; i++)); do
-        if [ "${sources[$i]}" = "$source" ] && [ "${names[$i]}" = "$filename" ]; then
-            current_index=$i
-            break
-        fi
-    done
-
-    if [ "$current_index" -lt 0 ]; then
-        if [ "$direction" = "next" ]; then
-            target=0
-        else
-            target=$((total - 1))
-        fi
-    elif [ "$direction" = "next" ]; then
-        target=$(( (current_index + 1) % total ))
-    else
-        target=$(( (current_index - 1 + total) % total ))
-    fi
-
-    printf '%s\t%s\n' "${sources[$target]}" "${names[$target]}"
-}
-
-command="${1:-help}"
-
-case "$command" in
-    list)
-        while IFS=$'\t' read -r source filename display_name path; do
-            printf "%s\n" "$display_name"
-        done < <(collect_entries)
-        ;;
-
-    catalog)
-        catalog
-        ;;
-
-    current)
-        current_entry | cut -f2
-        ;;
-
-    current-path)
-        current="$(current_entry)"
-        IFS=$'\t' read -r source filename <<< "$current"
-        find_file_in_source "$source" "$filename"
-        ;;
-
-    set)
-        if [ "$#" -eq 2 ]; then
-            set_by_filename "$2"
-        elif [ "$#" -eq 3 ]; then
-            case "$2" in
-                builtin|custom) set_wallpaper "$2" "$3" ;;
-                *) echo "A16EEN: source must be builtin or custom." >&2; exit 1 ;;
-            esac
-        else
-            echo "A16EEN: usage: a16een wallpaper set <filename> OR set <builtin|custom> <filename>" >&2
-            exit 1
-        fi
-        ;;
-
-    next|previous)
-        IFS=$'\t' read -r source filename < <(relative_wallpaper "$command")
-        set_wallpaper "$source" "$filename"
-        ;;
-
-    reset)
-        set_wallpaper builtin "default.png"
-        ;;
-
-    help|--help|-h)
-        usage
-        ;;
-
-    *)
-        echo "A16EEN: unknown wallpaper command '$command'." >&2
-        usage >&2
-        exit 1
-        ;;
-esac
-\n'*|*
-
-set_wallpaper() {
-    local source="$1"
-    local filename="$2"
-    local path
-
-    validate_filename "$filename"
-
-    path="$(find_file_in_source "$source" "$filename" 2>/dev/null || true)"
-    if [ -z "$path" ]; then
-        echo "A16EEN: wallpaper not found: $filename" >&2
-        exit 1
-    fi
-
-    write_state "$source" "$filename"
-    echo "A16EEN: wallpaper set to $filename"
-    restart_shell
-}
-
-set_by_filename() {
-    local filename="$1"
-    local builtin_path custom_path
-
-    validate_filename "$filename"
-
-    builtin_path="$(find_file_in_source builtin "$filename" 2>/dev/null || true)"
-    custom_path="$(find_file_in_source custom "$filename" 2>/dev/null || true)"
-
-    if [ -n "$builtin_path" ] && [ -n "$custom_path" ]; then
-        echo "A16EEN: '$filename' exists in both wallpaper folders; use 'set builtin <filename>' or 'set custom <filename>'." >&2
-        exit 1
-    fi
-
-    if [ -n "$builtin_path" ]; then
-        set_wallpaper builtin "$filename"
-        return
-    fi
-
-    if [ -n "$custom_path" ]; then
-        set_wallpaper custom "$filename"
-        return
-    fi
-
-    echo "A16EEN: wallpaper not found: $filename" >&2
-    exit 1
-}
-
-relative_wallpaper() {
-    local direction="$1"
-    local current source filename
-    local -a sources=()
-    local -a names=()
-    local row_source row_name row_path
-    local i current_index=-1 total target
-
-    current="$(current_entry)"
-    IFS=$'\t' read -r source filename <<< "$current"
-
-    while IFS=$'\t' read -r row_source row_name row_path; do
-        sources+=("$row_source")
-        names+=("$row_name")
-    done < <(collect_entries)
-
-    total=${#names[@]}
-    [ "$total" -gt 0 ] || {
-        echo "A16EEN: no wallpapers found." >&2
-        exit 1
-    }
-
-    for ((i = 0; i < total; i++)); do
-        if [ "${sources[$i]}" = "$source" ] && [ "${names[$i]}" = "$filename" ]; then
-            current_index=$i
-            break
-        fi
-    done
-
-    if [ "$current_index" -lt 0 ]; then
-        if [ "$direction" = "next" ]; then
-            target=0
-        else
-            target=$((total - 1))
-        fi
-    elif [ "$direction" = "next" ]; then
-        target=$(( (current_index + 1) % total ))
-    else
-        target=$(( (current_index - 1 + total) % total ))
-    fi
-
-    printf '%s\t%s\n' "${sources[$target]}" "${names[$target]}"
-}
-
-command="${1:-help}"
-
-case "$command" in
-    list)
-        while IFS=$'\t' read -r source filename display_name path; do
-            printf "%s\n" "$display_name"
-        done < <(collect_entries)
-        ;;
-
-    catalog)
-        catalog
-        ;;
-
-    current)
-        current_entry | cut -f2
-        ;;
-
-    current-path)
-        current="$(current_entry)"
-        IFS=$'\t' read -r source filename <<< "$current"
-        find_file_in_source "$source" "$filename"
-        ;;
-
-    set)
-        if [ "$#" -eq 2 ]; then
-            set_by_filename "$2"
-        elif [ "$#" -eq 3 ]; then
-            case "$2" in
-                builtin|custom) set_wallpaper "$2" "$3" ;;
-                *) echo "A16EEN: source must be builtin or custom." >&2; exit 1 ;;
-            esac
-        else
-            echo "A16EEN: usage: a16een wallpaper set <filename> OR set <builtin|custom> <filename>" >&2
-            exit 1
-        fi
-        ;;
-
-    next|previous)
-        IFS=$'\t' read -r source filename < <(relative_wallpaper "$command")
-        set_wallpaper "$source" "$filename"
-        ;;
-
-    reset)
-        set_wallpaper builtin "default.png"
-        ;;
-
-    help|--help|-h)
-        usage
-        ;;
-
-    *)
-        echo "A16EEN: unknown wallpaper command '$command'." >&2
-        usage >&2
-        exit 1
-        ;;
-esac
-\t'*)
-            echo "A16EEN: invalid wallpaper path." >&2
+        ""|/*|../*|*/../*|..|*/..|*"/"*|*$'\n'*|*$'\t'*)
+            echo "A16EEN: invalid wallpaper filename." >&2
             exit 1
             ;;
     esac
@@ -462,7 +196,7 @@ set_wallpaper() {
 
     validate_filename "$filename"
 
-    path="$(find_file_in_source "$source" "$filename" 2>/dev/null || true)"
+    path="$(find_wallpaper "$source" "$filename" 2>/dev/null || true)"
     if [ -z "$path" ]; then
         echo "A16EEN: wallpaper not found: $filename" >&2
         exit 1
@@ -479,11 +213,11 @@ set_by_filename() {
 
     validate_filename "$filename"
 
-    builtin_path="$(find_file_in_source builtin "$filename" 2>/dev/null || true)"
-    custom_path="$(find_file_in_source custom "$filename" 2>/dev/null || true)"
+    builtin_path="$(find_wallpaper builtin "$filename" 2>/dev/null || true)"
+    custom_path="$(find_wallpaper custom "$filename" 2>/dev/null || true)"
 
     if [ -n "$builtin_path" ] && [ -n "$custom_path" ]; then
-        echo "A16EEN: '$filename' exists in both wallpaper folders; use 'set builtin <filename>' or 'set custom <filename>'." >&2
+        echo "A16EEN: '$filename' exists in both collections; specify builtin or custom." >&2
         exit 1
     fi
 
@@ -506,18 +240,17 @@ relative_wallpaper() {
     local current source filename
     local -a sources=()
     local -a names=()
-    local row_source row_name row_path
+    local row_source row_filename row_display row_path
     local i current_index=-1 total target
 
-    current="$(current_entry)"
-    IFS=$'\t' read -r source filename <<< "$current"
+    IFS=$'\t' read -r source filename < <(current_entry)
 
-    while IFS=$'\t' read -r row_source row_name row_path; do
+    while IFS=$'\t' read -r row_source row_filename row_display row_path; do
         sources+=("$row_source")
-        names+=("$row_name")
+        names+=("$row_filename")
     done < <(collect_entries)
 
-    total=${#names[@]}
+    total="${#names[@]}"
     [ "$total" -gt 0 ] || {
         echo "A16EEN: no wallpapers found." >&2
         exit 1
@@ -531,11 +264,8 @@ relative_wallpaper() {
     done
 
     if [ "$current_index" -lt 0 ]; then
-        if [ "$direction" = "next" ]; then
-            target=0
-        else
-            target=$((total - 1))
-        fi
+        target=0
+        [ "$direction" = "next" ] || target=$((total - 1))
     elif [ "$direction" = "next" ]; then
         target=$(( (current_index + 1) % total ))
     else
@@ -549,8 +279,8 @@ command="${1:-help}"
 
 case "$command" in
     list)
-        while IFS=$'\t' read -r source filename display_name path; do
-            printf "%s\n" "$display_name"
+        while IFS=$'\t' read -r source filename display path; do
+            printf '%s\t%s\n' "$source" "$display"
         done < <(collect_entries)
         ;;
 
@@ -559,13 +289,13 @@ case "$command" in
         ;;
 
     current)
-        current_entry | cut -f2
+        IFS=$'\t' read -r source filename < <(current_entry)
+        display_name "$filename"
         ;;
 
     current-path)
-        current="$(current_entry)"
-        IFS=$'\t' read -r source filename <<< "$current"
-        find_file_in_source "$source" "$filename"
+        IFS=$'\t' read -r source filename < <(current_entry)
+        find_wallpaper "$source" "$filename"
         ;;
 
     set)
