@@ -19,7 +19,9 @@ ShellRoot {
     property var windows: []
     property int focusedWorkspaceId: -1
     property int focusedWindowId: -1
-    property bool focusedWindowFullscreen: false
+    readonly property bool focusedWindowFullscreen: ToplevelManager.activeToplevel
+        ? ToplevelManager.activeToplevel.fullscreen
+        : false
     property string activeTitle: "A16EEN"
 
     property real systemLoad: 0
@@ -44,10 +46,8 @@ ShellRoot {
             if (event.WindowsChanged) {
                 root.windows = event.WindowsChanged.windows || []
                 const focused = root.windows.find(window => window.is_focused === true)
-                if (focused) {
+                if (focused)
                     root.focusedWindowId = focused.id
-                    root.focusedWindowFullscreen = focused.is_fullscreen === true
-                }
                 return
             }
 
@@ -56,10 +56,8 @@ ShellRoot {
                 const next = [...root.windows].filter(window => window.id !== incoming.id)
                 next.push(incoming)
                 root.windows = next
-                if (incoming.is_focused) {
+                if (incoming.is_focused)
                     root.focusedWindowId = incoming.id
-                    root.focusedWindowFullscreen = incoming.is_fullscreen === true
-                }
                 return
             }
 
@@ -76,12 +74,6 @@ ShellRoot {
                     ? -1
                     : event.WindowFocusChanged.id
 
-                const focused = root.windows.find(window =>
-                    window.id === root.focusedWindowId
-                )
-                root.focusedWindowFullscreen = focused
-                    ? focused.is_fullscreen === true
-                    : false
                 return
             }
 
@@ -218,45 +210,6 @@ ShellRoot {
             }
         }
     }
-
-    Process {
-        id: focusedWindowProcess
-
-        command: ["niri", "msg", "--json", "focused-window"]
-
-        stdout: StdioCollector {
-            onStreamFinished: {
-                try {
-                    const payload = JSON.parse(text.trim())
-                    const response = payload.Ok || payload
-                    const window = response.FocusedWindow || response.window || (response.id !== undefined ? response : null)
-
-                    if (window) {
-                        root.focusedWindowId = window.id ?? -1
-                        root.focusedWindowFullscreen = window.is_fullscreen === true
-                    } else {
-                        root.focusedWindowId = -1
-                        root.focusedWindowFullscreen = false
-                    }
-                } catch (error) {
-                    console.error("A16EEN focused-window state:", error)
-                }
-            }
-        }
-    }
-
-    Timer {
-        id: focusedWindowPoll
-        interval: 250
-        repeat: true
-        running: true
-
-        onTriggered: {
-            focusedWindowProcess.running = false
-            focusedWindowProcess.running = true
-        }
-    }
-
 
     Timer {
         interval: 3000
