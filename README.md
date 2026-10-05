@@ -123,6 +123,21 @@ cd A16EEN
 bash scripts/install.sh
 ```
 
+## A16EEN icon system
+
+A16EEN uses two icon sources:
+
+- application icons come from each application's XDG desktop entry, so the real app icon is shown in the dock and launcher;
+- A16EEN's own interface icons use pinned Lucide SVG assets.
+
+Lucide is used as a generic UI icon source because it provides a large open-source SVG collection. A16EEN pins the icon source to a known release rather than downloading from a moving branch. The installer refreshes the runtime icon set when A16EEN is installed or updated, while bundled SVG fallbacks keep the dock usable when the network is unavailable. citeturn175664search1turn815170search0
+
+You can manually refresh the icon set with:
+
+```sh
+a16een icons
+```
+
 ## A16EEN terminal command
 
 A16EEN installs a unified `a16een` command for terminal control:
