@@ -110,6 +110,7 @@ ShellRoot {
             if (root.launcherOpen) {
                 root.dashboardOpen = false
                 root.commandCenterOpen = false
+                root.wallpaperPickerOpen = false
             }
         }
 
@@ -117,6 +118,7 @@ ShellRoot {
             root.launcherOpen = true
             root.dashboardOpen = false
             root.commandCenterOpen = false
+            root.wallpaperPickerOpen = false
         }
 
         function close(): void {
@@ -142,6 +144,7 @@ ShellRoot {
             if (root.dashboardOpen) {
                 root.launcherOpen = false
                 root.commandCenterOpen = false
+                root.wallpaperPickerOpen = false
             }
         }
 
@@ -149,6 +152,7 @@ ShellRoot {
             root.dashboardOpen = true
             root.launcherOpen = false
             root.commandCenterOpen = false
+            root.wallpaperPickerOpen = false
         }
 
         function close(): void {
@@ -164,6 +168,7 @@ ShellRoot {
             if (root.commandCenterOpen) {
                 root.launcherOpen = false
                 root.dashboardOpen = false
+                root.wallpaperPickerOpen = false
             }
         }
 
@@ -171,6 +176,7 @@ ShellRoot {
             root.commandCenterOpen = true
             root.launcherOpen = false
             root.dashboardOpen = false
+            root.wallpaperPickerOpen = false
         }
 
         function close(): void {
@@ -295,6 +301,7 @@ ShellRoot {
                 root.launcherOpen = true
                 root.dashboardOpen = false
                 root.commandCenterOpen = false
+                root.wallpaperPickerOpen = false
             }
         }
     }
