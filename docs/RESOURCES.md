@@ -7,51 +7,51 @@ A16EEN should reuse excellent open-source visual work instead of shipping a gian
 ### Lucide
 https://github.com/lucide-icons/lucide
 
-The existing A16EEN icon pipeline already uses Lucide for its own UI icons. It provides 1,600+ SVG icons and is licensed under ISC, including commercial use. citeturn668822search7
+The existing A16EEN icon pipeline already uses Lucide for its own UI icons. It provides 1,600+ SVG icons and is licensed under ISC, including commercial use.
 
 ### Iconoir
 https://github.com/iconoir-icons/iconoir
 
-A strong alternative when we want a different visual voice. Iconoir provides 1,600+ SVG icons and is MIT licensed. citeturn668822search4turn668822search0
+A strong alternative when we want a different visual voice. Iconoir provides 1,600+ SVG icons and is MIT licensed.
 
 ### Phosphor
 https://github.com/phosphor-icons/core
 
-Useful for softer, heavier, thin, duotone, and playful icon treatments. The core repository contains the raw SVG assets and catalog data and is MIT licensed. citeturn668822search13
+Useful for softer, heavier, thin, duotone, and playful icon treatments. The core repository contains the raw SVG assets and catalog data and is MIT licensed.
 
 ### Material Design Icons
 https://github.com/Templarian/MaterialDesign
 
-A huge fallback library with 7,000+ community icons. Its icon assets are primarily distributed under Apache 2.0, with other files covered by their listed licenses. citeturn424637search8turn424637search1
+A huge fallback library with 7,000+ community icons. Its icon assets are primarily distributed under Apache 2.0, with other files covered by their listed licenses.
 
 ## Emojis, stickers, and expressive graphics
 
 ### OpenMoji
 https://github.com/hfg-gmuend/openmoji
 
-This is one of the best sources for expressive emoji and sticker-like graphics. OpenMoji ships color and black SVG/PNG exports and is licensed CC BY-SA 4.0, so attribution and ShareAlike obligations matter when adapting the artwork. citeturn385049search0turn385049search2
+This is one of the best sources for expressive emoji and sticker-like graphics. OpenMoji ships color and black SVG/PNG exports and is licensed CC BY-SA 4.0, so attribution and ShareAlike obligations matter when adapting the artwork.
 
 ### Twemoji
 https://github.com/twitter/twemoji
 
-A very recognizable emoji set with SVG assets. The graphics are CC BY 4.0 and require attribution; the code is MIT. citeturn385049search3
+A very recognizable emoji set with SVG assets. The graphics are CC BY 4.0 and require attribution; the code is MIT.
 
 ### SVGmoji
 https://github.com/svgmoji/svgmoji
 
-Useful as a unified SVG sprite approach over several popular open emoji sets. The repository itself is MIT licensed. citeturn385049search9
+Useful as a unified SVG sprite approach over several popular open emoji sets. The repository itself is MIT licensed.
 
 ## Animation sources
 
 ### Lottie
 https://github.com/airbnb/lottie-web
 
-Lottie is a runtime for rendering After Effects/Bodymovin animations, not a license blanket for every animation found on the internet. The runtime itself is MIT licensed; each downloaded animation should still be checked for its own license. citeturn424637search6turn424637search5
+Lottie is a runtime for rendering After Effects/Bodymovin animations, not a license blanket for every animation found on the internet. The runtime itself is MIT licensed; each downloaded animation should still be checked for its own license.
 
 ### Rive
 https://github.com/rive-app/rive-runtime
 
-Excellent for interactive animated UI pieces and state-driven graphics. Rive's official runtimes are open source and MIT licensed; individual Rive assets still need their own licensing review. citeturn424637search7turn424637search0
+Excellent for interactive animated UI pieces and state-driven graphics. Rive's official runtimes are open source and MIT licensed; individual Rive assets still need their own licensing review.
 
 A16EEN should prefer small, purpose-built animations rather than cloning entire animation repositories.
 
@@ -65,13 +65,13 @@ A16EEN installs a lightweight baseline set through Arch packages:
 - Roboto — neutral compatibility fallback
 - Roboto Mono — terminals, technical labels, diagnostics
 
-Inter is packaged by Arch as a variable TTF/TTC family; Lato is an OFL family; Source Sans is OFL-licensed; Roboto and Roboto Mono are OFL-licensed. citeturn878825search12turn724706search0turn724706search3turn724706search1turn724706search9
+Inter is packaged by Arch as a variable TTF/TTC family; Lato is an OFL family; Source Sans is OFL-licensed; Roboto and Roboto Mono are OFL-licensed.
 
 ### Artistic display font to keep in the toolbox: Fraunces
 
 https://github.com/googlefonts/fraunces
 
-Fraunces is an expressive variable display typeface with weight, optical-size, softness, and “wonky” axes. It is especially useful for editorial, cinematic, playful, or artistic A16EEN screens. The upstream font is published under the Open Font License. citeturn965561search1turn965561search0
+Fraunces is an expressive variable display typeface with weight, optical-size, softness, and “wonky” axes. It is especially useful for editorial, cinematic, playful, or artistic A16EEN screens. The upstream font is published under the Open Font License.
 
 We do not bundle large font files into A16EEN's core runtime. That keeps updates small while leaving the typography system open to more families later.
 
