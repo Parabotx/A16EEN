@@ -71,8 +71,13 @@ jobs:
           ! grep -q 'text: "A"' quickshell/a16een/ui/Dock.qml
           ! grep -q 'TopBar {' quickshell/a16een/shell.qml
           grep -q 'workspaces: root.workspaces' quickshell/a16een/shell.qml
-          grep -q 'focusWorkspace("home")' quickshell/a16een/ui/Dock.qml
-          grep -q 'focusWorkspace("studio")' quickshell/a16een/ui/Dock.qml
+          grep -q 'focusWorkspace(1)' quickshell/a16een/ui/Dock.qml
+          grep -q 'focusWorkspace(2)' quickshell/a16een/ui/Dock.qml
+          grep -q 'focusWorkspace(3)' quickshell/a16een/ui/Dock.qml
+          grep -q 'focusWorkspace(4)' quickshell/a16een/ui/Dock.qml
+          grep -q 'focusWorkspace(5)' quickshell/a16een/ui/Dock.qml
+          ! grep -q 'text: "Applications"' quickshell/a16een/ui/Dock.qml
+          ! grep -q 'launcherMouse.containsMouse ? root.hoverBackground' quickshell/a16een/ui/Dock.qml
           grep -q 'xwayland-satellite' niri/config.kdl
           grep -q 'Mod+Return { spawn "foot"; }' niri/config.kdl
           grep -q 'XF86AudioPlay allow-when-locked=true { spawn "playerctl" "play-pause"; }' niri/config.kdl
