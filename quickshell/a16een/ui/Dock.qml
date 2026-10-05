@@ -16,14 +16,6 @@ PanelWindow {
     readonly property color hoverBackground: "#F1F3F5"
     readonly property color activeBackground: "#E8EAED"
 
-    readonly property var workspaceDefinitions: [
-        { name: "home", label: "Home", icon: Qt.resolvedUrl("../assets/icons/house.svg") },
-        { name: "code", label: "Development", icon: Qt.resolvedUrl("../assets/icons/code-2.svg") },
-        { name: "web", label: "Web", icon: Qt.resolvedUrl("../assets/icons/globe.svg") },
-        { name: "comms", label: "Communication", icon: Qt.resolvedUrl("../assets/icons/messages-square.svg") },
-        { name: "studio", label: "Studio", icon: Qt.resolvedUrl("../assets/icons/sparkles.svg") }
-    ]
-
     readonly property string searchIcon: Qt.resolvedUrl("../assets/icons/search.svg")
 
     screen: modelData
@@ -75,7 +67,6 @@ PanelWindow {
             anchors.centerIn: parent
             spacing: 4
 
-            // Launcher
             Rectangle {
                 width: 32
                 height: 32
@@ -128,70 +119,208 @@ PanelWindow {
                 color: root.dockBorder
             }
 
-            Repeater {
-                model: root.workspaceDefinitions
+            Rectangle {
+                width: 32
+                height: 32
+                radius: 11
+                color: root.workspaceIsFocused("home")
+                    ? root.activeBackground
+                    : (homeMouse.containsMouse ? root.hoverBackground : "transparent")
+                border.width: root.workspaceIsFocused("home") ? 1 : 0
+                border.color: "#D6D9DE"
 
-                delegate: Rectangle {
-                    required property var modelData
+                Image {
+                    anchors.centerIn: parent
+                    width: 17
+                    height: 17
+                    source: Qt.resolvedUrl("../assets/icons/house.svg")
+                    fillMode: Image.PreserveAspectFit
+                    asynchronous: true
+                    mipmap: true
+                    smooth: true
+                }
 
-                    width: 32
-                    height: 32
-                    radius: 11
-                    color: root.workspaceIsFocused(modelData.name)
-                        ? root.activeBackground
-                        : (workspaceMouse.containsMouse ? root.hoverBackground : "transparent")
+                Rectangle {
+                    visible: root.workspaceIsFocused("home")
+                    width: 3
+                    height: 16
+                    radius: 2
+                    anchors.right: parent.right
+                    anchors.rightMargin: 2
+                    anchors.verticalCenter: parent.verticalCenter
+                    color: root.iconColor
+                }
 
-                    border.width: root.workspaceIsFocused(modelData.name) ? 1 : 0
-                    border.color: "#D6D9DE"
+                MouseArea {
+                    id: homeMouse
+                    anchors.fill: parent
+                    hoverEnabled: true
+                    cursorShape: Qt.PointingHandCursor
+                    onClicked: root.focusWorkspace("home")
+                }
+            }
 
-                    Image {
-                        anchors.centerIn: parent
-                        width: 17
-                        height: 17
-                        source: modelData.icon
-                        fillMode: Image.PreserveAspectFit
-                        asynchronous: true
-                        mipmap: true
-                        smooth: true
-                    }
+            Rectangle {
+                width: 32
+                height: 32
+                radius: 11
+                color: root.workspaceIsFocused("code")
+                    ? root.activeBackground
+                    : (codeMouse.containsMouse ? root.hoverBackground : "transparent")
+                border.width: root.workspaceIsFocused("code") ? 1 : 0
+                border.color: "#D6D9DE"
 
-                    Rectangle {
-                        visible: root.workspaceIsFocused(modelData.name)
-                        width: 3
-                        height: 16
-                        radius: 2
-                        anchors.right: parent.right
-                        anchors.rightMargin: 2
-                        anchors.verticalCenter: parent.verticalCenter
-                        color: root.iconColor
-                    }
+                Image {
+                    anchors.centerIn: parent
+                    width: 17
+                    height: 17
+                    source: Qt.resolvedUrl("../assets/icons/code-2.svg")
+                    fillMode: Image.PreserveAspectFit
+                    asynchronous: true
+                    mipmap: true
+                    smooth: true
+                }
 
-                    MouseArea {
-                        id: workspaceMouse
-                        anchors.fill: parent
-                        hoverEnabled: true
-                        cursorShape: Qt.PointingHandCursor
-                        onClicked: root.focusWorkspace(modelData.name)
-                    }
+                Rectangle {
+                    visible: root.workspaceIsFocused("code")
+                    width: 3
+                    height: 16
+                    radius: 2
+                    anchors.right: parent.right
+                    anchors.rightMargin: 2
+                    anchors.verticalCenter: parent.verticalCenter
+                    color: root.iconColor
+                }
 
-                    Rectangle {
-                        visible: workspaceMouse.containsMouse
-                        x: -114
-                        anchors.verticalCenter: parent.verticalCenter
-                        width: 104
-                        height: 28
-                        radius: 9
-                        color: "#111827"
-                        z: 10
+                MouseArea {
+                    id: codeMouse
+                    anchors.fill: parent
+                    hoverEnabled: true
+                    cursorShape: Qt.PointingHandCursor
+                    onClicked: root.focusWorkspace("code")
+                }
+            }
 
-                        Text {
-                            anchors.centerIn: parent
-                            text: modelData.label
-                            color: "#FFFFFF"
-                            font.pixelSize: 9
-                            font.weight: Font.DemiBold
-                        }
-                    }
+            Rectangle {
+                width: 32
+                height: 32
+                radius: 11
+                color: root.workspaceIsFocused("web")
+                    ? root.activeBackground
+                    : (webMouse.containsMouse ? root.hoverBackground : "transparent")
+                border.width: root.workspaceIsFocused("web") ? 1 : 0
+                border.color: "#D6D9DE"
+
+                Image {
+                    anchors.centerIn: parent
+                    width: 17
+                    height: 17
+                    source: Qt.resolvedUrl("../assets/icons/globe.svg")
+                    fillMode: Image.PreserveAspectFit
+                    asynchronous: true
+                    mipmap: true
+                    smooth: true
+                }
+
+                Rectangle {
+                    visible: root.workspaceIsFocused("web")
+                    width: 3
+                    height: 16
+                    radius: 2
+                    anchors.right: parent.right
+                    anchors.rightMargin: 2
+                    anchors.verticalCenter: parent.verticalCenter
+                    color: root.iconColor
+                }
+
+                MouseArea {
+                    id: webMouse
+                    anchors.fill: parent
+                    hoverEnabled: true
+                    cursorShape: Qt.PointingHandCursor
+                    onClicked: root.focusWorkspace("web")
+                }
+            }
+
+            Rectangle {
+                width: 32
+                height: 32
+                radius: 11
+                color: root.workspaceIsFocused("comms")
+                    ? root.activeBackground
+                    : (commsMouse.containsMouse ? root.hoverBackground : "transparent")
+                border.width: root.workspaceIsFocused("comms") ? 1 : 0
+                border.color: "#D6D9DE"
+
+                Image {
+                    anchors.centerIn: parent
+                    width: 17
+                    height: 17
+                    source: Qt.resolvedUrl("../assets/icons/messages-square.svg")
+                    fillMode: Image.PreserveAspectFit
+                    asynchronous: true
+                    mipmap: true
+                    smooth: true
+                }
+
+                Rectangle {
+                    visible: root.workspaceIsFocused("comms")
+                    width: 3
+                    height: 16
+                    radius: 2
+                    anchors.right: parent.right
+                    anchors.rightMargin: 2
+                    anchors.verticalCenter: parent.verticalCenter
+                    color: root.iconColor
+                }
+
+                MouseArea {
+                    id: commsMouse
+                    anchors.fill: parent
+                    hoverEnabled: true
+                    cursorShape: Qt.PointingHandCursor
+                    onClicked: root.focusWorkspace("comms")
+                }
+            }
+
+            Rectangle {
+                width: 32
+                height: 32
+                radius: 11
+                color: root.workspaceIsFocused("studio")
+                    ? root.activeBackground
+                    : (studioMouse.containsMouse ? root.hoverBackground : "transparent")
+                border.width: root.workspaceIsFocused("studio") ? 1 : 0
+                border.color: "#D6D9DE"
+
+                Image {
+                    anchors.centerIn: parent
+                    width: 17
+                    height: 17
+                    source: Qt.resolvedUrl("../assets/icons/sparkles.svg")
+                    fillMode: Image.PreserveAspectFit
+                    asynchronous: true
+                    mipmap: true
+                    smooth: true
+                }
+
+                Rectangle {
+                    visible: root.workspaceIsFocused("studio")
+                    width: 3
+                    height: 16
+                    radius: 2
+                    anchors.right: parent.right
+                    anchors.rightMargin: 2
+                    anchors.verticalCenter: parent.verticalCenter
+                    color: root.iconColor
+                }
+
+                MouseArea {
+                    id: studioMouse
+                    anchors.fill: parent
+                    hoverEnabled: true
+                    cursorShape: Qt.PointingHandCursor
+                    onClicked: root.focusWorkspace("studio")
                 }
             }
         }
