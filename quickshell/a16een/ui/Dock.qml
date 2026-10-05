@@ -7,6 +7,7 @@ PanelWindow {
 
     required property var modelData
     required property var workspaces
+    required property int focusedWorkspaceId
 
     signal launcherRequested()
 
@@ -33,7 +34,7 @@ PanelWindow {
 
     function workspaceIsFocused(name) {
         const current = root.workspaces.find(workspace => workspace.name === name)
-        return !!current && current.is_focused === true
+        return !!current && current.id === root.focusedWorkspaceId
     }
 
     function focusWorkspace(index) {
