@@ -228,32 +228,29 @@ set_wallpaper() {
 
 set_by_filename() {
     local filename="$1"
-    local builtin_path custom_path
+    local source path
+    local -a matches=()
 
     validate_filename "$filename"
 
-    builtin_path="$(find_wallpaper builtin "$filename" 2>/dev/null || true)"
-    custom_path="$(find_wallpaper custom "$filename" 2>/dev/null || true)"
+    for source in builtin custom builtin-animated custom-animated; do
+        path="$(find_wallpaper "$source" "$filename" 2>/dev/null || true)"
+        [ -n "$path" ] && matches+=("$source")
+    done
 
-    if [ -n "$builtin_path" ] && [ -n "$custom_path" ]; then
-        echo "A16EEN: '$filename' exists in both collections; specify builtin or custom." >&2
+    if [ "${#matches[@]}" -gt 1 ]; then
+        echo "A16EEN: '$filename' exists in multiple collections; specify the source." >&2
         exit 1
     fi
 
-    if [ -n "$builtin_path" ]; then
-        set_wallpaper builtin "$filename"
-        return
-    fi
-
-    if [ -n "$custom_path" ]; then
-        set_wallpaper custom "$filename"
+    if [ "${#matches[@]}" -eq 1 ]; then
+        set_wallpaper "${matches[0]}" "$filename"
         return
     fi
 
     echo "A16EEN: wallpaper not found: $filename" >&2
     exit 1
 }
-
 relative_wallpaper() {
     local direction="$1"
     local current source filename
