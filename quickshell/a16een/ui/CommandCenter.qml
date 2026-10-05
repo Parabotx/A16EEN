@@ -112,20 +112,10 @@ PanelWindow {
                     ? root.fieldFocusBorder
                     : root.fieldBorder
 
-                Text {
-                    anchors.left: parent.left
-                    anchors.leftMargin: 14
-                    anchors.verticalCenter: parent.verticalCenter
-                    text: "/"
-                    color: root.primaryText
-                    font.pixelSize: 15
-                    font.weight: Font.DemiBold
-                }
-
                 TextInput {
                     id: search
                     anchors.fill: parent
-                    anchors.leftMargin: 28
+                    anchors.leftMargin: 14
                     anchors.rightMargin: 12
                     color: root.primaryText
                     selectionColor: "#FFFFFF20"
@@ -213,17 +203,6 @@ PanelWindow {
                         font.weight: commandList.currentIndex === index
                             ? Font.DemiBold
                             : Font.Normal
-                    }
-
-                    Rectangle {
-                        width: 2
-                        height: 18
-                        radius: 1
-                        anchors.right: parent.right
-                        anchors.rightMargin: 8
-                        anchors.verticalCenter: parent.verticalCenter
-                        color: root.accent
-                        visible: commandList.currentIndex === index
                     }
 
                     MouseArea {
