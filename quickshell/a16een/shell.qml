@@ -19,6 +19,7 @@ ShellRoot {
     property var windows: []
     property int focusedWorkspaceId: -1
     property int focusedWindowId: -1
+    property bool focusedWindowFullscreen: false
     property string activeTitle: "A16EEN"
 
     property real systemLoad: 0
@@ -42,6 +43,11 @@ ShellRoot {
 
             if (event.WindowsChanged) {
                 root.windows = event.WindowsChanged.windows || []
+                const focused = root.windows.find(window => window.is_focused === true)
+                if (focused) {
+                    root.focusedWindowId = focused.id
+                    root.focusedWindowFullscreen = focused.is_fullscreen === true
+                }
                 return
             }
 
@@ -50,7 +56,10 @@ ShellRoot {
                 const next = [...root.windows].filter(window => window.id !== incoming.id)
                 next.push(incoming)
                 root.windows = next
-                if (incoming.is_focused) root.focusedWindowId = incoming.id
+                if (incoming.is_focused) {
+                    root.focusedWindowId = incoming.id
+                    root.focusedWindowFullscreen = incoming.is_fullscreen === true
+                }
                 return
             }
 
@@ -66,6 +75,13 @@ ShellRoot {
                 root.focusedWindowId = event.WindowFocusChanged.id === null
                     ? -1
                     : event.WindowFocusChanged.id
+
+                const focused = root.windows.find(window =>
+                    window.id === root.focusedWindowId
+                )
+                root.focusedWindowFullscreen = focused
+                    ? focused.is_fullscreen === true
+                    : false
                 return
             }
 
@@ -232,6 +248,7 @@ ShellRoot {
             modelData: modelData
             workspaces: root.workspaces
             focusedWorkspaceId: root.focusedWorkspaceId
+            fullscreenActive: root.focusedWindowFullscreen
 
             onLauncherRequested: {
                 root.launcherOpen = !root.launcherOpen
