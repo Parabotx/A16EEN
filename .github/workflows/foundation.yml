@@ -85,7 +85,8 @@ jobs:
           grep -Fq 'signal wallpaperRequested()' quickshell/a16een/ui/CommandCenter.qml
           grep -Fq 'readonly property var commands' quickshell/a16een/ui/CommandCenter.qml
           grep -Fq 'function executeCommand(command)' quickshell/a16een/ui/CommandCenter.qml
-          grep -Fq 'onWallpaperRequested: root.wallpaperPickerOpen = true' quickshell/a16een/shell.qml
+          grep -Fq 'onWallpaperRequested: {' quickshell/a16een/shell.qml
+          grep -Fq 'root.wallpaperPickerOpen = true' quickshell/a16een/shell.qml
           grep -Fq 'a16een-wallpaper", "catalog' quickshell/a16een/ui/WallpaperPicker.qml
           grep -Fq 'modelData.path' quickshell/a16een/ui/WallpaperPicker.qml
           ! grep -Fq 'sh", "-c"' quickshell/a16een/ui/CommandCenter.qml
