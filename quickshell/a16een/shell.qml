@@ -231,6 +231,7 @@ ShellRoot {
         Dock {
             modelData: modelData
             workspaces: root.workspaces
+            focusedWorkspaceId: root.focusedWorkspaceId
 
             onLauncherRequested: {
                 root.launcherOpen = !root.launcherOpen
@@ -244,6 +245,7 @@ ShellRoot {
         opened: root.launcherOpen
         searchText: root.searchText
         onSearchTextChanged: root.searchText = searchText
+        onCloseRequested: root.launcherOpen = false
     }
 
     Dashboard {
