@@ -11,6 +11,9 @@ readonly -a ICONS=(
     "globe.svg"
     "folder.svg"
     "code-2.svg"
+    "house.svg"
+    "messages-square.svg"
+    "sparkles.svg"
 )
 
 if [[ $EUID -eq 0 ]]; then
