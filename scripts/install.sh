@@ -33,6 +33,7 @@ xdg-desktop-portal-gtk
 xdg-utils
 qt6-imageformats
 qt6-svg
+qt6-multimedia
 inter-font
 ttf-lato
 adobe-source-sans-fonts
@@ -139,13 +140,13 @@ if command -v git >/dev/null 2>&1 && git -C "$ROOT_DIR" rev-parse HEAD >/dev/nul
     SOURCE_COMMIT=$(git -C "$ROOT_DIR" rev-parse HEAD)
 fi
 
-mkdir -p "$NIRI_DIR" "$QS_DIR/ui" "$QS_DIR/assets/wallpapers" "$BACKUP_ROOT" "$USER_WALLPAPER_DIR"
+mkdir -p "$NIRI_DIR" "$QS_DIR/ui" "$QS_DIR/assets/wallpapers" "$QS_DIR/assets/animated" "$BACKUP_ROOT" "$USER_WALLPAPER_DIR" "$USER_WALLPAPER_DIR/animated"
 
 # A16EEN has two wallpaper stores:
 #   1. Built-in wallpapers shipped in the GitHub repository.
 #   2. Personal wallpapers in the user's Pictures/a16een folder.
 # The personal folder is never overwritten by A16EEN updates.
-mkdir -p "$USER_WALLPAPER_DIR"
+mkdir -p "$USER_WALLPAPER_DIR" "$USER_WALLPAPER_DIR/animated"
 
 if [ ! -f "$WALLPAPER_STATE" ] || [ ! -s "$WALLPAPER_STATE" ]; then
     printf '%s\t%s\n' "builtin" "default.png" > "$WALLPAPER_STATE"
@@ -181,7 +182,7 @@ else
     }
     trap cleanup_deploy EXIT INT TERM
 
-    mkdir -p "$TMP_DEPLOY/ui" "$TMP_DEPLOY/assets/wallpapers" "$TMP_DEPLOY/assets/icons"
+    mkdir -p "$TMP_DEPLOY/ui" "$TMP_DEPLOY/assets/wallpapers" "$TMP_DEPLOY/assets/animated" "$TMP_DEPLOY/assets/icons"
     cp "$ROOT_DIR/niri/config.kdl" "$TMP_DEPLOY/config.kdl"
     cp "$ROOT_DIR/quickshell/a16een/shell.qml" "$TMP_DEPLOY/shell.qml"
     cp "$ROOT_DIR/quickshell/a16een/ui/"*.qml "$TMP_DEPLOY/ui/"
@@ -201,6 +202,19 @@ else
             -o -iname '*.svg' -o -iname '*.ppm' -o -iname '*.pgm' -o -iname '*.pbm' \
             -o -iname '*.xpm' -o -iname '*.xbm' \) -print0 | LC_ALL=C sort -z -f
     )
+
+    # Ship built-in animated wallpapers separately from static wallpapers.
+    BUILTIN_ANIMATED_SOURCE_DIR="$ROOT_DIR/quickshell/a16een/assets/animated"
+    if [ -d "$BUILTIN_ANIMATED_SOURCE_DIR" ]; then
+        while IFS= read -r -d '' wallpaper; do
+            relative="${wallpaper#"$BUILTIN_ANIMATED_SOURCE_DIR"/}"
+            destination="$TMP_DEPLOY/assets/animated/$relative"
+            mkdir -p "$(dirname "$destination")"
+            cp "$wallpaper" "$destination"
+        done < <(
+            find "$BUILTIN_ANIMATED_SOURCE_DIR" -type f                 ( -iname '*.gif' -o -iname '*.mp4' -o -iname '*.webm' -o -iname '*.mov' ) -print0 | LC_ALL=C sort -z -f
+        )
+    fi
 
     # Compatibility migration for wallpapers added to the repository root
     # by the earlier wallpaper setup. Existing files are imported automatically.
@@ -234,6 +248,9 @@ else
     # Replace only the built-in runtime library. Personal wallpapers live elsewhere.
     find "$QS_DIR/assets/wallpapers" -type f -delete
     cp -a "$TMP_DEPLOY/assets/wallpapers/." "$QS_DIR/assets/wallpapers/"
+
+    find "$QS_DIR/assets/animated" -type f -delete
+    cp -a "$TMP_DEPLOY/assets/animated/." "$QS_DIR/assets/animated/"
 
     mkdir -p "$QS_DIR/assets/icons"
     cp "$TMP_DEPLOY/assets/icons/"*.svg "$QS_DIR/assets/icons/"
@@ -326,3 +343,4 @@ echo "╰───────────────────────�
 echo "Run 'a16een-update' whenever you want to check for updates."
 echo "Built-in wallpapers: $QS_DIR/assets/wallpapers"
 echo "Personal wallpapers: $USER_WALLPAPER_DIR"
+echo "Personal animated wallpapers: $USER_WALLPAPER_DIR/animated"
