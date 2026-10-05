@@ -230,17 +230,10 @@ ShellRoot {
 
         Dock {
             modelData: modelData
-            workspaces: root.workspaces
-            focusedWorkspaceId: root.focusedWorkspaceId
 
             onLauncherRequested: {
                 root.launcherOpen = !root.launcherOpen
                 if (root.launcherOpen) root.dashboardOpen = false
-            }
-
-            onDashboardRequested: {
-                root.dashboardOpen = !root.dashboardOpen
-                if (root.dashboardOpen) root.launcherOpen = false
             }
         }
     }
