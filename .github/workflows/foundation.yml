@@ -71,6 +71,10 @@ jobs:
           ! grep -q 'text: "A"' quickshell/a16een/ui/Dock.qml
           ! grep -q 'TopBar {' quickshell/a16een/shell.qml
           grep -q 'workspaces: root.workspaces' quickshell/a16een/shell.qml
+          grep -q 'focusedWorkspaceId: root.focusedWorkspaceId' quickshell/a16een/shell.qml
+          grep -q 'signal closeRequested' quickshell/a16een/ui/Launcher.qml
+          ! grep -q 'root.opened = false' quickshell/a16een/ui/Launcher.qml
+          grep -q 'current.id === root.focusedWorkspaceId' quickshell/a16een/ui/Dock.qml
           grep -q 'focusWorkspace(1)' quickshell/a16een/ui/Dock.qml
           grep -q 'focusWorkspace(2)' quickshell/a16een/ui/Dock.qml
           grep -q 'focusWorkspace(3)' quickshell/a16een/ui/Dock.qml
