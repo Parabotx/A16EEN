@@ -44,10 +44,18 @@ jobs:
           test -f quickshell/a16een/assets/icons/globe.svg
           test -f quickshell/a16een/assets/icons/folder.svg
           test -f quickshell/a16een/assets/icons/code-2.svg
+          test -f quickshell/a16een/assets/icons/house.svg
+          test -f quickshell/a16een/assets/icons/messages-square.svg
+          test -f quickshell/a16een/assets/icons/sparkles.svg
           test -f xdg/xdg-desktop-portal/a16een-portals.conf
           test -f scripts/a16een
 
           grep -q 'spawn-sh-at-startup "a16een-shell"' niri/config.kdl
+          grep -q 'workspace "home"' niri/config.kdl
+          grep -q 'workspace "code"' niri/config.kdl
+          grep -q 'workspace "web"' niri/config.kdl
+          grep -q 'workspace "comms"' niri/config.kdl
+          grep -q 'workspace "studio"' niri/config.kdl
           grep -q 'import qs.ui' quickshell/a16een/shell.qml
           grep -q 'Mod+Space repeat=false { spawn-sh "qs ipc call launcher toggle"; }' niri/config.kdl
           grep -q 'Dock {' quickshell/a16een/shell.qml
@@ -62,6 +70,9 @@ jobs:
           ! grep -q '⚙' quickshell/a16een/ui/Dock.qml
           ! grep -q 'text: "A"' quickshell/a16een/ui/Dock.qml
           ! grep -q 'TopBar {' quickshell/a16een/shell.qml
+          grep -q 'workspaces: root.workspaces' quickshell/a16een/shell.qml
+          grep -q 'focusWorkspace("home")' quickshell/a16een/ui/Dock.qml
+          grep -q 'focusWorkspace("studio")' quickshell/a16een/ui/Dock.qml
           grep -q 'xwayland-satellite' niri/config.kdl
           grep -q 'Mod+Return { spawn "foot"; }' niri/config.kdl
           grep -q 'XF86AudioPlay allow-when-locked=true { spawn "playerctl" "play-pause"; }' niri/config.kdl
