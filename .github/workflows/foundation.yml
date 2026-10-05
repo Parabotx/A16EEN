@@ -57,10 +57,10 @@ jobs:
           grep -q 'workspace "comms"' niri/config.kdl
           grep -q 'workspace "studio"' niri/config.kdl
           grep -q 'import qs.ui' quickshell/a16een/shell.qml
-          grep -q 'Mod+A repeat=false hotkey-overlay-title="A16EEN Application Launcher" { spawn-sh "qs ipc call launcher open"; }' niri/config.kdl
-          grep -q 'focusedWindowProcess' quickshell/a16een/shell.qml
-          grep -q 'niri", "--json", "focused-window' quickshell/a16een/shell.qml
-          ! grep -q 'Ok?\.FocusedWindow' quickshell/a16een/shell.qml
+          grep -q 'Super+Space repeat=false hotkey-overlay-title="A16EEN Application Launcher"' niri/config.kdl
+          grep -q 'ToplevelManager.activeToplevel' quickshell/a16een/shell.qml
+          ! grep -q 'focusedWindowProcess' quickshell/a16een/shell.qml
+          ! grep -q 'is_fullscreen' quickshell/a16een/shell.qml
           grep -q 'x: root.dockVisible' quickshell/a16een/ui/Dock.qml
           grep -q 'verticalAlignment: Text.AlignVCenter' quickshell/a16een/ui/Launcher.qml
           ! grep -q 'Mod+A .*launcher toggle' niri/config.kdl
@@ -69,10 +69,10 @@ jobs:
           grep -q 'property bool edgeRevealed' quickshell/a16een/ui/Dock.qml
           grep -q 'width: 8' quickshell/a16een/ui/Dock.qml
           grep -q 'height: 240' quickshell/a16een/ui/Dock.qml
-          grep -q 'opacity: root.dockVisible' quickshell/a16een/ui/Dock.qml
+          grep -q 'x: root.dockVisible' quickshell/a16een/ui/Dock.qml
           grep -q 'Mod+X repeat=false { close-window; }' niri/config.kdl
           grep -q 'Mod+F { fullscreen-window; }' niri/config.kdl
-          grep -q 'Mod+T repeat=false { spawn-sh "if niri msg --json focused-window | grep -q '\"is_fullscreen\":true'; then niri msg action fullscreen-window; fi"; }' niri/config.kdl
+          grep -q 'Mod+T repeat=false { spawn-sh "if niri msg --json focused-window | grep -q '\"id\"'; then niri msg action fullscreen-window; fi"; }' niri/config.kdl
           ! grep -q 'Mod+Slash.*launcher toggle' niri/config.kdl
           ! grep -q 'Mod+F { maximize-column; }' niri/config.kdl
           grep -q 'Mod+M { maximize-column; }' niri/config.kdl
