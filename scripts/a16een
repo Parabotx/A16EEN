@@ -45,6 +45,7 @@ Hardware
   media next|previous         Skip to the next/previous track
 
 Maintenance
+  icons                       Sync A16EEN's pinned SVG icon set
   update                      Check for and apply A16EEN updates
   rollback                    Restore the latest known-good A16EEN revision
   doctor                      Run A16EEN diagnostics
@@ -329,6 +330,15 @@ case "$command" in
         require_no_args "$@"
         require_cmd niri
         exec niri msg action screenshot-window
+        ;;
+
+    icons)
+        require_no_args "$@"
+        if [[ -x /usr/local/bin/a16een-icons ]]; then
+            exec /usr/local/bin/a16een-icons
+        fi
+        [[ -x "$SOURCE_DIR/scripts/a16een-icons" ]] || die "A16EEN icon sync is not installed."
+        exec "$SOURCE_DIR/scripts/a16een-icons"
         ;;
 
     update)
