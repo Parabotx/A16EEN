@@ -14,8 +14,6 @@ PanelWindow {
     readonly property color dockBorder: "#E5E7EB"
     readonly property color iconColor: "#111827"
     readonly property color hoverBackground: "#F1F3F5"
-    readonly property color activeBackground: "#E8EAED"
-
     readonly property string searchIcon: Qt.resolvedUrl("../assets/icons/search.svg")
 
     screen: modelData
@@ -105,11 +103,7 @@ PanelWindow {
                 width: 32
                 height: 32
                 radius: 11
-                color: root.workspaceIsFocused("home")
-                    ? root.activeBackground
-                    : (homeMouse.containsMouse ? root.hoverBackground : "transparent")
-                border.width: root.workspaceIsFocused("home") ? 1 : 0
-                border.color: "#D6D9DE"
+                color: homeMouse.containsMouse ? root.hoverBackground : "transparent"
 
                 Image {
                     anchors.centerIn: parent
@@ -146,11 +140,7 @@ PanelWindow {
                 width: 32
                 height: 32
                 radius: 11
-                color: root.workspaceIsFocused("code")
-                    ? root.activeBackground
-                    : (codeMouse.containsMouse ? root.hoverBackground : "transparent")
-                border.width: root.workspaceIsFocused("code") ? 1 : 0
-                border.color: "#D6D9DE"
+                color: codeMouse.containsMouse ? root.hoverBackground : "transparent"
 
                 Image {
                     anchors.centerIn: parent
@@ -187,11 +177,7 @@ PanelWindow {
                 width: 32
                 height: 32
                 radius: 11
-                color: root.workspaceIsFocused("web")
-                    ? root.activeBackground
-                    : (webMouse.containsMouse ? root.hoverBackground : "transparent")
-                border.width: root.workspaceIsFocused("web") ? 1 : 0
-                border.color: "#D6D9DE"
+                color: webMouse.containsMouse ? root.hoverBackground : "transparent"
 
                 Image {
                     anchors.centerIn: parent
@@ -228,11 +214,7 @@ PanelWindow {
                 width: 32
                 height: 32
                 radius: 11
-                color: root.workspaceIsFocused("comms")
-                    ? root.activeBackground
-                    : (commsMouse.containsMouse ? root.hoverBackground : "transparent")
-                border.width: root.workspaceIsFocused("comms") ? 1 : 0
-                border.color: "#D6D9DE"
+                color: commsMouse.containsMouse ? root.hoverBackground : "transparent"
 
                 Image {
                     anchors.centerIn: parent
@@ -269,11 +251,7 @@ PanelWindow {
                 width: 32
                 height: 32
                 radius: 11
-                color: root.workspaceIsFocused("studio")
-                    ? root.activeBackground
-                    : (studioMouse.containsMouse ? root.hoverBackground : "transparent")
-                border.width: root.workspaceIsFocused("studio") ? 1 : 0
-                border.color: "#D6D9DE"
+                color: studioMouse.containsMouse ? root.hoverBackground : "transparent"
 
                 Image {
                     anchors.centerIn: parent
