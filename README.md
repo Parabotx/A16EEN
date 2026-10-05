@@ -19,6 +19,7 @@ The project is being designed as a cohesive desktop product rather than a conven
 - Live workspace state from Niri's JSON event stream
 - Keyboard-searchable application launcher with system application icons
 - Centered white application launcher with searchable grid and system application icons
+- A16EEN command center with slash-first command search
 - MPRIS media controls for compatible players
 - Notification daemon integration
 - Network connection indicator
@@ -209,6 +210,7 @@ Reboot and power-off require confirmation unless `--yes` / `-y` is explicitly su
 
 ```
 Super + Space          Application launcher
+Super + /              A16EEN command center
 Super + P              A16EEN dashboard
 Super + O              Niri overview
 Super + Return         Terminal
