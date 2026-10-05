@@ -150,9 +150,11 @@ PanelWindow {
                                     anchors.margins: 5
                                     height: 104
                                     source: modelData.path
+                                    sourceSize.width: root.tileWidth * 2
+                                    sourceSize.height: 0
                                     fillMode: Image.PreserveAspectCrop
                                     asynchronous: true
-                                    mipmap: true
+                                    cache: true
                                     smooth: true
                                     visible: status === Image.Ready
                                 }
@@ -164,15 +166,61 @@ PanelWindow {
                                     anchors.margins: 5
                                     height: 104
                                     radius: 8
-                                    color: "#EEEEEE"
+                                    color: "#F4F4F4"
                                     visible: preview.status !== Image.Ready
+                                }
 
-                                    Text {
-                                        anchors.centerIn: parent
-                                        text: "Preview unavailable"
-                                        color: "#A0A0A0"
-                                        font.pixelSize: 9
+                                Row {
+                                    anchors.centerIn: parent
+                                    spacing: 4
+                                    visible: preview.status !== Image.Ready
+                                        && preview.status !== Image.Error
+
+                                    Repeater {
+                                        model: 3
+
+                                        delegate: Rectangle {
+                                            width: 5
+                                            height: 5
+                                            radius: 3
+                                            color: "#8A8A8A"
+                                            opacity: 0.35
+
+                                            SequentialAnimation on opacity {
+                                                loops: Animation.Infinite
+                                                running: preview.status !== Image.Ready
+                                                    && preview.status !== Image.Error
+
+                                                PauseAnimation {
+                                                    duration: index * 140
+                                                }
+
+                                                NumberAnimation {
+                                                    to: 1
+                                                    duration: 280
+                                                    easing.type: Easing.InOutQuad
+                                                }
+
+                                                NumberAnimation {
+                                                    to: 0.35
+                                                    duration: 280
+                                                    easing.type: Easing.InOutQuad
+                                                }
+
+                                                PauseAnimation {
+                                                    duration: (2 - index) * 140
+                                                }
+                                            }
+                                        }
                                     }
+                                }
+
+                                Text {
+                                    anchors.centerIn: parent
+                                    text: "Preview unavailable"
+                                    color: "#A0A0A0"
+                                    font.pixelSize: 9
+                                    visible: preview.status === Image.Error
                                 }
 
                                 Text {
