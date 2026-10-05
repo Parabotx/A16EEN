@@ -15,11 +15,11 @@ PanelWindow {
     signal closeRequested()
 
     readonly property color surface: "#FFFFFFFF"
-    readonly property color borderColor: "#E6E8EB"
+    readonly property color borderColor: "#E4E7EB"
     readonly property color primaryText: "#15171A"
-    readonly property color secondaryText: "#737880"
-    readonly property color searchBackground: "#F7F8FA"
-    readonly property color selectedBackground: "#EEF0F3"
+    readonly property color secondaryText: "#7A7F87"
+    readonly property color searchBackground: "#F6F7F8"
+    readonly property color selectedBackground: "#EEF1F3"
 
     screen: modelData
     color: "transparent"
@@ -61,53 +61,65 @@ PanelWindow {
     Rectangle {
         anchors.fill: parent
         color: "#000000"
-        opacity: root.opened ? 0.16 : 0
+        opacity: root.opened ? 0.12 : 0
     }
 
     Rectangle {
         id: card
         z: 2
-        width: Math.min(780, parent.width - 116)
-        height: Math.min(650, parent.height - 90)
+        width: Math.min(560, parent.width - 80)
+        height: Math.min(430, parent.height - 100)
         anchors.centerIn: parent
-        radius: 28
+        radius: 24
         color: root.surface
         border.width: 1
         border.color: root.borderColor
 
+        Rectangle {
+            anchors.fill: parent
+            anchors.margins: -5
+            radius: 29
+            color: "#12000000"
+            z: -1
+        }
+
         ColumnLayout {
             anchors.fill: parent
-            anchors.margins: 18
-            spacing: 14
+            anchors.margins: 14
+            spacing: 10
 
             Rectangle {
                 Layout.fillWidth: true
-                height: 58
-                radius: 17
+                height: 44
+                radius: 14
                 color: root.searchBackground
                 border.width: 1
-                border.color: "#E9EBEE"
+                border.color: "#E7E9EC"
 
                 RowLayout {
                     anchors.fill: parent
-                    anchors.leftMargin: 16
-                    anchors.rightMargin: 16
-                    spacing: 12
+                    anchors.leftMargin: 13
+                    anchors.rightMargin: 13
+                    spacing: 9
 
-                    Text {
-                        text: "⌕"
-                        color: root.primaryText
-                        font.pixelSize: 23
+                    Image {
                         Layout.alignment: Qt.AlignVCenter
+                        width: 17
+                        height: 17
+                        source: Qt.resolvedUrl("../assets/icons/search.svg")
+                        fillMode: Image.PreserveAspectFit
+                        asynchronous: true
+                        mipmap: true
+                        smooth: true
                     }
 
                     TextInput {
                         id: search
                         Layout.fillWidth: true
                         color: root.primaryText
-                        selectionColor: "#11182722"
+                        selectionColor: "#DDE2E7"
                         selectedTextColor: root.primaryText
-                        font.pixelSize: 14
+                        font.pixelSize: 12
                         clip: true
                         focus: root.opened
                         activeFocusOnPress: true
@@ -165,18 +177,13 @@ PanelWindow {
                                 )
                             }
                         }
-
-                        Component.onCompleted: {
-                            if (root.opened)
-                                forceActiveFocus()
-                        }
                     }
 
                     Text {
                         text: root.searchText.length ? "FILTER" : "SEARCH"
                         color: root.secondaryText
                         font.pixelSize: 8
-                        font.letterSpacing: 1.4
+                        font.letterSpacing: 1.2
                         Layout.alignment: Qt.AlignVCenter
                     }
                 }
@@ -187,9 +194,11 @@ PanelWindow {
                 Layout.fillWidth: true
                 Layout.fillHeight: true
                 clip: true
-                cellWidth: 112
-                cellHeight: 106
+                cellWidth: 86
+                cellHeight: 78
                 currentIndex: count > 0 ? 0 : -1
+                highlightFollowsCurrentItem: true
+                highlightMoveDuration: 0
 
                 model: ScriptModel {
                     objectProp: "id"
@@ -216,48 +225,51 @@ PanelWindow {
                 }
 
                 delegate: Rectangle {
-                    id: appRow
+                    id: appTile
+
                     required property var modelData
 
-                    width: 102
-                    height: 96
-                    radius: 18
+                    width: 78
+                    height: 70
+                    radius: 14
                     color: GridView.isCurrentItem
                         ? root.selectedBackground
                         : "transparent"
-                    border.width: GridView.isCurrentItem ? 1 : 0
-                    border.color: "#E0E3E7"
 
                     property var entry: modelData
 
                     Column {
                         anchors.fill: parent
-                        anchors.margins: 9
-                        spacing: 6
+                        anchors.topMargin: 5
+                        anchors.bottomMargin: 5
+                        anchors.leftMargin: 3
+                        anchors.rightMargin: 3
+                        spacing: 3
 
                         Item {
                             width: parent.width
-                            height: 54
+                            height: 38
 
                             IconImage {
                                 anchors.centerIn: parent
-                                implicitWidth: 46
-                                implicitHeight: 46
+                                implicitWidth: 30
+                                implicitHeight: 30
                                 source: Quickshell.iconPath(
-                                    appRow.entry.icon,
+                                    appTile.entry.icon,
                                     "application-x-executable"
                                 )
                             }
                         }
 
                         Text {
-                            id: appName
                             width: parent.width
-                            text: delegateItem.entry.name
+                            height: 18
+                            text: appTile.entry.name || "Application"
                             color: root.primaryText
-                            font.pixelSize: 10
-                            font.weight: Font.DemiBold
+                            font.pixelSize: 9
+                            font.weight: Font.Medium
                             horizontalAlignment: Text.AlignHCenter
+                            verticalAlignment: Text.AlignVCenter
                             elide: Text.ElideRight
                             maximumLineCount: 1
                         }
@@ -268,7 +280,7 @@ PanelWindow {
                         hoverEnabled: true
                         cursorShape: Qt.PointingHandCursor
                         onEntered: appGrid.currentIndex = index
-                        onClicked: root.launch(appRow.entry)
+                        onClicked: root.launch(appTile.entry)
                     }
                 }
 
@@ -277,27 +289,27 @@ PanelWindow {
                     visible: appGrid.count === 0
                     text: "No applications found"
                     color: root.secondaryText
-                    font.pixelSize: 12
+                    font.pixelSize: 11
                 }
             }
 
             Rectangle {
                 Layout.fillWidth: true
                 visible: root.launchError.length > 0
-                height: 38
-                radius: 12
+                height: 32
+                radius: 10
                 color: "#FFF5F5"
                 border.width: 1
                 border.color: "#F1D3D3"
 
                 Text {
                     anchors.fill: parent
-                    anchors.leftMargin: 12
-                    anchors.rightMargin: 12
+                    anchors.leftMargin: 10
+                    anchors.rightMargin: 10
                     verticalAlignment: Text.AlignVCenter
                     text: root.launchError
                     color: "#9B3A3A"
-                    font.pixelSize: 10
+                    font.pixelSize: 9
                     elide: Text.ElideRight
                 }
             }
