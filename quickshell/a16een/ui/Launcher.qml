@@ -188,7 +188,7 @@ PanelWindow {
                     anchors.fill: parent
                     acceptedButtons: Qt.NoButton
                     hoverEnabled: true
-                    z: -1
+                    z: 1
                 }
             }
 
