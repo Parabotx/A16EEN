@@ -51,6 +51,9 @@ jobs:
           grep -q 'import qs.ui' quickshell/a16een/shell.qml
           grep -q 'Mod+Space repeat=false { spawn-sh "qs ipc call launcher toggle"; }' niri/config.kdl
           grep -q 'Dock {' quickshell/a16een/shell.qml
+          grep -q 'anchors.right: true' quickshell/a16een/ui/Dock.qml
+          grep -q 'width: 56' quickshell/a16een/ui/Dock.qml
+          grep -q 'onStatusChanged' quickshell/a16een/ui/Dock.qml
           ! grep -q 'workspaces: root.workspaces' quickshell/a16een/shell.qml
           ! grep -q 'focusedWorkspaceId: root.focusedWorkspaceId' quickshell/a16een/shell.qml
           ! grep -q 'onDashboardRequested' quickshell/a16een/shell.qml
