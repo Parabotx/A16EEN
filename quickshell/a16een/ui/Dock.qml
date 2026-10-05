@@ -2,7 +2,6 @@ import QtQuick
 import QtQuick.Layouts
 import Quickshell
 import Quickshell.Wayland
-import Quickshell.Widgets
 
 PanelWindow {
     id: root
@@ -13,22 +12,21 @@ PanelWindow {
 
     readonly property color dockBackground: "#FFFFFEF8"
     readonly property color dockBorder: "#E5E7EB"
-    readonly property color iconPrimary: "#111827"
-    readonly property color iconMuted: "#4B5563"
+    readonly property color iconColor: "#111827"
     readonly property color hoverBackground: "#F1F3F5"
     readonly property color activeBackground: "#111827"
 
     readonly property string searchIcon: Qt.resolvedUrl("../assets/icons/search.svg")
-    readonly property string terminalFallbackIcon: Qt.resolvedUrl("../assets/icons/terminal.svg")
-    readonly property string browserFallbackIcon: Qt.resolvedUrl("../assets/icons/globe.svg")
-    readonly property string filesFallbackIcon: Qt.resolvedUrl("../assets/icons/folder.svg")
-    readonly property string codeFallbackIcon: Qt.resolvedUrl("../assets/icons/code-2.svg")
+    readonly property string terminalIcon: Qt.resolvedUrl("../assets/icons/terminal.svg")
+    readonly property string browserIcon: Qt.resolvedUrl("../assets/icons/globe.svg")
+    readonly property string filesIcon: Qt.resolvedUrl("../assets/icons/folder.svg")
+    readonly property string codeIcon: Qt.resolvedUrl("../assets/icons/code-2.svg")
 
     screen: modelData
     color: "transparent"
     aboveWindows: true
     exclusiveZone: 0
-    implicitWidth: 96
+    implicitWidth: 100
 
     anchors {
         left: true
@@ -54,16 +52,6 @@ PanelWindow {
         }) || null
     }
 
-    function applicationIcon(entry, fallback) {
-        if (!entry || !entry.icon) return fallback
-
-        try {
-            return Quickshell.iconPath(entry.icon, "application-x-executable")
-        } catch (error) {
-            return fallback
-        }
-    }
-
     function launch(entry, fallbackCommand) {
         try {
             if (entry) {
@@ -78,51 +66,121 @@ PanelWindow {
 
     Rectangle {
         id: dock
-        anchors.verticalCenter: parent.verticalCenter
         anchors.left: parent.left
         anchors.leftMargin: 18
+        anchors.verticalCenter: parent.verticalCenter
 
         width: 68
         height: 278
         radius: 26
-
         color: root.dockBackground
         border.width: 1
         border.color: root.dockBorder
 
-        // Subtle floating shadow.
         Rectangle {
             anchors.fill: parent
             anchors.margins: -5
             radius: 31
-            color: "#16000000"
+            color: "#18000000"
             z: -1
         }
 
-        ColumnLayout {
+        Column {
             anchors.centerIn: parent
             spacing: 8
 
-            DockIconButton {
-                tooltip: "Applications"
-                iconSource: root.searchIcon
-                dark: true
-                onClicked: root.launcherRequested()
+            // Launcher
+            Rectangle {
+                width: 46
+                height: 46
+                radius: 15
+                color: launcherMouse.containsMouse ? root.hoverBackground : root.activeBackground
+
+                Image {
+                    anchors.centerIn: parent
+                    width: 20
+                    height: 20
+                    source: root.searchIcon
+                    fillMode: Image.PreserveAspectFit
+                    asynchronous: true
+                    mipmap: true
+                    smooth: true
+                }
+
+                MouseArea {
+                    id: launcherMouse
+                    anchors.fill: parent
+                    hoverEnabled: true
+                    cursorShape: Qt.PointingHandCursor
+                    onClicked: root.launcherRequested()
+                }
+
+                Rectangle {
+                    visible: launcherMouse.containsMouse
+                    x: parent.width + 10
+                    anchors.verticalCenter: parent.verticalCenter
+                    width: 108
+                    height: 30
+                    radius: 10
+                    color: "#111827"
+                    z: 10
+
+                    Text {
+                        anchors.centerIn: parent
+                        text: "Applications"
+                        color: "#FFFFFF"
+                        font.pixelSize: 9
+                        font.weight: Font.DemiBold
+                    }
+                }
             }
 
-            Separator {}
-
-            DockAppButton {
-                tooltip: "Terminal"
-                app: root.findApplication(["foot", "terminal", "console"])
-                fallbackIcon: root.terminalFallbackIcon
-                fallbackCommand: ["foot"]
-                onLaunchRequested: root.launch(app, fallbackCommand)
+            Rectangle {
+                width: 28
+                height: 1
+                anchors.horizontalCenter: parent.horizontalCenter
+                color: root.dockBorder
             }
 
-            DockAppButton {
-                tooltip: "Web browser"
-                app: root.findApplication([
+            // Terminal
+            Rectangle {
+                width: 46
+                height: 46
+                radius: 15
+                color: terminalMouse.containsMouse ? root.hoverBackground : "transparent"
+
+                Image {
+                    anchors.centerIn: parent
+                    width: 22
+                    height: 22
+                    source: root.terminalIcon
+                    fillMode: Image.PreserveAspectFit
+                    asynchronous: true
+                    mipmap: true
+                    smooth: true
+                }
+
+                MouseArea {
+                    id: terminalMouse
+                    anchors.fill: parent
+                    hoverEnabled: true
+                    cursorShape: Qt.PointingHandCursor
+                    onClicked: root.launch(
+                        root.findApplication(["foot", "terminal", "console"]),
+                        ["foot"]
+                    )
+                }
+            }
+
+            // Browser
+            Rectangle {
+                width: 46
+                height: 46
+                radius: 15
+                color: browserMouse.containsMouse ? root.hoverBackground : "transparent"
+                opacity: browserApp ? 1.0 : 0.38
+
+                readonly property var browserApp: root.findApplication([
                     "firefox",
                     "mozilla firefox",
                     "chromium",
@@ -130,160 +188,107 @@ PanelWindow {
                     "google chrome",
                     "microsoft edge"
                 ])
-                fallbackIcon: root.browserFallbackIcon
-                onLaunchRequested: if (app) root.launch(app)
+
+                Image {
+                    anchors.centerIn: parent
+                    width: 22
+                    height: 22
+                    source: browserApp && browserApp.icon
+                        ? Quickshell.iconPath(browserApp.icon, "web-browser")
+                        : root.browserIcon
+                    fillMode: Image.PreserveAspectFit
+                    asynchronous: true
+                    mipmap: true
+                    smooth: true
+                }
+
+                MouseArea {
+                    id: browserMouse
+                    anchors.fill: parent
+                    hoverEnabled: true
+                    enabled: !!parent.browserApp
+                    cursorShape: enabled ? Qt.PointingHandCursor : Qt.ArrowCursor
+                    onClicked: root.launch(parent.browserApp)
+                }
             }
 
-            DockAppButton {
-                tooltip: "Files"
-                app: root.findApplication([
+            // File manager
+            Rectangle {
+                width: 46
+                height: 46
+                radius: 15
+                color: filesMouse.containsMouse ? root.hoverBackground : "transparent"
+                opacity: filesApp ? 1.0 : 0.38
+
+                readonly property var filesApp: root.findApplication([
                     "thunar",
                     "nautilus",
                     "dolphin",
                     "pcmanfm",
                     "file manager"
                 ])
-                fallbackIcon: root.filesFallbackIcon
-                onLaunchRequested: if (app) root.launch(app)
+
+                Image {
+                    anchors.centerIn: parent
+                    width: 22
+                    height: 22
+                    source: filesApp && filesApp.icon
+                        ? Quickshell.iconPath(filesApp.icon, "folder")
+                        : root.filesIcon
+                    fillMode: Image.PreserveAspectFit
+                    asynchronous: true
+                    mipmap: true
+                    smooth: true
+                }
+
+                MouseArea {
+                    id: filesMouse
+                    anchors.fill: parent
+                    hoverEnabled: true
+                    enabled: !!parent.filesApp
+                    cursorShape: enabled ? Qt.PointingHandCursor : Qt.ArrowCursor
+                    onClicked: root.launch(parent.filesApp)
+                }
             }
 
-            DockAppButton {
-                tooltip: "Code editor"
-                app: root.findApplication([
+            // Code editor
+            Rectangle {
+                width: 46
+                height: 46
+                radius: 15
+                color: codeMouse.containsMouse ? root.hoverBackground : "transparent"
+                opacity: codeApp ? 1.0 : 0.38
+
+                readonly property var codeApp: root.findApplication([
                     "visual studio code",
                     "code",
                     "vscodium",
                     "zed",
                     "codium"
                 ])
-                fallbackIcon: root.codeFallbackIcon
-                onLaunchRequested: if (app) root.launch(app)
+
+                Image {
+                    anchors.centerIn: parent
+                    width: 22
+                    height: 22
+                    source: codeApp && codeApp.icon
+                        ? Quickshell.iconPath(codeApp.icon, "text-editor")
+                        : root.codeIcon
+                    fillMode: Image.PreserveAspectFit
+                    asynchronous: true
+                    mipmap: true
+                    smooth: true
+                }
+
+                MouseArea {
+                    id: codeMouse
+                    anchors.fill: parent
+                    hoverEnabled: true
+                    enabled: !!parent.codeApp
+                    cursorShape: enabled ? Qt.PointingHandCursor : Qt.ArrowCursor
+                    onClicked: root.launch(parent.codeApp)
+                }
             }
-        }
-    }
-
-    component Separator: Rectangle {
-        Layout.alignment: Qt.AlignHCenter
-        width: 28
-        height: 1
-        color: "#E5E7EB"
-    }
-
-    component DockIconButton: Rectangle {
-        property string tooltip: ""
-        property string iconSource: ""
-        property bool dark: false
-
-        signal clicked()
-
-        Layout.alignment: Qt.AlignHCenter
-        width: 46
-        height: 46
-        radius: 15
-
-        color: dark
-            ? root.activeBackground
-            : (hover.containsMouse ? root.hoverBackground : "transparent")
-
-        border.width: dark ? 0 : (hover.containsMouse ? 1 : 0)
-        border.color: root.dockBorder
-
-        Behavior on color {
-            ColorAnimation { duration: 110 }
-        }
-
-        Image {
-            anchors.centerIn: parent
-            width: 21
-            height: 21
-            source: parent.iconSource
-            fillMode: Image.PreserveAspectFit
-            smooth: true
-            mipmap: true
-            asynchronous: true
-        }
-
-        MouseArea {
-            id: hover
-            anchors.fill: parent
-            hoverEnabled: true
-            cursorShape: Qt.PointingHandCursor
-            onClicked: parent.clicked()
-        }
-
-        DockTooltip {
-            visible: hover.containsMouse
-            text: parent.tooltip
-        }
-    }
-
-    component DockAppButton: Rectangle {
-        property string tooltip: ""
-        property var app: null
-        property string fallbackIcon: ""
-        property list<string> fallbackCommand: []
-
-        signal launchRequested()
-
-        Layout.alignment: Qt.AlignHCenter
-        width: 46
-        height: 46
-        radius: 15
-
-        color: hover.containsMouse ? root.hoverBackground : "transparent"
-        border.width: hover.containsMouse ? 1 : 0
-        border.color: root.dockBorder
-
-        opacity: app ? 1.0 : 0.42
-
-        Behavior on color {
-            ColorAnimation { duration: 110 }
-        }
-
-        IconImage {
-            anchors.centerIn: parent
-            width: 22
-            height: 22
-            source: app
-                ? root.applicationIcon(app, fallbackIcon)
-                : fallbackIcon
-        }
-
-        MouseArea {
-            id: hover
-            anchors.fill: parent
-            hoverEnabled: true
-            enabled: !!app || fallbackCommand.length > 0
-            cursorShape: enabled ? Qt.PointingHandCursor : Qt.ArrowCursor
-            onClicked: parent.launchRequested()
-        }
-
-        DockTooltip {
-            visible: hover.containsMouse
-            text: parent.tooltip
-        }
-    }
-
-    component DockTooltip: Rectangle {
-        property string text: ""
-
-        x: parent.width + 10
-        anchors.verticalCenter: parent.verticalCenter
-        width: Math.min(150, label.implicitWidth + 22)
-        height: 30
-        radius: 10
-        color: "#111827"
-        border.width: 1
-        border.color: "#1F2937"
-        z: 30
-
-        Text {
-            id: label
-            anchors.centerIn: parent
-            text: parent.text
-            color: "#FFFFFF"
-            font.pixelSize: 9
-            font.weight: Font.DemiBold
         }
     }
 }
