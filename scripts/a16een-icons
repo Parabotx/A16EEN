@@ -1,0 +1,58 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+readonly ICON_VERSION="1.50.0"
+readonly ICON_BASE_URL="https://raw.githubusercontent.com/lucide-icons/lucide/${ICON_VERSION}/icons"
+readonly ICON_ROOT="${XDG_CONFIG_HOME:-$HOME/.config}/a16een/quickshell/a16een/assets/icons"
+
+readonly -a ICONS=(
+    "search.svg"
+    "terminal.svg"
+    "globe.svg"
+    "folder.svg"
+    "code-2.svg"
+)
+
+if [[ $EUID -eq 0 ]]; then
+    echo "a16een-icons must run as your normal desktop user, not root." >&2
+    exit 1
+fi
+
+if ! command -v curl >/dev/null 2>&1; then
+    echo "A16EEN icon sync skipped: curl is not installed." >&2
+    exit 0
+fi
+
+tmp_dir="$(mktemp -d)"
+cleanup() {
+    rm -rf "$tmp_dir"
+}
+trap cleanup EXIT INT TERM
+
+for icon in "${ICONS[@]}"; do
+    target="$tmp_dir/$icon"
+
+    if ! curl -fsSL \
+        --proto '=https' \
+        --tlsv1.2 \
+        "${ICON_BASE_URL}/${icon}" \
+        -o "$target"; then
+        echo "A16EEN icon sync failed while downloading $icon." >&2
+        echo "Keeping the previous icon set." >&2
+        exit 0
+    fi
+
+    if ! grep -q '<svg' "$target"; then
+        echo "A16EEN icon sync rejected an invalid SVG: $icon" >&2
+        echo "Keeping the previous icon set." >&2
+        exit 0
+    fi
+done
+
+mkdir -p "$ICON_ROOT"
+
+for icon in "${ICONS[@]}"; do
+    install -Dm644 "$tmp_dir/$icon" "$ICON_ROOT/$icon"
+done
+
+printf "A16EEN icons synced from Lucide %s (%d icons).\n" "$ICON_VERSION" "${#ICONS[@]}"
