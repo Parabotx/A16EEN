@@ -104,7 +104,7 @@ PanelWindow {
             Flickable {
                 id: wallpaperScroll
                 anchors.fill: parent
-                contentWidth: root.gridWidth
+                contentWidth: width
                 contentHeight: Math.max(
                     root.gridHeight,
                     height
@@ -113,7 +113,7 @@ PanelWindow {
 
                 Grid {
                     id: wallpaperGrid
-                    x: Math.max(0, (parent.width - width) / 2)
+                    x: Math.max(0, (wallpaperScroll.width - width) / 2)
                     y: 0
                     width: root.gridWidth
                     columns: root.columns
