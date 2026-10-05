@@ -67,7 +67,7 @@ jobs:
           grep -Fq 'import qs.ui' quickshell/a16een/shell.qml
           grep -Fq 'qt6-imageformats' scripts/install.sh
           grep -Fq 'qt6-svg' scripts/install.sh
-          grep -Fq 'USER_WALLPAPER_DIR="$USER_PICTURES_DIR/a16een"' scripts/install.sh
+          grep -Fq 'USER_WALLPAPER_DIR="$HOME/Pictures/a16een"' scripts/install.sh
           grep -Fq 'property bool wallpaperPickerOpen' quickshell/a16een/shell.qml
           grep -Fq 'WallpaperPicker {' quickshell/a16een/shell.qml
           grep -Fq 'cp "$ROOT_DIR/quickshell/a16een/ui/"*.qml "$TMP_DEPLOY/ui/"' scripts/install.sh
@@ -178,7 +178,7 @@ jobs:
           grep -Fq '*.webp' scripts/a16een-wallpaper
           grep -Fq '*.tiff' scripts/a16een-wallpaper
           grep -Fq '*.tga' scripts/a16een-wallpaper
-          grep -Fq 'USER_WALLPAPER_DIR="$PICTURES_DIR/a16een"' scripts/a16een-wallpaper
+          grep -Fq 'USER_WALLPAPER_DIR="$HOME/Pictures/a16een"' scripts/a16een-wallpaper
           grep -Fq 'a16een-update --rollback' README.md
           # Launcher shortcut is already validated earlier in this block.
 
