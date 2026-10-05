@@ -8,6 +8,7 @@ PanelWindow {
     required property var modelData
     required property var workspaces
     required property int focusedWorkspaceId
+    required property bool fullscreenActive
 
     signal launcherRequested()
 
@@ -16,6 +17,9 @@ PanelWindow {
     readonly property color iconColor: "#111827"
     readonly property color hoverBackground: "#F1F3F5"
     readonly property string searchIcon: Qt.resolvedUrl("../assets/icons/search.svg")
+
+    property bool edgeRevealed: false
+    readonly property bool dockVisible: !root.fullscreenActive || root.edgeRevealed
 
     screen: modelData
     color: "transparent"
@@ -41,6 +45,45 @@ PanelWindow {
         Quickshell.execDetached(["niri", "msg", "action", "focus-workspace", String(index)])
     }
 
+    function revealDock() {
+        root.edgeRevealed = true
+        hideRevealTimer.stop()
+    }
+
+    function scheduleHide() {
+        if (root.fullscreenActive)
+            hideRevealTimer.restart()
+    }
+
+    Timer {
+        id: hideRevealTimer
+        interval: 700
+        repeat: false
+        onTriggered: root.edgeRevealed = false
+    }
+
+    onFullscreenActiveChanged: {
+        if (!fullscreenActive) {
+            edgeRevealed = false
+            hideRevealTimer.stop()
+        }
+    }
+
+    MouseArea {
+        id: edgeReveal
+        anchors {
+            top: parent.top
+            right: parent.right
+            bottom: parent.bottom
+        }
+        width: 10
+        hoverEnabled: true
+        acceptedButtons: Qt.NoButton
+        z: 5
+        onEntered: root.revealDock()
+        onExited: root.scheduleHide()
+    }
+
     Rectangle {
         id: dock
         anchors.right: parent.right
@@ -52,7 +95,15 @@ PanelWindow {
         radius: 18
         color: root.dockBackground
         border.width: 1
+        opacity: root.dockVisible ? 1 : 0
         border.color: root.dockBorder
+
+        Behavior on opacity {
+            NumberAnimation {
+                duration: 130
+                easing.type: Easing.OutCubic
+            }
+        }
 
         Rectangle {
             anchors.fill: parent
@@ -86,6 +137,8 @@ PanelWindow {
                 MouseArea {
                     id: launcherMouse
                     anchors.fill: parent
+                    onEntered: root.revealDock()
+                    onExited: root.scheduleHide()
                     hoverEnabled: true
                     cursorShape: Qt.PointingHandCursor
                     onClicked: root.launcherRequested()
@@ -131,6 +184,8 @@ PanelWindow {
                 MouseArea {
                     id: homeMouse
                     anchors.fill: parent
+                    onEntered: root.revealDock()
+                    onExited: root.scheduleHide()
                     hoverEnabled: true
                     cursorShape: Qt.PointingHandCursor
                     onClicked: root.focusWorkspace(1)
@@ -168,6 +223,8 @@ PanelWindow {
                 MouseArea {
                     id: codeMouse
                     anchors.fill: parent
+                    onEntered: root.revealDock()
+                    onExited: root.scheduleHide()
                     hoverEnabled: true
                     cursorShape: Qt.PointingHandCursor
                     onClicked: root.focusWorkspace(2)
@@ -205,6 +262,8 @@ PanelWindow {
                 MouseArea {
                     id: webMouse
                     anchors.fill: parent
+                    onEntered: root.revealDock()
+                    onExited: root.scheduleHide()
                     hoverEnabled: true
                     cursorShape: Qt.PointingHandCursor
                     onClicked: root.focusWorkspace(3)
@@ -242,6 +301,8 @@ PanelWindow {
                 MouseArea {
                     id: commsMouse
                     anchors.fill: parent
+                    onEntered: root.revealDock()
+                    onExited: root.scheduleHide()
                     hoverEnabled: true
                     cursorShape: Qt.PointingHandCursor
                     onClicked: root.focusWorkspace(4)
@@ -279,6 +340,8 @@ PanelWindow {
                 MouseArea {
                     id: studioMouse
                     anchors.fill: parent
+                    onEntered: root.revealDock()
+                    onExited: root.scheduleHide()
                     hoverEnabled: true
                     cursorShape: Qt.PointingHandCursor
                     onClicked: root.focusWorkspace(5)
