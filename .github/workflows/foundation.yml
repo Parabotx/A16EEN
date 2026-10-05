@@ -70,6 +70,7 @@ jobs:
           grep -Fq 'USER_WALLPAPER_DIR="$USER_PICTURES_DIR/a16een"' scripts/install.sh
           grep -Fq 'property bool wallpaperPickerOpen' quickshell/a16een/shell.qml
           grep -Fq 'WallpaperPicker {' quickshell/a16een/shell.qml
+          grep -Fq 'cp "$ROOT_DIR/quickshell/a16een/ui/"*.qml "$TMP_DEPLOY/ui/"' scripts/install.sh
           grep -Fq 'dockBackground: "#FFFFFF"' quickshell/a16een/ui/Dock.qml
           grep -Fq 'iconColor: "#111111"' quickshell/a16een/ui/Dock.qml
           ! grep -Fq '#2F6FED' quickshell/a16een/ui/Dock.qml
@@ -85,7 +86,6 @@ jobs:
           grep -Fq 'readonly property var commands' quickshell/a16een/ui/CommandCenter.qml
           grep -Fq 'function executeCommand(command)' quickshell/a16een/ui/CommandCenter.qml
           grep -Fq 'onWallpaperRequested: root.wallpaperPickerOpen = true' quickshell/a16een/shell.qml
-          grep -Fq 'a16een-wallpaper" ]' quickshell/a16een/ui/WallpaperPicker.qml || true
           grep -Fq 'a16een-wallpaper", "catalog' quickshell/a16een/ui/WallpaperPicker.qml
           grep -Fq 'modelData.path' quickshell/a16een/ui/WallpaperPicker.qml
           ! grep -Fq 'sh", "-c"' quickshell/a16een/ui/CommandCenter.qml
