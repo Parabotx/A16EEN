@@ -7,6 +7,8 @@ PanelWindow {
 
     required property var modelData
     required property string currentWallpaperPath
+    required property bool desktopAnimationAllowed
+
 
     readonly property string fallbackPath: Qt.resolvedUrl("../assets/wallpapers/default.png")
     readonly property string activePath: root.currentWallpaperPath.length
@@ -55,8 +57,20 @@ PanelWindow {
         fillMode: Image.PreserveAspectFit
         asynchronous: true
         cache: false
-        playing: root.isGif
+        playing: root.isGif && (root.desktopAnimationAllowed || wallpaperPointer.containsMouse)
         visible: root.isGif && status === AnimatedImage.Ready
+    }
+
+    // Animation pauses while another window is focused or fullscreen, unless
+    // the pointer returns to an exposed desktop area.
+    MouseArea {
+        id: wallpaperPointer
+        anchors.fill: parent
+        hoverEnabled: true
+        acceptedButtons: Qt.NoButton
+        propagateComposedEvents: true
+        enabled: root.isGif
+        z: -1
     }
 
     Rectangle {
