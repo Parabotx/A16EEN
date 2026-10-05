@@ -13,6 +13,8 @@ PanelWindow {
     property string searchText: ""
     property string launchError: ""
 
+    signal closeRequested()
+
     property color cardColor: "#0B0D12F5"
     property color cardBorder: "#FFFFFF18"
     property color primaryText: "#F5F2EA"
@@ -61,7 +63,7 @@ PanelWindow {
                 entry.execute()
             }
 
-            root.opened = false
+            root.closeRequested()
             return true
         } catch (error) {
             root.launchError = "Couldn't launch " + entry.name + ". Check the app installation."
@@ -175,7 +177,7 @@ PanelWindow {
                             root.launchError = ""
                         }
 
-                        Keys.onEscapePressed: root.opened = false
+                        Keys.onEscapePressed: root.closeRequested()
 
                         Keys.onReturnPressed: {
                             if (appList.currentItem && appList.currentItem.entry) {
@@ -376,7 +378,7 @@ PanelWindow {
             right: parent.right
             rightMargin: 66
         }
-        onClicked: root.opened = false
+        onClicked: root.closeRequested()
     }
 
     onOpenedChanged: {
