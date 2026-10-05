@@ -55,94 +55,94 @@ jobs:
           test -f docs/RESOURCES.md
           test -f quickshell/a16een/assets/user-images/README.md
 
-          grep -q 'spawn-sh-at-startup "a16een-shell"' niri/config.kdl
-          grep -q 'workspace "home"' niri/config.kdl
-          grep -q 'workspace "code"' niri/config.kdl
-          grep -q 'workspace "web"' niri/config.kdl
-          grep -q 'workspace "comms"' niri/config.kdl
-          grep -q 'workspace "studio"' niri/config.kdl
-          grep -q 'workspace "music"' niri/config.kdl
-          grep -q 'import qs.ui' quickshell/a16een/shell.qml
-          grep -q 'Super+Space repeat=false hotkey-overlay-title="A16EEN Application Launcher"' niri/config.kdl
-          grep -q 'ToplevelManager.activeToplevel' quickshell/a16een/shell.qml
-          ! grep -q 'focusedWindowProcess' quickshell/a16een/shell.qml
-          ! grep -q 'is_fullscreen' quickshell/a16een/shell.qml
-          grep -q 'x: root.dockVisible' quickshell/a16een/ui/Dock.qml
-          grep -q 'verticalAlignment: Text.AlignVCenter' quickshell/a16een/ui/Launcher.qml
+          grep -Fq 'spawn-sh-at-startup "a16een-shell"' niri/config.kdl
+          grep -Fq 'workspace "home"' niri/config.kdl
+          grep -Fq 'workspace "code"' niri/config.kdl
+          grep -Fq 'workspace "web"' niri/config.kdl
+          grep -Fq 'workspace "comms"' niri/config.kdl
+          grep -Fq 'workspace "studio"' niri/config.kdl
+          grep -Fq 'workspace "music"' niri/config.kdl
+          grep -Fq 'import qs.ui' quickshell/a16een/shell.qml
+          grep -Fq 'Super+Space repeat=false hotkey-overlay-title="A16EEN Application Launcher"' niri/config.kdl
+          grep -Fq 'ToplevelManager.activeToplevel' quickshell/a16een/shell.qml
+          ! grep -Fq 'focusedWindowProcess' quickshell/a16een/shell.qml
+          ! grep -Fq 'is_fullscreen' quickshell/a16een/shell.qml
+          grep -Fq 'x: root.dockVisible' quickshell/a16een/ui/Dock.qml
+          grep -Fq 'verticalAlignment: Text.AlignVCenter' quickshell/a16een/ui/Launcher.qml
           ! grep -q 'Mod+A .*launcher toggle' niri/config.kdl
-          grep -q 'focusedWindowFullscreen' quickshell/a16een/shell.qml
-          grep -q 'fullscreenActive: root.focusedWindowFullscreen' quickshell/a16een/shell.qml
-          grep -q 'property bool edgeRevealed' quickshell/a16een/ui/Dock.qml
-          grep -q 'width: 8' quickshell/a16een/ui/Dock.qml
-          grep -q 'height: 240' quickshell/a16een/ui/Dock.qml
-          grep -q 'x: root.dockVisible' quickshell/a16een/ui/Dock.qml
-          grep -q 'Mod+X repeat=false { close-window; }' niri/config.kdl
-          grep -q 'Mod+F { fullscreen-window; }' niri/config.kdl
-          grep -q 'Mod+T repeat=false { spawn-sh "qs -c \"$HOME/.config/a16een/quickshell/a16een\" ipc call fullscreen exit"; }' niri/config.kdl
+          grep -Fq 'focusedWindowFullscreen' quickshell/a16een/shell.qml
+          grep -Fq 'fullscreenActive: root.focusedWindowFullscreen' quickshell/a16een/shell.qml
+          grep -Fq 'property bool edgeRevealed' quickshell/a16een/ui/Dock.qml
+          grep -Fq 'width: 8' quickshell/a16een/ui/Dock.qml
+          grep -Fq 'height: 240' quickshell/a16een/ui/Dock.qml
+          grep -Fq 'x: root.dockVisible' quickshell/a16een/ui/Dock.qml
+          grep -Fq 'Mod+X repeat=false { close-window; }' niri/config.kdl
+          grep -Fq 'Mod+F { fullscreen-window; }' niri/config.kdl
+          grep -Fq 'Mod+T repeat=false { spawn-sh "qs -c \"$HOME/.config/a16een/quickshell/a16een\" ipc call fullscreen exit"; }' niri/config.kdl
           ! grep -q 'Mod+Slash.*launcher toggle' niri/config.kdl
-          ! grep -q 'Mod+F { maximize-column; }' niri/config.kdl
-          grep -q 'Mod+M { maximize-column; }' niri/config.kdl
-          grep -q 'Dock {' quickshell/a16een/shell.qml
-          grep -q 'anchors.right: true' quickshell/a16een/ui/Dock.qml
-          grep -q 'width: 44' quickshell/a16een/ui/Dock.qml
-          grep -q 'height: 260' quickshell/a16een/ui/Dock.qml
-          ! grep -q 'D7B56D' quickshell/a16een/ui/Dock.qml
-          ! grep -q 'Repeater' quickshell/a16een/ui/Dock.qml
-          ! grep -q '⚙' quickshell/a16een/ui/Dock.qml
-          ! grep -q 'text: "A"' quickshell/a16een/ui/Dock.qml
-          ! grep -q 'TopBar {' quickshell/a16een/shell.qml
-          grep -q 'workspaces: root.workspaces' quickshell/a16een/shell.qml
-          grep -q 'focusedWorkspaceId: root.focusedWorkspaceId' quickshell/a16een/shell.qml
-          grep -q 'signal closeRequested' quickshell/a16een/ui/Launcher.qml
-          ! grep -q 'root.opened = false' quickshell/a16een/ui/Launcher.qml
-          grep -q 'current.id === root.focusedWorkspaceId' quickshell/a16een/ui/Dock.qml
-          grep -q 'focusWorkspace(1)' quickshell/a16een/ui/Dock.qml
-          grep -q 'focusWorkspace(2)' quickshell/a16een/ui/Dock.qml
-          grep -q 'focusWorkspace(3)' quickshell/a16een/ui/Dock.qml
-          grep -q 'focusWorkspace(4)' quickshell/a16een/ui/Dock.qml
-          grep -q 'focusWorkspace(5)' quickshell/a16een/ui/Dock.qml
-          grep -q 'focusWorkspace(6)' quickshell/a16een/ui/Dock.qml
-          ! grep -q 'activeBackground' quickshell/a16een/ui/Dock.qml
-          grep -q 'rightMargin: 66' quickshell/a16een/ui/Launcher.qml
-          ! grep -q 'text: "Applications"' quickshell/a16een/ui/Dock.qml
-          ! grep -q 'launcherMouse.containsMouse ? root.hoverBackground' quickshell/a16een/ui/Dock.qml
-          grep -q 'GridView {' quickshell/a16een/ui/Launcher.qml
-          grep -q 'cellWidth: 88' quickshell/a16een/ui/Launcher.qml
-          grep -q 'cellHeight: 72' quickshell/a16een/ui/Launcher.qml
-          grep -q 'text: appTile.entry.name' quickshell/a16een/ui/Launcher.qml
-          ! grep -q 'QUICK LAUNCH' quickshell/a16een/ui/Launcher.qml
-          grep -q 'width: 500' quickshell/a16een/ui/Launcher.qml
-          grep -q 'height: 380' quickshell/a16een/ui/Launcher.qml
-          grep -q 'text: appTile.entry.name' quickshell/a16een/ui/Launcher.qml
-          grep -q 'acceptedButtons: Qt.NoButton' quickshell/a16een/ui/Launcher.qml
-          grep -q 'TextInput {' quickshell/a16een/ui/Launcher.qml
-          grep -q 'Quickshell.iconPath' quickshell/a16een/ui/Launcher.qml
-          ! grep -q 'QUICK LAUNCH' quickshell/a16een/ui/Launcher.qml
-          ! grep -q 'appGrid.columns' quickshell/a16een/ui/Launcher.qml
-          ! grep -q 'search.svg' quickshell/a16een/ui/Launcher.qml
-          grep -q 'Layout.preferredWidth: 300' quickshell/a16een/ui/Launcher.qml
-          grep -q 'height: 36' quickshell/a16een/ui/Launcher.qml
-          grep -q 'xwayland-satellite' niri/config.kdl
-          grep -q 'Mod+Return { spawn "foot"; }' niri/config.kdl
-          grep -q 'XF86AudioPlay allow-when-locked=true { spawn "playerctl" "play-pause"; }' niri/config.kdl
-          grep -q 'XF86AudioMute allow-when-locked=true {' niri/config.kdl
-          grep -q 'spawn "wpctl" "set-mute" "@DEFAULT_AUDIO_SINK@" "toggle";' niri/config.kdl
-          grep -q 'xdg-desktop-portal' scripts/install.sh
-          grep -q 'bash "$ROOT_DIR/scripts/a16een-icons"' scripts/install.sh
-          grep -q 'niri msg action load-config-file' scripts/install.sh
-          grep -q 'a16een-shell' scripts/install.sh
-          grep -q 'inter-font' scripts/install.sh
-          grep -q 'ttf-lato' scripts/install.sh
-          grep -q 'adobe-source-sans-fonts' scripts/install.sh
-          grep -q 'ttf-roboto' scripts/install.sh
-          grep -q 'ttf-roboto-mono' scripts/install.sh
-          grep -q 'USER_WALLPAPER_DIR' scripts/install.sh
-          grep -q 'a16een-wallpaper' scripts/install.sh
-          grep -q 'wallpaper)' scripts/a16een
-          grep -q 'a16een-update --rollback' README.md
-          grep -q 'NIRI_CONFIG' scripts/start-a16een
-          ! grep -q 'export XDG_CONFIG_HOME=' scripts/start-a16een
-          grep -q 'Super+Space repeat=false hotkey-overlay-title="A16EEN Application Launcher"' niri/config.kdl
+          ! grep -Fq 'Mod+F { maximize-column; }' niri/config.kdl
+          grep -Fq 'Mod+M { maximize-column; }' niri/config.kdl
+          grep -Fq 'Dock {' quickshell/a16een/shell.qml
+          grep -Fq 'anchors.right: true' quickshell/a16een/ui/Dock.qml
+          grep -Fq 'width: 44' quickshell/a16een/ui/Dock.qml
+          grep -Fq 'height: 260' quickshell/a16een/ui/Dock.qml
+          ! grep -Fq 'D7B56D' quickshell/a16een/ui/Dock.qml
+          ! grep -Fq 'Repeater' quickshell/a16een/ui/Dock.qml
+          ! grep -Fq '⚙' quickshell/a16een/ui/Dock.qml
+          ! grep -Fq 'text: "A"' quickshell/a16een/ui/Dock.qml
+          ! grep -Fq 'TopBar {' quickshell/a16een/shell.qml
+          grep -Fq 'workspaces: root.workspaces' quickshell/a16een/shell.qml
+          grep -Fq 'focusedWorkspaceId: root.focusedWorkspaceId' quickshell/a16een/shell.qml
+          grep -Fq 'signal closeRequested' quickshell/a16een/ui/Launcher.qml
+          ! grep -Fq 'root.opened = false' quickshell/a16een/ui/Launcher.qml
+          grep -Fq 'current.id === root.focusedWorkspaceId' quickshell/a16een/ui/Dock.qml
+          grep -Fq 'focusWorkspace(1)' quickshell/a16een/ui/Dock.qml
+          grep -Fq 'focusWorkspace(2)' quickshell/a16een/ui/Dock.qml
+          grep -Fq 'focusWorkspace(3)' quickshell/a16een/ui/Dock.qml
+          grep -Fq 'focusWorkspace(4)' quickshell/a16een/ui/Dock.qml
+          grep -Fq 'focusWorkspace(5)' quickshell/a16een/ui/Dock.qml
+          grep -Fq 'focusWorkspace(6)' quickshell/a16een/ui/Dock.qml
+          ! grep -Fq 'activeBackground' quickshell/a16een/ui/Dock.qml
+          grep -Fq 'rightMargin: 66' quickshell/a16een/ui/Launcher.qml
+          ! grep -Fq 'text: "Applications"' quickshell/a16een/ui/Dock.qml
+          ! grep -Fq 'launcherMouse.containsMouse ? root.hoverBackground' quickshell/a16een/ui/Dock.qml
+          grep -Fq 'GridView {' quickshell/a16een/ui/Launcher.qml
+          grep -Fq 'cellWidth: 88' quickshell/a16een/ui/Launcher.qml
+          grep -Fq 'cellHeight: 72' quickshell/a16een/ui/Launcher.qml
+          grep -Fq 'text: appTile.entry.name' quickshell/a16een/ui/Launcher.qml
+          ! grep -Fq 'QUICK LAUNCH' quickshell/a16een/ui/Launcher.qml
+          grep -Fq 'width: 500' quickshell/a16een/ui/Launcher.qml
+          grep -Fq 'height: 380' quickshell/a16een/ui/Launcher.qml
+          grep -Fq 'text: appTile.entry.name' quickshell/a16een/ui/Launcher.qml
+          grep -Fq 'acceptedButtons: Qt.NoButton' quickshell/a16een/ui/Launcher.qml
+          grep -Fq 'TextInput {' quickshell/a16een/ui/Launcher.qml
+          grep -Fq 'Quickshell.iconPath' quickshell/a16een/ui/Launcher.qml
+          ! grep -Fq 'QUICK LAUNCH' quickshell/a16een/ui/Launcher.qml
+          ! grep -Fq 'appGrid.columns' quickshell/a16een/ui/Launcher.qml
+          ! grep -Fq 'search.svg' quickshell/a16een/ui/Launcher.qml
+          grep -Fq 'Layout.preferredWidth: 300' quickshell/a16een/ui/Launcher.qml
+          grep -Fq 'height: 36' quickshell/a16een/ui/Launcher.qml
+          grep -Fq 'xwayland-satellite' niri/config.kdl
+          grep -Fq 'Mod+Return { spawn "foot"; }' niri/config.kdl
+          grep -Fq 'XF86AudioPlay allow-when-locked=true { spawn "playerctl" "play-pause"; }' niri/config.kdl
+          grep -Fq 'XF86AudioMute allow-when-locked=true {' niri/config.kdl
+          grep -Fq 'spawn "wpctl" "set-mute" "@DEFAULT_AUDIO_SINK@" "toggle";' niri/config.kdl
+          grep -Fq 'xdg-desktop-portal' scripts/install.sh
+          grep -Fq 'bash "$ROOT_DIR/scripts/a16een-icons"' scripts/install.sh
+          grep -Fq 'niri msg action load-config-file' scripts/install.sh
+          grep -Fq 'a16een-shell' scripts/install.sh
+          grep -Fq 'inter-font' scripts/install.sh
+          grep -Fq 'ttf-lato' scripts/install.sh
+          grep -Fq 'adobe-source-sans-fonts' scripts/install.sh
+          grep -Fq 'ttf-roboto' scripts/install.sh
+          grep -Fq 'ttf-roboto-mono' scripts/install.sh
+          grep -Fq 'USER_WALLPAPER_DIR' scripts/install.sh
+          grep -Fq 'a16een-wallpaper' scripts/install.sh
+          grep -Fq 'wallpaper)' scripts/a16een
+          grep -Fq 'a16een-update --rollback' README.md
+          grep -Fq 'NIRI_CONFIG' scripts/start-a16een
+          ! grep -Fq 'export XDG_CONFIG_HOME=' scripts/start-a16een
+          grep -Fq 'Super+Space repeat=false hotkey-overlay-title="A16EEN Application Launcher"' niri/config.kdl
 
       - name: Validate no legacy wallpaper reference
         run: |
