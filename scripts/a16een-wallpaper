@@ -8,6 +8,7 @@ LEGACY_BUILTIN_DIR="$SOURCE_DIR"
 STATE_DIR="${XDG_STATE_HOME:-$HOME/.local/state}/a16een"
 STATE_FILE="$STATE_DIR/wallpaper"
 USER_WALLPAPER_DIR="$HOME/Pictures/a16een"
+QUICKSHELL_CONFIG_DIR="$CONFIG_DIR/quickshell/a16een"
 
 mkdir -p "$BUILTIN_DIR" "$USER_WALLPAPER_DIR" "$STATE_DIR"
 
@@ -174,9 +175,9 @@ catalog() {
     done < <(collect_entries)
 }
 
-restart_shell() {
-    if command -v a16een >/dev/null 2>&1; then
-        a16een restart-shell >/dev/null 2>&1 || true
+notify_shell() {
+    if command -v qs >/dev/null 2>&1; then
+        qs -c "$QUICKSHELL_CONFIG_DIR" ipc call wallpaper apply "$1" >/dev/null 2>&1 || true
     fi
 }
 
@@ -204,7 +205,10 @@ set_wallpaper() {
 
     write_state "$source" "$filename"
     echo "A16EEN: wallpaper set to $filename"
-    restart_shell
+
+    # Update the already-running wallpaper layer in place. Do not restart
+    # Quickshell: the dock/navbar and the rest of A16EEN must remain alive.
+    notify_shell "$path"
 }
 
 set_by_filename() {
