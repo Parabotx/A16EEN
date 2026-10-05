@@ -23,8 +23,8 @@ Usage:
 User wallpapers live in:
   ~/.local/share/a16een/assets/images/wallpapers/
 
-Supported formats:
-  PNG, JPG, JPEG, WEBP
+Supported format:
+  PNG
 
 A16EEN keeps the selected wallpaper outside the installed runtime so
 updates do not overwrite the user's collection.
@@ -33,7 +33,7 @@ EOF
 
 wallpapers() {
     find "$DATA_DIR" -maxdepth 1 -type f \
-        \( -iname '*.png' -o -iname '*.jpg' -o -iname '*.jpeg' -o -iname '*.webp' \) \
+        \( -iname '*.png' \) \
         -printf '%f\n' | LC_ALL=C sort -f
 }
 
