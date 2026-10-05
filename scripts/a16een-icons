@@ -5,12 +5,12 @@ readonly ICON_VERSION="1.50.0"
 readonly ICON_BASE_URL="https://raw.githubusercontent.com/lucide-icons/lucide/${ICON_VERSION}/icons"
 readonly ICON_ROOT="${XDG_CONFIG_HOME:-$HOME/.config}/a16een/quickshell/a16een/assets/icons"
 
-readonly -a ICONS=(
+readonly ICONS=(
     "search.svg"
     "terminal.svg"
     "globe.svg"
     "folder.svg"
-    "code-2.svg"
+    "code.svg"
     "house.svg"
     "messages-square.svg"
     "sparkles.svg"
