@@ -26,6 +26,7 @@ jobs:
           bash -n scripts/a16een-update
           bash -n scripts/a16een-doctor
           bash -n scripts/a16een
+          bash -n scripts/a16een-wallpaper
           bash -n scripts/a16een-icons
 
       - name: Validate foundation files
@@ -49,6 +50,9 @@ jobs:
           test -f quickshell/a16een/assets/icons/sparkles.svg
           test -f xdg/xdg-desktop-portal/a16een-portals.conf
           test -f scripts/a16een
+          test -f scripts/a16een-wallpaper
+          test -f docs/RESOURCES.md
+          test -f quickshell/a16een/assets/user-images/README.md
 
           grep -q 'spawn-sh-at-startup "a16een-shell"' niri/config.kdl
           grep -q 'workspace "home"' niri/config.kdl
@@ -124,6 +128,14 @@ jobs:
           grep -q 'bash "$ROOT_DIR/scripts/a16een-icons"' scripts/install.sh
           grep -q 'niri msg action load-config-file' scripts/install.sh
           grep -q 'a16een-shell' scripts/install.sh
+          grep -q 'inter-font' scripts/install.sh
+          grep -q 'ttf-lato' scripts/install.sh
+          grep -q 'adobe-source-sans-fonts' scripts/install.sh
+          grep -q 'ttf-roboto' scripts/install.sh
+          grep -q 'ttf-roboto-mono' scripts/install.sh
+          grep -q 'USER_WALLPAPER_DIR' scripts/install.sh
+          grep -q 'a16een-wallpaper' scripts/install.sh
+          grep -q 'wallpaper)' scripts/a16een
           grep -q 'a16een-update --rollback' README.md
           grep -q 'NIRI_CONFIG' scripts/start-a16een
           ! grep -q 'export XDG_CONFIG_HOME=' scripts/start-a16een
