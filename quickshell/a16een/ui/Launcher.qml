@@ -133,6 +133,7 @@ PanelWindow {
                     clip: true
                     focus: root.opened
                     activeFocusOnPress: true
+                    verticalAlignment: Text.AlignVCenter
                     text: root.searchText
                     selectByMouse: true
 
