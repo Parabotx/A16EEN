@@ -7,8 +7,14 @@ STATE_DIR="$HOME/.local/state/a16een"
 NIRI_DIR="$CONFIG_DIR/niri"
 QS_DIR="$CONFIG_DIR/quickshell/a16een"
 BACKUP_ROOT="$STATE_DIR/backups"
-USER_IMAGE_DIR="${XDG_DATA_HOME:-$HOME/.local/share}/a16een/assets/images"
-USER_WALLPAPER_DIR="$USER_IMAGE_DIR/wallpapers"
+USER_PICTURES_DIR="$HOME/Pictures"
+if command -v xdg-user-dir >/dev/null 2>&1; then
+    DETECTED_PICTURES_DIR="$(xdg-user-dir PICTURES 2>/dev/null || true)"
+    if [ -n "$DETECTED_PICTURES_DIR" ] && [ -d "$DETECTED_PICTURES_DIR" ]; then
+        USER_PICTURES_DIR="$DETECTED_PICTURES_DIR"
+    fi
+fi
+USER_WALLPAPER_DIR="$USER_PICTURES_DIR/a16een"
 WALLPAPER_STATE="$STATE_DIR/wallpaper"
 
 PACKAGES="
@@ -32,6 +38,8 @@ curl
 xdg-desktop-portal
 xdg-desktop-portal-gtk
 xdg-utils
+qt6-imageformats
+qt6-svg
 inter-font
 ttf-lato
 adobe-source-sans-fonts
@@ -140,28 +148,14 @@ fi
 
 mkdir -p "$NIRI_DIR" "$QS_DIR/ui" "$QS_DIR/assets/wallpapers" "$BACKUP_ROOT" "$USER_WALLPAPER_DIR"
 
-# User-managed wallpapers live outside the installed source/runtime tree.
-# Seed the persistent collection once; never overwrite user-provided images.
-if [ ! -f "$USER_WALLPAPER_DIR/default.png" ] && [ -f "$ROOT_DIR/quickshell/a16een/assets/wallpapers/default.png" ]; then
-    cp "$ROOT_DIR/quickshell/a16een/assets/wallpapers/default.png" "$USER_WALLPAPER_DIR/default.png"
-fi
+# A16EEN has two wallpaper stores:
+#   1. Built-in wallpapers shipped in the GitHub repository.
+#   2. Personal wallpapers in the user's Pictures/a16een folder.
+# The personal folder is never overwritten by A16EEN updates.
+mkdir -p "$USER_WALLPAPER_DIR"
 
-SELECTED_WALLPAPER=""
-if [ -f "$WALLPAPER_STATE" ]; then
-    SELECTED_WALLPAPER=$(cat "$WALLPAPER_STATE")
-fi
-case "$SELECTED_WALLPAPER" in
-    ''|*/*|..)
-        SELECTED_WALLPAPER=""
-        ;;
-esac
-if [ -n "$SELECTED_WALLPAPER" ] && [ ! -f "$USER_WALLPAPER_DIR/$SELECTED_WALLPAPER" ]; then
-    SELECTED_WALLPAPER=""
-fi
-if [ -z "$SELECTED_WALLPAPER" ] && [ -f "$USER_WALLPAPER_DIR/default.png" ]; then
-    SELECTED_WALLPAPER="default.png"
-    printf '%s
-' "$SELECTED_WALLPAPER" > "$WALLPAPER_STATE"
+if [ ! -f "$WALLPAPER_STATE" ] || [ ! -s "$WALLPAPER_STATE" ]; then
+    printf '%s\t%s\n' "builtin" "default.png" > "$WALLPAPER_STATE"
 fi
 
 INSTALLED_COMMIT=""
@@ -200,11 +194,15 @@ else
     cp "$ROOT_DIR/quickshell/a16een/ui/"*.qml "$TMP_DEPLOY/ui/"
     cp "$ROOT_DIR/quickshell/a16een/assets/icons/"*.svg "$TMP_DEPLOY/assets/icons/"
 
-    if [ -n "$SELECTED_WALLPAPER" ] && [ -f "$USER_WALLPAPER_DIR/$SELECTED_WALLPAPER" ]; then
-        cp "$USER_WALLPAPER_DIR/$SELECTED_WALLPAPER" "$TMP_DEPLOY/assets/wallpapers/default.png"
-    elif [ -f "$ROOT_DIR/quickshell/a16een/assets/wallpapers/default.png" ]; then
-        cp "$ROOT_DIR/quickshell/a16een/assets/wallpapers/default.png" "$TMP_DEPLOY/assets/wallpapers/default.png"
-    fi
+    # Ship every supported built-in wallpaper from the repository.
+    for wallpaper in "$ROOT_DIR"/quickshell/a16een/assets/wallpapers/*; do
+        [ -f "$wallpaper" ] || continue
+        case "$wallpaper" in
+            *.png|*.PNG|*.jpg|*.JPG|*.jpeg|*.JPEG|*.webp|*.WEBP|*.bmp|*.BMP|*.tif|*.TIF|*.tiff|*.TIFF|*.tga|*.TGA|*.svg|*.SVG|*.ppm|*.PPM|*.pgm|*.PGM|*.pbm|*.PBM|*.xpm|*.XPM|*.xbm|*.XBM)
+                cp "$wallpaper" "$TMP_DEPLOY/assets/wallpapers/"
+                ;;
+        esac
+    done
 
     # Never install a new compositor config that Niri cannot parse.
     if command -v niri >/dev/null 2>&1; then
@@ -221,9 +219,35 @@ else
     cp "$TMP_DEPLOY/shell.qml" "$QS_DIR/shell.qml"
     cp "$TMP_DEPLOY/ui/"*.qml "$QS_DIR/ui/"
 
-    if [ -f "$TMP_DEPLOY/assets/wallpapers/default.png" ]; then
-        cp "$TMP_DEPLOY/assets/wallpapers/default.png"             "$QS_DIR/assets/wallpapers/default.png"
-    fi
+    rm -f "$QS_DIR/assets/wallpapers/"*.png
+    rm -f "$QS_DIR/assets/wallpapers/"*.PNG
+    rm -f "$QS_DIR/assets/wallpapers/"*.jpg
+    rm -f "$QS_DIR/assets/wallpapers/"*.JPG
+    rm -f "$QS_DIR/assets/wallpapers/"*.jpeg
+    rm -f "$QS_DIR/assets/wallpapers/"*.JPEG
+    rm -f "$QS_DIR/assets/wallpapers/"*.webp
+    rm -f "$QS_DIR/assets/wallpapers/"*.WEBP
+    rm -f "$QS_DIR/assets/wallpapers/"*.bmp
+    rm -f "$QS_DIR/assets/wallpapers/"*.BMP
+    rm -f "$QS_DIR/assets/wallpapers/"*.tif
+    rm -f "$QS_DIR/assets/wallpapers/"*.TIF
+    rm -f "$QS_DIR/assets/wallpapers/"*.tiff
+    rm -f "$QS_DIR/assets/wallpapers/"*.TIFF
+    rm -f "$QS_DIR/assets/wallpapers/"*.tga
+    rm -f "$QS_DIR/assets/wallpapers/"*.TGA
+    rm -f "$QS_DIR/assets/wallpapers/"*.svg
+    rm -f "$QS_DIR/assets/wallpapers/"*.SVG
+    rm -f "$QS_DIR/assets/wallpapers/"*.ppm
+    rm -f "$QS_DIR/assets/wallpapers/"*.PPM
+    rm -f "$QS_DIR/assets/wallpapers/"*.pgm
+    rm -f "$QS_DIR/assets/wallpapers/"*.PGM
+    rm -f "$QS_DIR/assets/wallpapers/"*.pbm
+    rm -f "$QS_DIR/assets/wallpapers/"*.PBM
+    rm -f "$QS_DIR/assets/wallpapers/"*.xpm
+    rm -f "$QS_DIR/assets/wallpapers/"*.XPM
+    rm -f "$QS_DIR/assets/wallpapers/"*.xbm
+    rm -f "$QS_DIR/assets/wallpapers/"*.XBM
+    cp "$TMP_DEPLOY/assets/wallpapers/"* "$QS_DIR/assets/wallpapers/" 2>/dev/null || true
 
     mkdir -p "$QS_DIR/assets/icons"
     cp "$TMP_DEPLOY/assets/icons/"*.svg "$QS_DIR/assets/icons/"
@@ -314,4 +338,5 @@ echo "╭───────────────────────�
 echo "│           A16EEN installation complete       │"
 echo "╰──────────────────────────────────────────────╯"
 echo "Run 'a16een-update' whenever you want to check for updates."
-echo "User wallpapers: $USER_WALLPAPER_DIR"
+echo "Built-in wallpapers: $QS_DIR/assets/wallpapers"
+echo "Personal wallpapers: $USER_WALLPAPER_DIR"
