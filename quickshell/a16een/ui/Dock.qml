@@ -58,7 +58,7 @@ PanelWindow {
         if (!entry || !entry.icon) return fallback
 
         try {
-            return Quickshell.iconPath(entry.icon, fallback)
+            return Quickshell.iconPath(entry.icon, "application-x-executable")
         } catch (error) {
             return fallback
         }
