@@ -219,6 +219,47 @@ ShellRoot {
         }
     }
 
+    Process {
+        id: focusedWindowProcess
+
+        command: ["niri", "msg", "--json", "focused-window"]
+
+        stdout: StdioCollector {
+            onStreamFinished: {
+                try {
+                    const payload = JSON.parse(text.trim())
+                    const window = payload.FocusedWindow
+                        || payload.Ok?.FocusedWindow
+                        || payload.window
+                        || null
+
+                    if (window) {
+                        root.focusedWindowId = window.id ?? -1
+                        root.focusedWindowFullscreen = window.is_fullscreen === true
+                    } else {
+                        root.focusedWindowId = -1
+                        root.focusedWindowFullscreen = false
+                    }
+                } catch (error) {
+                    console.error("A16EEN focused-window state:", error)
+                }
+            }
+        }
+    }
+
+    Timer {
+        id: focusedWindowPoll
+        interval: 250
+        repeat: true
+        running: true
+
+        onTriggered: {
+            focusedWindowProcess.running = false
+            focusedWindowProcess.running = true
+        }
+    }
+
+
     Timer {
         interval: 3000
         repeat: true
