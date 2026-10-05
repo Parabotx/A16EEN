@@ -14,6 +14,7 @@ ShellRoot {
     property bool launcherOpen: false
     property bool dashboardOpen: false
     property bool commandCenterOpen: false
+    property bool wallpaperPickerOpen: false
     property string searchText: ""
 
     property var workspaces: []
