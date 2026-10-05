@@ -365,9 +365,17 @@ PanelWindow {
         }
     }
 
+    // Keep the dock clickable while the launcher is open.
+    // The launcher remains dismissible everywhere else without stealing the dock click.
     MouseArea {
         z: 1
-        anchors.fill: parent
+        anchors {
+            top: parent.top
+            left: parent.left
+            bottom: parent.bottom
+            right: parent.right
+            rightMargin: 66
+        }
         onClicked: root.opened = false
     }
 
