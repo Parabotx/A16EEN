@@ -60,6 +60,7 @@ jobs:
           grep -q 'Mod+Slash repeat=false hotkey-overlay-title="A16EEN Application Launcher" { spawn-sh "qs ipc call launcher toggle"; }' niri/config.kdl
           grep -q 'Mod+X repeat=false { close-window; }' niri/config.kdl
           grep -q 'Mod+F { fullscreen-window; }' niri/config.kdl
+          ! grep -q 'Mod+F { maximize-column; }' niri/config.kdl
           grep -q 'Mod+M { maximize-column; }' niri/config.kdl
           grep -q 'Dock {' quickshell/a16een/shell.qml
           grep -q 'anchors.right: true' quickshell/a16een/ui/Dock.qml
@@ -88,6 +89,7 @@ jobs:
           grep -q 'TextInput {' quickshell/a16een/ui/Launcher.qml
           grep -q 'Quickshell.iconPath' quickshell/a16een/ui/Launcher.qml
           ! grep -q 'QUICK LAUNCH' quickshell/a16een/ui/Launcher.qml
+          ! grep -q 'appGrid.columns' quickshell/a16een/ui/Launcher.qml
           grep -q 'xwayland-satellite' niri/config.kdl
           grep -q 'Mod+Return { spawn "foot"; }' niri/config.kdl
           grep -q 'XF86AudioPlay allow-when-locked=true { spawn "playerctl" "play-pause"; }' niri/config.kdl
