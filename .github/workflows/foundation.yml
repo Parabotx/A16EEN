@@ -60,7 +60,7 @@ jobs:
           grep -q 'Mod+A repeat=false hotkey-overlay-title="A16EEN Application Launcher" { spawn-sh "qs ipc call launcher toggle"; }' niri/config.kdl
           grep -q 'Mod+X repeat=false { close-window; }' niri/config.kdl
           grep -q 'Mod+F { fullscreen-window; }' niri/config.kdl
-          grep -q 'Mod+T { fullscreen-window; }' niri/config.kdl
+          grep -q 'Mod+T repeat=false { spawn-sh "if niri msg --json focused-window | grep -q '\"is_fullscreen\":true'; then niri msg action fullscreen-window; fi"; }' niri/config.kdl
           ! grep -q 'Mod+Slash.*launcher toggle' niri/config.kdl
           ! grep -q 'Mod+F { maximize-column; }' niri/config.kdl
           grep -q 'Mod+M { maximize-column; }' niri/config.kdl
@@ -92,6 +92,11 @@ jobs:
           grep -q 'cellHeight: 78' quickshell/a16een/ui/Launcher.qml
           grep -q 'text: appTile.entry.name' quickshell/a16een/ui/Launcher.qml
           ! grep -q 'QUICK LAUNCH' quickshell/a16een/ui/Launcher.qml
+          grep -q 'width: 500' quickshell/a16een/ui/Launcher.qml
+          grep -q 'height: 380' quickshell/a16een/ui/Launcher.qml
+          grep -q 'cellWidth: 84' quickshell/a16een/ui/Launcher.qml
+          grep -q 'cellHeight: 72' quickshell/a16een/ui/Launcher.qml
+          grep -q 'text: appTile.entry.name' quickshell/a16een/ui/Launcher.qml
           grep -q 'TextInput {' quickshell/a16een/ui/Launcher.qml
           grep -q 'Quickshell.iconPath' quickshell/a16een/ui/Launcher.qml
           ! grep -q 'QUICK LAUNCH' quickshell/a16een/ui/Launcher.qml
