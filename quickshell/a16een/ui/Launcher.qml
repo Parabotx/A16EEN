@@ -18,7 +18,7 @@ PanelWindow {
     readonly property color borderColor: "#E4E7EB"
     readonly property color primaryText: "#15171A"
     readonly property color secondaryText: "#7A7F87"
-    readonly property color searchBackground: "#F7F8FA"
+    readonly property color searchBackground: "#F6F7F8"
     readonly property color searchHoverBackground: "#FAFBFC"
     readonly property color searchFocusBackground: "#FFFFFF"
     readonly property color searchBorder: "#E3E6EA"
@@ -72,8 +72,8 @@ PanelWindow {
     Rectangle {
         id: card
         z: 2
-        width: Math.min(500, parent.width - 64)
-        height: Math.min(380, parent.height - 80)
+        width: Math.min(480, parent.width - 64)
+        height: Math.min(360, parent.height - 80)
         anchors.centerIn: parent
         radius: 22
         color: root.surface
@@ -82,8 +82,8 @@ PanelWindow {
 
         Rectangle {
             anchors.fill: parent
-            anchors.margins: -5
-            radius: 29
+            anchors.margins: -4
+            radius: 26
             color: "#12000000"
             z: -1
         }
@@ -95,34 +95,21 @@ PanelWindow {
 
             Rectangle {
                 id: searchBox
-                Layout.preferredWidth: 320
-                Layout.minimumWidth: 220
-                Layout.maximumWidth: 360
+                Layout.preferredWidth: 300
                 Layout.alignment: Qt.AlignHCenter
                 height: 36
                 radius: 12
-
-                property bool hovered: searchHover.hovered
-
                 color: search.activeFocus
                     ? root.searchFocusBackground
-                    : (hovered ? root.searchHoverBackground : root.searchBackground)
+                    : (searchMouse.containsMouse
+                        ? root.searchHoverBackground
+                        : root.searchBackground)
                 border.width: 1
                 border.color: search.activeFocus
                     ? root.searchFocusBorder
-                    : (hovered ? root.searchHoverBorder : root.searchBorder)
-
-                Behavior on color {
-                    ColorAnimation { duration: 110 }
-                }
-
-                Behavior on border.color {
-                    ColorAnimation { duration: 110 }
-                }
-
-                HoverHandler {
-                    id: searchHover
-                }
+                    : (searchMouse.containsMouse
+                        ? root.searchHoverBorder
+                        : root.searchBorder)
 
                 Text {
                     anchors.left: parent.left
@@ -149,60 +136,59 @@ PanelWindow {
                     text: root.searchText
                     selectByMouse: true
 
-                        onTextChanged: {
-                            root.searchText = text
-                            appGrid.currentIndex = appGrid.count > 0 ? 0 : -1
-                            root.launchError = ""
-                        }
+                    onTextChanged: {
+                        root.searchText = text
+                        appGrid.currentIndex = appGrid.count > 0 ? 0 : -1
+                        root.launchError = ""
+                    }
 
-                        Keys.onEscapePressed: root.closeRequested()
+                    Keys.onEscapePressed: root.closeRequested()
 
-                        Keys.onReturnPressed: {
-                            if (appGrid.currentItem && appGrid.currentItem.entry)
-                                root.launch(appGrid.currentItem.entry)
-                        }
+                    Keys.onReturnPressed: {
+                        if (appGrid.currentItem && appGrid.currentItem.entry)
+                            root.launch(appGrid.currentItem.entry)
+                    }
 
-                        Keys.onRightPressed: {
-                            if (appGrid.currentIndex >= 0)
-                                appGrid.currentIndex = Math.min(
-                                    appGrid.count - 1,
-                                    appGrid.currentIndex + 1
-                                )
-                        }
+                    Keys.onRightPressed: {
+                        if (appGrid.currentIndex >= 0)
+                            appGrid.currentIndex = Math.min(
+                                appGrid.count - 1,
+                                appGrid.currentIndex + 1
+                            )
+                    }
 
-                        Keys.onLeftPressed: {
-                            if (appGrid.currentIndex > 0)
-                                appGrid.currentIndex -= 1
-                        }
+                    Keys.onLeftPressed: {
+                        if (appGrid.currentIndex > 0)
+                            appGrid.currentIndex -= 1
+                    }
 
-                        Keys.onDownPressed: {
-                            if (appGrid.count > 0) {
-                                const columns = Math.max(
-                                    1,
-                                    Math.floor(appGrid.width / appGrid.cellWidth)
-                                )
-                                appGrid.currentIndex = Math.min(
-                                    appGrid.count - 1,
-                                    appGrid.currentIndex + columns
-                                )
-                            }
-                        }
-
-                        Keys.onUpPressed: {
-                            if (appGrid.count > 0) {
-                                const columns = Math.max(
-                                    1,
-                                    Math.floor(appGrid.width / appGrid.cellWidth)
-                                )
-                                appGrid.currentIndex = Math.max(
-                                    0,
-                                    appGrid.currentIndex - columns
-                                )
-                            }
+                    Keys.onDownPressed: {
+                        if (appGrid.count > 0) {
+                            const columns = 5
+                            appGrid.currentIndex = Math.min(
+                                appGrid.count - 1,
+                                appGrid.currentIndex + columns
+                            )
                         }
                     }
 
+                    Keys.onUpPressed: {
+                        if (appGrid.count > 0) {
+                            const columns = 5
+                            appGrid.currentIndex = Math.max(
+                                0,
+                                appGrid.currentIndex - columns
+                            )
+                        }
+                    }
+                }
 
+                MouseArea {
+                    id: searchMouse
+                    anchors.fill: parent
+                    acceptedButtons: Qt.NoButton
+                    hoverEnabled: true
+                    z: -1
                 }
             }
 
@@ -211,12 +197,9 @@ PanelWindow {
                 Layout.fillWidth: true
                 Layout.fillHeight: true
                 clip: true
-                property int gridColumns: 5
-                cellWidth: width > 0 ? width / gridColumns : 84
+                cellWidth: 88
                 cellHeight: 72
                 currentIndex: count > 0 ? 0 : -1
-                highlightFollowsCurrentItem: true
-                highlightMoveDuration: 0
 
                 model: ScriptModel {
                     objectProp: "id"
@@ -247,20 +230,16 @@ PanelWindow {
 
                     required property var modelData
 
-                    width: appGrid.cellWidth - 8
+                    width: 82
                     height: 68
                     radius: 13
+                    color: appMouse.containsMouse
+                        ? "#F7F8FA"
+                        : (GridView.isCurrentItem
+                            ? root.selectedBackground
+                            : "transparent")
 
                     property var entry: modelData
-                    property bool hovered: appMouse.containsMouse
-
-                    color: hovered
-                        ? "#F7F8FA"
-                        : (GridView.isCurrentItem ? root.selectedBackground : "transparent")
-
-                    Behavior on color {
-                        ColorAnimation { duration: 90 }
-                    }
 
                     Column {
                         anchors.fill: parent
@@ -290,7 +269,7 @@ PanelWindow {
                             height: 20
                             text: appTile.entry.name || "Application"
                             color: root.primaryText
-                            font.pixelSize: 8
+                            font.pixelSize: 9
                             font.weight: Font.Medium
                             horizontalAlignment: Text.AlignHCenter
                             verticalAlignment: Text.AlignVCenter
@@ -321,7 +300,7 @@ PanelWindow {
             Rectangle {
                 Layout.fillWidth: true
                 visible: root.launchError.length > 0
-                height: 30
+                height: 28
                 radius: 10
                 color: "#FFF5F5"
                 border.width: 1
