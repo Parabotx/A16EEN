@@ -118,7 +118,8 @@ PanelWindow {
             radius: 1
             anchors.left: parent.left
             anchors.leftMargin: 6
-            anchors.verticalCenter: parent.verticalCenter
+            anchors.top: parent.top
+            anchors.topMargin: 44
             color: "#2F6FED26"
         }
 
