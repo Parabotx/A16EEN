@@ -76,6 +76,9 @@ jobs:
           grep -q 'focusWorkspace(3)' quickshell/a16een/ui/Dock.qml
           grep -q 'focusWorkspace(4)' quickshell/a16een/ui/Dock.qml
           grep -q 'focusWorkspace(5)' quickshell/a16een/ui/Dock.qml
+          ! grep -q 'activeBackground' quickshell/a16een/ui/Dock.qml
+          grep -q 'rightMargin: 66' quickshell/a16een/ui/Launcher.qml
+          ! grep -q 'text: "Applications"' quickshell/a16een/ui/Dock.qml
           ! grep -q 'text: "Applications"' quickshell/a16een/ui/Dock.qml
           ! grep -q 'launcherMouse.containsMouse ? root.hoverBackground' quickshell/a16een/ui/Dock.qml
           grep -q 'xwayland-satellite' niri/config.kdl
