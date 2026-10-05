@@ -180,12 +180,13 @@ Reboot and power-off require confirmation unless `--yes` / `-y` is explicitly su
 ## Keyboard controls
 
 ```
-Super + /              Application launcher
+Super + A              Application launcher
 Super + P              A16EEN dashboard
 Super + O              Niri overview
 Super + Return         Terminal
 Super + X              Close window
-Super + F              Fullscreen
+Super + F              Fullscreen toggle
+Super + T              Fullscreen toggle
 Super + M              Maximize column
 Super + H/J/K/L        Navigate
 Super + 1..5           Workspaces
