@@ -110,19 +110,6 @@ PanelWindow {
             z: -1
         }
 
-        // Subtle workspace spine: a single blue design detail ties the workspace controls together.
-        Rectangle {
-            id: workspaceSpine
-            width: 2
-            height: 210
-            radius: 1
-            anchors.left: parent.left
-            anchors.leftMargin: 6
-            anchors.top: parent.top
-            anchors.topMargin: 44
-            color: "#1111111A"
-        }
-
         Column {
             anchors.centerIn: parent
             spacing: 4
