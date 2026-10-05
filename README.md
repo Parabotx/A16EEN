@@ -217,8 +217,8 @@ Super + F              Fullscreen toggle
 Super + T              Exit fullscreen
 Super + M              Maximize column
 Super + H/J/K/L        Navigate
-Super + 1..5           Workspaces
-Super + Shift + 1..5  Move window to workspace
+Super + 1..6           Workspaces
+Super + Shift + 1..6  Move window to workspace
 Super + Alt + L        Lock screen
 ```
 
