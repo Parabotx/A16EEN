@@ -39,6 +39,7 @@ jobs:
           test -f quickshell/a16een/ui/Dock.qml
           test -f quickshell/a16een/ui/Dashboard.qml
           test -f quickshell/a16een/ui/CommandCenter.qml
+          test -f quickshell/a16een/ui/WallpaperPicker.qml
           test -f quickshell/a16een/ui/NotificationToast.qml
           test -f quickshell/a16een/assets/wallpapers/default.png
           test -f quickshell/a16een/assets/icons/search.svg
@@ -64,6 +65,11 @@ jobs:
           grep -Fq 'workspace "studio"' niri/config.kdl
           grep -Fq 'workspace "music"' niri/config.kdl
           grep -Fq 'import qs.ui' quickshell/a16een/shell.qml
+          grep -Fq 'qt6-imageformats' scripts/install.sh
+          grep -Fq 'qt6-svg' scripts/install.sh
+          grep -Fq 'USER_WALLPAPER_DIR="$USER_PICTURES_DIR/a16een"' scripts/install.sh
+          grep -Fq 'property bool wallpaperPickerOpen' quickshell/a16een/shell.qml
+          grep -Fq 'WallpaperPicker {' quickshell/a16een/shell.qml
           grep -Fq 'dockBackground: "#FFFFFF"' quickshell/a16een/ui/Dock.qml
           grep -Fq 'iconColor: "#111111"' quickshell/a16een/ui/Dock.qml
           ! grep -Fq '#2F6FED' quickshell/a16een/ui/Dock.qml
@@ -74,11 +80,16 @@ jobs:
           grep -Fq 'property bool commandCenterOpen' quickshell/a16een/shell.qml
           grep -Fq 'visible: root.opened' quickshell/a16een/ui/CommandCenter.qml
           grep -Fq 'text: "/"' quickshell/a16een/ui/CommandCenter.qml
-          grep -Fq 'Type an A16EEN command' quickshell/a16een/ui/CommandCenter.qml
+          grep -Fq 'text: "search commands"' quickshell/a16een/ui/CommandCenter.qml
+          grep -Fq 'signal wallpaperRequested()' quickshell/a16een/ui/CommandCenter.qml
           grep -Fq 'readonly property var commands' quickshell/a16een/ui/CommandCenter.qml
           grep -Fq 'function executeCommand(command)' quickshell/a16een/ui/CommandCenter.qml
+          grep -Fq 'onWallpaperRequested: root.wallpaperPickerOpen = true' quickshell/a16een/shell.qml
+          grep -Fq 'a16een-wallpaper" ]' quickshell/a16een/ui/WallpaperPicker.qml || true
+          grep -Fq 'a16een-wallpaper", "catalog' quickshell/a16een/ui/WallpaperPicker.qml
+          grep -Fq 'modelData.path' quickshell/a16een/ui/WallpaperPicker.qml
           ! grep -Fq 'sh", "-c"' quickshell/a16een/ui/CommandCenter.qml
-          grep -Fq 'anchors.verticalCenterOffset: 120' quickshell/a16een/ui/CommandCenter.qml
+          grep -Fq 'anchors.verticalCenterOffset: 185' quickshell/a16een/ui/CommandCenter.qml
           grep -Fq 'ToplevelManager.activeToplevel' quickshell/a16een/shell.qml
           ! grep -Fq 'focusedWindowProcess' quickshell/a16een/shell.qml
           ! grep -Fq 'is_fullscreen' quickshell/a16een/shell.qml
@@ -159,7 +170,15 @@ jobs:
           grep -Fq 'ttf-roboto-mono' scripts/install.sh
           grep -Fq 'USER_WALLPAPER_DIR' scripts/install.sh
           grep -Fq 'a16een-wallpaper' scripts/install.sh
+          test -f quickshell/a16een/assets/wallpapers/README.md
+          grep -Fq 'quickshell/a16een/assets/wallpapers/' quickshell/a16een/assets/wallpapers/README.md
           grep -Fq 'wallpaper)' scripts/a16een
+          grep -Fq 'current-path)' scripts/a16een-wallpaper
+          grep -Fq 'catalog)' scripts/a16een-wallpaper
+          grep -Fq '*.webp' scripts/a16een-wallpaper
+          grep -Fq '*.tiff' scripts/a16een-wallpaper
+          grep -Fq '*.tga' scripts/a16een-wallpaper
+          grep -Fq 'USER_WALLPAPER_DIR="$PICTURES_DIR/a16een"' scripts/a16een-wallpaper
           grep -Fq 'a16een-update --rollback' README.md
           # Launcher shortcut is already validated earlier in this block.
 
