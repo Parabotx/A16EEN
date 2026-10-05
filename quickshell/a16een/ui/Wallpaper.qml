@@ -34,6 +34,7 @@ PanelWindow {
             : Qt.resolvedUrl("../assets/wallpapers/default.png")
         fillMode: Image.PreserveAspectCrop
         asynchronous: true
+        retainWhileLoading: true
         mipmap: true
         cache: true
         opacity: 0.16
