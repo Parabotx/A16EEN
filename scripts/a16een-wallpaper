@@ -51,19 +51,19 @@ restart_shell() {
 
 apply_wallpaper() {
     local filename="$1"
-    local source="$DATA_DIR/$filename"
-
-    [ -f "$source" ] || {
-        echo "A16EEN: wallpaper not found: $filename" >&2
-        exit 1
-    }
 
     case "$filename" in
-        */*|..)
+        */*|..|'')
             echo "A16EEN: wallpaper must be a filename inside the A16EEN wallpaper folder." >&2
             exit 1
             ;;
     esac
+
+    local source="$DATA_DIR/$filename"
+    [ -f "$source" ] || {
+        echo "A16EEN: wallpaper not found: $filename" >&2
+        exit 1
+    }
 
     cp -- "$source" "$RUNTIME_WALLPAPER"
     printf '%s\n' "$filename" > "$STATE_FILE"
