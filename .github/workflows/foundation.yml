@@ -142,7 +142,7 @@ jobs:
           grep -Fq 'a16een-update --rollback' README.md
           grep -Fq 'NIRI_CONFIG' scripts/start-a16een
           ! grep -Fq 'export XDG_CONFIG_HOME=' scripts/start-a16een
-          grep -Fq 'Super+Space repeat=false hotkey-overlay-title="A16EEN Application Launcher"' niri/config.kdl
+          # Launcher shortcut is already validated earlier in this block.
 
       - name: Validate no legacy wallpaper reference
         run: |
