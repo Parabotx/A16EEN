@@ -17,8 +17,8 @@ PanelWindow {
     property color cardBorder: "#FFFFFF18"
     property color primaryText: "#F5F2EA"
     property color secondaryText: "#8D94A3"
-    property color accent: "#D7B56D"
-    property color errorAccent: "#E88F8F"
+    property color accent: "#111827"
+    property color errorAccent: "#9F1239"
 
     screen: modelData
     color: "transparent"
@@ -162,7 +162,7 @@ PanelWindow {
                         id: search
                         Layout.fillWidth: true
                         color: root.primaryText
-                        selectionColor: "#D7B56D55"
+                        selectionColor: "#11182722"
                         selectedTextColor: root.primaryText
                         font.pixelSize: 14
                         clip: true
@@ -251,9 +251,9 @@ PanelWindow {
                     width: appList.width
                     height: 58
                     radius: 15
-                    color: ListView.isCurrentItem ? "#D7B56D16" : "#FFFFFF06"
+                    color: ListView.isCurrentItem ? "#F1F3F5" : "#FFFFFF08"
                     border.width: ListView.isCurrentItem ? 1 : 0
-                    border.color: "#D7B56D55"
+                    border.color: "#D1D5DB"
 
                     property var entry: modelData
 
@@ -299,7 +299,7 @@ PanelWindow {
 
                         Text {
                             text: "↵"
-                            color: ListView.isCurrentItem ? root.accent : "#4E5561"
+                            color: ListView.isCurrentItem ? root.primaryText : "#6B7280"
                             font.pixelSize: 15
                         }
                     }
