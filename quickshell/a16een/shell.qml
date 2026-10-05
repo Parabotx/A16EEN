@@ -112,6 +112,16 @@ ShellRoot {
     }
 
     IpcHandler {
+        target: "fullscreen"
+
+        function exit(): void {
+            const active = ToplevelManager.activeToplevel
+            if (active && active.fullscreen)
+                active.fullscreen = false
+        }
+    }
+
+    IpcHandler {
         target: "dashboard"
 
         function toggle(): void {
