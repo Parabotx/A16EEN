@@ -13,6 +13,7 @@ ShellRoot {
 
     property bool launcherOpen: false
     property bool dashboardOpen: false
+    property bool commandCenterOpen: false
     property string searchText: ""
 
     property var workspaces: []
@@ -105,12 +106,16 @@ ShellRoot {
 
         function toggle(): void {
             root.launcherOpen = !root.launcherOpen
-            if (root.launcherOpen) root.dashboardOpen = false
+            if (root.launcherOpen) {
+                root.dashboardOpen = false
+                root.commandCenterOpen = false
+            }
         }
 
         function open(): void {
             root.launcherOpen = true
             root.dashboardOpen = false
+            root.commandCenterOpen = false
         }
 
         function close(): void {
@@ -133,16 +138,42 @@ ShellRoot {
 
         function toggle(): void {
             root.dashboardOpen = !root.dashboardOpen
-            if (root.dashboardOpen) root.launcherOpen = false
+            if (root.dashboardOpen) {
+                root.launcherOpen = false
+                root.commandCenterOpen = false
+            }
         }
 
         function open(): void {
             root.dashboardOpen = true
             root.launcherOpen = false
+            root.commandCenterOpen = false
         }
 
         function close(): void {
             root.dashboardOpen = false
+        }
+    }
+
+    IpcHandler {
+        target: "command-center"
+
+        function toggle(): void {
+            root.commandCenterOpen = !root.commandCenterOpen
+            if (root.commandCenterOpen) {
+                root.launcherOpen = false
+                root.dashboardOpen = false
+            }
+        }
+
+        function open(): void {
+            root.commandCenterOpen = true
+            root.launcherOpen = false
+            root.dashboardOpen = false
+        }
+
+        function close(): void {
+            root.commandCenterOpen = false
         }
     }
 
@@ -260,10 +291,19 @@ ShellRoot {
             fullscreenActive: root.focusedWindowFullscreen
 
             onLauncherRequested: {
-                root.launcherOpen = !root.launcherOpen
-                if (root.launcherOpen) root.dashboardOpen = false
+                root.launcherOpen = true
+                root.dashboardOpen = false
+                root.commandCenterOpen = false
             }
         }
+    }
+
+    CommandCenter {
+        modelData: root.primaryScreen
+        opened: root.commandCenterOpen
+        onCloseRequested: root.commandCenterOpen = false
+        onLauncherRequested: root.launcherOpen = true
+        onDashboardRequested: root.dashboardOpen = true
     }
 
     Launcher {
