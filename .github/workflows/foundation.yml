@@ -127,10 +127,8 @@ jobs:
           grep -q 'a16een-update --rollback' README.md
           grep -q 'NIRI_CONFIG' scripts/start-a16een
           ! grep -q 'export XDG_CONFIG_HOME=' scripts/start-a16een
-          grep -q "a16een logout" README.md
-          grep -q "a16een reboot" README.md
-          grep -q "a16een volume up" README.md
-          grep -q "a16een icons" README.md
+          grep -q 'Super+Space repeat=false hotkey-overlay-title="A16EEN Application Launcher"' niri/config.kdl
+          grep -q 'target: "fullscreen"' quickshell/a16een/shell.qml
 
       - name: Validate no legacy wallpaper reference
         run: |
