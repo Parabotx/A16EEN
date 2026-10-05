@@ -51,6 +51,10 @@ for icon in "${ICONS[@]}"; do
         echo "Keeping the previous icon set." >&2
         exit 0
     fi
+
+    # A16EEN's dock uses a monochrome icon language. Normalize Lucide's
+    # currentColor stroke to the same black fallback during synchronization.
+    sed -i 's/stroke="currentColor"/stroke="#111111"/g' "$target"
 done
 
 mkdir -p "$ICON_ROOT"
