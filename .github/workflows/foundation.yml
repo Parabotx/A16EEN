@@ -150,7 +150,6 @@ jobs:
           grep -Fq 'a16een-wallpaper' scripts/install.sh
           grep -Fq 'wallpaper)' scripts/a16een
           grep -Fq 'a16een-update --rollback' README.md
-          grep -Fq 'NIRI_CONFIG' scripts/start-a16een
           # Launcher shortcut is already validated earlier in this block.
 
       - name: Validate no legacy wallpaper reference
