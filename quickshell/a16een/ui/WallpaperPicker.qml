@@ -46,21 +46,20 @@ PanelWindow {
         stdout: StdioCollector {
             onStreamFinished: {
                 const next = []
-                const lines = text.trim().split("
-")
+                const lines = text.trim().split(/\r?\n/)
 
                 for (const line of lines) {
                     if (!line.length)
                         continue
 
-                    const fields = line.split("	")
+                    const fields = line.split("\t")
                     if (fields.length < 5)
                         continue
 
                     next.push({
                         source: fields[0],
                         name: fields[1],
-                        displayName: fields[2],
+                        displayName: fields[2] || fields[1].replace(/\.[^.]+$/, ""),
                         path: fields[3],
                         selected: fields[4] === "1"
                     })
