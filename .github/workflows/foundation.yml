@@ -92,15 +92,18 @@ jobs:
           grep -Fq 'preview.status !== Image.Ready && preview.status !== Image.Error' quickshell/a16een/ui/WallpaperPicker.qml
           grep -Fq 'preview.status === Image.Error' quickshell/a16een/ui/WallpaperPicker.qml
           grep -Fq 'sourceSize.width: root.tileWidth * 2' quickshell/a16een/ui/WallpaperPicker.qml
+          grep -Fq 'SequentialAnimation on opacity' quickshell/a16een/ui/WallpaperPicker.qml
           grep -Fq 'function apply(path: string): void' quickshell/a16een/shell.qml
           grep -Fq 'wallpaperPath: ""' quickshell/a16een/shell.qml
           grep -Fq 'currentWallpaperPath: root.wallpaperPath' quickshell/a16een/shell.qml
           ! grep -Fq 'wallpaperPathProcess' quickshell/a16een/ui/Wallpaper.qml
+          grep -Fq 'retainWhileLoading: true' quickshell/a16een/ui/Wallpaper.qml
           grep -Fq 'modelData.displayName' quickshell/a16een/ui/WallpaperPicker.qml
           grep -Fq 'find "$dir" -type f' scripts/a16een-wallpaper
           grep -Fq 'notify_shell()' scripts/a16een-wallpaper
           grep -Fq 'ipc call wallpaper apply' scripts/a16een-wallpaper
           ! grep -Fq 'restart_shell' scripts/a16een-wallpaper
+          grep -Fq 'notify_shell "$path"' scripts/a16een-wallpaper
           ! grep -Fq 'sh", "-c"' quickshell/a16een/ui/CommandCenter.qml
           grep -Fq 'anchors.verticalCenterOffset: 185' quickshell/a16een/ui/CommandCenter.qml
           grep -Fq 'ToplevelManager.activeToplevel' quickshell/a16een/shell.qml
