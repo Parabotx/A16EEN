@@ -67,10 +67,10 @@ PanelWindow {
     Rectangle {
         id: card
         z: 2
-        width: Math.min(560, parent.width - 80)
-        height: Math.min(430, parent.height - 100)
+        width: Math.min(500, parent.width - 64)
+        height: Math.min(380, parent.height - 80)
         anchors.centerIn: parent
-        radius: 24
+        radius: 22
         color: root.surface
         border.width: 1
         border.color: root.borderColor
@@ -85,22 +85,22 @@ PanelWindow {
 
         ColumnLayout {
             anchors.fill: parent
-            anchors.margins: 14
-            spacing: 10
+            anchors.margins: 12
+            spacing: 8
 
             Rectangle {
                 Layout.fillWidth: true
-                height: 44
-                radius: 14
+                height: 40
+                radius: 13
                 color: root.searchBackground
                 border.width: 1
                 border.color: "#E7E9EC"
 
                 RowLayout {
                     anchors.fill: parent
-                    anchors.leftMargin: 13
-                    anchors.rightMargin: 13
-                    spacing: 9
+                    anchors.leftMargin: 12
+                    anchors.rightMargin: 12
+                    spacing: 8
 
                     Image {
                         Layout.alignment: Qt.AlignVCenter
@@ -179,13 +179,7 @@ PanelWindow {
                         }
                     }
 
-                    Text {
-                        text: root.searchText.length ? "FILTER" : "SEARCH"
-                        color: root.secondaryText
-                        font.pixelSize: 8
-                        font.letterSpacing: 1.2
-                        Layout.alignment: Qt.AlignVCenter
-                    }
+
                 }
             }
 
@@ -194,8 +188,8 @@ PanelWindow {
                 Layout.fillWidth: true
                 Layout.fillHeight: true
                 clip: true
-                cellWidth: 86
-                cellHeight: 78
+                cellWidth: 84
+                cellHeight: 72
                 currentIndex: count > 0 ? 0 : -1
                 highlightFollowsCurrentItem: true
                 highlightMoveDuration: 0
@@ -229,9 +223,9 @@ PanelWindow {
 
                     required property var modelData
 
-                    width: 78
-                    height: 70
-                    radius: 14
+                    width: 76
+                    height: 68
+                    radius: 13
                     color: GridView.isCurrentItem
                         ? root.selectedBackground
                         : "transparent"
@@ -240,20 +234,20 @@ PanelWindow {
 
                     Column {
                         anchors.fill: parent
-                        anchors.topMargin: 5
-                        anchors.bottomMargin: 5
-                        anchors.leftMargin: 3
-                        anchors.rightMargin: 3
-                        spacing: 3
+                        anchors.topMargin: 4
+                        anchors.bottomMargin: 4
+                        anchors.leftMargin: 2
+                        anchors.rightMargin: 2
+                        spacing: 2
 
                         Item {
                             width: parent.width
-                            height: 38
+                            height: 34
 
                             IconImage {
                                 anchors.centerIn: parent
-                                implicitWidth: 30
-                                implicitHeight: 30
+                                implicitWidth: 28
+                                implicitHeight: 28
                                 source: Quickshell.iconPath(
                                     appTile.entry.icon,
                                     "application-x-executable"
@@ -263,10 +257,10 @@ PanelWindow {
 
                         Text {
                             width: parent.width
-                            height: 18
+                            height: 20
                             text: appTile.entry.name || "Application"
                             color: root.primaryText
-                            font.pixelSize: 9
+                            font.pixelSize: 8
                             font.weight: Font.Medium
                             horizontalAlignment: Text.AlignHCenter
                             verticalAlignment: Text.AlignVCenter
@@ -296,7 +290,7 @@ PanelWindow {
             Rectangle {
                 Layout.fillWidth: true
                 visible: root.launchError.length > 0
-                height: 32
+                height: 30
                 radius: 10
                 color: "#FFF5F5"
                 border.width: 1
@@ -309,7 +303,7 @@ PanelWindow {
                     verticalAlignment: Text.AlignVCenter
                     text: root.launchError
                     color: "#9B3A3A"
-                    font.pixelSize: 9
+                    font.pixelSize: 8
                     elide: Text.ElideRight
                 }
             }
