@@ -12,11 +12,11 @@ PanelWindow {
 
     signal launcherRequested()
 
-    // Blue glass: low alpha so the blurred scene remains visible through the dock.
-    readonly property color dockBackground: "#35243B8F"
-    readonly property color dockBorder: "#664F8FD0"
-    readonly property color iconColor: "#F4F7FF"
-    readonly property color hoverBackground: "#263C6BB8"
+    // Clean white A16EEN dock with a blue interface language.
+    readonly property color dockBackground: "#FFFFFF"
+    readonly property color dockBorder: "#DCE5F2"
+    readonly property color iconColor: "#2F6FED"
+    readonly property color hoverBackground: "#EDF4FF"
     readonly property string searchIcon: Qt.resolvedUrl("../assets/icons/search.svg")
 
     property bool edgeRevealed: false
@@ -36,13 +36,6 @@ PanelWindow {
 
     WlrLayershell.layer: WlrLayer.Overlay
     WlrLayershell.namespace: "a16een-dock"
-
-    // Request compositor-backed background blur for the glass surface.
-    // Niri implements ext-background-effect-v1 natively.
-    BackgroundEffect.blurRegion: Region {
-        item: dock
-        radius: 18
-    }
 
     function workspaceIsFocused(name) {
         const current = root.workspaces.find(workspace => workspace.name === name)
@@ -96,7 +89,7 @@ PanelWindow {
         anchors.verticalCenter: parent.verticalCenter
 
         width: 44
-        height: 222
+        height: 260
         radius: 18
         color: root.dockBackground
         border.width: 1
@@ -115,6 +108,18 @@ PanelWindow {
             radius: 21
             color: "#16000000"
             z: -1
+        }
+
+        // Subtle workspace spine: a single blue design detail ties the workspace controls together.
+        Rectangle {
+            id: workspaceSpine
+            width: 2
+            height: 210
+            radius: 1
+            anchors.left: parent.left
+            anchors.leftMargin: 6
+            anchors.verticalCenter: parent.verticalCenter
+            color: "#2F6FED26"
         }
 
         Column {
@@ -349,6 +354,45 @@ PanelWindow {
                     hoverEnabled: true
                     cursorShape: Qt.PointingHandCursor
                     onClicked: root.focusWorkspace(5)
+                }
+            }
+
+            Rectangle {
+                width: 32
+                height: 32
+                radius: 11
+                color: musicMouse.containsMouse ? root.hoverBackground : "transparent"
+
+                Image {
+                    anchors.centerIn: parent
+                    width: 17
+                    height: 17
+                    source: Qt.resolvedUrl("../assets/icons/music.svg")
+                    fillMode: Image.PreserveAspectFit
+                    asynchronous: true
+                    mipmap: true
+                    smooth: true
+                }
+
+                Rectangle {
+                    visible: root.workspaceIsFocused("music")
+                    width: 3
+                    height: 16
+                    radius: 2
+                    anchors.right: parent.right
+                    anchors.rightMargin: 2
+                    anchors.verticalCenter: parent.verticalCenter
+                    color: root.iconColor
+                }
+
+                MouseArea {
+                    id: musicMouse
+                    anchors.fill: parent
+                    onEntered: root.revealDock()
+                    onExited: root.scheduleHide()
+                    hoverEnabled: true
+                    cursorShape: Qt.PointingHandCursor
+                    onClicked: root.focusWorkspace(6)
                 }
             }
         }
