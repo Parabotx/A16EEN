@@ -80,8 +80,9 @@ xwayland-satellite {
 binds {
     // A16EEN UI
     // Super+Space opens the A16EEN application launcher.
-    // Super+/ remains reserved for a future A16EEN feature.
+    // Super+/ opens the A16EEN command center.
     Super+Space repeat=false hotkey-overlay-title="A16EEN Application Launcher" { spawn-sh "qs -c \"$HOME/.config/a16een/quickshell/a16een\" ipc call launcher open"; }
+    Super+Slash repeat=false hotkey-overlay-title="A16EEN Command Center" { spawn-sh "qs ipc call command-center toggle"; }
     Mod+P repeat=false { spawn-sh "qs ipc call dashboard toggle"; }
     Mod+O repeat=false { toggle-overview; }
 
