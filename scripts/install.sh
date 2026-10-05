@@ -254,6 +254,13 @@ if [ "${XDG_CURRENT_DESKTOP:-}" = "A16EEN" ]; then
     if [ "$RESTARTED_SHELL" -eq 1 ]; then
         echo "==> Restarted the A16EEN Quickshell shell."
     fi
+
+    # If the supervisor itself exited after repeated QML failures, recover it
+    # without requiring the user to leave the desktop session.
+    if ! pgrep -f '[a]16een-shell' >/dev/null 2>&1; then
+        nohup /usr/local/bin/a16een-shell >/dev/null 2>&1 &
+        echo "==> Started the A16EEN shell supervisor."
+    fi
 fi
 
 echo
