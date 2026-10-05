@@ -237,6 +237,9 @@ PanelWindow {
                     }
                 }
             }
+        }
+    }
+
     MouseArea {
         z: 1
         anchors.fill: parent
