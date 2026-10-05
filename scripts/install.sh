@@ -222,7 +222,7 @@ else
 fi
 
 echo "==> Syncing A16EEN UI icons"
-if ! "$ROOT_DIR/scripts/a16een-icons"; then
+if ! bash "$ROOT_DIR/scripts/a16een-icons"; then
     echo "WARNING: icon synchronization failed; using the bundled fallback SVGs." >&2
 fi
 
