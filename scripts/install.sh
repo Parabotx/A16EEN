@@ -212,7 +212,8 @@ else
             mkdir -p "$(dirname "$destination")"
             cp "$wallpaper" "$destination"
         done < <(
-            find "$BUILTIN_ANIMATED_SOURCE_DIR" -type f                 ( -iname '*.gif' -o -iname '*.mp4' -o -iname '*.webm' -o -iname '*.mov' ) -print0 | LC_ALL=C sort -z -f
+            find "$BUILTIN_ANIMATED_SOURCE_DIR" -type f \
+            \( -iname '*.gif' -o -iname '*.mp4' -o -iname '*.webm' -o -iname '*.mov' \) -print0 | LC_ALL=C sort -z -f
         )
     fi
 
