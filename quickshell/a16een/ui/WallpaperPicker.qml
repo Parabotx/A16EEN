@@ -54,14 +54,15 @@ PanelWindow {
                         continue
 
                     const fields = line.split("	")
-                    if (fields.length < 4)
+                    if (fields.length < 5)
                         continue
 
                     next.push({
                         source: fields[0],
                         name: fields[1],
-                        path: fields[2],
-                        selected: fields[3] === "1"
+                        displayName: fields[2],
+                        path: fields[3],
+                        selected: fields[4] === "1"
                     })
                 }
 
@@ -183,7 +184,7 @@ PanelWindow {
                                     anchors.rightMargin: 10
                                     anchors.bottomMargin: 8
                                     height: 18
-                                    text: modelData.name
+                                    text: modelData.displayName
                                     color: "#161616"
                                     font.pixelSize: 10
                                     font.weight: modelData.selected
