@@ -12,8 +12,8 @@ PanelWindow {
 
     signal launcherRequested()
 
-    readonly property color dockBackground: "#FFFFFEF8"
-    readonly property color dockBorder: "#E5E7EB"
+    readonly property color dockBackground: "#66FFFFFF"
+    readonly property color dockBorder: "#7AFFFFFF"
     readonly property color iconColor: "#111827"
     readonly property color hoverBackground: "#F1F3F5"
     readonly property string searchIcon: Qt.resolvedUrl("../assets/icons/search.svg")
@@ -36,6 +36,12 @@ PanelWindow {
     WlrLayershell.layer: WlrLayer.Overlay
     WlrLayershell.namespace: "a16een-dock"
 
+    // Request compositor-backed background blur for the glass surface.
+    // Niri implements ext-background-effect-v1 natively.
+    BackgroundEffect.blurRegion: Region {
+        item: dock
+    }
+
     function workspaceIsFocused(name) {
         const current = root.workspaces.find(workspace => workspace.name === name)
         return !!current && current.id === root.focusedWorkspaceId
@@ -57,16 +63,14 @@ PanelWindow {
 
     Timer {
         id: hideRevealTimer
-        interval: 700
+        interval: 320
         repeat: false
         onTriggered: root.edgeRevealed = false
     }
 
     onFullscreenActiveChanged: {
-        if (!fullscreenActive) {
-            edgeRevealed = false
-            hideRevealTimer.stop()
-        }
+        edgeRevealed = false
+        hideRevealTimer.stop()
     }
 
     MouseArea {
@@ -98,7 +102,7 @@ PanelWindow {
 
         Behavior on x {
             NumberAnimation {
-                duration: 160
+                duration: 85
                 easing.type: Easing.OutCubic
             }
         }
