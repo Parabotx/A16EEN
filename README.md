@@ -20,6 +20,8 @@ The project is being designed as a cohesive desktop product rather than a conven
 - Keyboard-searchable application launcher with system application icons
 - Centered white application launcher with searchable grid and system application icons
 - A16EEN command center with slash-first command search
+- Visual wallpaper picker with live previews
+- Separate built-in and personal wallpaper collections
 - MPRIS media controls for compatible players
 - Notification daemon integration
 - Network connection indicator
@@ -33,13 +35,53 @@ The project is being designed as a cohesive desktop product rather than a conven
 
 ## Wallpaper
 
-Put your default wallpaper here:
+A16EEN keeps two wallpaper collections.
+
+Built-in A16EEN wallpapers live in the GitHub repository at:
 
 ```
-quickshell/a16een/assets/wallpapers/default.png
+quickshell/a16een/assets/wallpapers/
 ```
 
-The installer copies it into the installed A16EEN shell tree. Use a high-resolution image; the shell preserves the aspect ratio and crops to fill the screen.
+Put any supported static wallpaper there. The filename does not matter. Keep:
+
+```
+default.png
+```
+
+as the first-launch default.
+
+Personal wallpapers live in:
+
+```
+~/Pictures/a16een/
+```
+
+A16EEN creates this folder during installation. User files are never overwritten by A16EEN updates.
+
+Use **Super + /**, then choose:
+
+```
+/wallpaper
+```
+
+A16EEN opens a clean visual picker with minimal previews and the real image filenames. Select any wallpaper to make it active. Selecting `default.png` returns to the A16EEN default.
+
+The wallpaper manager also supports:
+
+```
+a16een wallpaper list
+a16een wallpaper current
+a16een wallpaper current-path
+a16een wallpaper catalog
+a16een wallpaper set <filename>
+a16een wallpaper set <builtin|custom> <filename>
+a16een wallpaper next
+a16een wallpaper previous
+a16een wallpaper reset
+```
+
+Supported static image formats include PNG, JPG, JPEG, WEBP, BMP, TIFF, TGA, SVG, PPM, PGM, PBM, XPM, and XBM. Qt's core image support plus Qt Image Formats provide the corresponding image-loading plugins used by the shell. Animated images and short-video backgrounds are intentionally left for the next wallpaper stage.
 
 ## One-command installation
 
@@ -75,6 +117,8 @@ nm-connection-editor
 curl
 xdg-desktop-portal
 xdg-utils
+qt6-imageformats
+qt6-svg
 ```
 
 Niri and Quickshell are available as official Arch packages.
