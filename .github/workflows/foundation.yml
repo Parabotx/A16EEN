@@ -116,6 +116,7 @@ jobs:
           grep -q 'spawn "wpctl" "set-mute" "@DEFAULT_AUDIO_SINK@" "toggle";' niri/config.kdl
           grep -q 'xdg-desktop-portal' scripts/install.sh
           grep -q 'bash "$ROOT_DIR/scripts/a16een-icons"' scripts/install.sh
+          grep -q 'niri msg action load-config-file' scripts/install.sh
           grep -q 'a16een-shell' scripts/install.sh
           grep -q 'a16een-update --rollback' README.md
           grep -q 'NIRI_CONFIG' scripts/start-a16een
