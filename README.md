@@ -176,25 +176,21 @@ A16EEN keeps its built-in asset set small and reuses open-source libraries when 
 
 Useful sources include Lucide, Iconoir, Phosphor, OpenMoji, Twemoji, Lottie, Rive, and selected open-source typefaces. We do not vendor entire repositories into the desktop.
 
-### User wallpapers
+### Wallpaper locations
 
-Put your PNG wallpapers here:
+Built-in A16EEN wallpapers:
 
 ```
-~/.local/share/a16een/assets/images/wallpapers/
+quickshell/a16een/assets/wallpapers/
 ```
 
-Then switch them without editing QML:
+Personal wallpapers:
 
-```sh
-a16een wallpaper list
-a16een wallpaper set my-wallpaper.png
-a16een wallpaper next
-a16een wallpaper previous
-a16een wallpaper reset
+```
+~/Pictures/a16een/
 ```
 
-The collection lives outside the installed runtime so A16EEN updates do not overwrite it.
+A16EEN preserves the user's personal collection across updates. Root-level image files from the earlier wallpaper setup are also imported automatically during installation so existing wallpapers are not lost.
 
 ## A16EEN icon system
 
