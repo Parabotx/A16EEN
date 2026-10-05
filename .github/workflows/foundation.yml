@@ -72,7 +72,7 @@ jobs:
           grep -q 'x: root.dockVisible' quickshell/a16een/ui/Dock.qml
           grep -q 'Mod+X repeat=false { close-window; }' niri/config.kdl
           grep -q 'Mod+F { fullscreen-window; }' niri/config.kdl
-          grep -q 'Mod+T repeat=false { spawn-sh "if niri msg --json focused-window | grep -q '\"id\"'; then niri msg action fullscreen-window; fi"; }' niri/config.kdl
+          grep -q 'Mod+T repeat=false { spawn-sh "qs -c \"$HOME/.config/a16een/quickshell/a16een\" ipc call fullscreen exit"; }' niri/config.kdl
           ! grep -q 'Mod+Slash.*launcher toggle' niri/config.kdl
           ! grep -q 'Mod+F { maximize-column; }' niri/config.kdl
           grep -q 'Mod+M { maximize-column; }' niri/config.kdl
