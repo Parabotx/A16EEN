@@ -69,8 +69,8 @@ networkmanager
 bluez
 bluez-utils
 nm-connection-editor
+curl
 xdg-desktop-portal
-xdg-desktop-portal-gtk
 xdg-utils
 ```
 
