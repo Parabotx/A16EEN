@@ -86,7 +86,7 @@ PanelWindow {
         id: dock
         x: root.dockVisible
             ? parent.width - width - 10
-            : parent.width - 4
+            : parent.width + 2
         anchors.verticalCenter: parent.verticalCenter
 
         width: 44
