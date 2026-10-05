@@ -51,6 +51,10 @@ jobs:
           grep -q 'import "ui" as A16UI' quickshell/a16een/shell.qml
           grep -q 'Mod+Space repeat=false { spawn-sh "qs ipc call launcher toggle"; }' niri/config.kdl
           grep -q 'A16UI.Dock {' quickshell/a16een/shell.qml
+          ! grep -q 'D7B56D' quickshell/a16een/ui/Dock.qml
+          ! grep -q 'Repeater' quickshell/a16een/ui/Dock.qml
+          ! grep -q '⚙' quickshell/a16een/ui/Dock.qml
+          ! grep -q 'text: "A"' quickshell/a16een/ui/Dock.qml
           ! grep -q 'TopBar {' quickshell/a16een/shell.qml
           grep -q 'xwayland-satellite' niri/config.kdl
           grep -q 'Mod+Return { spawn "foot"; }' niri/config.kdl
