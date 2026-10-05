@@ -310,8 +310,26 @@ ShellRoot {
         modelData: root.primaryScreen
         opened: root.commandCenterOpen
         onCloseRequested: root.commandCenterOpen = false
-        onLauncherRequested: root.launcherOpen = true
-        onDashboardRequested: root.dashboardOpen = true
+        onLauncherRequested: {
+            root.commandCenterOpen = false
+            root.wallpaperPickerOpen = false
+            root.launcherOpen = true
+        }
+        onDashboardRequested: {
+            root.commandCenterOpen = false
+            root.wallpaperPickerOpen = false
+            root.dashboardOpen = true
+        }
+        onWallpaperRequested: {
+            root.commandCenterOpen = false
+            root.wallpaperPickerOpen = true
+        }
+    }
+
+    WallpaperPicker {
+        modelData: root.primaryScreen
+        opened: root.wallpaperPickerOpen
+        onCloseRequested: root.wallpaperPickerOpen = false
     }
 
     Launcher {
