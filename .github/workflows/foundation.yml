@@ -48,6 +48,7 @@ jobs:
           test -f quickshell/a16een/assets/icons/house.svg
           test -f quickshell/a16een/assets/icons/messages-square.svg
           test -f quickshell/a16een/assets/icons/sparkles.svg
+          test -f quickshell/a16een/assets/icons/music.svg
           test -f xdg/xdg-desktop-portal/a16een-portals.conf
           test -f scripts/a16een
           test -f scripts/a16een-wallpaper
@@ -60,6 +61,7 @@ jobs:
           grep -q 'workspace "web"' niri/config.kdl
           grep -q 'workspace "comms"' niri/config.kdl
           grep -q 'workspace "studio"' niri/config.kdl
+          grep -q 'workspace "music"' niri/config.kdl
           grep -q 'import qs.ui' quickshell/a16een/shell.qml
           grep -q 'Super+Space repeat=false hotkey-overlay-title="A16EEN Application Launcher"' niri/config.kdl
           grep -q 'ToplevelManager.activeToplevel' quickshell/a16een/shell.qml
@@ -83,7 +85,7 @@ jobs:
           grep -q 'Dock {' quickshell/a16een/shell.qml
           grep -q 'anchors.right: true' quickshell/a16een/ui/Dock.qml
           grep -q 'width: 44' quickshell/a16een/ui/Dock.qml
-          grep -q 'height: 222' quickshell/a16een/ui/Dock.qml
+          grep -q 'height: 260' quickshell/a16een/ui/Dock.qml
           ! grep -q 'D7B56D' quickshell/a16een/ui/Dock.qml
           ! grep -q 'Repeater' quickshell/a16een/ui/Dock.qml
           ! grep -q '⚙' quickshell/a16een/ui/Dock.qml
@@ -99,6 +101,7 @@ jobs:
           grep -q 'focusWorkspace(3)' quickshell/a16een/ui/Dock.qml
           grep -q 'focusWorkspace(4)' quickshell/a16een/ui/Dock.qml
           grep -q 'focusWorkspace(5)' quickshell/a16een/ui/Dock.qml
+          grep -q 'focusWorkspace(6)' quickshell/a16een/ui/Dock.qml
           ! grep -q 'activeBackground' quickshell/a16een/ui/Dock.qml
           grep -q 'rightMargin: 66' quickshell/a16een/ui/Launcher.qml
           ! grep -q 'text: "Applications"' quickshell/a16een/ui/Dock.qml
@@ -148,3 +151,4 @@ jobs:
             echo "Legacy default.webp reference found." >&2
             exit 1
           fi
+
