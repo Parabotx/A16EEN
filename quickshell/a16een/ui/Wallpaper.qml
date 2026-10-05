@@ -1,11 +1,13 @@
 import QtQuick
 import Quickshell
+import Quickshell.Io
 import Quickshell.Wayland
 
 PanelWindow {
     id: root
 
     required property var modelData
+    property string currentWallpaperPath: ""
 
     screen: modelData
     color: "#050608"
@@ -21,9 +23,30 @@ PanelWindow {
         left: true
     }
 
+    Process {
+        id: wallpaperPathProcess
+        command: ["a16een-wallpaper", "current-path"]
+        running: true
+
+        stdout: StdioCollector {
+            onStreamFinished: {
+                const path = text.trim()
+                if (path.length)
+                    root.currentWallpaperPath = path
+            }
+        }
+    }
+
+    Rectangle {
+        anchors.fill: parent
+        color: "#050608"
+    }
+
     Image {
         anchors.fill: parent
-        source: Qt.resolvedUrl("../assets/wallpapers/default.png")
+        source: root.currentWallpaperPath.length
+            ? root.currentWallpaperPath
+            : Qt.resolvedUrl("../assets/wallpapers/default.png")
         fillMode: Image.PreserveAspectCrop
         asynchronous: true
         mipmap: true
@@ -32,22 +55,17 @@ PanelWindow {
         visible: status === Image.Ready
     }
 
-    // The primary layer never crops the supplied artwork.
+    // The primary artwork keeps its full aspect ratio rather than forcing a crop.
     Image {
         anchors.fill: parent
-        source: Qt.resolvedUrl("../assets/wallpapers/default.png")
+        source: root.currentWallpaperPath.length
+            ? root.currentWallpaperPath
+            : Qt.resolvedUrl("../assets/wallpapers/default.png")
         fillMode: Image.PreserveAspectFit
         asynchronous: true
         mipmap: true
         cache: true
         visible: status === Image.Ready
-    }
-
-    // A16EEN remains usable even when the optional wallpaper is missing.
-    Rectangle {
-        anchors.fill: parent
-        color: "#050608"
-        z: -1
     }
 
     Rectangle {
