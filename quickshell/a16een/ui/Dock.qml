@@ -84,8 +84,9 @@ PanelWindow {
 
     Rectangle {
         id: dock
-        anchors.right: parent.right
-        anchors.rightMargin: 10
+        x: root.dockVisible
+            ? parent.width - width - 10
+            : parent.width - 4
         anchors.verticalCenter: parent.verticalCenter
 
         width: 44
@@ -93,12 +94,11 @@ PanelWindow {
         radius: 18
         color: root.dockBackground
         border.width: 1
-        opacity: root.dockVisible ? 1 : 0
         border.color: root.dockBorder
 
-        Behavior on opacity {
+        Behavior on x {
             NumberAnimation {
-                duration: 130
+                duration: 160
                 easing.type: Easing.OutCubic
             }
         }
