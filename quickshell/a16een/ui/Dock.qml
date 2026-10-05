@@ -38,8 +38,8 @@ PanelWindow {
         return !!current && current.is_focused === true
     }
 
-    function focusWorkspace(name) {
-        Quickshell.execDetached(["niri", "msg", "action", "focus-workspace", name])
+    function focusWorkspace(index) {
+        Quickshell.execDetached(["niri", "msg", "action", "focus-workspace", String(index)])
     }
 
     Rectangle {
@@ -71,7 +71,7 @@ PanelWindow {
                 width: 32
                 height: 32
                 radius: 11
-                color: launcherMouse.containsMouse ? root.hoverBackground : "transparent"
+                color: "transparent"
 
                 Image {
                     anchors.centerIn: parent
@@ -92,24 +92,6 @@ PanelWindow {
                     onClicked: root.launcherRequested()
                 }
 
-                Rectangle {
-                    visible: launcherMouse.containsMouse
-                    x: -112
-                    anchors.verticalCenter: parent.verticalCenter
-                    width: 102
-                    height: 28
-                    radius: 9
-                    color: "#111827"
-                    z: 10
-
-                    Text {
-                        anchors.centerIn: parent
-                        text: "Applications"
-                        color: "#FFFFFF"
-                        font.pixelSize: 9
-                        font.weight: Font.DemiBold
-                    }
-                }
             }
 
             Rectangle {
@@ -156,7 +138,7 @@ PanelWindow {
                     anchors.fill: parent
                     hoverEnabled: true
                     cursorShape: Qt.PointingHandCursor
-                    onClicked: root.focusWorkspace("home")
+                    onClicked: root.focusWorkspace(1)
                 }
             }
 
@@ -197,7 +179,7 @@ PanelWindow {
                     anchors.fill: parent
                     hoverEnabled: true
                     cursorShape: Qt.PointingHandCursor
-                    onClicked: root.focusWorkspace("code")
+                    onClicked: root.focusWorkspace(2)
                 }
             }
 
@@ -238,7 +220,7 @@ PanelWindow {
                     anchors.fill: parent
                     hoverEnabled: true
                     cursorShape: Qt.PointingHandCursor
-                    onClicked: root.focusWorkspace("web")
+                    onClicked: root.focusWorkspace(3)
                 }
             }
 
@@ -279,7 +261,7 @@ PanelWindow {
                     anchors.fill: parent
                     hoverEnabled: true
                     cursorShape: Qt.PointingHandCursor
-                    onClicked: root.focusWorkspace("comms")
+                    onClicked: root.focusWorkspace(4)
                 }
             }
 
@@ -320,7 +302,7 @@ PanelWindow {
                     anchors.fill: parent
                     hoverEnabled: true
                     cursorShape: Qt.PointingHandCursor
-                    onClicked: root.focusWorkspace("studio")
+                    onClicked: root.focusWorkspace(5)
                 }
             }
         }
