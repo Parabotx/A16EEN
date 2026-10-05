@@ -8,6 +8,12 @@ PanelWindow {
     required property var modelData
     required property string currentWallpaperPath
 
+    readonly property string fallbackPath: Qt.resolvedUrl("../assets/wallpapers/default.png")
+    readonly property string activePath: root.currentWallpaperPath.length
+        ? root.currentWallpaperPath
+        : root.fallbackPath
+    readonly property bool isGif: root.activePath.toLowerCase().endsWith(".gif")
+
     screen: modelData
     color: "#050608"
     aboveWindows: false
@@ -27,16 +33,30 @@ PanelWindow {
         color: "#050608"
     }
 
+    // Keep the existing static wallpaper path untouched.
     Image {
+        id: staticWallpaper
         anchors.fill: parent
-        source: root.currentWallpaperPath.length
-            ? root.currentWallpaperPath
-            : Qt.resolvedUrl("../assets/wallpapers/default.png")
+        source: root.activePath
         fillMode: Image.PreserveAspectFit
         asynchronous: true
         mipmap: true
         cache: true
-        visible: status === Image.Ready
+        visible: !root.isGif && status === Image.Ready
+    }
+
+    // Qt 6.11 AnimatedImage already plays and loops continuously by default.
+    // Do not use the Qt 6.12-only 'loops' property here.
+    AnimatedImage {
+        id: animatedWallpaper
+        anchors.fill: parent
+        source: root.isGif ? root.activePath : ""
+        sourceSize.width: Math.max(1, Math.round(width))
+        fillMode: Image.PreserveAspectFit
+        asynchronous: true
+        cache: false
+        playing: root.isGif
+        visible: root.isGif && status === AnimatedImage.Ready
     }
 
     Rectangle {
