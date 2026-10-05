@@ -11,6 +11,8 @@ PanelWindow {
     property string commandText: ""
 
     signal closeRequested()
+    signal launcherRequested()
+    signal dashboardRequested()
 
     readonly property color surface: "#0B0D12F5"
     readonly property color surfaceSoft: "#11141BF2"
@@ -338,16 +340,11 @@ PanelWindow {
         switch (command.id) {
         case "launcher":
             root.closeRequested()
-            Quickshell.execDetached([
-                "qs", "-c", "$HOME/.config/a16een/quickshell/a16een"
-            ])
+            root.launcherRequested()
             break
         case "dashboard":
             root.closeRequested()
-            Quickshell.execDetached([
-                "qs", "-c", "$HOME/.config/a16een/quickshell/a16een",
-                "ipc", "call", "dashboard", "open"
-            ])
+            root.dashboardRequested()
             break
         case "overview":
             root.closeRequested()
