@@ -225,6 +225,7 @@ PanelWindow {
                                     fillMode: Image.PreserveAspectCrop
                                     asynchronous: true
                                     cache: false
+                                    sourceSize.width: root.tileWidth * 2
                                     playing: modelData.type === "animated"
                                     loops: Animation.Infinite
                                     visible: modelData.type === "animated" && status === AnimatedImage.Ready
@@ -297,12 +298,14 @@ PanelWindow {
                                 Row {
                                     anchors.centerIn: parent
                                     spacing: 4
-                                    visible: modelData.type !== "video"
-                                        ? (modelData.type === "static"
-                                            ? preview.status !== Image.Ready && preview.status !== Image.Error
-                                            : gifPreview.status !== AnimatedImage.Ready && gifPreview.status !== AnimatedImage.Error)
-                                        : videoPreviewPlayer.mediaStatus !== MediaPlayer.LoadedMedia
+                                    visible: modelData.type === "video"
+                                        ? (tileMouse.containsMouse
+                                            && videoPreviewPlayer.mediaStatus !== MediaPlayer.LoadedMedia
                                             && videoPreviewPlayer.mediaStatus !== MediaPlayer.BufferedMedia
+                                            && videoPreviewPlayer.mediaStatus !== MediaPlayer.InvalidMedia)
+                                        : modelData.type === "static"
+                                            ? preview.status !== Image.Ready && preview.status !== Image.Error
+                                            : gifPreview.status !== AnimatedImage.Ready && gifPreview.status !== AnimatedImage.Error
 
                                     Repeater {
                                         model: 3
