@@ -13,6 +13,7 @@ PanelWindow {
     signal closeRequested()
     signal launcherRequested()
     signal dashboardRequested()
+    signal wallpaperRequested()
 
     readonly property color surface: "#000000"
     readonly property color borderColor: "#1A1A1A"
@@ -257,7 +258,7 @@ PanelWindow {
         switch (command.id) {
         case "wallpaper":
             root.closeRequested()
-            Quickshell.execDetached(["a16een", "wallpaper", "next"])
+            root.wallpaperRequested()
             break
         case "launcher":
             root.closeRequested()
