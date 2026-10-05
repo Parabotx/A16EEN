@@ -141,19 +141,29 @@ PanelWindow {
                         }
 
                         Keys.onDownPressed: {
-                            if (appGrid.count > 0)
+                            if (appGrid.count > 0) {
+                                const columns = Math.max(
+                                    1,
+                                    Math.floor(appGrid.width / appGrid.cellWidth)
+                                )
                                 appGrid.currentIndex = Math.min(
                                     appGrid.count - 1,
-                                    appGrid.currentIndex + appGrid.columns
+                                    appGrid.currentIndex + columns
                                 )
+                            }
                         }
 
                         Keys.onUpPressed: {
-                            if (appGrid.count > 0)
+                            if (appGrid.count > 0) {
+                                const columns = Math.max(
+                                    1,
+                                    Math.floor(appGrid.width / appGrid.cellWidth)
+                                )
                                 appGrid.currentIndex = Math.max(
                                     0,
-                                    appGrid.currentIndex - appGrid.columns
+                                    appGrid.currentIndex - columns
                                 )
+                            }
                         }
 
                         Component.onCompleted: {
@@ -206,6 +216,7 @@ PanelWindow {
                 }
 
                 delegate: Rectangle {
+                    id: appRow
                     required property var modelData
 
                     width: 102
@@ -233,7 +244,7 @@ PanelWindow {
                                 implicitWidth: 46
                                 implicitHeight: 46
                                 source: Quickshell.iconPath(
-                                    delegateItem.entry.icon,
+                                    appRow.entry.icon,
                                     "application-x-executable"
                                 )
                             }
@@ -252,14 +263,12 @@ PanelWindow {
                         }
                     }
 
-                    readonly property Item delegateItem: this
-
                     MouseArea {
                         anchors.fill: parent
                         hoverEnabled: true
                         cursorShape: Qt.PointingHandCursor
                         onEntered: appGrid.currentIndex = index
-                        onClicked: root.launch(delegateItem.entry)
+                        onClicked: root.launch(appRow.entry)
                     }
                 }
 
