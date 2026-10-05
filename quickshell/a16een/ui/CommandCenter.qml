@@ -9,6 +9,7 @@ PanelWindow {
     required property var modelData
     property bool opened: false
     property string commandText: "/"
+    property int selectedCommandIndex: 0
 
     signal closeRequested()
     signal launcherRequested()
@@ -135,29 +136,31 @@ PanelWindow {
                         }
 
                         root.commandText = text
-                        commandList.currentIndex = commandList.count > 0 ? 0 : -1
+                        root.selectedCommandIndex = 0
                     }
 
                     Keys.onEscapePressed: root.closeRequested()
 
                     Keys.onReturnPressed: {
-                        if (commandList.currentItem)
-                            root.executeCommand(commandList.currentItem.modelData)
+                        if (root.filteredCommands.length > 0)
+                            root.executeCommand(
+                                root.filteredCommands[root.selectedCommandIndex]
+                            )
                     }
 
                     Keys.onDownPressed: {
-                        if (commandList.count > 0)
-                            commandList.currentIndex = Math.min(
-                                commandList.count - 1,
-                                commandList.currentIndex + 1
+                        if (root.filteredCommands.length > 0)
+                            root.selectedCommandIndex = Math.min(
+                                root.filteredCommands.length - 1,
+                                root.selectedCommandIndex + 1
                             )
                     }
 
                     Keys.onUpPressed: {
-                        if (commandList.count > 0)
-                            commandList.currentIndex = Math.max(
+                        if (root.filteredCommands.length > 0)
+                            root.selectedCommandIndex = Math.max(
                                 0,
-                                commandList.currentIndex - 1
+                                root.selectedCommandIndex - 1
                             )
                     }
                 }
@@ -180,59 +183,60 @@ PanelWindow {
                 radius: 12
                 color: "#000000"
 
-                ListView {
-                    id: commandList
+                Column {
+                    id: commandColumn
                     anchors.fill: parent
                     anchors.margins: 4
-                    clip: true
                     spacing: 2
-                    model: root.filteredCommands
-                    currentIndex: count > 0 ? 0 : -1
 
-                    delegate: Rectangle {
-                        id: commandRow
-                        required property var modelData
-    
-                        width: commandList.width
-                        height: 42
-                        radius: 10
-                        color: commandList.currentIndex === index
-                            ? root.selectedBackground
-                            : "transparent"
-    
-                        Text {
-                            anchors.left: parent.left
-                            anchors.leftMargin: 14
-                            anchors.verticalCenter: parent.verticalCenter
-                            text: "/" + commandRow.modelData.name
-                            color: root.primaryText
-                            font.pixelSize: 12
-                            font.weight: commandList.currentIndex === index
-                                ? Font.DemiBold
-                                : Font.Normal
-                        }
-    
-                        MouseArea {
-                            anchors.fill: parent
-                            hoverEnabled: true
-                            cursorShape: Qt.PointingHandCursor
-                            onEntered: commandList.currentIndex = index
-                            onClicked: root.executeCommand(commandRow.modelData)
+                    Repeater {
+                        model: root.filteredCommands
+
+                        delegate: Rectangle {
+                            id: commandRow
+                            required property var modelData
+
+                            width: commandColumn.width
+                            height: 36
+                            radius: 9
+                            color: root.selectedCommandIndex === index
+                                ? root.selectedBackground
+                                : "#000000"
+
+                            Text {
+                                anchors.left: parent.left
+                                anchors.leftMargin: 14
+                                anchors.verticalCenter: parent.verticalCenter
+                                text: "/" + commandRow.modelData.name
+                                color: root.primaryText
+                                font.pixelSize: 12
+                                font.weight: root.selectedCommandIndex === index
+                                    ? Font.DemiBold
+                                    : Font.Normal
+                            }
+
+                            MouseArea {
+                                anchors.fill: parent
+                                hoverEnabled: true
+                                cursorShape: Qt.PointingHandCursor
+
+                                onEntered: root.selectedCommandIndex = index
+                                onClicked: root.executeCommand(commandRow.modelData)
+                            }
                         }
                     }
-    
-                        Text {
-                        anchors.centerIn: parent
-                        visible: commandList.count === 0
+
+                    Text {
+                        width: parent.width
+                        visible: root.filteredCommands.length === 0
                         text: "No command"
                         color: root.secondaryText
                         font.pixelSize: 10
+                        horizontalAlignment: Text.AlignHCenter
+                        topPadding: 12
                     }
                 }
             }
-        }
-    }
-
     MouseArea {
         z: 1
         anchors.fill: parent
@@ -274,10 +278,12 @@ PanelWindow {
     onOpenedChanged: {
         if (opened) {
             root.commandText = "/"
+            root.selectedCommandIndex = 0
             search.text = "/"
             Qt.callLater(() => search.forceActiveFocus())
         } else {
             root.commandText = "/"
+            root.selectedCommandIndex = 0
             search.text = "/"
         }
     }
