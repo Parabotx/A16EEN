@@ -18,6 +18,8 @@ PanelWindow {
     readonly property bool isVideo: lowerPath.endsWith(".mp4")
         || lowerPath.endsWith(".webm")
         || lowerPath.endsWith(".mov")
+        || lowerPath.endsWith(".m4v")
+        || lowerPath.endsWith(".mkv")
 
     screen: modelData
     color: "#050608"
