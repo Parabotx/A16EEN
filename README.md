@@ -26,6 +26,8 @@ The project is being designed as a cohesive desktop product rather than a conven
 - Safe session controls with confirmation for reboot and power-off
 - Volume, microphone, media, and brightness keybindings
 - Dedicated **A16EEN** Wayland session entry
+- Lightweight curated font set for UI, display, text, and mono use
+- Persistent user wallpaper collection with `a16een wallpaper`
 - Isolated configuration under `~/.config/a16een/`
 
 ## Wallpaper
@@ -122,6 +124,32 @@ git clone https://github.com/Parabotx/A16EEN.git
 cd A16EEN
 bash scripts/install.sh
 ```
+
+## A16EEN visual resources
+
+A16EEN keeps its built-in asset set small and reuses open-source libraries when a feature needs a specialized visual. The curated sources and their licenses are documented in [docs/RESOURCES.md](docs/RESOURCES.md).
+
+Useful sources include Lucide, Iconoir, Phosphor, OpenMoji, Twemoji, Lottie, Rive, and selected open-source typefaces. We do not vendor entire repositories into the desktop.
+
+### User wallpapers
+
+Put your PNG wallpapers here:
+
+```
+~/.local/share/a16een/assets/images/wallpapers/
+```
+
+Then switch them without editing QML:
+
+```sh
+a16een wallpaper list
+a16een wallpaper set my-wallpaper.png
+a16een wallpaper next
+a16een wallpaper previous
+a16een wallpaper reset
+```
+
+The collection lives outside the installed runtime so A16EEN updates do not overwrite it.
 
 ## A16EEN icon system
 
