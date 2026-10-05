@@ -38,6 +38,7 @@ jobs:
           test -f quickshell/a16een/ui/Launcher.qml
           test -f quickshell/a16een/ui/Dock.qml
           test -f quickshell/a16een/ui/Dashboard.qml
+          test -f quickshell/a16een/ui/CommandCenter.qml
           test -f quickshell/a16een/ui/NotificationToast.qml
           test -f quickshell/a16een/assets/wallpapers/default.png
           test -f quickshell/a16een/assets/icons/search.svg
@@ -68,6 +69,16 @@ jobs:
           ! grep -Fq '#2F6FED' quickshell/a16een/ui/Dock.qml
           ! grep -Fq 'width: 20' quickshell/a16een/ui/Dock.qml
           grep -Fq 'Super+Space repeat=false hotkey-overlay-title="A16EEN Application Launcher"' niri/config.kdl
+          grep -Fq 'Super+Slash repeat=false hotkey-overlay-title="A16EEN Command Center"' niri/config.kdl
+          grep -Fq 'target: "command-center"' quickshell/a16een/shell.qml
+          grep -Fq 'property bool commandCenterOpen' quickshell/a16een/shell.qml
+          grep -Fq 'visible: root.opened' quickshell/a16een/ui/CommandCenter.qml
+          grep -Fq 'text: "/"' quickshell/a16een/ui/CommandCenter.qml
+          grep -Fq 'Type an A16EEN command' quickshell/a16een/ui/CommandCenter.qml
+          grep -Fq 'readonly property var commands' quickshell/a16een/ui/CommandCenter.qml
+          grep -Fq 'function executeCommand(command)' quickshell/a16een/ui/CommandCenter.qml
+          ! grep -Fq 'sh", "-c"' quickshell/a16een/ui/CommandCenter.qml
+          grep -Fq 'anchors.verticalCenterOffset: 120' quickshell/a16een/ui/CommandCenter.qml
           grep -Fq 'ToplevelManager.activeToplevel' quickshell/a16een/shell.qml
           ! grep -Fq 'focusedWindowProcess' quickshell/a16een/shell.qml
           ! grep -Fq 'is_fullscreen' quickshell/a16een/shell.qml
