@@ -1,13 +1,12 @@
 import QtQuick
 import Quickshell
-import Quickshell.Io
 import Quickshell.Wayland
 
 PanelWindow {
     id: root
 
     required property var modelData
-    property string currentWallpaperPath: ""
+    required property string currentWallpaperPath
 
     screen: modelData
     color: "#050608"
@@ -21,20 +20,6 @@ PanelWindow {
         right: true
         bottom: true
         left: true
-    }
-
-    Process {
-        id: wallpaperPathProcess
-        command: ["a16een-wallpaper", "current-path"]
-        running: true
-
-        stdout: StdioCollector {
-            onStreamFinished: {
-                const path = text.trim()
-                if (path.length)
-                    root.currentWallpaperPath = path
-            }
-        }
     }
 
     Rectangle {
@@ -55,7 +40,6 @@ PanelWindow {
         visible: status === Image.Ready
     }
 
-    // The primary artwork keeps its full aspect ratio rather than forcing a crop.
     Image {
         anchors.fill: parent
         source: root.currentWallpaperPath.length
