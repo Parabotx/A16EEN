@@ -200,6 +200,17 @@ fi
 
 printf '%s\n' "$SOURCE_COMMIT" > "$STATE_DIR/installed-commit"
 
+# Apply the deployed compositor configuration immediately when updating an
+# already-running A16EEN session. Without this, new keybindings would not take
+# effect until the next login.
+if [ "${XDG_CURRENT_DESKTOP:-}" = "A16EEN" ] && command -v niri >/dev/null 2>&1; then
+    if niri msg action load-config-file >/dev/null 2>&1; then
+        echo "==> Reloaded the active Niri configuration."
+    else
+        echo "WARNING: could not reload the active Niri configuration; re-enter A16EEN to apply compositor changes." >&2
+    fi
+fi
+
 echo "==> Installing A16EEN session launcher, shell supervisor, updater and diagnostics"
 sudo install -Dm755 "$ROOT_DIR/scripts/start-a16een" /usr/local/bin/start-a16een
 sudo install -Dm755 "$ROOT_DIR/scripts/a16een-shell" /usr/local/bin/a16een-shell
