@@ -186,7 +186,7 @@ Super + O              Niri overview
 Super + Return         Terminal
 Super + X              Close window
 Super + F              Fullscreen toggle
-Super + T              Fullscreen toggle
+Super + T              Exit fullscreen
 Super + M              Maximize column
 Super + H/J/K/L        Navigate
 Super + 1..5           Workspaces
