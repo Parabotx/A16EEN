@@ -38,6 +38,14 @@ Media / capture
   screenshot-screen           Capture the focused screen
   screenshot-window           Capture the focused window
 
+Visuals
+  wallpaper list              List user wallpapers
+  wallpaper current           Show the active wallpaper
+  wallpaper set <filename>    Switch to a wallpaper
+  wallpaper next              Switch to the next wallpaper
+  wallpaper previous          Switch to the previous wallpaper
+  wallpaper reset             Restore the A16EEN default wallpaper
+
 Hardware
   volume up|down|mute         Adjust or mute system volume
   brightness up|down          Adjust screen brightness
@@ -64,6 +72,7 @@ Examples:
   a16een logout
   a16een reboot
   a16een screenshot-window
+  a16een wallpaper set studio.png
   a16een doctor
   a16een update
 EOF
