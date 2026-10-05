@@ -1,5 +1,4 @@
 import QtQuick
-import QtQuick.Layouts
 import Quickshell
 import Quickshell.Wayland
 
@@ -16,13 +15,12 @@ PanelWindow {
     signal dashboardRequested()
 
     readonly property color surface: "#000000"
-    readonly property color borderColor: "#1C1C1C"
+    readonly property color borderColor: "#1A1A1A"
     readonly property color fieldBackground: "#0A0A0A"
-    readonly property color fieldBorder: "#1F1F1F"
+    readonly property color fieldBorder: "#1C1C1C"
     readonly property color fieldFocusBorder: "#333333"
-    readonly property color primaryText: "#F5F5F5"
-    readonly property color secondaryText: "#767676"
-    readonly property color accent: "#FFFFFF"
+    readonly property color primaryText: "#FFFFFF"
+    readonly property color secondaryText: "#6F6F6F"
     readonly property color selectedBackground: "#111111"
 
     readonly property var commands: [
@@ -36,11 +34,14 @@ PanelWindow {
 
     readonly property string query: {
         const value = root.commandText
-        return value.startsWith("/") ? value.slice(1).trim().toLowerCase() : value.trim().toLowerCase()
+        return value.startsWith("/")
+            ? value.slice(1).trim().toLowerCase()
+            : value.trim().toLowerCase()
     }
 
     readonly property var filteredCommands: {
         const query = root.query
+
         if (!query)
             return root.commands
 
@@ -79,9 +80,8 @@ PanelWindow {
 
     Rectangle {
         id: card
-        z: 2
         width: Math.min(500, parent.width - 48)
-        height: Math.min(330, parent.height - 140)
+        height: 326
         anchors.centerIn: parent
         anchors.verticalCenterOffset: 185
         radius: 18
@@ -93,155 +93,152 @@ PanelWindow {
             anchors.fill: parent
             anchors.margins: -4
             radius: 22
-            color: "#22000000"
+            color: "#28000000"
             z: -1
         }
 
-        ColumnLayout {
-            anchors.fill: parent
-            anchors.margins: 12
-            spacing: 8
+        Rectangle {
+            id: searchBox
+            x: 12
+            y: 12
+            width: parent.width - 24
+            height: 48
+            radius: 12
+            color: search.activeFocus ? "#0D0D0D" : root.fieldBackground
+            border.width: 1
+            border.color: search.activeFocus
+                ? root.fieldFocusBorder
+                : root.fieldBorder
 
-            Rectangle {
-                id: searchBox
-                Layout.fillWidth: true
-                height: 48
-                radius: 12
-                color: search.activeFocus ? "#0D0D0D" : root.fieldBackground
-                border.width: 1
-                border.color: search.activeFocus
-                    ? root.fieldFocusBorder
-                    : root.fieldBorder
+            TextInput {
+                id: search
+                anchors.fill: parent
+                anchors.leftMargin: 14
+                anchors.rightMargin: 12
+                color: root.primaryText
+                selectionColor: "#FFFFFF20"
+                selectedTextColor: root.primaryText
+                font.pixelSize: 12
+                clip: true
+                focus: root.opened
+                activeFocusOnPress: true
+                verticalAlignment: Text.AlignVCenter
+                selectByMouse: true
+                text: "/"
 
-                TextInput {
-                    id: search
-                    anchors.fill: parent
-                    anchors.leftMargin: 14
-                    anchors.rightMargin: 12
-                    color: root.primaryText
-                    selectionColor: "#FFFFFF20"
-                    selectedTextColor: root.primaryText
-                    font.pixelSize: 12
-                    clip: true
-                    focus: root.opened
-                    activeFocusOnPress: true
-                    verticalAlignment: Text.AlignVCenter
-                    selectByMouse: true
-                    text: "/"
+                onTextChanged: {
+                    if (!text.startsWith("/")) {
+                        text = "/" + text
+                        return
+                    }
 
-                    onTextChanged: {
-                        if (!text.startsWith("/")) {
-                            text = "/" + text
-                            return
+                    root.commandText = text
+                    root.selectedCommandIndex = 0
+                }
+
+                Keys.onEscapePressed: root.closeRequested()
+
+                Keys.onReturnPressed: {
+                    if (root.filteredCommands.length > 0)
+                        root.executeCommand(
+                            root.filteredCommands[
+                                Math.min(
+                                    root.selectedCommandIndex,
+                                    root.filteredCommands.length - 1
+                                )
+                            ]
+                        )
+                }
+
+                Keys.onDownPressed: {
+                    if (root.filteredCommands.length > 0)
+                        root.selectedCommandIndex = Math.min(
+                            root.filteredCommands.length - 1,
+                            root.selectedCommandIndex + 1
+                        )
+                }
+
+                Keys.onUpPressed: {
+                    if (root.filteredCommands.length > 0)
+                        root.selectedCommandIndex = Math.max(
+                            0,
+                            root.selectedCommandIndex - 1
+                        )
+                }
+            }
+
+            Text {
+                anchors.left: parent.left
+                anchors.leftMargin: 28
+                anchors.verticalCenter: parent.verticalCenter
+                text: "search commands"
+                color: root.secondaryText
+                font.pixelSize: 12
+                visible: search.text === "/"
+            }
+        }
+
+        Rectangle {
+            id: commandSurface
+            x: 12
+            y: 68
+            width: parent.width - 24
+            height: 246
+            radius: 12
+            color: "#000000"
+            border.width: 1
+            border.color: "#111111"
+            clip: true
+
+            Column {
+                id: commandColumn
+                x: 5
+                y: 5
+                width: parent.width - 10
+                spacing: 2
+
+                Repeater {
+                    model: root.filteredCommands
+
+                    delegate: Rectangle {
+                        width: commandColumn.width
+                        height: 36
+                        radius: 9
+                        color: root.selectedCommandIndex === index
+                            ? root.selectedBackground
+                            : "#000000"
+
+                        Text {
+                            anchors.left: parent.left
+                            anchors.leftMargin: 14
+                            anchors.verticalCenter: parent.verticalCenter
+                            text: "/" + modelData.name
+                            color: root.primaryText
+                            font.pixelSize: 12
+                            font.weight: root.selectedCommandIndex === index
+                                ? Font.DemiBold
+                                : Font.Normal
+                            visible: true
                         }
 
-                        root.commandText = text
-                        root.selectedCommandIndex = 0
-                    }
+                        MouseArea {
+                            anchors.fill: parent
+                            hoverEnabled: true
+                            cursorShape: Qt.PointingHandCursor
 
-                    Keys.onEscapePressed: root.closeRequested()
-
-                    Keys.onReturnPressed: {
-                        if (root.filteredCommands.length > 0)
-                            root.executeCommand(
-                                root.filteredCommands[root.selectedCommandIndex]
-                            )
-                    }
-
-                    Keys.onDownPressed: {
-                        if (root.filteredCommands.length > 0)
-                            root.selectedCommandIndex = Math.min(
-                                root.filteredCommands.length - 1,
-                                root.selectedCommandIndex + 1
-                            )
-                    }
-
-                    Keys.onUpPressed: {
-                        if (root.filteredCommands.length > 0)
-                            root.selectedCommandIndex = Math.max(
-                                0,
-                                root.selectedCommandIndex - 1
-                            )
+                            onEntered: root.selectedCommandIndex = index
+                            onClicked: root.executeCommand(modelData)
+                        }
                     }
                 }
 
                 Text {
-                    anchors.left: parent.left
-                    anchors.leftMargin: 28
-                    anchors.verticalCenter: parent.verticalCenter
-                    text: "search commands"
+                    width: parent.width
+                    visible: root.filteredCommands.length === 0
+                    text: "No command"
                     color: root.secondaryText
-                    font.pixelSize: 12
-                    visible: search.text === "/"
-                }
-            }
-
-            Rectangle {
-                id: commandSurface
-                Layout.fillWidth: true
-                Layout.preferredHeight: 238
-                Layout.minimumHeight: 238
-                Layout.maximumHeight: 238
-                radius: 12
-                color: "#000000"
-                border.width: 1
-                border.color: "#121212"
-                clip: true
-
-                Column {
-                    id: commandColumn
-                    anchors.fill: parent
-                    anchors.margins: 4
-                    spacing: 2
-
-                    Repeater {
-                        model: root.filteredCommands
-
-                        delegate: Rectangle {
-                            id: commandRow
-                            required property var modelData
-
-                            width: commandColumn.width
-                            height: 36
-                            radius: 9
-                            z: 2
-                            opacity: 1
-                            color: root.selectedCommandIndex === index
-                                ? root.selectedBackground
-                                : "#000000"
-
-                            Text {
-                                anchors.left: parent.left
-                                anchors.leftMargin: 14
-                                anchors.verticalCenter: parent.verticalCenter
-                                text: "/" + commandRow.modelData.name
-                                color: root.primaryText
-                                font.pixelSize: 12
-                                font.weight: root.selectedCommandIndex === index
-                                    ? Font.DemiBold
-                                    : Font.Normal
-                            }
-
-                            MouseArea {
-                                anchors.fill: parent
-                                hoverEnabled: true
-                                cursorShape: Qt.PointingHandCursor
-
-                                onEntered: root.selectedCommandIndex = index
-                                onClicked: root.executeCommand(commandRow.modelData)
-                            }
-                        }
-                    }
-
-                    Text {
-                        width: parent.width
-                        visible: root.filteredCommands.length === 0
-                        text: "No command"
-                        color: root.secondaryText
-                        font.pixelSize: 10
-                        horizontalAlignment: Text.AlignHCenter
-                        topPadding: 12
-                    }
+                    font.pixelSize: 10
+                    horizontalAlignment: Text.AlignHCenter
                 }
             }
         }
@@ -286,15 +283,11 @@ PanelWindow {
     }
 
     onOpenedChanged: {
-        if (opened) {
-            root.commandText = "/"
-            root.selectedCommandIndex = 0
-            search.text = "/"
+        root.commandText = "/"
+        root.selectedCommandIndex = 0
+        search.text = "/"
+
+        if (opened)
             Qt.callLater(() => search.forceActiveFocus())
-        } else {
-            root.commandText = "/"
-            root.selectedCommandIndex = 0
-            search.text = "/"
-        }
     }
 }
