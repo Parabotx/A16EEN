@@ -35,10 +35,20 @@ Built-in A16EEN wallpapers:
 Personal wallpapers:
   ~/Pictures/a16een/
 
+Built-in animated wallpapers:
+  ~/.config/a16een/quickshell/a16een/assets/animated/
+
+Personal animated wallpapers:
+  ~/Pictures/a16een/animated/
+
 Static image formats:
   PNG, JPG, JPEG, WEBP, BMP, TIFF, TGA, SVG, PPM, PGM, PBM, XPM, XBM
 
-Animated wallpapers and short-video backgrounds are reserved for a later stage.
+Animated formats:
+  GIF
+
+Video formats:
+  MP4, WEBM, MOV, M4V, MKV
 EOF
 }
 
@@ -70,7 +80,7 @@ media_type() {
     local name="$1"
     case "${name,,}" in
         *.gif) printf "%s\n" "animated" ;;
-        *.mp4|*.webm|*.mov) printf "%s\n" "video" ;;
+        *.mp4|*.webm|*.mov|*.m4v|*.mkv) printf "%s\n" "video" ;;
         *) printf "%s\n" "static" ;;
     esac
 }
