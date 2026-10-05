@@ -56,6 +56,7 @@ PanelWindow {
         fillMode: Image.PreserveAspectFit
         asynchronous: true
         cache: false
+        sourceSize.width: Math.max(1, Math.round(width))
         playing: root.isGif
         loops: Animation.Infinite
         visible: root.isGif && status === AnimatedImage.Ready
