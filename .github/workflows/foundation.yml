@@ -26,6 +26,7 @@ jobs:
           bash -n scripts/a16een-update
           bash -n scripts/a16een-doctor
           bash -n scripts/a16een
+          bash -n scripts/a16een-icons
 
       - name: Validate foundation files
         run: |
@@ -38,6 +39,11 @@ jobs:
           test -f quickshell/a16een/ui/Dashboard.qml
           test -f quickshell/a16een/ui/NotificationToast.qml
           test -f quickshell/a16een/assets/wallpapers/default.png
+          test -f quickshell/a16een/assets/icons/search.svg
+          test -f quickshell/a16een/assets/icons/terminal.svg
+          test -f quickshell/a16een/assets/icons/globe.svg
+          test -f quickshell/a16een/assets/icons/folder.svg
+          test -f quickshell/a16een/assets/icons/code-2.svg
           test -f xdg/xdg-desktop-portal/a16een-portals.conf
           test -f scripts/a16een
 
@@ -59,6 +65,7 @@ jobs:
           grep -q "a16een logout" README.md
           grep -q "a16een reboot" README.md
           grep -q "a16een volume up" README.md
+          grep -q "a16een icons" README.md
 
       - name: Validate no legacy wallpaper reference
         run: |
