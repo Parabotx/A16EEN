@@ -71,12 +71,10 @@ PanelWindow {
 
     MouseArea {
         id: edgeReveal
-        anchors {
-            top: parent.top
-            right: parent.right
-            bottom: parent.bottom
-        }
-        width: 10
+        anchors.right: parent.right
+        anchors.verticalCenter: parent.verticalCenter
+        height: 240
+        width: 8
         hoverEnabled: true
         acceptedButtons: Qt.NoButton
         z: 5
