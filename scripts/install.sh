@@ -187,15 +187,21 @@ else
     cp "$ROOT_DIR/quickshell/a16een/ui/"*.qml "$TMP_DEPLOY/ui/"
     cp "$ROOT_DIR/quickshell/a16een/assets/icons/"*.svg "$TMP_DEPLOY/assets/icons/"
 
-    # Ship every supported built-in wallpaper from the repository.
-    for wallpaper in "$ROOT_DIR"/quickshell/a16een/assets/wallpapers/*; do
-        [ -f "$wallpaper" ] || continue
-        case "$wallpaper" in
-            *.png|*.PNG|*.jpg|*.JPG|*.jpeg|*.JPEG|*.webp|*.WEBP|*.bmp|*.BMP|*.tif|*.TIF|*.tiff|*.TIFF|*.tga|*.TGA|*.svg|*.SVG|*.ppm|*.PPM|*.pgm|*.PGM|*.pbm|*.PBM|*.xpm|*.XPM|*.xbm|*.XBM)
-                cp "$wallpaper" "$TMP_DEPLOY/assets/wallpapers/"
-                ;;
-        esac
-    done
+    # Ship every supported built-in wallpaper from the repository, including
+    # wallpapers placed inside subfolders. Their relative paths are preserved.
+    BUILTIN_SOURCE_DIR="$ROOT_DIR/quickshell/a16een/assets/wallpapers"
+    while IFS= read -r -d '' wallpaper; do
+        relative="${wallpaper#"$BUILTIN_SOURCE_DIR"/}"
+        destination="$TMP_DEPLOY/assets/wallpapers/$relative"
+        mkdir -p "$(dirname "$destination")"
+        cp "$wallpaper" "$destination"
+    done < <(
+        find "$BUILTIN_SOURCE_DIR" -type f \
+            \( -iname '*.png' -o -iname '*.jpg' -o -iname '*.jpeg' -o -iname '*.webp' \
+            -o -iname '*.bmp' -o -iname '*.tif' -o -iname '*.tiff' -o -iname '*.tga' \
+            -o -iname '*.svg' -o -iname '*.ppm' -o -iname '*.pgm' -o -iname '*.pbm' \
+            -o -iname '*.xpm' -o -iname '*.xbm' \) -print0 | LC_ALL=C sort -z -f
+    )
 
     # Never install a new compositor config that Niri cannot parse.
     if command -v niri >/dev/null 2>&1; then
@@ -212,35 +218,9 @@ else
     cp "$TMP_DEPLOY/shell.qml" "$QS_DIR/shell.qml"
     cp "$TMP_DEPLOY/ui/"*.qml "$QS_DIR/ui/"
 
-    rm -f "$QS_DIR/assets/wallpapers/"*.png
-    rm -f "$QS_DIR/assets/wallpapers/"*.PNG
-    rm -f "$QS_DIR/assets/wallpapers/"*.jpg
-    rm -f "$QS_DIR/assets/wallpapers/"*.JPG
-    rm -f "$QS_DIR/assets/wallpapers/"*.jpeg
-    rm -f "$QS_DIR/assets/wallpapers/"*.JPEG
-    rm -f "$QS_DIR/assets/wallpapers/"*.webp
-    rm -f "$QS_DIR/assets/wallpapers/"*.WEBP
-    rm -f "$QS_DIR/assets/wallpapers/"*.bmp
-    rm -f "$QS_DIR/assets/wallpapers/"*.BMP
-    rm -f "$QS_DIR/assets/wallpapers/"*.tif
-    rm -f "$QS_DIR/assets/wallpapers/"*.TIF
-    rm -f "$QS_DIR/assets/wallpapers/"*.tiff
-    rm -f "$QS_DIR/assets/wallpapers/"*.TIFF
-    rm -f "$QS_DIR/assets/wallpapers/"*.tga
-    rm -f "$QS_DIR/assets/wallpapers/"*.TGA
-    rm -f "$QS_DIR/assets/wallpapers/"*.svg
-    rm -f "$QS_DIR/assets/wallpapers/"*.SVG
-    rm -f "$QS_DIR/assets/wallpapers/"*.ppm
-    rm -f "$QS_DIR/assets/wallpapers/"*.PPM
-    rm -f "$QS_DIR/assets/wallpapers/"*.pgm
-    rm -f "$QS_DIR/assets/wallpapers/"*.PGM
-    rm -f "$QS_DIR/assets/wallpapers/"*.pbm
-    rm -f "$QS_DIR/assets/wallpapers/"*.PBM
-    rm -f "$QS_DIR/assets/wallpapers/"*.xpm
-    rm -f "$QS_DIR/assets/wallpapers/"*.XPM
-    rm -f "$QS_DIR/assets/wallpapers/"*.xbm
-    rm -f "$QS_DIR/assets/wallpapers/"*.XBM
-    cp "$TMP_DEPLOY/assets/wallpapers/"* "$QS_DIR/assets/wallpapers/" 2>/dev/null || true
+    # Replace only the built-in runtime library. Personal wallpapers live elsewhere.
+    find "$QS_DIR/assets/wallpapers" -type f -delete
+    cp -a "$TMP_DEPLOY/assets/wallpapers/." "$QS_DIR/assets/wallpapers/"
 
     mkdir -p "$QS_DIR/assets/icons"
     cp "$TMP_DEPLOY/assets/icons/"*.svg "$QS_DIR/assets/icons/"
