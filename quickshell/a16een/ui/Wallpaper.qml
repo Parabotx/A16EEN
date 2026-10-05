@@ -1,4 +1,5 @@
 import QtQuick
+import QtMultimedia
 import Quickshell
 import Quickshell.Wayland
 
@@ -7,6 +8,16 @@ PanelWindow {
 
     required property var modelData
     required property string currentWallpaperPath
+
+    readonly property string fallbackPath: Qt.resolvedUrl("../assets/wallpapers/default.png")
+    readonly property string activePath: root.currentWallpaperPath.length
+        ? root.currentWallpaperPath
+        : root.fallbackPath
+    readonly property string lowerPath: root.activePath.toLowerCase()
+    readonly property bool isGif: lowerPath.endsWith(".gif")
+    readonly property bool isVideo: lowerPath.endsWith(".mp4")
+        || lowerPath.endsWith(".webm")
+        || lowerPath.endsWith(".mov")
 
     screen: modelData
     color: "#050608"
@@ -29,14 +40,57 @@ PanelWindow {
 
     Image {
         anchors.fill: parent
-        source: root.currentWallpaperPath.length
-            ? root.currentWallpaperPath
-            : Qt.resolvedUrl("../assets/wallpapers/default.png")
+        source: root.activePath
         fillMode: Image.PreserveAspectFit
         asynchronous: true
         mipmap: true
         cache: true
-        visible: status === Image.Ready
+        visible: !root.isGif && !root.isVideo && status === Image.Ready
+    }
+
+    AnimatedImage {
+        anchors.fill: parent
+        source: root.isGif ? root.activePath : ""
+        fillMode: Image.PreserveAspectFit
+        asynchronous: true
+        cache: false
+        playing: root.isGif
+        loops: Animation.Infinite
+        visible: root.isGif && status === AnimatedImage.Ready
+    }
+
+    MediaPlayer {
+        id: videoPlayer
+        source: root.isVideo ? root.activePath : ""
+        loops: MediaPlayer.Infinite
+        playbackRate: 1.0
+        audioOutput: AudioOutput {
+            muted: true
+            volume: 0
+        }
+        onErrorOccurred: function(error, errorString) {
+            console.warn("A16EEN wallpaper video error:", errorString)
+        }
+    }
+
+    VideoOutput {
+        anchors.fill: parent
+        source: videoPlayer
+        fillMode: VideoOutput.PreserveAspectCrop
+        visible: root.isVideo && videoPlayer.playbackState !== MediaPlayer.StoppedState
+    }
+
+    Connections {
+        target: videoPlayer
+
+        function onMediaStatusChanged(status) {
+            if (root.isVideo
+                    && (status === MediaPlayer.LoadedMedia
+                        || status === MediaPlayer.BufferedMedia
+                        || status === MediaPlayer.BufferedMedia)) {
+                videoPlayer.play()
+            }
+        }
     }
 
     Rectangle {
