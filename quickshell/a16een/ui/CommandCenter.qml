@@ -81,7 +81,7 @@ PanelWindow {
         id: card
         z: 2
         width: Math.min(500, parent.width - 48)
-        height: Math.min(300, parent.height - 160)
+        height: Math.min(330, parent.height - 140)
         anchors.centerIn: parent
         anchors.verticalCenterOffset: 185
         radius: 18
@@ -179,9 +179,14 @@ PanelWindow {
             Rectangle {
                 id: commandSurface
                 Layout.fillWidth: true
-                Layout.fillHeight: true
+                Layout.preferredHeight: 238
+                Layout.minimumHeight: 238
+                Layout.maximumHeight: 238
                 radius: 12
                 color: "#000000"
+                border.width: 1
+                border.color: "#121212"
+                clip: true
 
                 Column {
                     id: commandColumn
@@ -199,6 +204,8 @@ PanelWindow {
                             width: commandColumn.width
                             height: 36
                             radius: 9
+                            z: 2
+                            opacity: 1
                             color: root.selectedCommandIndex === index
                                 ? root.selectedBackground
                                 : "#000000"
