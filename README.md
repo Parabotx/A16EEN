@@ -180,7 +180,7 @@ Reboot and power-off require confirmation unless `--yes` / `-y` is explicitly su
 ## Keyboard controls
 
 ```
-Super + A              Application launcher
+Super + Space          Application launcher
 Super + P              A16EEN dashboard
 Super + O              Niri overview
 Super + Return         Terminal
