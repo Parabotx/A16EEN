@@ -89,6 +89,8 @@ jobs:
           grep -Fq 'root.wallpaperPickerOpen = true' quickshell/a16een/shell.qml
           grep -Fq 'a16een-wallpaper", "catalog' quickshell/a16een/ui/WallpaperPicker.qml
           grep -Fq 'modelData.path' quickshell/a16een/ui/WallpaperPicker.qml
+          grep -Fq 'modelData.displayName' quickshell/a16een/ui/WallpaperPicker.qml
+          grep -Fq 'find "$dir" -type f' scripts/a16een-wallpaper
           ! grep -Fq 'sh", "-c"' quickshell/a16een/ui/CommandCenter.qml
           grep -Fq 'anchors.verticalCenterOffset: 185' quickshell/a16een/ui/CommandCenter.qml
           grep -Fq 'ToplevelManager.activeToplevel' quickshell/a16een/shell.qml
