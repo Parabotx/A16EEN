@@ -25,6 +25,14 @@ ShellRoot {
     readonly property bool focusedWindowFullscreen: ToplevelManager.activeToplevel
         ? ToplevelManager.activeToplevel.fullscreen
         : false
+    readonly property bool wallpaperDesktopActive:
+        root.focusedWindowId < 0
+        && !root.focusedWindowFullscreen
+        && !root.launcherOpen
+        && !root.dashboardOpen
+        && !root.commandCenterOpen
+        && !root.wallpaperPickerOpen
+
     property string activeTitle: "A16EEN"
 
     property real systemLoad: 0
@@ -310,6 +318,7 @@ ShellRoot {
         Wallpaper {
             modelData: modelData
             currentWallpaperPath: root.wallpaperPath
+            desktopAnimationAllowed: root.wallpaperDesktopActive
         }
     }
 
