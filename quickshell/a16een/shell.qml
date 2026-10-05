@@ -230,6 +230,7 @@ ShellRoot {
 
         Dock {
             modelData: modelData
+            workspaces: root.workspaces
 
             onLauncherRequested: {
                 root.launcherOpen = !root.launcherOpen
