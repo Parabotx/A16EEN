@@ -51,6 +51,9 @@ jobs:
           grep -q 'import qs.ui' quickshell/a16een/shell.qml
           grep -q 'Mod+Space repeat=false { spawn-sh "qs ipc call launcher toggle"; }' niri/config.kdl
           grep -q 'Dock {' quickshell/a16een/shell.qml
+          ! grep -q 'workspaces: root.workspaces' quickshell/a16een/shell.qml
+          ! grep -q 'focusedWorkspaceId: root.focusedWorkspaceId' quickshell/a16een/shell.qml
+          ! grep -q 'onDashboardRequested' quickshell/a16een/shell.qml
           ! grep -q 'D7B56D' quickshell/a16een/ui/Dock.qml
           ! grep -q 'Repeater' quickshell/a16een/ui/Dock.qml
           ! grep -q '⚙' quickshell/a16een/ui/Dock.qml
@@ -62,6 +65,7 @@ jobs:
           grep -q 'XF86AudioMute allow-when-locked=true {' niri/config.kdl
           grep -q 'spawn "wpctl" "set-mute" "@DEFAULT_AUDIO_SINK@" "toggle";' niri/config.kdl
           grep -q 'xdg-desktop-portal' scripts/install.sh
+          grep -q 'bash "$ROOT_DIR/scripts/a16een-icons"' scripts/install.sh
           grep -q 'a16een-shell' scripts/install.sh
           grep -q 'a16een-update --rollback' README.md
           grep -q 'NIRI_CONFIG' scripts/start-a16een
