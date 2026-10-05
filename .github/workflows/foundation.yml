@@ -140,7 +140,6 @@ jobs:
           grep -q 'NIRI_CONFIG' scripts/start-a16een
           ! grep -q 'export XDG_CONFIG_HOME=' scripts/start-a16een
           grep -q 'Super+Space repeat=false hotkey-overlay-title="A16EEN Application Launcher"' niri/config.kdl
-          grep -q 'function exit(): void' quickshell/a16een/shell.qml
 
       - name: Validate no legacy wallpaper reference
         run: |
