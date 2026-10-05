@@ -1,0 +1,149 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+DATA_DIR="${XDG_DATA_HOME:-$HOME/.local/share}/a16een/assets/images/wallpapers"
+STATE_DIR="${XDG_STATE_HOME:-$HOME/.local/state}/a16een"
+RUNTIME_WALLPAPER="${XDG_CONFIG_HOME:-$HOME/.config}/a16een/quickshell/a16een/assets/wallpapers/default.png"
+STATE_FILE="$STATE_DIR/wallpaper"
+
+mkdir -p "$DATA_DIR" "$STATE_DIR"
+
+usage() {
+    cat <<'EOF'
+A16EEN wallpaper manager
+
+Usage:
+  a16een wallpaper list
+  a16een wallpaper current
+  a16een wallpaper set <filename>
+  a16een wallpaper next
+  a16een wallpaper previous
+  a16een wallpaper reset
+
+User wallpapers live in:
+  ~/.local/share/a16een/assets/images/wallpapers/
+
+Supported formats:
+  PNG, JPG, JPEG, WEBP
+
+A16EEN keeps the selected wallpaper outside the installed runtime so
+updates do not overwrite the user's collection.
+EOF
+}
+
+wallpapers() {
+    find "$DATA_DIR" -maxdepth 1 -type f \
+        \( -iname '*.png' -o -iname '*.jpg' -o -iname '*.jpeg' -o -iname '*.webp' \) \
+        -printf '%f\n' | LC_ALL=C sort -f
+}
+
+current_name() {
+    if [ -f "$STATE_FILE" ]; then
+        cat "$STATE_FILE"
+    fi
+}
+
+restart_shell() {
+    if command -v a16een >/dev/null 2>&1; then
+        a16een restart-shell >/dev/null 2>&1 || true
+    fi
+}
+
+apply_wallpaper() {
+    local filename="$1"
+    local source="$DATA_DIR/$filename"
+
+    [ -f "$source" ] || {
+        echo "A16EEN: wallpaper not found: $filename" >&2
+        exit 1
+    }
+
+    case "$filename" in
+        */*|..)
+            echo "A16EEN: wallpaper must be a filename inside the A16EEN wallpaper folder." >&2
+            exit 1
+            ;;
+    esac
+
+    cp -- "$source" "$RUNTIME_WALLPAPER"
+    printf '%s\n' "$filename" > "$STATE_FILE"
+    echo "A16EEN: wallpaper set to $filename"
+    restart_shell
+}
+
+pick_relative() {
+    local direction="$1"
+    local current="$2"
+    local list current_index total target
+
+    list="$(wallpapers)"
+    [ -n "$list" ] || {
+        echo "A16EEN: no wallpapers found in $DATA_DIR" >&2
+        exit 1
+    }
+
+    if [ -z "$current" ]; then
+        if [ "$direction" = "next" ]; then
+            printf '%s\n' "$list" | head -n 1
+        else
+            printf '%s\n' "$list" | tail -n 1
+        fi
+        return
+    fi
+
+    current_index="$(printf '%s\n' "$list" | awk -v name="$current" 'BEGIN { i=0 } { if ($0 == name) print i; i++ }' | head -n 1)"
+    total="$(printf '%s\n' "$list" | wc -l | tr -d ' ')"
+
+    if [ -z "$current_index" ]; then
+        printf '%s\n' "$list" | head -n 1
+        return
+    fi
+
+    if [ "$direction" = "next" ]; then
+        target=$(( (current_index + 1) % total ))
+    else
+        target=$(( (current_index - 1 + total) % total ))
+    fi
+
+    printf '%s\n' "$list" | sed -n "$((target + 1))p"
+}
+
+command="${1:-help}"
+
+case "$command" in
+    list)
+        wallpapers
+        ;;
+    current)
+        current_name
+        ;;
+    set)
+        [ "${2:-}" ] || {
+            echo "A16EEN: usage: a16een wallpaper set <filename>" >&2
+            exit 1
+        }
+        [ "$#" -eq 2 ] || {
+            echo "A16EEN: usage: a16een wallpaper set <filename>" >&2
+            exit 1
+        }
+        apply_wallpaper "$2"
+        ;;
+    next|previous)
+        next_wallpaper="$(pick_relative "$command" "$(current_name)")"
+        apply_wallpaper "$next_wallpaper"
+        ;;
+    reset)
+        if [ ! -f "$DATA_DIR/default.png" ] && [ -f "$RUNTIME_WALLPAPER" ]; then
+            cp -- "$RUNTIME_WALLPAPER" "$DATA_DIR/default.png"
+        fi
+        apply_wallpaper "default.png"
+        ;;
+    help|--help|-h)
+        usage
+        ;;
+    *)
+        echo "A16EEN: unknown wallpaper command '$command'." >&2
+        usage >&2
+        exit 1
+        ;;
+esac
