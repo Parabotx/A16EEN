@@ -4,15 +4,13 @@ set -euo pipefail
 CONFIG_DIR="${XDG_CONFIG_HOME:-$HOME/.config}/a16een"
 SOURCE_DIR="${XDG_DATA_HOME:-$HOME/.local/share}/a16een/source"
 BUILTIN_DIR="$CONFIG_DIR/quickshell/a16een/assets/wallpapers"
-BUILTIN_ANIMATED_DIR="$CONFIG_DIR/quickshell/a16een/assets/animated"
 LEGACY_BUILTIN_DIR="$SOURCE_DIR"
 STATE_DIR="${XDG_STATE_HOME:-$HOME/.local/state}/a16een"
 STATE_FILE="$STATE_DIR/wallpaper"
 USER_WALLPAPER_DIR="$HOME/Pictures/a16een"
-USER_ANIMATED_DIR="$USER_WALLPAPER_DIR/animated"
 QUICKSHELL_CONFIG_DIR="$CONFIG_DIR/quickshell/a16een"
 
-mkdir -p "$BUILTIN_DIR" "$BUILTIN_ANIMATED_DIR" "$USER_WALLPAPER_DIR" "$USER_ANIMATED_DIR" "$STATE_DIR"
+mkdir -p "$BUILTIN_DIR" "$USER_WALLPAPER_DIR" "$STATE_DIR"
 
 usage() {
     cat <<'EOF'
@@ -35,24 +33,14 @@ Built-in A16EEN wallpapers:
 Personal wallpapers:
   ~/Pictures/a16een/
 
-Built-in animated wallpapers:
-  ~/.config/a16een/quickshell/a16een/assets/animated/
-
-Personal animated wallpapers:
-  ~/Pictures/a16een/animated/
-
 Static image formats:
   PNG, JPG, JPEG, WEBP, BMP, TIFF, TGA, SVG, PPM, PGM, PBM, XPM, XBM
 
-Animated formats:
-  GIF
-
-Video formats:
-  MP4, WEBM, MOV, M4V, MKV
+Animated wallpapers and short-video backgrounds are reserved for a later stage.
 EOF
 }
 
-is_static_supported() {
+is_supported() {
     local name="$1"
     case "${name,,}" in
         *.png|*.jpg|*.jpeg|*.webp|*.bmp|*.tif|*.tiff|*.tga|*.svg|*.ppm|*.pgm|*.pbm|*.xpm|*.xbm)
@@ -64,26 +52,6 @@ is_static_supported() {
     esac
 }
 
-is_animated_supported() {
-    local name="$1"
-    case "${name,,}" in
-        *.gif|*.mp4|*.webm|*.mov|*.m4v|*.mkv) return 0 ;;
-        *) return 1 ;;
-    esac
-}
-
-is_supported() {
-    is_static_supported "$1" || is_animated_supported "$1"
-}
-
-media_type() {
-    local name="$1"
-    case "${name,,}" in
-        *.gif) printf "%s\n" "animated" ;;
-        *.mp4|*.webm|*.mov|*.m4v|*.mkv) printf "%s\n" "video" ;;
-        *) printf "%s\n" "static" ;;
-    esac
-}
 display_name() {
     local name="$1"
     printf '%s\n' "${name%.*}"
@@ -96,7 +64,7 @@ read_state() {
         IFS=$'\t' read -r source filename < "$STATE_FILE" || true
     fi
 
-    if [ "$source" != "builtin" ] && [ "$source" != "custom" ] && [ "$source" != "builtin-animated" ] && [ "$source" != "custom-animated" ]; then
+    if [ "$source" != "builtin" ] && [ "$source" != "custom" ]; then
         source=""
     fi
 
@@ -116,8 +84,6 @@ source_dir() {
     case "$1" in
         builtin) printf '%s\n' "$BUILTIN_DIR" ;;
         custom) printf '%s\n' "$USER_WALLPAPER_DIR" ;;
-        builtin-animated) printf '%s\n' "$BUILTIN_ANIMATED_DIR" ;;
-        custom-animated) printf '%s\n' "$USER_ANIMATED_DIR" ;;
         *) return 1 ;;
     esac
 }
@@ -160,43 +126,52 @@ current_entry() {
     printf '%s\t%s\n' "$source" "$filename"
 }
 
-collect_entries_for_dir() {
-    local source="$1"
-    local dir="$2"
-    local file name display type
-
-    [ -d "$dir" ] || return 0
+collect_builtin_entries() {
+    local file name display
 
     while IFS= read -r -d '' file; do
         name="${file##*/}"
         is_supported "$name" || continue
         display="$(display_name "$name")"
-        type="$(media_type "$name")"
-        printf '%s\t%s\t%s\t%s\t%s\n' "$source" "$name" "$display" "$file" "$type"
-    done < <(find "$dir" -maxdepth 1 -type f -print0 | LC_ALL=C sort -z -f)
+        printf '%s\t%s\t%s\t%s\n' "builtin" "$name" "$display" "$file"
+    done < <(
+        {
+            find "$BUILTIN_DIR" -maxdepth 1 -type f -print0
+            if [ -d "$LEGACY_BUILTIN_DIR" ]; then
+                find "$LEGACY_BUILTIN_DIR" -maxdepth 1 -type f -print0
+            fi
+        } | while IFS= read -r -d '' file; do printf '%s\0' "$file"; done | LC_ALL=C sort -zu -f
+    )
+}
+
+collect_custom_entries() {
+    local file name display
+
+    while IFS= read -r -d '' file; do
+        name="${file##*/}"
+        is_supported "$name" || continue
+        display="$(display_name "$name")"
+        printf '%s\t%s\t%s\t%s\n' "custom" "$name" "$display" "$file"
+    done < <(find "$USER_WALLPAPER_DIR" -maxdepth 1 -type f -print0 | LC_ALL=C sort -zu -f)
 }
 
 collect_entries() {
-    collect_entries_for_dir "builtin" "$BUILTIN_DIR"
-    if [ -d "$LEGACY_BUILTIN_DIR" ]; then
-        collect_entries_for_dir "builtin" "$LEGACY_BUILTIN_DIR"
-    fi
-    collect_entries_for_dir "custom" "$USER_WALLPAPER_DIR"
-    collect_entries_for_dir "builtin-animated" "$BUILTIN_ANIMATED_DIR"
-    collect_entries_for_dir "custom-animated" "$USER_ANIMATED_DIR"
+    collect_builtin_entries
+    collect_custom_entries
 }
+
 catalog() {
-    local source filename row_source row_filename row_display row_path row_type selected
+    local source filename row_source row_filename row_display row_path selected
 
     IFS=$'\t' read -r source filename < <(current_entry)
 
-    while IFS=$'\t' read -r row_source row_filename row_display row_path row_type; do
+    while IFS=$'\t' read -r row_source row_filename row_display row_path; do
         selected="0"
         if [ "$row_source" = "$source" ] && [ "$row_filename" = "$filename" ]; then
             selected="1"
         fi
 
-        printf '%s\t%s\t%s\t%s\t%s\t%s\n'             "$row_source" "$row_filename" "$row_display" "$row_path" "$selected" "$row_type"
+        printf '%s\t%s\t%s\t%s\t%s\n'             "$row_source" "$row_filename" "$row_display" "$row_path" "$selected"
     done < <(collect_entries)
 }
 
@@ -238,29 +213,32 @@ set_wallpaper() {
 
 set_by_filename() {
     local filename="$1"
-    local source path
-    local -a matches=()
+    local builtin_path custom_path
 
     validate_filename "$filename"
 
-    for source in builtin custom builtin-animated custom-animated; do
-        path="$(find_wallpaper "$source" "$filename" 2>/dev/null || true)"
-        [ -n "$path" ] && matches+=("$source")
-    done
+    builtin_path="$(find_wallpaper builtin "$filename" 2>/dev/null || true)"
+    custom_path="$(find_wallpaper custom "$filename" 2>/dev/null || true)"
 
-    if [ "${#matches[@]}" -gt 1 ]; then
-        echo "A16EEN: '$filename' exists in multiple collections; specify the source." >&2
+    if [ -n "$builtin_path" ] && [ -n "$custom_path" ]; then
+        echo "A16EEN: '$filename' exists in both collections; specify builtin or custom." >&2
         exit 1
     fi
 
-    if [ "${#matches[@]}" -eq 1 ]; then
-        set_wallpaper "${matches[0]}" "$filename"
+    if [ -n "$builtin_path" ]; then
+        set_wallpaper builtin "$filename"
+        return
+    fi
+
+    if [ -n "$custom_path" ]; then
+        set_wallpaper custom "$filename"
         return
     fi
 
     echo "A16EEN: wallpaper not found: $filename" >&2
     exit 1
 }
+
 relative_wallpaper() {
     local direction="$1"
     local current source filename
@@ -329,8 +307,8 @@ case "$command" in
             set_by_filename "$2"
         elif [ "$#" -eq 3 ]; then
             case "$2" in
-                builtin|custom|builtin-animated|custom-animated) set_wallpaper "$2" "$3" ;;
-                *) echo "A16EEN: source must be builtin, custom, builtin-animated or custom-animated." >&2; exit 1 ;;
+                builtin|custom) set_wallpaper "$2" "$3" ;;
+                *) echo "A16EEN: source must be builtin or custom." >&2; exit 1 ;;
             esac
         else
             echo "A16EEN: usage: a16een wallpaper set <filename> OR set <builtin|custom> <filename>" >&2
