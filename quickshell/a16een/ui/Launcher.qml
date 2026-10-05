@@ -1,5 +1,4 @@
 import QtQuick
-import QtQuick.Controls
 import QtQuick.Layouts
 import Quickshell
 import Quickshell.Wayland
@@ -15,12 +14,12 @@ PanelWindow {
 
     signal closeRequested()
 
-    property color cardColor: "#0B0D12F5"
-    property color cardBorder: "#FFFFFF18"
-    property color primaryText: "#F5F2EA"
-    property color secondaryText: "#8D94A3"
-    property color accent: "#111827"
-    property color errorAccent: "#9F1239"
+    readonly property color surface: "#FFFFFFFF"
+    readonly property color borderColor: "#E6E8EB"
+    readonly property color primaryText: "#15171A"
+    readonly property color secondaryText: "#737880"
+    readonly property color searchBackground: "#F7F8FA"
+    readonly property color selectedBackground: "#EEF0F3"
 
     screen: modelData
     color: "transparent"
@@ -36,7 +35,9 @@ PanelWindow {
 
     WlrLayershell.layer: WlrLayer.Overlay
     WlrLayershell.namespace: "a16een-launcher"
-    WlrLayershell.keyboardFocus: root.opened ? WlrKeyboardFocus.OnDemand : WlrKeyboardFocus.None
+    WlrLayershell.keyboardFocus: root.opened
+        ? WlrKeyboardFocus.OnDemand
+        : WlrKeyboardFocus.None
 
     function launch(entry) {
         root.launchError = ""
@@ -46,27 +47,12 @@ PanelWindow {
             return false
         }
 
-        if (!entry.command || entry.command.length === 0) {
-            root.launchError = entry.name + " does not provide a launch command."
-            return false
-        }
-
         try {
-            if (entry.runInTerminal) {
-                // Respect desktop entries that explicitly request a terminal.
-                Quickshell.execDetached({
-                    command: ["foot", "--", ...entry.command],
-                    workingDirectory: entry.workingDirectory || undefined
-                })
-            } else {
-                // Uses the parsed desktop-entry command and its working directory.
-                entry.execute()
-            }
-
+            entry.execute()
             root.closeRequested()
             return true
         } catch (error) {
-            root.launchError = "Couldn't launch " + entry.name + ". Check the app installation."
+            root.launchError = "Couldn't launch " + entry.name + "."
             console.error("A16EEN launcher:", entry.name, error)
             return false
         }
@@ -75,87 +61,42 @@ PanelWindow {
     Rectangle {
         anchors.fill: parent
         color: "#000000"
-        opacity: root.opened ? 0.20 : 0
+        opacity: root.opened ? 0.16 : 0
     }
 
     Rectangle {
         id: card
         z: 2
-        width: Math.min(470, parent.width - 118)
-        height: Math.min(560, parent.height - 76)
-        anchors.left: parent.left
-        anchors.leftMargin: 104
-        anchors.verticalCenter: parent.verticalCenter
-        radius: 23
-        color: root.cardColor
+        width: Math.min(780, parent.width - 116)
+        height: Math.min(650, parent.height - 90)
+        anchors.centerIn: parent
+        radius: 28
+        color: root.surface
         border.width: 1
-        border.color: root.cardBorder
-
-        Behavior on scale {
-            NumberAnimation {
-                duration: 180
-                easing.type: Easing.OutCubic
-            }
-        }
-
-        Behavior on opacity {
-            NumberAnimation {
-                duration: 140
-            }
-        }
-
-        scale: root.opened ? 1.0 : 0.96
-        opacity: root.opened ? 1.0 : 0.0
+        border.color: root.borderColor
 
         ColumnLayout {
             anchors.fill: parent
-            anchors.margins: 16
-            spacing: 10
-
-            RowLayout {
-                Layout.fillWidth: true
-                spacing: 10
-
-                Text {
-                    text: "A16"
-                    color: root.accent
-                    font.pixelSize: 12
-                    font.weight: Font.DemiBold
-                    font.letterSpacing: 1.5
-                }
-
-                Text {
-                    text: "QUICK LAUNCH"
-                    color: root.secondaryText
-                    font.pixelSize: 9
-                    font.letterSpacing: 1.8
-                    Layout.fillWidth: true
-                }
-
-                Text {
-                    text: DesktopEntries.applications.values.length + " APPS"
-                    color: "#5C6470"
-                    font.pixelSize: 9
-                    font.letterSpacing: 0.7
-                }
-            }
+            anchors.margins: 18
+            spacing: 14
 
             Rectangle {
                 Layout.fillWidth: true
-                implicitHeight: 52
-                radius: 15
-                color: "#FFFFFF09"
+                height: 58
+                radius: 17
+                color: root.searchBackground
                 border.width: 1
-                border.color: "#FFFFFF12"
+                border.color: "#E9EBEE"
 
                 RowLayout {
                     anchors.fill: parent
-                    anchors.leftMargin: 15
-                    anchors.rightMargin: 15
+                    anchors.leftMargin: 16
+                    anchors.rightMargin: 16
+                    spacing: 12
 
                     Text {
                         text: "⌕"
-                        color: root.accent
+                        color: root.primaryText
                         font.pixelSize: 23
                         Layout.alignment: Qt.AlignVCenter
                     }
@@ -171,167 +112,174 @@ PanelWindow {
                         focus: root.opened
                         activeFocusOnPress: true
                         text: root.searchText
+                        selectByMouse: true
+
                         onTextChanged: {
                             root.searchText = text
-                            appList.currentIndex = appList.count > 0 ? 0 : -1
+                            appGrid.currentIndex = appGrid.count > 0 ? 0 : -1
                             root.launchError = ""
                         }
 
                         Keys.onEscapePressed: root.closeRequested()
 
                         Keys.onReturnPressed: {
-                            if (appList.currentItem && appList.currentItem.entry) {
-                                root.launch(appList.currentItem.entry)
-                            }
+                            if (appGrid.currentItem && appGrid.currentItem.entry)
+                                root.launch(appGrid.currentItem.entry)
+                        }
+
+                        Keys.onRightPressed: {
+                            if (appGrid.currentIndex >= 0)
+                                appGrid.currentIndex = Math.min(
+                                    appGrid.count - 1,
+                                    appGrid.currentIndex + 1
+                                )
+                        }
+
+                        Keys.onLeftPressed: {
+                            if (appGrid.currentIndex > 0)
+                                appGrid.currentIndex -= 1
                         }
 
                         Keys.onDownPressed: {
-                            if (appList.count > 0) {
-                                appList.currentIndex = Math.min(
-                                    appList.count - 1,
-                                    appList.currentIndex + 1
+                            if (appGrid.count > 0)
+                                appGrid.currentIndex = Math.min(
+                                    appGrid.count - 1,
+                                    appGrid.currentIndex + appGrid.columns
                                 )
-                            }
                         }
 
                         Keys.onUpPressed: {
-                            if (appList.count > 0) {
-                                appList.currentIndex = Math.max(
+                            if (appGrid.count > 0)
+                                appGrid.currentIndex = Math.max(
                                     0,
-                                    appList.currentIndex - 1
+                                    appGrid.currentIndex - appGrid.columns
                                 )
-                            }
                         }
 
-                        Component.onCompleted: if (root.opened) forceActiveFocus()
+                        Component.onCompleted: {
+                            if (root.opened)
+                                forceActiveFocus()
+                        }
                     }
 
                     Text {
-                        text: "ESC"
+                        text: root.searchText.length ? "FILTER" : "SEARCH"
                         color: root.secondaryText
-                        font.pixelSize: 9
-                        font.letterSpacing: 1.2
+                        font.pixelSize: 8
+                        font.letterSpacing: 1.4
                         Layout.alignment: Qt.AlignVCenter
                     }
                 }
             }
 
-            Text {
-                text: root.searchText.length ? "MATCHES" : "INSTALLED APPLICATIONS"
-                color: root.secondaryText
-                font.pixelSize: 9
-                font.letterSpacing: 2
-            }
-
-            ListView {
-                id: appList
+            GridView {
+                id: appGrid
                 Layout.fillWidth: true
                 Layout.fillHeight: true
                 clip: true
-                spacing: 5
+                cellWidth: 112
+                cellHeight: 106
                 currentIndex: count > 0 ? 0 : -1
 
                 model: ScriptModel {
                     objectProp: "id"
-                    values: [...DesktopEntries.applications.values].filter(entry => {
-                        if (!root.searchText.length) return true
+                    values: [...DesktopEntries.applications.values]
+                        .filter(entry => {
+                            if (!root.searchText.length)
+                                return true
 
-                        const q = root.searchText.toLowerCase().trim()
-                        const haystack = [
-                            entry.name,
-                            entry.genericName,
-                            entry.comment,
-                            ...(entry.keywords || [])
-                        ].filter(value => value).join(" ").toLowerCase()
+                            const q = root.searchText.toLowerCase().trim()
+                            const haystack = [
+                                entry.name,
+                                entry.genericName,
+                                entry.comment,
+                                ...(entry.keywords || [])
+                            ].filter(value => value)
+                             .join(" ")
+                             .toLowerCase()
 
-                        return haystack.includes(q)
-                    }).sort((a, b) => (a.name || "").localeCompare(b.name || ""))
+                            return haystack.includes(q)
+                        })
+                        .sort((a, b) =>
+                            (a.name || "").localeCompare(b.name || "")
+                        )
                 }
 
                 delegate: Rectangle {
-                    id: appRow
-                    width: appList.width
-                    height: 58
-                    radius: 15
-                    color: ListView.isCurrentItem ? "#F1F3F5" : "#FFFFFF08"
-                    border.width: ListView.isCurrentItem ? 1 : 0
-                    border.color: "#D1D5DB"
+                    required property var modelData
+
+                    width: 102
+                    height: 96
+                    radius: 18
+                    color: GridView.isCurrentItem
+                        ? root.selectedBackground
+                        : "transparent"
+                    border.width: GridView.isCurrentItem ? 1 : 0
+                    border.color: "#E0E3E7"
 
                     property var entry: modelData
 
-                    RowLayout {
+                    Column {
                         anchors.fill: parent
-                        anchors.leftMargin: 12
-                        anchors.rightMargin: 12
-                        spacing: 12
+                        anchors.margins: 9
+                        spacing: 6
 
-                        IconImage {
-                            Layout.alignment: Qt.AlignVCenter
-                            implicitWidth: 34
-                            implicitHeight: 34
-                            source: Quickshell.iconPath(
-                                appRow.entry.icon,
-                                "application-x-executable"
-                            )
-                        }
+                        Item {
+                            width: parent.width
+                            height: 54
 
-                        ColumnLayout {
-                            Layout.fillWidth: true
-                            spacing: 1
-
-                            Text {
-                                text: appRow.entry.name
-                                color: root.primaryText
-                                font.pixelSize: 12
-                                font.weight: Font.DemiBold
-                                elide: Text.ElideRight
-                                Layout.fillWidth: true
-                            }
-
-                            Text {
-                                text: appRow.entry.runInTerminal
-                                    ? "Terminal application"
-                                    : (appRow.entry.genericName || appRow.entry.comment || "Application")
-                                color: root.secondaryText
-                                font.pixelSize: 9
-                                elide: Text.ElideRight
-                                Layout.fillWidth: true
+                            IconImage {
+                                anchors.centerIn: parent
+                                implicitWidth: 46
+                                implicitHeight: 46
+                                source: Quickshell.iconPath(
+                                    delegateItem.entry.icon,
+                                    "application-x-executable"
+                                )
                             }
                         }
 
                         Text {
-                            text: "↵"
-                            color: ListView.isCurrentItem ? root.primaryText : "#6B7280"
-                            font.pixelSize: 15
+                            id: appName
+                            width: parent.width
+                            text: delegateItem.entry.name
+                            color: root.primaryText
+                            font.pixelSize: 10
+                            font.weight: Font.DemiBold
+                            horizontalAlignment: Text.AlignHCenter
+                            elide: Text.ElideRight
+                            maximumLineCount: 1
                         }
                     }
+
+                    readonly property Item delegateItem: this
 
                     MouseArea {
                         anchors.fill: parent
                         hoverEnabled: true
-                        onEntered: appList.currentIndex = index
-                        onClicked: root.launch(appRow.entry)
+                        cursorShape: Qt.PointingHandCursor
+                        onEntered: appGrid.currentIndex = index
+                        onClicked: root.launch(delegateItem.entry)
                     }
                 }
 
-                footer: Text {
-                    visible: appList.count === 0
-                    text: "No application matches that search."
+                Text {
+                    anchors.centerIn: parent
+                    visible: appGrid.count === 0
+                    text: "No applications found"
                     color: root.secondaryText
                     font.pixelSize: 12
-                    horizontalAlignment: Text.AlignHCenter
-                    width: appList.width
                 }
             }
 
             Rectangle {
                 Layout.fillWidth: true
                 visible: root.launchError.length > 0
-                implicitHeight: 42
+                height: 38
                 radius: 12
-                color: "#E88F8F12"
+                color: "#FFF5F5"
                 border.width: 1
-                border.color: "#E88F8F35"
+                border.color: "#F1D3D3"
 
                 Text {
                     anchors.fill: parent
@@ -339,36 +287,14 @@ PanelWindow {
                     anchors.rightMargin: 12
                     verticalAlignment: Text.AlignVCenter
                     text: root.launchError
-                    color: root.errorAccent
+                    color: "#9B3A3A"
                     font.pixelSize: 10
                     elide: Text.ElideRight
-                }
-            }
-
-            RowLayout {
-                Layout.fillWidth: true
-                spacing: 6
-
-                Text {
-                    text: "A16EEN"
-                    color: root.accent
-                    font.pixelSize: 9
-                    font.letterSpacing: 1.4
-                }
-
-                Text {
-                    text: "ENTER TO OPEN  •  ↑↓ NAVIGATE  •  INSTALLED APPS ONLY"
-                    color: root.secondaryText
-                    font.pixelSize: 9
-                    font.letterSpacing: 0.7
-                    Layout.fillWidth: true
                 }
             }
         }
     }
 
-    // Keep the dock clickable while the launcher is open.
-    // The launcher remains dismissible everywhere else without stealing the dock click.
     MouseArea {
         z: 1
         anchors {
