@@ -173,53 +173,61 @@ PanelWindow {
                 }
             }
 
-            ListView {
-                id: commandList
+            Rectangle {
+                id: commandSurface
                 Layout.fillWidth: true
                 Layout.fillHeight: true
-                clip: true
-                spacing: 2
-                model: root.filteredCommands
-                currentIndex: count > 0 ? 0 : -1
+                radius: 12
+                color: "#000000"
 
-                delegate: Rectangle {
-                    id: commandRow
-                    required property var modelData
+                ListView {
+                    id: commandList
+                    anchors.fill: parent
+                    anchors.margins: 4
+                    clip: true
+                    spacing: 2
+                    model: root.filteredCommands
+                    currentIndex: count > 0 ? 0 : -1
 
-                    width: commandList.width
-                    height: 42
-                    radius: 10
-                    color: commandList.currentIndex === index
-                        ? root.selectedBackground
-                        : "transparent"
-
-                    Text {
-                        anchors.left: parent.left
-                        anchors.leftMargin: 14
-                        anchors.verticalCenter: parent.verticalCenter
-                        text: "/" + commandRow.modelData.name
-                        color: root.primaryText
-                        font.pixelSize: 12
-                        font.weight: commandList.currentIndex === index
-                            ? Font.DemiBold
-                            : Font.Normal
+                    delegate: Rectangle {
+                        id: commandRow
+                        required property var modelData
+    
+                        width: commandList.width
+                        height: 42
+                        radius: 10
+                        color: commandList.currentIndex === index
+                            ? root.selectedBackground
+                            : "transparent"
+    
+                        Text {
+                            anchors.left: parent.left
+                            anchors.leftMargin: 14
+                            anchors.verticalCenter: parent.verticalCenter
+                            text: "/" + commandRow.modelData.name
+                            color: root.primaryText
+                            font.pixelSize: 12
+                            font.weight: commandList.currentIndex === index
+                                ? Font.DemiBold
+                                : Font.Normal
+                        }
+    
+                        MouseArea {
+                            anchors.fill: parent
+                            hoverEnabled: true
+                            cursorShape: Qt.PointingHandCursor
+                            onEntered: commandList.currentIndex = index
+                            onClicked: root.executeCommand(commandRow.modelData)
+                        }
                     }
-
-                    MouseArea {
-                        anchors.fill: parent
-                        hoverEnabled: true
-                        cursorShape: Qt.PointingHandCursor
-                        onEntered: commandList.currentIndex = index
-                        onClicked: root.executeCommand(commandRow.modelData)
+    
+                        Text {
+                        anchors.centerIn: parent
+                        visible: commandList.count === 0
+                        text: "No command"
+                        color: root.secondaryText
+                        font.pixelSize: 10
                     }
-                }
-
-                Text {
-                    anchors.centerIn: parent
-                    visible: commandList.count === 0
-                    text: "No command"
-                    color: root.secondaryText
-                    font.pixelSize: 10
                 }
             }
         }
