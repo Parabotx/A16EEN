@@ -187,8 +187,7 @@ else
     cp "$ROOT_DIR/quickshell/a16een/ui/"*.qml "$TMP_DEPLOY/ui/"
     cp "$ROOT_DIR/quickshell/a16een/assets/icons/"*.svg "$TMP_DEPLOY/assets/icons/"
 
-    # Ship every supported built-in wallpaper from the repository, including
-    # wallpapers placed inside subfolders. Their relative paths are preserved.
+    # Ship every supported built-in wallpaper from the dedicated repository folder.
     BUILTIN_SOURCE_DIR="$ROOT_DIR/quickshell/a16een/assets/wallpapers"
     while IFS= read -r -d '' wallpaper; do
         relative="${wallpaper#"$BUILTIN_SOURCE_DIR"/}"
@@ -197,6 +196,20 @@ else
         cp "$wallpaper" "$destination"
     done < <(
         find "$BUILTIN_SOURCE_DIR" -type f \
+            \( -iname '*.png' -o -iname '*.jpg' -o -iname '*.jpeg' -o -iname '*.webp' \
+            -o -iname '*.bmp' -o -iname '*.tif' -o -iname '*.tiff' -o -iname '*.tga' \
+            -o -iname '*.svg' -o -iname '*.ppm' -o -iname '*.pgm' -o -iname '*.pbm' \
+            -o -iname '*.xpm' -o -iname '*.xbm' \) -print0 | LC_ALL=C sort -z -f
+    )
+
+    # Compatibility migration for wallpapers added to the repository root
+    # by the earlier wallpaper setup. Existing files are imported automatically.
+    while IFS= read -r -d '' wallpaper; do
+        name="${wallpaper##*/}"
+        destination="$TMP_DEPLOY/assets/wallpapers/$name"
+        [ -e "$destination" ] || cp "$wallpaper" "$destination"
+    done < <(
+        find "$ROOT_DIR" -maxdepth 1 -type f \
             \( -iname '*.png' -o -iname '*.jpg' -o -iname '*.jpeg' -o -iname '*.webp' \
             -o -iname '*.bmp' -o -iname '*.tif' -o -iname '*.tiff' -o -iname '*.tga' \
             -o -iname '*.svg' -o -iname '*.ppm' -o -iname '*.pgm' -o -iname '*.pbm' \
