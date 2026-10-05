@@ -39,7 +39,7 @@ Media / capture
   screenshot-window           Capture the focused window
 
 Visuals
-  wallpaper list              List user wallpapers
+  wallpaper list              List available wallpapers
   wallpaper current           Show the active wallpaper
   wallpaper set <filename>    Switch to a wallpaper
   wallpaper next              Switch to the next wallpaper
@@ -339,6 +339,14 @@ case "$command" in
         require_no_args "$@"
         require_cmd niri
         exec niri msg action screenshot-window
+        ;;
+
+    wallpaper)
+        if [[ -x /usr/local/bin/a16een-wallpaper ]]; then
+            exec /usr/local/bin/a16een-wallpaper "$@"
+        fi
+        [[ -x "$SOURCE_DIR/scripts/a16een-wallpaper" ]] || die "A16EEN wallpaper manager is not installed."
+        exec "$SOURCE_DIR/scripts/a16een-wallpaper" "$@"
         ;;
 
     icons)
