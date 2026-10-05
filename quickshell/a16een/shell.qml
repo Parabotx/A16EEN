@@ -40,6 +40,13 @@ ShellRoot {
 
             if (event.WorkspacesChanged) {
                 root.workspaces = event.WorkspacesChanged.workspaces || []
+
+                const focused = root.workspaces.find(workspace =>
+                    workspace.is_focused === true
+                )
+                if (focused)
+                    root.focusedWorkspaceId = focused.id
+
                 return
             }
 
