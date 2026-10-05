@@ -63,6 +63,10 @@ jobs:
           grep -Fq 'workspace "studio"' niri/config.kdl
           grep -Fq 'workspace "music"' niri/config.kdl
           grep -Fq 'import qs.ui' quickshell/a16een/shell.qml
+          grep -Fq 'dockBackground: "#FFFFFF"' quickshell/a16een/ui/Dock.qml
+          grep -Fq 'iconColor: "#111111"' quickshell/a16een/ui/Dock.qml
+          ! grep -Fq '#2F6FED' quickshell/a16een/ui/Dock.qml
+          ! grep -Fq 'width: 20' quickshell/a16een/ui/Dock.qml
           grep -Fq 'Super+Space repeat=false hotkey-overlay-title="A16EEN Application Launcher"' niri/config.kdl
           grep -Fq 'ToplevelManager.activeToplevel' quickshell/a16een/shell.qml
           ! grep -Fq 'focusedWindowProcess' quickshell/a16een/shell.qml
@@ -82,6 +86,8 @@ jobs:
           ! grep -q 'Mod+Slash.*launcher toggle' niri/config.kdl
           ! grep -Fq 'Mod+F { maximize-column; }' niri/config.kdl
           grep -Fq 'Mod+M { maximize-column; }' niri/config.kdl
+          grep -Fq 'Mod+6 { focus-workspace "music"; }' niri/config.kdl
+          grep -Fq 'Mod+Shift+6 { move-column-to-workspace "music"; }' niri/config.kdl
           grep -Fq 'Dock {' quickshell/a16een/shell.qml
           grep -Fq 'anchors.right: true' quickshell/a16een/ui/Dock.qml
           grep -Fq 'width: 44' quickshell/a16een/ui/Dock.qml
@@ -96,12 +102,16 @@ jobs:
           grep -Fq 'signal closeRequested' quickshell/a16een/ui/Launcher.qml
           ! grep -Fq 'root.opened = false' quickshell/a16een/ui/Launcher.qml
           grep -Fq 'current.id === root.focusedWorkspaceId' quickshell/a16een/ui/Dock.qml
-          grep -Fq 'focusWorkspace(1)' quickshell/a16een/ui/Dock.qml
-          grep -Fq 'focusWorkspace(2)' quickshell/a16een/ui/Dock.qml
-          grep -Fq 'focusWorkspace(3)' quickshell/a16een/ui/Dock.qml
-          grep -Fq 'focusWorkspace(4)' quickshell/a16een/ui/Dock.qml
-          grep -Fq 'focusWorkspace(5)' quickshell/a16een/ui/Dock.qml
-          grep -Fq 'focusWorkspace(6)' quickshell/a16een/ui/Dock.qml
+          grep -Fq 'function focusWorkspace(name)' quickshell/a16een/ui/Dock.qml
+          grep -Fq 'root.focusWorkspace("music")' quickshell/a16een/ui/Dock.qml
+          grep -Fq 'workspace.is_focused === true' quickshell/a16een/shell.qml
+
+
+
+
+
+
+
           ! grep -Fq 'activeBackground' quickshell/a16een/ui/Dock.qml
           grep -Fq 'rightMargin: 66' quickshell/a16een/ui/Launcher.qml
           ! grep -Fq 'text: "Applications"' quickshell/a16een/ui/Dock.qml
@@ -150,4 +160,5 @@ jobs:
             echo "Legacy default.webp reference found." >&2
             exit 1
           fi
+
 
