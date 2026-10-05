@@ -108,7 +108,7 @@ binds {
     // Layout
     Mod+M { maximize-column; }
     Mod+F { fullscreen-window; }
-    Mod+T repeat=false { spawn-sh "if niri msg --json focused-window | grep -q '\"is_fullscreen\":true'; then niri msg action fullscreen-window; fi"; }
+    Mod+T repeat=false { spawn-sh "qs -c \"$HOME/.config/a16een/quickshell/a16een\" ipc call fullscreen exit"; }
     Mod+V { toggle-window-floating; }
     Mod+R { switch-preset-column-width; }
     Mod+Shift+R { switch-preset-column-width-back; }
