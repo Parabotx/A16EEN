@@ -106,8 +106,8 @@ binds {
     Mod+Ctrl+Down { move-window-down; }
 
     // Layout
-    Mod+F { maximize-column; }
-    Mod+Shift+F { fullscreen-window; }
+    Mod+M { maximize-column; }
+    Mod+F { fullscreen-window; }
     Mod+V { toggle-window-floating; }
     Mod+R { switch-preset-column-width; }
     Mod+Shift+R { switch-preset-column-width-back; }
