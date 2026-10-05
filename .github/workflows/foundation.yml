@@ -141,6 +141,8 @@ jobs:
           ! grep -q 'export XDG_CONFIG_HOME=' scripts/start-a16een
           grep -q 'Super+Space repeat=false hotkey-overlay-title="A16EEN Application Launcher"' niri/config.kdl
           grep -q 'target: "fullscreen"' quickshell/a16een/shell.qml
+          grep -q 'a16een wallpaper set my-wallpaper.png' README.md
+          grep -q 'Persistent user wallpaper collection' README.md
 
       - name: Validate no legacy wallpaper reference
         run: |
