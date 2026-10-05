@@ -57,7 +57,7 @@ is_static_supported() {
 is_animated_supported() {
     local name="$1"
     case "${name,,}" in
-        *.gif|*.mp4|*.webm|*.mov) return 0 ;;
+        *.gif|*.mp4|*.webm|*.mov|*.m4v|*.mkv) return 0 ;;
         *) return 1 ;;
     esac
 }
