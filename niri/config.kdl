@@ -76,6 +76,18 @@ xwayland-satellite {
     path "xwayland-satellite"
 }
 
+// A16EEN dock glass: clean true blur with no added pixel noise.
+layer-rule {
+    match namespace="^a16een-dock$"
+
+    background-effect {
+        blur true
+        xray false
+        noise 0
+        saturation 1.05
+    }
+}
+
 binds {
     // A16EEN UI
     // Super+Space opens the A16EEN application launcher.
