@@ -62,7 +62,8 @@ jobs:
           grep -q 'focusedWindowFullscreen' quickshell/a16een/shell.qml
           grep -q 'fullscreenActive: root.focusedWindowFullscreen' quickshell/a16een/shell.qml
           grep -q 'property bool edgeRevealed' quickshell/a16een/ui/Dock.qml
-          grep -q 'width: 10' quickshell/a16een/ui/Dock.qml
+          grep -q 'width: 8' quickshell/a16een/ui/Dock.qml
+          grep -q 'height: 240' quickshell/a16een/ui/Dock.qml
           grep -q 'opacity: root.dockVisible' quickshell/a16een/ui/Dock.qml
           grep -q 'Mod+X repeat=false { close-window; }' niri/config.kdl
           grep -q 'Mod+F { fullscreen-window; }' niri/config.kdl
