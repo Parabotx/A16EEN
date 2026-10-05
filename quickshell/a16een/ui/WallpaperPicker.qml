@@ -246,7 +246,6 @@ PanelWindow {
                                     asynchronous: true
                                     cache: false
                                     playing: modelData.type === "animated"
-                                    loops: Animation.Infinite
                                     visible: modelData.type === "animated"
                                         && status === AnimatedImage.Ready
                                 }
@@ -309,7 +308,6 @@ PanelWindow {
                                                 opacity: 0.35
 
                                                 SequentialAnimation on opacity {
-                                                    loops: Animation.Infinite
                                                     running: true
 
                                                     PauseAnimation {
