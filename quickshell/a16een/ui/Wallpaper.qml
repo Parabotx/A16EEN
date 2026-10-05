@@ -86,9 +86,7 @@ PanelWindow {
         target: videoPlayer
 
         function onMediaStatusChanged(status) {
-            if (root.isVideo
-                    && (status === MediaPlayer.LoadedMedia
-                        || status === MediaPlayer.BufferedMedia)) {
+            if (root.isVideo && status === MediaPlayer.LoadedMedia) {
                 videoPlayer.play()
             }
         }
