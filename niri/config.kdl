@@ -1,6 +1,13 @@
 // A16EEN — active desktop foundation
 // Compositor behavior stays here. Visual UI lives in Quickshell.
 
+// Stable A16EEN workspaces. The UI represents these without numeric labels.
+workspace "home"
+workspace "code"
+workspace "web"
+workspace "comms"
+workspace "studio"
+
 input {
     keyboard {
         xkb {}
@@ -108,17 +115,17 @@ binds {
     Mod+C { center-column; }
 
     // Workspaces
-    Mod+1 { focus-workspace 1; }
-    Mod+2 { focus-workspace 2; }
-    Mod+3 { focus-workspace 3; }
-    Mod+4 { focus-workspace 4; }
-    Mod+5 { focus-workspace 5; }
+    Mod+1 { focus-workspace "home"; }
+    Mod+2 { focus-workspace "code"; }
+    Mod+3 { focus-workspace "web"; }
+    Mod+4 { focus-workspace "comms"; }
+    Mod+5 { focus-workspace "studio"; }
 
-    Mod+Shift+1 { move-column-to-workspace 1; }
-    Mod+Shift+2 { move-column-to-workspace 2; }
-    Mod+Shift+3 { move-column-to-workspace 3; }
-    Mod+Shift+4 { move-column-to-workspace 4; }
-    Mod+Shift+5 { move-column-to-workspace 5; }
+    Mod+Shift+1 { move-column-to-workspace "home"; }
+    Mod+Shift+2 { move-column-to-workspace "code"; }
+    Mod+Shift+3 { move-column-to-workspace "web"; }
+    Mod+Shift+4 { move-column-to-workspace "comms"; }
+    Mod+Shift+5 { move-column-to-workspace "studio"; }
 
     // Media / volume
     XF86AudioRaiseVolume allow-when-locked=true {
