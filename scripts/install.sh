@@ -25,6 +25,7 @@ networkmanager
 bluez
 bluez-utils
 nm-connection-editor
+curl
 xdg-desktop-portal
 xdg-desktop-portal-gtk
 xdg-utils
@@ -161,10 +162,11 @@ else
     }
     trap cleanup_deploy EXIT INT TERM
 
-    mkdir -p "$TMP_DEPLOY/ui" "$TMP_DEPLOY/assets/wallpapers"
+    mkdir -p "$TMP_DEPLOY/ui" "$TMP_DEPLOY/assets/wallpapers" "$TMP_DEPLOY/assets/icons"
     cp "$ROOT_DIR/niri/config.kdl" "$TMP_DEPLOY/config.kdl"
     cp "$ROOT_DIR/quickshell/a16een/shell.qml" "$TMP_DEPLOY/shell.qml"
     cp "$ROOT_DIR/quickshell/a16een/ui/"*.qml "$TMP_DEPLOY/ui/"
+    cp "$ROOT_DIR/quickshell/a16een/assets/icons/"*.svg "$TMP_DEPLOY/assets/icons/"
 
     if [ -f "$ROOT_DIR/quickshell/a16een/assets/wallpapers/default.png" ]; then
         cp "$ROOT_DIR/quickshell/a16een/assets/wallpapers/default.png"             "$TMP_DEPLOY/assets/wallpapers/default.png"
@@ -189,6 +191,9 @@ else
         cp "$TMP_DEPLOY/assets/wallpapers/default.png"             "$QS_DIR/assets/wallpapers/default.png"
     fi
 
+    mkdir -p "$QS_DIR/assets/icons"
+    cp "$TMP_DEPLOY/assets/icons/"*.svg "$QS_DIR/assets/icons/"
+
     rm -rf "$TMP_DEPLOY"
     trap - EXIT INT TERM
 fi
@@ -199,6 +204,7 @@ echo "==> Installing A16EEN session launcher, shell supervisor, updater and diag
 sudo install -Dm755 "$ROOT_DIR/scripts/start-a16een" /usr/local/bin/start-a16een
 sudo install -Dm755 "$ROOT_DIR/scripts/a16een-shell" /usr/local/bin/a16een-shell
 sudo install -Dm755 "$ROOT_DIR/scripts/a16een" /usr/local/bin/a16een
+sudo install -Dm755 "$ROOT_DIR/scripts/a16een-icons" /usr/local/bin/a16een-icons
 sudo install -Dm755 "$ROOT_DIR/scripts/a16een-update" /usr/local/bin/a16een-update
 sudo install -Dm755 "$ROOT_DIR/scripts/a16een-doctor" /usr/local/bin/a16een-doctor
 sudo install -Dm644 "$ROOT_DIR/session/a16een.desktop" /usr/share/wayland-sessions/a16een.desktop
@@ -213,6 +219,11 @@ if [ ! -f "$PORTAL_CONF" ]; then
     echo "==> Installed A16EEN XDG portal preference."
 else
     echo "==> Preserved existing A16EEN portal preference."
+fi
+
+echo "==> Syncing A16EEN UI icons"
+if ! "$ROOT_DIR/scripts/a16een-icons"; then
+    echo "WARNING: icon synchronization failed; using the bundled fallback SVGs." >&2
 fi
 
 # If A16EEN is already running, restart only its Quickshell process after
