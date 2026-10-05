@@ -1,9 +1,9 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-CONFIG_DIR="\${XDG_CONFIG_HOME:-$HOME/.config}/a16een"
+CONFIG_DIR="${XDG_CONFIG_HOME:-$HOME/.config}/a16een"
 BUILTIN_DIR="$CONFIG_DIR/quickshell/a16een/assets/wallpapers"
-STATE_DIR="\${XDG_STATE_HOME:-$HOME/.local/state}/a16een"
+STATE_DIR="${XDG_STATE_HOME:-$HOME/.local/state}/a16een"
 STATE_FILE="$STATE_DIR/wallpaper"
 PICTURES_DIR="$HOME/Pictures"
 
@@ -48,7 +48,7 @@ EOF
 
 is_supported() {
     local name="$1"
-    local lower="\${name,,}"
+    local lower="${name,,}"
     case "$lower" in
         *.png|*.jpg|*.jpeg|*.webp|*.bmp|*.tif|*.tiff|*.tga|*.svg|*.ppm|*.pgm|*.pbm|*.xpm|*.xbm)
             return 0
@@ -130,7 +130,7 @@ collect_entries() {
         dir="$(resolve_source_dir "$source")"
 
         while IFS= read -r -d '' file; do
-            name="\${file##*/}"
+            name="${file##*/}"
             if is_supported "$name"; then
                 printf '%s\t%s\t%s\n' "$source" "$name" "$file"
             fi
@@ -230,14 +230,14 @@ relative_wallpaper() {
         names+=("$row_name")
     done < <(collect_entries)
 
-    total=\${#names[@]}
+    total=${#names[@]}
     [ "$total" -gt 0 ] || {
         echo "A16EEN: no wallpapers found." >&2
         exit 1
     }
 
     for ((i = 0; i < total; i++)); do
-        if [ "\${sources[$i]}" = "$source" ] && [ "\${names[$i]}" = "$filename" ]; then
+        if [ "${sources[$i]}" = "$source" ] && [ "${names[$i]}" = "$filename" ]; then
             current_index=$i
             break
         fi
@@ -255,10 +255,10 @@ relative_wallpaper() {
         target=$(( (current_index - 1 + total) % total ))
     fi
 
-    printf '%s\t%s\n' "\${sources[$target]}" "\${names[$target]}"
+    printf '%s\t%s\n' "${sources[$target]}" "${names[$target]}"
 }
 
-command="\${1:-help}"
+command="${1:-help}"
 
 case "$command" in
     list)
