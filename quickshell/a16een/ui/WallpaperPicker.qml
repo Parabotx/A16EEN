@@ -232,7 +232,9 @@ PanelWindow {
 
                                 MediaPlayer {
                                     id: videoPreviewPlayer
-                                    source: modelData.type === "video" ? modelData.path : ""
+                                    source: modelData.type === "video" && tileMouse.containsMouse
+                                        ? modelData.path
+                                        : ""
                                     loops: MediaPlayer.Infinite
                                     audioOutput: AudioOutput {
                                         muted: true
@@ -277,8 +279,18 @@ PanelWindow {
                                             return preview.status !== Image.Ready
                                         if (modelData.type === "animated")
                                             return gifPreview.status !== AnimatedImage.Ready
-                                        return videoPreviewPlayer.mediaStatus !== MediaPlayer.LoadedMedia
-                                            && videoPreviewPlayer.mediaStatus !== MediaPlayer.BufferedMedia
+                                        return !tileMouse.containsMouse
+                                            || (videoPreviewPlayer.mediaStatus !== MediaPlayer.LoadedMedia
+                                                && videoPreviewPlayer.mediaStatus !== MediaPlayer.BufferedMedia)
+                                    }
+
+                                    Text {
+                                        anchors.centerIn: parent
+                                        visible: modelData.type === "video" && !tileMouse.containsMouse
+                                        text: "▶  HOVER TO PREVIEW"
+                                        color: "#8A8A8A"
+                                        font.pixelSize: 8
+                                        font.weight: Font.DemiBold
                                     }
                                 }
 
@@ -363,6 +375,7 @@ PanelWindow {
                                 }
 
                                 MouseArea {
+                                    id: tileMouse
                                     anchors.fill: parent
                                     hoverEnabled: true
                                     cursorShape: Qt.PointingHandCursor
