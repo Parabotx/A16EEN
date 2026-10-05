@@ -115,35 +115,35 @@ current_entry() {
 }
 
 collect_entries() {
-    local source dir file name
+    local source dir file relative name display_name
 
     for source in builtin custom; do
         dir="$(resolve_source_dir "$source")"
 
-        while IFS= read -r -d '' file; do
+        while IFS= read -r -d "" file; do
+            relative="${file#"$dir"/}"
             name="${file##*/}"
             if is_supported "$name"; then
-                printf '%s\t%s\t%s\n' "$source" "$name" "$file"
+                display_name="${name%.*}"
+                printf "%s\t%s\t%s\t%s\n" "$source" "$relative" "$display_name" "$file"
             fi
-        done < <(find "$dir" -maxdepth 1 -type f -print0 | LC_ALL=C sort -z -f)
+        done < <(find "$dir" -type f -print0 | LC_ALL=C sort -z -f)
     done
 }
-
 catalog() {
-    local current source filename row row_source row_name row_path selected
+    local current source filename row_source row_path row_display row_abs_path selected
 
     current="$(current_entry)"
     IFS=$'\t' read -r source filename <<< "$current"
 
-    while IFS=$'\t' read -r row_source row_name row_path; do
+    while IFS=$'\t' read -r row_source row_path row_display row_abs_path; do
         selected="0"
-        if [ "$row_source" = "$source" ] && [ "$row_name" = "$filename" ]; then
+        if [ "$row_source" = "$source" ] && [ "$row_path" = "$filename" ]; then
             selected="1"
         fi
-        printf '%s\t%s\t%s\t%s\n' "$row_source" "$row_name" "$row_path" "$selected"
+        printf "%s\t%s\t%s\t%s\t%s\n" "$row_source" "$row_path" "$row_display" "$row_abs_path" "$selected"
     done < <(collect_entries)
 }
-
 restart_shell() {
     if command -v a16een >/dev/null 2>&1; then
         a16een restart-shell >/dev/null 2>&1 || true
@@ -253,8 +253,8 @@ command="${1:-help}"
 
 case "$command" in
     list)
-        while IFS=$'\t' read -r source filename path; do
-            printf '%s\n' "$filename"
+        while IFS=$'\t' read -r source filename display_name path; do
+            printf "%s\n" "$display_name"
         done < <(collect_entries)
         ;;
 
