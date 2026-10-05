@@ -7,14 +7,7 @@ STATE_DIR="$HOME/.local/state/a16een"
 NIRI_DIR="$CONFIG_DIR/niri"
 QS_DIR="$CONFIG_DIR/quickshell/a16een"
 BACKUP_ROOT="$STATE_DIR/backups"
-USER_PICTURES_DIR="$HOME/Pictures"
-if command -v xdg-user-dir >/dev/null 2>&1; then
-    DETECTED_PICTURES_DIR="$(xdg-user-dir PICTURES 2>/dev/null || true)"
-    if [ -n "$DETECTED_PICTURES_DIR" ] && [ -d "$DETECTED_PICTURES_DIR" ]; then
-        USER_PICTURES_DIR="$DETECTED_PICTURES_DIR"
-    fi
-fi
-USER_WALLPAPER_DIR="$USER_PICTURES_DIR/a16een"
+USER_WALLPAPER_DIR="$HOME/Pictures/a16een"
 WALLPAPER_STATE="$STATE_DIR/wallpaper"
 
 PACKAGES="
