@@ -18,7 +18,12 @@ PanelWindow {
     readonly property color borderColor: "#E4E7EB"
     readonly property color primaryText: "#15171A"
     readonly property color secondaryText: "#7A7F87"
-    readonly property color searchBackground: "#F6F7F8"
+    readonly property color searchBackground: "#F7F8FA"
+    readonly property color searchHoverBackground: "#FAFBFC"
+    readonly property color searchFocusBackground: "#FFFFFF"
+    readonly property color searchBorder: "#E3E6EA"
+    readonly property color searchHoverBorder: "#CDD2D8"
+    readonly property color searchFocusBorder: "#AEB5BE"
     readonly property color selectedBackground: "#EEF1F3"
 
     screen: modelData
@@ -89,42 +94,60 @@ PanelWindow {
             spacing: 8
 
             Rectangle {
-                Layout.fillWidth: true
-                height: 40
-                radius: 13
-                color: root.searchBackground
-                border.width: 1
-                border.color: "#E7E9EC"
+                id: searchBox
+                Layout.preferredWidth: 320
+                Layout.minimumWidth: 220
+                Layout.maximumWidth: 360
+                Layout.alignment: Qt.AlignHCenter
+                height: 36
+                radius: 12
 
-                RowLayout {
+                property bool hovered: searchHover.hovered
+
+                color: search.activeFocus
+                    ? root.searchFocusBackground
+                    : (hovered ? root.searchHoverBackground : root.searchBackground)
+                border.width: 1
+                border.color: search.activeFocus
+                    ? root.searchFocusBorder
+                    : (hovered ? root.searchHoverBorder : root.searchBorder)
+
+                Behavior on color {
+                    ColorAnimation { duration: 110 }
+                }
+
+                Behavior on border.color {
+                    ColorAnimation { duration: 110 }
+                }
+
+                HoverHandler {
+                    id: searchHover
+                }
+
+                Text {
+                    anchors.left: parent.left
+                    anchors.leftMargin: 12
+                    anchors.verticalCenter: parent.verticalCenter
+                    text: "Search"
+                    color: root.secondaryText
+                    font.pixelSize: 11
+                    visible: search.text.length === 0 && !search.activeFocus
+                }
+
+                TextInput {
+                    id: search
                     anchors.fill: parent
                     anchors.leftMargin: 12
                     anchors.rightMargin: 12
-                    spacing: 8
-
-                    Image {
-                        Layout.alignment: Qt.AlignVCenter
-                        width: 17
-                        height: 17
-                        source: Qt.resolvedUrl("../assets/icons/search.svg")
-                        fillMode: Image.PreserveAspectFit
-                        asynchronous: true
-                        mipmap: true
-                        smooth: true
-                    }
-
-                    TextInput {
-                        id: search
-                        Layout.fillWidth: true
-                        color: root.primaryText
-                        selectionColor: "#DDE2E7"
-                        selectedTextColor: root.primaryText
-                        font.pixelSize: 12
-                        clip: true
-                        focus: root.opened
-                        activeFocusOnPress: true
-                        text: root.searchText
-                        selectByMouse: true
+                    color: root.primaryText
+                    selectionColor: "#DDE2E7"
+                    selectedTextColor: root.primaryText
+                    font.pixelSize: 11
+                    clip: true
+                    focus: root.opened
+                    activeFocusOnPress: true
+                    text: root.searchText
+                    selectByMouse: true
 
                         onTextChanged: {
                             root.searchText = text
@@ -188,7 +211,8 @@ PanelWindow {
                 Layout.fillWidth: true
                 Layout.fillHeight: true
                 clip: true
-                cellWidth: 84
+                property int gridColumns: 5
+                cellWidth: width > 0 ? width / gridColumns : 84
                 cellHeight: 72
                 currentIndex: count > 0 ? 0 : -1
                 highlightFollowsCurrentItem: true
@@ -223,14 +247,20 @@ PanelWindow {
 
                     required property var modelData
 
-                    width: 76
+                    width: appGrid.cellWidth - 8
                     height: 68
                     radius: 13
-                    color: GridView.isCurrentItem
-                        ? root.selectedBackground
-                        : "transparent"
 
                     property var entry: modelData
+                    property bool hovered: appMouse.containsMouse
+
+                    color: hovered
+                        ? "#F7F8FA"
+                        : (GridView.isCurrentItem ? root.selectedBackground : "transparent")
+
+                    Behavior on color {
+                        ColorAnimation { duration: 90 }
+                    }
 
                     Column {
                         anchors.fill: parent
@@ -270,6 +300,7 @@ PanelWindow {
                     }
 
                     MouseArea {
+                        id: appMouse
                         anchors.fill: parent
                         hoverEnabled: true
                         cursorShape: Qt.PointingHandCursor
