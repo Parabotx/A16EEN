@@ -12,10 +12,11 @@ PanelWindow {
 
     signal launcherRequested()
 
-    readonly property color dockBackground: "#66FFFFFF"
-    readonly property color dockBorder: "#7AFFFFFF"
-    readonly property color iconColor: "#111827"
-    readonly property color hoverBackground: "#F1F3F5"
+    // Blue glass: low alpha so the blurred scene remains visible through the dock.
+    readonly property color dockBackground: "#35243B8F"
+    readonly property color dockBorder: "#664F8FD0"
+    readonly property color iconColor: "#F4F7FF"
+    readonly property color hoverBackground: "#263C6BB8"
     readonly property string searchIcon: Qt.resolvedUrl("../assets/icons/search.svg")
 
     property bool edgeRevealed: false
