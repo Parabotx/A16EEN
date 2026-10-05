@@ -147,7 +147,7 @@ PanelWindow {
                     anchors.centerIn: parent
                     width: 17
                     height: 17
-                    source: Qt.resolvedUrl("../assets/icons/code-2.svg")
+                    source: Qt.resolvedUrl("../assets/icons/code.svg")
                     fillMode: Image.PreserveAspectFit
                     asynchronous: true
                     mipmap: true
