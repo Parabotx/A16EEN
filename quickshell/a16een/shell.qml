@@ -15,6 +15,7 @@ ShellRoot {
     property bool dashboardOpen: false
     property bool commandCenterOpen: false
     property bool wallpaperPickerOpen: false
+    property string wallpaperPath: ""
     property string searchText: ""
 
     property var workspaces: []
@@ -32,6 +33,20 @@ ShellRoot {
     property var latestNotification: null
 
     readonly property var primaryScreen: Quickshell.screens.length > 0 ? Quickshell.screens[0] : null
+
+    Process {
+        id: wallpaperPathProcess
+        command: ["a16een-wallpaper", "current-path"]
+        running: true
+
+        stdout: StdioCollector {
+            onStreamFinished: {
+                const path = text.trim()
+                if (path.length)
+                    root.wallpaperPath = path
+            }
+        }
+    }
 
     function consumeNiriEvent(raw) {
         const line = String(raw).trim()
@@ -161,6 +176,15 @@ ShellRoot {
     }
 
     IpcHandler {
+        target: "wallpaper"
+
+        function apply(path: string): void {
+            if (path.length)
+                root.wallpaperPath = path
+        }
+    }
+
+    IpcHandler {
         target: "command-center"
 
         function toggle(): void {
@@ -285,6 +309,7 @@ ShellRoot {
 
         Wallpaper {
             modelData: modelData
+            currentWallpaperPath: root.wallpaperPath
         }
     }
 
