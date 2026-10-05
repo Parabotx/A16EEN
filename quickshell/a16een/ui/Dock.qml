@@ -40,6 +40,7 @@ PanelWindow {
     // Niri implements ext-background-effect-v1 natively.
     BackgroundEffect.blurRegion: Region {
         item: dock
+        radius: 18
     }
 
     function workspaceIsFocused(name) {
