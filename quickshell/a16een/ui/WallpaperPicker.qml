@@ -173,8 +173,7 @@ PanelWindow {
                                 Row {
                                     anchors.centerIn: parent
                                     spacing: 4
-                                    visible: preview.status !== Image.Ready
-                                        && preview.status !== Image.Error
+                                    visible: preview.status !== Image.Ready && preview.status !== Image.Error
 
                                     Repeater {
                                         model: 3
