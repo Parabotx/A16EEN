@@ -326,6 +326,8 @@ PanelWindow {
                                 anchors.centerIn: parent
                                 implicitWidth: 28
                                 implicitHeight: 28
+                                asynchronous: true
+                                mipmap: true
                                 source: root.iconSource(appTile.entry.icon)
                             }
                         }
