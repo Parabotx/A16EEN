@@ -139,9 +139,8 @@ Item {
                 } else {
                     root.statusMessage = "THEME APPLIED"
                 }
-                // Quickshell reads QS_ICON_THEME when its process starts.
-                // The supervisor now re-reads the state before each launch.
-                Quickshell.execDetached(["a16een", "restart-shell"])
+                // A16EEN stays alive while the launcher refreshes its icon map.
+                // The selected theme is also written to GTK settings for external apps.
             } else {
                 root.statusMessage = "INSTALL / APPLY ERROR"
                 root.currentThemeReader.running = true
