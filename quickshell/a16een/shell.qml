@@ -496,7 +496,8 @@ ShellRoot {
         modelData: root.primaryScreen
         opened: root.commandCenterOpen
         widgetViewOpen: root.widgetsCenterOpen
-        timeWidgetEnabled: root.timeWidgetEnabled
+        editorialTimeWidgetEnabled: root.editorialTimeWidgetEnabled
+        calendarWidgetEnabled: root.calendarWidgetEnabled
         pulseWidgetEnabled: root.pulseWidgetEnabled
         workspaceWidgetEnabled: root.workspaceWidgetEnabled
         timeUse24Hour: root.timeUse24Hour
@@ -523,13 +524,15 @@ ShellRoot {
 
         onWidgetsRequested: {
             root.widgetsCenterOpen = true
+            root.commandCenterOpen = true
         }
 
         onWidgetsCloseRequested: {
             root.widgetsCenterOpen = false
         }
 
-        onTimeWidgetEnabledRequested: root.timeWidgetEnabled = enabled
+        onEditorialTimeWidgetEnabledRequested: root.editorialTimeWidgetEnabled = enabled
+        onCalendarWidgetEnabledRequested: root.calendarWidgetEnabled = enabled
         onPulseWidgetEnabledRequested: root.pulseWidgetEnabled = enabled
         onWorkspaceWidgetEnabledRequested: root.workspaceWidgetEnabled = enabled
         onTimeUse24HourRequested: root.timeUse24Hour = enabled
