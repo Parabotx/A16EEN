@@ -43,6 +43,7 @@ PanelWindow {
         source: root.activePath
         fillMode: Image.PreserveAspectFit
         asynchronous: true
+        retainWhileLoading: true
         mipmap: true
         cache: true
         visible: !root.isGif && status === Image.Ready
