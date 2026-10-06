@@ -20,7 +20,6 @@ PanelWindow {
     property real dragStartX: 0
     property real dragStartY: 0
     property bool dragging: false
-    property real screenScale: modelData ? modelData.devicePixelRatio : 1
     property real screenOriginX: modelData ? modelData.geometry.x : 0
     property real screenOriginY: modelData ? modelData.geometry.y : 0
 
@@ -100,10 +99,10 @@ PanelWindow {
             "a16een-screenshot",
             "area",
             root.snapshotPath,
-            String(Math.round((root.selectionX + root.screenOriginX) * root.screenScale)),
-            String(Math.round((root.selectionY + root.screenOriginY) * root.screenScale)),
-            String(Math.round(root.selectionWidth * root.screenScale)),
-            String(Math.round(root.selectionHeight * root.screenScale))
+            String(Math.round(root.selectionX + root.screenOriginX)),
+            String(Math.round(root.selectionY + root.screenOriginY)),
+            String(Math.round(root.selectionWidth)),
+            String(Math.round(root.selectionHeight))
         ]
         areaCaptureProcess.running = false
         areaCaptureProcess.running = true
