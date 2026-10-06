@@ -13,6 +13,12 @@ PanelWindow {
     property string commandText: "/"
     property int selectedCommandIndex: 0
 
+    property bool timeWidgetEnabled: true
+    property bool pulseWidgetEnabled: false
+    property bool workspaceWidgetEnabled: false
+    property bool timeUse24Hour: true
+    property bool timeShowSeconds: false
+
     property string currentPowerProfile: ""
     property string pendingPowerProfile: ""
     property string powerStatus: "READY"
@@ -28,6 +34,11 @@ PanelWindow {
     signal launcherRequested()
     signal dashboardRequested()
     signal wallpaperRequested()
+    signal timeWidgetEnabledRequested(bool enabled)
+    signal pulseWidgetEnabledRequested(bool enabled)
+    signal workspaceWidgetEnabledRequested(bool enabled)
+    signal timeUse24HourRequested(bool enabled)
+    signal timeShowSecondsRequested(bool enabled)
 
     readonly property color surface: "#000000"
     readonly property color borderColor: "#1A1A1A"
@@ -252,7 +263,10 @@ PanelWindow {
         root.powerViewOpen = false
         root.commandText = "/widgets"
         root.selectedCommandIndex = 0
-        Qt.callLater(() => widgetSectionLoader.forceActiveFocus())
+        Qt.callLater(() => {
+            if (widgetSectionLoader.item)
+                widgetSectionLoader.item.forceActiveFocus()
+        })
     }
 
     function closeWidgetView() {
@@ -397,6 +411,35 @@ PanelWindow {
             radius: root.powerViewOpen ? 31 : 23
             color: "#16000000"
             z: -1
+        }
+
+        Connections {
+            target: root
+
+            function onTimeWidgetEnabledChanged() {
+                if (widgetSectionLoader.item)
+                    widgetSectionLoader.item.timeEnabled = root.timeWidgetEnabled
+            }
+
+            function onPulseWidgetEnabledChanged() {
+                if (widgetSectionLoader.item)
+                    widgetSectionLoader.item.pulseEnabled = root.pulseWidgetEnabled
+            }
+
+            function onWorkspaceWidgetEnabledChanged() {
+                if (widgetSectionLoader.item)
+                    widgetSectionLoader.item.workspaceEnabled = root.workspaceWidgetEnabled
+            }
+
+            function onTimeUse24HourChanged() {
+                if (widgetSectionLoader.item)
+                    widgetSectionLoader.item.timeUse24Hour = root.timeUse24Hour
+            }
+
+            function onTimeShowSecondsChanged() {
+                if (widgetSectionLoader.item)
+                    widgetSectionLoader.item.timeShowSeconds = root.timeShowSeconds
+            }
         }
 
         // Normal command search.
@@ -564,11 +607,11 @@ PanelWindow {
             source: "WidgetSection.qml"
 
             onLoaded: {
-                item.timeEnabled = true
-                item.pulseEnabled = false
-                item.workspaceEnabled = false
-                item.timeUse24Hour = true
-                item.timeShowSeconds = false
+                item.timeEnabled = root.timeWidgetEnabled
+                item.pulseEnabled = root.pulseWidgetEnabled
+                item.workspaceEnabled = root.workspaceWidgetEnabled
+                item.timeUse24Hour = root.timeUse24Hour
+                item.timeShowSeconds = root.timeShowSeconds
 
                 item.backRequested.connect(root.closeWidgetView)
                 item.widgetEnabledRequested.connect((widgetId, enabled) => {
@@ -576,6 +619,8 @@ PanelWindow {
                     else if (widgetId === "pulse") root.pulseWidgetEnabledRequested(enabled)
                     else if (widgetId === "workspaces") root.workspaceWidgetEnabledRequested(enabled)
                 })
+                item.timeUse24HourRequested.connect(enabled => root.timeUse24HourRequested(enabled))
+                item.timeShowSecondsRequested.connect(enabled => root.timeShowSecondsRequested(enabled))
             }
         }
 
