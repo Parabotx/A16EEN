@@ -36,6 +36,7 @@ PanelWindow {
     signal dashboardRequested()
     signal wallpaperRequested()
     signal screenshotRequested()
+    signal screenshotSettingsRequested()
     signal widgetsRequested()
     signal widgetsCloseRequested()
     signal editorialTimeWidgetEnabledRequested(bool enabled)
@@ -58,6 +59,7 @@ PanelWindow {
     readonly property var commands: [
         { id: "wallpaper", name: "wallpaper", keywords: ["wallpaper", "background", "image"] },
         { id: "screenshot", name: "screenshot", keywords: ["screenshot", "screen", "capture", "snapshot", "area", "window"] },
+        { id: "screenshot-settings", name: "screenshot settings", keywords: ["screenshot settings", "capture settings", "save", "clipboard", "pointer", "location"] },
         { id: "launcher", name: "launcher", keywords: ["launcher", "applications", "apps"] },
         { id: "dashboard", name: "dashboard", keywords: ["dashboard", "system"] },
         { id: "overview", name: "overview", keywords: ["overview", "workspaces", "windows"] },
@@ -1208,6 +1210,10 @@ PanelWindow {
         case "screenshot":
             root.closeRequested()
             root.screenshotRequested()
+            break
+        case "screenshot-settings":
+            root.closeRequested()
+            root.screenshotSettingsRequested()
             break
         case "launcher":
             root.closeRequested()
