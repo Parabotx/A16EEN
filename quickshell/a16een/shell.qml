@@ -425,17 +425,9 @@ ShellRoot {
             modelData: modelData
             currentWallpaperPath: root.wallpaperPath
             desktopAnimationAllowed: root.wallpaperAnimationAllowed
-        }
-    }
-
-    Variants {
-        model: Quickshell.screens
-
-        EditorialTimeWidget {
-            modelData: modelData
-            widgetEnabled: root.editorialTimeWidgetEnabled
-            use24Hour: root.timeUse24Hour
-            showSeconds: root.timeShowSeconds
+            editorialTimeWidgetEnabled: root.editorialTimeWidgetEnabled
+            timeUse24Hour: root.timeUse24Hour
+            timeShowSeconds: root.timeShowSeconds
         }
     }
 
