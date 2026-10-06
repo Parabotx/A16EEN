@@ -15,6 +15,7 @@ ShellRoot {
     property bool dashboardOpen: false
     property bool commandCenterOpen: false
     property bool wallpaperPickerOpen: false
+    property bool powerCenterOpen: false
     property string wallpaperPath: ""
     property string searchText: ""
 
@@ -369,8 +370,18 @@ ShellRoot {
             root.commandCenterOpen = false
             root.wallpaperPickerOpen = true
         }
+        onPowerRequested: {
+            root.commandCenterOpen = false
+            root.wallpaperPickerOpen = false
+            root.powerCenterOpen = true
+        }
     }
 
+    PowerCenter {
+        modelData: root.primaryScreen
+        opened: root.powerCenterOpen
+        onCloseRequested: root.powerCenterOpen = false
+    }
     WallpaperPicker {
         modelData: root.primaryScreen
         opened: root.wallpaperPickerOpen
