@@ -13,7 +13,8 @@ PanelWindow {
     property string commandText: "/"
     property int selectedCommandIndex: 0
 
-    property bool timeWidgetEnabled: true
+    property bool editorialTimeWidgetEnabled: true
+    property bool calendarWidgetEnabled: false
     property bool pulseWidgetEnabled: false
     property bool workspaceWidgetEnabled: false
     property bool timeUse24Hour: true
@@ -36,7 +37,8 @@ PanelWindow {
     signal wallpaperRequested()
     signal widgetsRequested()
     signal widgetsCloseRequested()
-    signal timeWidgetEnabledRequested(bool enabled)
+    signal editorialTimeWidgetEnabledRequested(bool enabled)
+    signal calendarWidgetEnabledRequested(bool enabled)
     signal pulseWidgetEnabledRequested(bool enabled)
     signal workspaceWidgetEnabledRequested(bool enabled)
     signal timeUse24HourRequested(bool enabled)
@@ -265,10 +267,7 @@ PanelWindow {
         root.powerViewOpen = false
         root.commandText = "/widgets"
         root.selectedCommandIndex = 0
-        Qt.callLater(() => {
-            if (widgetSectionLoader.item)
-                widgetSectionLoader.item.forceActiveFocus()
-        })
+        Qt.callLater(() => widgetSection.forceActiveFocus())
     }
 
     function closeWidgetView() {
@@ -600,30 +599,25 @@ PanelWindow {
             anchors.fill: parent
             visible: root.powerViewOpen
 
-        Loader {
-            id: widgetSectionLoader
+        WidgetSection {
+            id: widgetSection
             anchors.fill: parent
-            anchors.margins: 0
-            active: root.widgetViewOpen
             visible: root.widgetViewOpen
-            source: "WidgetSection.qml"
 
-            onLoaded: {
-                item.timeEnabled = root.timeWidgetEnabled
-                item.pulseEnabled = root.pulseWidgetEnabled
-                item.workspaceEnabled = root.workspaceWidgetEnabled
-                item.timeUse24Hour = root.timeUse24Hour
-                item.timeShowSeconds = root.timeShowSeconds
+            editorialTimeEnabled: root.editorialTimeWidgetEnabled
+            calendarEnabled: root.calendarWidgetEnabled
+            pulseEnabled: root.pulseWidgetEnabled
+            workspaceEnabled: root.workspaceWidgetEnabled
+            timeUse24Hour: root.timeUse24Hour
+            timeShowSeconds: root.timeShowSeconds
 
-                item.backRequested.connect(root.closeWidgetView)
-                item.widgetEnabledRequested.connect((widgetId, enabled) => {
-                    if (widgetId === "time") root.timeWidgetEnabledRequested(enabled)
-                    else if (widgetId === "pulse") root.pulseWidgetEnabledRequested(enabled)
-                    else if (widgetId === "workspaces") root.workspaceWidgetEnabledRequested(enabled)
-                })
-                item.timeUse24HourRequested.connect(enabled => root.timeUse24HourRequested(enabled))
-                item.timeShowSecondsRequested.connect(enabled => root.timeShowSecondsRequested(enabled))
-            }
+            onBackRequested: root.closeWidgetView()
+            onEditorialTimeWidgetEnabledRequested: root.editorialTimeWidgetEnabledRequested(enabled)
+            onCalendarWidgetEnabledRequested: root.calendarWidgetEnabledRequested(enabled)
+            onPulseWidgetEnabledRequested: root.pulseWidgetEnabledRequested(enabled)
+            onWorkspaceWidgetEnabledRequested: root.workspaceWidgetEnabledRequested(enabled)
+            onTimeUse24HourRequested: root.timeUse24HourRequested(enabled)
+            onTimeShowSecondsRequested: root.timeShowSecondsRequested(enabled)
         }
 
             Column {
