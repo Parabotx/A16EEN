@@ -11,6 +11,7 @@ PanelWindow {
     property bool powerViewOpen: false
     property bool widgetViewOpen: false
     property bool controlViewOpen: false
+    property string controlDetail: ""
     property bool doNotDisturb: false
     property string commandText: "/"
     property int selectedCommandIndex: 0
@@ -49,7 +50,7 @@ PanelWindow {
     signal timeUse24HourRequested(bool enabled)
     signal timeShowSecondsRequested(bool enabled)
 
-    readonly property color surface: root.widgetViewOpen ? "#FFFFFF" : "#000000"
+    readonly property color surface: root.widgetViewOpen || root.controlViewOpen ? "#FFFFFF" : "#000000"
     readonly property color borderColor: "#1A1A1A"
     readonly property color fieldBackground: "#0A0A0A"
     readonly property color fieldBorder: "#1C1C1C"
@@ -68,6 +69,13 @@ PanelWindow {
         { id: "overview", name: "overview", keywords: ["overview", "workspaces", "windows"] },
         { id: "power", name: "power", keywords: ["power", "performance", "balanced", "battery", "energy", "eco", "power-saving", "power-saver"] },
         { id: "controls", name: "controls", keywords: ["controls", "control center", "wifi", "wi-fi", "bluetooth", "audio", "volume", "brightness", "night light", "battery", "do not disturb", "dnd"] },
+        { id: "wifi", name: "wifi", keywords: ["wifi", "wi-fi", "network", "networks", "internet", "connection"] },
+        { id: "bluetooth", name: "bluetooth", keywords: ["bluetooth", "devices", "pair", "wireless"] },
+        { id: "audio", name: "audio", keywords: ["audio", "volume", "sound", "mute", "speaker"] },
+        { id: "brightness", name: "brightness", keywords: ["brightness", "display", "screen"] },
+        { id: "night-light", name: "night light", keywords: ["night light", "nightlight", "warm", "temperature"] },
+        { id: "battery", name: "battery", keywords: ["battery", "power", "charge", "charging"] },
+        { id: "dnd", name: "do not disturb", keywords: ["do not disturb", "dnd", "focus", "notifications"] },
         { id: "widgets", name: "widgets", keywords: ["widgets", "widget", "clock", "time", "day", "date", "desktop", "modules"] },
         { id: "restart-shell", name: "restart-shell", keywords: ["restart", "shell", "reload", "quickshell"] },
         { id: "doctor", name: "doctor", keywords: ["doctor", "diagnostics", "health"] }
@@ -275,6 +283,7 @@ PanelWindow {
         root.powerViewOpen = false
         root.widgetViewOpen = false
         root.controlViewOpen = true
+        root.controlDetail = ""
         root.commandText = "/controls"
         root.selectedCommandIndex = 0
         Qt.callLater(() => {
@@ -285,9 +294,23 @@ PanelWindow {
 
     function closeControlView() {
         root.controlViewOpen = false
+        root.controlDetail = ""
         root.commandText = "/"
         root.selectedCommandIndex = 0
         Qt.callLater(() => search.forceActiveFocus())
+    }
+
+    function openControlDetail(key) {
+        root.powerViewOpen = false
+        root.widgetViewOpen = false
+        root.controlViewOpen = true
+        root.controlDetail = key
+        root.commandText = "/" + key
+        root.selectedCommandIndex = 0
+        Qt.callLater(() => {
+            if (root.controlDetail.length)
+                controlDetailSection.forceActiveFocus()
+        })
     }
 
     function openWidgetView() {
@@ -449,13 +472,26 @@ PanelWindow {
         ControlCenterSection {
             id: controlSection
             anchors.fill: parent
-            visible: root.controlViewOpen
-            active: root.controlViewOpen
+            visible: root.controlViewOpen && root.controlDetail.length === 0
+            active: root.controlViewOpen && root.controlDetail.length === 0
             doNotDisturb: root.doNotDisturb
 
             onBackRequested: root.closeControlView()
+            onControlRequested: root.openControlDetail(key)
             onDoNotDisturbRequested: root.doNotDisturbRequested(enabled)
             onBatteryRequested: root.openPowerView()
+        }
+
+        ControlDetailSection {
+            id: controlDetailSection
+            anchors.fill: parent
+            visible: root.controlViewOpen && root.controlDetail.length > 0
+            active: root.controlViewOpen && root.controlDetail.length > 0
+            mode: root.controlDetail
+            doNotDisturb: root.doNotDisturb
+
+            onBackRequested: root.openControlView()
+            onDoNotDisturbRequested: root.doNotDisturbRequested(enabled)
         }
 
         WidgetSection {
@@ -1305,6 +1341,15 @@ PanelWindow {
         case "controls":
             root.openControlView()
             break
+        case "wifi":
+        case "bluetooth":
+        case "audio":
+        case "brightness":
+        case "night-light":
+        case "battery":
+        case "dnd":
+            root.openControlDetail(command.id)
+            break
         case "widgets":
             root.openWidgetView()
             break
@@ -1322,6 +1367,7 @@ PanelWindow {
     onWidgetViewOpenChanged: {
         if (root.widgetViewOpen) {
             root.controlViewOpen = false
+            root.controlDetail = ""
             Qt.callLater(() => widgetSection.forceActiveFocus())
         } else if (root.opened && !root.powerViewOpen && !root.controlViewOpen) {
             Qt.callLater(() => search.forceActiveFocus())
@@ -1332,6 +1378,7 @@ PanelWindow {
         if (!opened) {
             root.powerViewOpen = false
             root.controlViewOpen = false
+            root.controlDetail = ""
             root.commandText = "/"
             root.selectedCommandIndex = 0
             return
