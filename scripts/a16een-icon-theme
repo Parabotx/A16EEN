@@ -51,8 +51,7 @@ theme_path() {
 system_theme_name() {
     local theme=""
 
-    if command -v gsettings >/dev/null 2>&1 &&
-       gsettings writable org.gnome.desktop.interface icon-theme >/dev/null 2>&1; then
+    if command -v gsettings >/dev/null 2>&1; then
         theme="$(gsettings get org.gnome.desktop.interface icon-theme 2>/dev/null | tr -d "\047")"
     fi
 
@@ -113,352 +112,6 @@ build_icon_index() {
     printf "%s\n" "$cache"
 }
 
-    local papirus_installed=0
-    local papirus_dark_installed=0
-    local breeze_installed=0
-    local elementary_installed=0
-    local tela_installed=0
-    local tela_blue_installed=0
-    local tela_dracula_installed=0
-    local tokyo_installed=0
-
-    theme_installed "Papirus" && papirus_installed=1 || true
-    theme_installed "Papirus-Dark" && papirus_dark_installed=1 || true
-    theme_installed "breeze" && breeze_installed=1 || true
-    theme_installed "elementary" && elementary_installed=1 || true
-    theme_installed "Tela-circle" && tela_installed=1 || true
-    theme_installed "Tela-circle-blue" && tela_blue_installed=1 || true
-    theme_installed "Tela-circle-dracula" && tela_dracula_installed=1 || true
-    theme_installed "TokyoNight-SE" && tokyo_installed=1 || true
-
-    printf '%s\n' \
-        'system|System Default|Use the desktop and Qt platform default|1|system' \
-        "papirus|Papirus|Clean, modern full icon family|$papirus_installed|Papirus" \
-        "papirus-dark|Papirus Dark|Dark folders with crisp application icons|$papirus_dark_installed|Papirus-Dark" \
-        "breeze|Breeze|KDE-style clean and balanced icons|$breeze_installed|breeze" \
-        "elementary|Elementary|Minimal, polished vector icon system|$elementary_installed|elementary" \
-        "tela-circle|Tela Circle|Colorful circular application icons|$tela_installed|Tela-circle" \
-        "tela-circle-blue|Tela Circle Blue|Blue-accent circular application icons|$tela_blue_installed|Tela-circle-blue" \
-        "tela-circle-dracula|Tela Circle Dracula|Dark Dracula-inspired circular icons|$tela_dracula_installed|Tela-circle-dracula" \
-        "tokyo-night|Tokyo Night|Tokyo Night themed app and folder icons|$tokyo_installed|TokyoNight-SE"
-}
-
-theme_record() {
-    local id="$1"
-    case "$id" in
-        system) printf '%s\n' 'system|System Default|Use the desktop and Qt platform default|1|system' ;;
-        papirus) printf '%s\n' 'papirus|Papirus|Clean, modern full icon family|1|Papirus' ;;
-        papirus-dark) printf '%s\n' 'papirus-dark|Papirus Dark|Dark folders with crisp application icons|1|Papirus-Dark' ;;
-        breeze) printf '%s\n' 'breeze|Breeze|KDE-style clean and balanced icons|1|breeze' ;;
-        elementary) printf '%s\n' 'elementary|Elementary|Minimal, polished vector icon system|1|elementary' ;;
-        tela-circle) printf '%s\n' 'tela-circle|Tela Circle|Colorful circular application icons|1|Tela-circle' ;;
-        tela-circle-blue) printf '%s\n' 'tela-circle-blue|Tela Circle Blue|Blue-accent circular application icons|1|Tela-circle-blue' ;;
-        tela-circle-dracula) printf '%s\n' 'tela-circle-dracula|Tela Circle Dracula|Dark Dracula-inspired circular icons|1|Tela-circle-dracula' ;;
-        tokyo-night) printf '%s\n' 'tokyo-night|Tokyo Night|Tokyo Night themed app and folder icons|0|TokyoNight-SE' ;;
-        *) return 1 ;;
-    esac
-}
-
-ensure_package() {
-    local package="$1"
-    if pacman -Q "$package" >/dev/null 2>&1; then
-        return 0
-    fi
-
-    command -v pacman >/dev/null 2>&1 || die "pacman is required to install $package."
-
-    # Never perform a full system upgrade just to install an icon theme.
-    if sudo -n true >/dev/null 2>&1; then
-        sudo pacman -S --needed "$package"
-        return 0
-    fi
-
-    # Quickshell has no TTY for sudo. Use a graphical Foot terminal only when
-    # authentication is actually required, then return to the same GUI flow.
-    if [[ -n "${WAYLAND_DISPLAY:-}" ]] && command -v foot >/dev/null 2>&1; then
-        foot --title="A16EEN • Installing Icon Theme" bash -lc "set -e; sudo pacman -S --needed \"$package\""
-        return 0
-    fi
-
-    sudo pacman -S --needed "$package"
-}
-
-ensure_theme_installed() {
-    local id="$1"
-    local package=""
-
-    case "$id" in
-        papirus|papirus-dark)
-            package="papirus-icon-theme"
-            ;;
-        breeze)
-            package="breeze-icons"
-            ;;
-        elementary)
-            package="elementary-icon-theme"
-            ;;
-        tela-circle)
-            package="tela-circle-icon-theme-standard"
-            ;;
-        tela-circle-blue)
-            package="tela-circle-icon-theme-blue"
-            ;;
-        tela-circle-dracula)
-            package="tela-circle-icon-theme-dracula"
-            ;;
-        tokyo-night)
-            install_tokyo_night
-            return
-            ;;
-        system)
-            return
-            ;;
-        *)
-            die "unknown icon theme '$id'."
-            ;;
-    esac
-
-    ensure_package "$package"
-}
-
-install_tokyo_night() {
-    command -v curl >/dev/null 2>&1 || die "curl is required to install Tokyo Night icons."
-    command -v jq >/dev/null 2>&1 || die "jq is required to install Tokyo Night icons."
-
-    if theme_installed "TokyoNight-SE"; then
-        return 0
-    fi
-
-    local download_url version tmp_dir archive extracted_dir theme_dir
-    download_url=$(curl -fsSL --proto '=https' --tlsv1.2 "$TOKYO_API" |
-        jq -r '.assets[] | select(.name == "TokyoNight-SE.tar.bz2") | .browser_download_url')
-    version=$(curl -fsSL --proto '=https' --tlsv1.2 "$TOKYO_API" |
-        jq -r '.tag_name')
-
-    [[ -n "$download_url" && "$download_url" != "null" ]] ||
-        die "could not find the Tokyo Night icon release archive."
-
-    [[ -n "$version" && "$version" != "null" ]] ||
-        die "could not determine the Tokyo Night icon release version."
-
-    tmp_dir=$(mktemp -d)
-    archive="$tmp_dir/TokyoNight-SE.tar.bz2"
-    extracted_dir="$tmp_dir/extracted"
-    mkdir -p "$extracted_dir"
-
-    curl -fsSL \
-        --proto '=https' \
-        --tlsv1.2 \
-        "$download_url" \
-        -o "$archive"
-
-    tar -tjf "$archive" >/dev/null 2>&1 ||
-        die "downloaded Tokyo Night archive failed validation."
-
-    tar -xjf "$archive" -C "$extracted_dir"
-
-    theme_dir=$(find "$extracted_dir" -type f -name index.theme -print -quit |
-        sed 's#/index.theme$##')
-
-    [[ -n "$theme_dir" && -f "$theme_dir/index.theme" ]] ||
-        die "Tokyo Night archive did not contain a valid icon theme."
-
-    mkdir -p "$HOME/.local/share/icons"
-    rm -rf "$HOME/.local/share/icons/TokyoNight-SE"
-    cp -a "$theme_dir" "$HOME/.local/share/icons/TokyoNight-SE"
-
-    if command -v gtk-update-icon-cache >/dev/null 2>&1; then
-        gtk-update-icon-cache -f -t "$HOME/.local/share/icons/TokyoNight-SE" >/dev/null 2>&1 || true
-    fi
-
-    rm -rf "$tmp_dir"
-    printf 'Installed Tokyo Night icon theme %s.\\n' "$version"
-}
-
-
-write_gtk_theme() {
-    local theme="$1"
-    local settings="$2"
-
-    if [[ "$theme" == "system" ]]; then
-        local dirname_name backup
-        dirname_name="$(basename "$(dirname "$settings")")"
-        backup="$BACKUP_DIR/$dirname_name.settings.ini"
-
-        if [[ -f "$backup" ]]; then
-            mkdir -p "$(dirname "$settings")"
-            cp "$backup" "$settings"
-        elif [[ -f "$settings" ]]; then
-            sed -i '/^[[:space:]]*gtk-icon-theme-name[[:space:]]*=/d' "$settings"
-        fi
-
-        return 0
-    fi
-
-    mkdir -p "$(dirname "$settings")"
-
-    if [[ -f "$settings" ]]; then
-        sed -i '/^[[:space:]]*gtk-icon-theme-name[[:space:]]*=/d' "$settings"
-    else
-        printf '[Settings]\n' > "$settings"
-    fi
-
-    if ! grep -q '^[[]Settings[]]' "$settings"; then
-        sed -i '1i[Settings]' "$settings"
-    fi
-
-    printf 'gtk-icon-theme-name=%s\n' "$theme" >> "$settings"
-}
-
-save_gtk_backups_once() {
-    mkdir -p "$BACKUP_DIR"
-
-    for settings in "$GTK3_SETTINGS" "$GTK4_SETTINGS"; do
-        local name="$BACKUP_DIR/$(basename "$(dirname "$settings")").settings.ini"
-        if [[ ! -e "$name" ]]; then
-            if [[ -f "$settings" ]]; then
-                cp "$settings" "$name"
-            else
-                : > "$name.absent"
-            fi
-        fi
-    done
-}
-
-restore_gtk_backups() {
-    for settings in "$GTK3_SETTINGS" "$GTK4_SETTINGS"; do
-        local dirname_name
-        dirname_name="$(basename "$(dirname "$settings")")"
-        local backup="$BACKUP_DIR/$dirname_name.settings.ini"
-
-        if [[ -f "$backup" ]]; then
-            mkdir -p "$(dirname "$settings")"
-            cp "$backup" "$settings"
-        elif [[ -f "$BACKUP_DIR/$dirname_name.settings.ini.absent" ]]; then
-            rm -f "$settings"
-        fi
-    done
-}
-
-set_gsettings_theme() {
-    local theme="$1"
-    if ! command -v gsettings >/dev/null 2>&1 ||
-       ! gsettings writable org.gnome.desktop.interface icon-theme >/dev/null 2>&1; then
-        return 0
-    fi
-
-    if [[ "$theme" == "system" ]]; then
-        if [[ -f "$STATE_DIR/previous-gsettings-icon-theme" ]]; then
-            gsettings set org.gnome.desktop.interface icon-theme                 "$(cat "$STATE_DIR/previous-gsettings-icon-theme")" >/dev/null 2>&1 || true
-        else
-            gsettings reset org.gnome.desktop.interface icon-theme >/dev/null 2>&1 || true
-        fi
-        return 0
-    fi
-
-    if [[ ! -f "$STATE_DIR/previous-gsettings-icon-theme" ]]; then
-        gsettings get org.gnome.desktop.interface icon-theme 2>/dev/null |
-            sed -e "s/^'//" -e "s/'$//" > "$STATE_DIR/previous-gsettings-icon-theme" || true
-    fi
-
-    gsettings set org.gnome.desktop.interface icon-theme "$theme" >/dev/null 2>&1 || true
-}
-
-theme_state_valid() {
-    local theme="$1"
-    [[ "$theme" == "system" ]] && return 0
-    theme_installed "$theme"
-}
-
-cleanup_installed() {
-    command -v pacman >/dev/null 2>&1 || die "pacman is required for icon-theme cleanup."
-
-    local packages=(
-        "breeze-icons"
-        "elementary-icon-theme"
-        "tela-circle-icon-theme-standard"
-        "tela-circle-icon-theme-blue"
-        "tela-circle-icon-theme-dracula"
-    )
-    local found=0
-
-    echo "Checking optional A16EEN icon theme packages..."
-    for package in "${packages[@]}"; do
-        if pacman -Q "$package" >/dev/null 2>&1; then
-            found=1
-            echo
-            echo "Removing $package..."
-            if ! sudo pacman -R "$package"; then
-                echo "Keeping $package because pacman did not allow its removal." >&2
-            fi
-        fi
-    done
-
-    if [[ "$found" -eq 0 ]]; then
-        printf 'No optional A16EEN icon theme packages are installed.\n'
-    fi
-}
-
-
-apply_theme() {
-    local id="$1"
-    local record name theme_name
-    record=$(theme_record "$id") || die "unknown icon theme '$id'."
-    IFS='|' read -r _ name _ _ theme_name <<< "$record"
-
-    if [[ "$id" != "system" ]]; then
-        ensure_theme_installed "$id"
-        theme_installed "$theme_name" || die "$name is not installed correctly."
-        save_gtk_backups_once
-        write_gtk_theme "$theme_name" "$GTK3_SETTINGS"
-        write_gtk_theme "$theme_name" "$GTK4_SETTINGS"
-        set_gsettings_theme "$theme_name"
-        printf '%s\n' "$theme_name" > "$THEME_STATE"
-        printf 'A16EEN icon theme: %s\n' "$name"
-        printf 'theme=%s\n' "$theme_name"
-        return
-    fi
-
-    rm -f "$THEME_STATE"
-    restore_gtk_backups
-    set_gsettings_theme system
-    printf 'A16EEN icon theme: System Default\n'
-}
-
-case "${1:-list}" in
-    list)
-        list_themes
-        ;;
-    current)
-        current_theme
-        ;;
-    path)
-        [[ $# -ge 2 ]] || die "usage: a16een-icon-theme path <theme-name>"
-        theme_path "$2" || exit 1
-        ;;
-    resolve)
-        resolve_icons "$@"
-        ;;
-    installed)
-        [[ $# -ge 2 ]] || die "usage: a16een-icon-theme installed <theme-name>"
-        theme_installed "$2"
-        ;;
-    install)
-        [[ $# -ge 2 ]] || die "usage: a16een-icon-theme install <theme-id>"
-        ensure_theme_installed "$2"
-        ;;
-    set)
-        [[ $# -ge 2 ]] || die "usage: a16een-icon-theme set <theme-id>"
-        apply_theme "$2"
-        ;;
-    cleanup)
-        [[ $# -eq 1 ]] || die "usage: a16een-icon-theme cleanup"
-        cleanup_installed
-        ;;
-    *)
-        die "usage: a16een-icon-theme {list|current|path|installed|install|set|cleanup}"
-        ;;
-esac
 resolve_icons() {
     [[ $# -ge 2 ]] || die "usage: a16een-icon-theme resolve <theme-name> <icon>..."
     local requested_theme="$1"
@@ -537,14 +190,14 @@ ensure_package() {
 
     command -v pacman >/dev/null 2>&1 || die "pacman is required to install $package."
 
-    # Never perform a full system upgrade just to install an icon theme.
+    # Installing one icon theme must not perform a full system upgrade.
     if sudo -n true >/dev/null 2>&1; then
         sudo pacman -S --needed "$package"
         return 0
     fi
 
-    # Quickshell has no TTY for sudo. Use a graphical Foot terminal only when
-    # authentication is actually required, then return to the same GUI flow.
+    # Quickshell launches the action without a TTY. Let the user authenticate
+    # in a small graphical terminal when sudo needs a password.
     if [[ -n "${WAYLAND_DISPLAY:-}" ]] && command -v foot >/dev/null 2>&1; then
         foot --title="A16EEN • Installing Icon Theme" bash -lc "set -e; sudo pacman -S --needed \"$package\""
         return 0
@@ -813,6 +466,9 @@ case "${1:-list}" in
     install)
         [[ $# -ge 2 ]] || die "usage: a16een-icon-theme install <theme-id>"
         ensure_theme_installed "$2"
+        ;;
+    resolve)
+        resolve_icons "$@"
         ;;
     set)
         [[ $# -ge 2 ]] || die "usage: a16een-icon-theme set <theme-id>"
