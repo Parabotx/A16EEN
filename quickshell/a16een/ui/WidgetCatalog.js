@@ -2,11 +2,18 @@
 
 var definitions = [
     {
-        id: "time",
-        title: "TIME & DATE",
-        subtitle: "Desktop clock and date",
-        detail: "Local time, weekday and calendar date",
+        id: "editorial-time",
+        title: "EDITORIAL TIME",
+        subtitle: "Minimal desktop clock",
+        detail: "Wide, container-free time and date display",
         defaultEnabled: true
+    },
+    {
+        id: "calendar",
+        title: "CALENDAR",
+        subtitle: "Monthly glass calendar",
+        detail: "Month navigation, today highlight and events area",
+        defaultEnabled: false
     },
     {
         id: "pulse",
