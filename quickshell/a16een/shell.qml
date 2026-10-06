@@ -299,6 +299,8 @@ ShellRoot {
             root.launcherOpen = false
             root.dashboardOpen = false
             root.wallpaperPickerOpen = false
+            root.screenshotCenterOpen = false
+            root.screenshotSettingsOpen = false
         }
 
         function close(): void {
