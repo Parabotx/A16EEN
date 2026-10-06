@@ -81,7 +81,7 @@ Item {
     }
 
     function iconSource(name) {
-        return Qt.resolvedUrl("../assets/icons/lucide-" + name + ".svg")
+        return Qt.resolvedUrl("../assets/icons/lucide-" + name + "-dark.svg")
     }
 
     function run(args) {
