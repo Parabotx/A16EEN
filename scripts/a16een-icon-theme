@@ -100,7 +100,19 @@ build_icon_index() {
                 else priority=4;
                 print name "\t" priority "\t" path;
             }
-        ' | sort -t 
+        ' | sort -k1,1 -k2,2n |
+        awk -F "\t" '!seen[$1]++ {print $1 "\t" $3}' > "$tmp"
+
+    if [[ -s "$tmp" ]]; then
+        mv "$tmp" "$cache"
+    else
+        rm -f "$tmp"
+        return 1
+    fi
+
+    printf "%s\n" "$cache"
+}
+
     local papirus_installed=0
     local papirus_dark_installed=0
     local breeze_installed=0
@@ -447,19 +459,6 @@ case "${1:-list}" in
         die "usage: a16een-icon-theme {list|current|path|installed|install|set|cleanup}"
         ;;
 esac
-\t' -k1,1 -k2,2n |
-        awk -F "\t" '!seen[$1]++ {print $1 "\t" $3}' > "$tmp"
-
-    if [[ -s "$tmp" ]]; then
-        mv "$tmp" "$cache"
-    else
-        rm -f "$tmp"
-        return 1
-    fi
-
-    printf "%s\n" "$cache"
-}
-
 resolve_icons() {
     [[ $# -ge 2 ]] || die "usage: a16een-icon-theme resolve <theme-name> <icon>..."
     local requested_theme="$1"
