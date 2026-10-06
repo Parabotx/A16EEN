@@ -855,7 +855,7 @@ PanelWindow {
                         }
 
                         Item {
-                            width: parent.width - 430
+                            width: Math.max(1, parent.width - 476)
                             height: 1
                         }
 
