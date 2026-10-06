@@ -11,9 +11,17 @@ PanelWindow {
     property bool powerViewOpen: false
     property string commandText: "/"
     property int selectedCommandIndex: 0
+
     property string currentPowerProfile: ""
     property string pendingPowerProfile: ""
     property string powerStatus: "READY"
+
+    property int batteryPercent: 0
+    property bool batteryPresent: false
+    property string batteryState: "unknown"
+    property string batteryTime: "—"
+    property string batteryRate: "—"
+    property string batteryCapacity: "—"
 
     signal closeRequested()
     signal launcherRequested()
@@ -62,11 +70,59 @@ PanelWindow {
         })
     }
 
-    function refreshPowerProfile() {
-        if (!root.powerViewOpen || profileReader.running)
-            return
+    readonly property string activeProfileLabel: {
+        switch (root.currentPowerProfile) {
+        case "performance":
+            return "PERFORMANCE"
+        case "power-saver":
+            return "ECO"
+        case "balanced":
+            return "BALANCED"
+        default:
+            return "—"
+        }
+    }
 
-        profileReader.running = true
+    readonly property string batteryStateLabel: {
+        switch (root.batteryState) {
+        case "charging":
+            return "CHARGING"
+        case "discharging":
+            return "ON BATTERY"
+        case "fully-charged":
+            return "FULLY CHARGED"
+        case "pending-charge":
+            return "PENDING CHARGE"
+        case "pending-discharge":
+            return "PENDING DISCHARGE"
+        default:
+            return root.batteryPresent ? "BATTERY" : "AC POWER"
+        }
+    }
+
+    readonly property string wallpaperModeLabel: {
+        switch (root.currentPowerProfile) {
+        case "performance":
+            return "LIVE • RUNNING"
+        case "power-saver":
+            return "STATIC • PAUSED"
+        case "balanced":
+            return "ADAPTIVE • DESKTOP ONLY"
+        default:
+            return "ADAPTIVE"
+        }
+    }
+
+    readonly property string monitorModeLabel: {
+        switch (root.currentPowerProfile) {
+        case "performance":
+            return "1 SECOND"
+        case "power-saver":
+            return "7 SECONDS"
+        case "balanced":
+        default:
+            return "3 SECONDS"
+        }
     }
 
     function normalizePowerProfile(value) {
@@ -84,12 +140,73 @@ PanelWindow {
         return profile
     }
 
+    function refreshPowerProfile() {
+        if (!root.powerViewOpen || profileReader.running)
+            return
+
+        profileReader.running = true
+    }
+
+    function refreshBattery() {
+        if (!root.powerViewOpen || batteryReader.running)
+            return
+
+        batteryReader.running = true
+    }
+
+    function parseBatteryInfo(output) {
+        root.batteryPresent = false
+        root.batteryPercent = 0
+        root.batteryState = "unknown"
+        root.batteryTime = "—"
+        root.batteryRate = "—"
+        root.batteryCapacity = "—"
+
+        const lines = String(output || "").split("\n")
+
+        for (const rawLine of lines) {
+            const line = rawLine.trim()
+            const parts = line.split(":")
+            if (parts.length < 2)
+                continue
+
+            const key = parts[0].trim().toLowerCase()
+            const value = parts.slice(1).join(":").trim()
+
+            if (key === "percentage") {
+                const match = value.match(/([0-9]+(?:\.[0-9]+)?)\s*%/)
+                if (match) {
+                    root.batteryPercent = Math.max(0, Math.min(100, Math.round(Number(match[1]))))
+                    root.batteryPresent = true
+                }
+            } else if (key === "state") {
+                root.batteryState = value.toLowerCase()
+            } else if (key === "time to empty" || key === "time to full") {
+                if (value.length)
+                    root.batteryTime = value
+            } else if (key === "energy-rate") {
+                root.batteryRate = value
+            } else if (key === "capacity") {
+                root.batteryCapacity = value
+            }
+        }
+
+        if (!root.batteryPresent) {
+            root.batteryState = "unknown"
+            root.batteryTime = "—"
+            root.batteryRate = "—"
+            root.batteryCapacity = "—"
+        }
+    }
+
     function selectPowerProfile(profile) {
         if (!profile)
             return
 
         root.pendingPowerProfile = profile
-        root.powerStatus = "APPLYING " + profile.toUpperCase()
+        root.powerStatus = "APPLYING " + (
+            profile === "power-saver" ? "ECO" : profile.toUpperCase()
+        )
 
         profileWriter.running = false
         Qt.callLater(() => profileWriter.running = true)
@@ -106,8 +223,17 @@ PanelWindow {
         root.currentPowerProfile = ""
         root.pendingPowerProfile = ""
         root.powerStatus = "READING SYSTEM PROFILE"
+        root.batteryPresent = false
+        root.batteryPercent = 0
+        root.batteryState = "unknown"
+        root.batteryTime = "—"
+        root.batteryRate = "—"
+        root.batteryCapacity = "—"
 
-        Qt.callLater(() => root.refreshPowerProfile())
+        Qt.callLater(() => {
+            root.refreshPowerProfile()
+            root.refreshBattery()
+        })
     }
 
     function closePowerView() {
@@ -138,7 +264,6 @@ PanelWindow {
 
     Process {
         id: profileReader
-
         command: ["powerprofilesctl", "get"]
         running: false
 
@@ -162,14 +287,12 @@ PanelWindow {
 
     Process {
         id: profileWriter
-
         command: ["powerprofilesctl", "set", root.pendingPowerProfile]
         running: false
 
         stderr: StdioCollector {
             onStreamFinished: {
-                const errorText = text.trim()
-                if (errorText.length)
+                if (text.trim().length)
                     root.powerStatus = "FAILED TO APPLY PROFILE"
             }
         }
@@ -183,34 +306,60 @@ PanelWindow {
         }
     }
 
+    Process {
+        id: batteryReader
+        command: [
+            "bash",
+            "-lc",
+            "upower -i /org/freedesktop/UPower/devices/DisplayDevice 2>/dev/null || true"
+        ]
+        running: false
+
+        stdout: StdioCollector {
+            onStreamFinished: root.parseBatteryInfo(text)
+        }
+    }
+
     Timer {
         id: powerRefreshTimer
         interval: 450
         repeat: false
+        onTriggered: root.refreshPowerProfile()
+    }
+
+    Timer {
+        id: powerDataTimer
+        interval: 4000
+        repeat: true
+        running: root.powerViewOpen
 
         onTriggered: {
             root.refreshPowerProfile()
+            root.refreshBattery()
         }
     }
 
     Rectangle {
         anchors.fill: parent
         color: "#000000"
-        opacity: root.opened ? 0.32 : 0
+        opacity: root.opened ? 0.34 : 0
     }
 
     Rectangle {
         id: card
         width: root.powerViewOpen
-            ? Math.min(880, parent.width - 80)
+            ? Math.min(940, parent.width - 72)
             : Math.min(500, parent.width - 48)
-        height: root.powerViewOpen ? Math.min(500, parent.height - 100) : 326
+        height: root.powerViewOpen
+            ? Math.min(640, parent.height - 80)
+            : 326
         anchors.centerIn: parent
         anchors.verticalCenterOffset: root.powerViewOpen ? 0 : 185
-        radius: root.powerViewOpen ? 24 : 18
+        radius: root.powerViewOpen ? 26 : 18
         color: root.surface
         border.width: 1
-        border.color: root.borderColor
+        border.color: "#202020"
+        clip: true
 
         Behavior on width {
             NumberAnimation { duration: 180; easing.type: Easing.OutCubic }
@@ -226,12 +375,13 @@ PanelWindow {
 
         Rectangle {
             anchors.fill: parent
-            anchors.margins: -4
-            radius: root.powerViewOpen ? 28 : 22
-            color: "#18000000"
+            anchors.margins: -5
+            radius: root.powerViewOpen ? 31 : 23
+            color: "#16000000"
             z: -1
         }
 
+        // Normal command search.
         Item {
             anchors.fill: parent
             visible: !root.powerViewOpen
@@ -363,7 +513,6 @@ PanelWindow {
                                 anchors.fill: parent
                                 hoverEnabled: true
                                 cursorShape: Qt.PointingHandCursor
-
                                 onEntered: root.selectedCommandIndex = index
                                 onClicked: root.executeCommand(modelData)
                             }
@@ -382,6 +531,7 @@ PanelWindow {
             }
         }
 
+        // Redesigned power center.
         Item {
             id: powerView
             anchors.fill: parent
@@ -389,126 +539,359 @@ PanelWindow {
 
             Column {
                 anchors.fill: parent
-                anchors.margins: 34
-                spacing: 22
+                anchors.margins: 28
+                spacing: 14
 
-                Row {
-                    width: parent.width
-                    height: 50
-
-                    Column {
-                        spacing: 3
-
-                        Text {
-                            text: "POWER MODE"
-                            color: root.primaryText
-                            font.pixelSize: 15
-                            font.weight: Font.DemiBold
-                            font.letterSpacing: 2.2
-                        }
-
-                        Text {
-                            text: "SYSTEM PERFORMANCE & BATTERY"
-                            color: "#505050"
-                            font.pixelSize: 8
-                            font.letterSpacing: 1.4
-                        }
-                    }
-
-                    Item { width: parent.width - 285; height: 1 }
-
-                    Column {
-                        width: 210
-                        spacing: 3
-
-                        Text {
-                            width: parent.width
-                            horizontalAlignment: Text.AlignRight
-                            text: root.currentPowerProfile.length
-                                ? root.currentPowerProfile === "power-saver"
-                                    ? "ECO"
-                                    : root.currentPowerProfile.toUpperCase()
-                                : "—"
-                            color: "#D7B56D"
-                            font.pixelSize: 12
-                            font.weight: Font.DemiBold
-                        }
-
-                        Text {
-                            width: parent.width
-                            horizontalAlignment: Text.AlignRight
-                            text: root.powerStatus
-                            color: "#5A5A5A"
-                            font.pixelSize: 8
-                        }
-                    }
-                }
-
+                // Header: profile status is now inside the main container.
                 Rectangle {
                     width: parent.width
-                    height: 1
-                    color: "#151515"
+                    height: 68
+                    radius: 16
+                    color: "#090909"
+                    border.width: 1
+                    border.color: "#181818"
+
+                    Row {
+                        anchors.fill: parent
+                        anchors.leftMargin: 20
+                        anchors.rightMargin: 20
+
+                        Column {
+                            anchors.verticalCenter: parent.verticalCenter
+                            spacing: 4
+
+                            Text {
+                                text: "POWER CENTER"
+                                color: root.primaryText
+                                font.pixelSize: 16
+                                font.weight: Font.DemiBold
+                                font.letterSpacing: 1.5
+                            }
+
+                            Text {
+                                text: "SYSTEM PERFORMANCE • BATTERY • ENERGY"
+                                color: "#505050"
+                                font.pixelSize: 8
+                                font.letterSpacing: 1.1
+                            }
+                        }
+
+                        Item {
+                            width: parent.width - 390
+                            height: 1
+                        }
+
+                        Rectangle {
+                            width: 180
+                            height: 44
+                            anchors.verticalCenter: parent.verticalCenter
+                            radius: 13
+                            color: "#101010"
+                            border.width: 1
+                            border.color: "#282828"
+
+                            Column {
+                                anchors.centerIn: parent
+                                spacing: 2
+
+                                Text {
+                                    width: 150
+                                    horizontalAlignment: Text.AlignHCenter
+                                    text: "ACTIVE PROFILE"
+                                    color: "#4C4C4C"
+                                    font.pixelSize: 7
+                                    font.weight: Font.DemiBold
+                                    font.letterSpacing: 1.1
+                                }
+
+                                Text {
+                                    width: 150
+                                    horizontalAlignment: Text.AlignHCenter
+                                    text: root.activeProfileLabel
+                                    color: "#D7B56D"
+                                    font.pixelSize: 11
+                                    font.weight: Font.DemiBold
+                                    font.letterSpacing: 0.8
+                                }
+                            }
+                        }
+                    }
                 }
 
+                // Main content.
                 Row {
                     width: parent.width
-                    height: 250
-                    spacing: 12
-
-                    PowerCard {
-                        title: "PERFORMANCE"
-                        subtitle: "Maximum system performance"
-                        details: [
-                            "CPU / system: performance priority",
-                            "Live wallpaper: keeps moving with normal windows",
-                            "Monitoring: updates every 1 second"
-                        ]
-                        profile: "performance"
-                        active: root.powerProfileIsActive("performance")
-                    }
-
-                    PowerCard {
-                        title: "BALANCED"
-                        subtitle: "Adaptive everyday mode"
-                        details: [
-                            "CPU / system: balanced efficiency",
-                            "Live wallpaper: pauses while an app is focused",
-                            "Monitoring: updates every 3 seconds"
-                        ]
-                        profile: "balanced"
-                        active: root.powerProfileIsActive("balanced")
-                    }
-
-                    PowerCard {
-                        title: "ECO"
-                        subtitle: "Maximum battery saving"
-                        details: [
-                            "CPU / system: power-saver priority",
-                            "Live wallpaper: always static",
-                            "Monitoring: updates every 7 seconds"
-                        ]
-                        profile: "power-saver"
-                        active: root.powerProfileIsActive("power-saver")
-                    }
-                }
-
-                Row {
-                    width: parent.width
-                    height: 36
+                    height: 340
+                    spacing: 14
 
                     Rectangle {
-                        width: 44
-                        height: 30
-                        radius: 9
-                        color: "#0B0B0B"
+                        id: batteryPanel
+                        width: Math.min(350, parent.width * 0.39)
+                        height: parent.height
+                        radius: 18
+                        color: "#080808"
                         border.width: 1
-                        border.color: "#191919"
+                        border.color: "#171717"
+
+                        Column {
+                            anchors.fill: parent
+                            anchors.margins: 22
+                            spacing: 12
+
+                            Row {
+                                width: parent.width
+                                height: 24
+
+                                Text {
+                                    text: "BATTERY"
+                                    color: "#B0B0B0"
+                                    font.pixelSize: 9
+                                    font.weight: Font.DemiBold
+                                    font.letterSpacing: 1.4
+                                }
+
+                                Item { width: parent.width - 125; height: 1 }
+
+                                Text {
+                                    width: 125
+                                    horizontalAlignment: Text.AlignRight
+                                    text: root.batteryPresent ? root.batteryStateLabel : "AC POWER"
+                                    color: "#555555"
+                                    font.pixelSize: 8
+                                    font.weight: Font.DemiBold
+                                    font.letterSpacing: 0.9
+                                }
+                            }
+
+                            Item {
+                                width: parent.width
+                                height: 120
+
+                                Rectangle {
+                                    id: batteryBody
+                                    width: 188
+                                    height: 78
+                                    anchors.centerIn: parent
+                                    radius: 15
+                                    color: "#0E0E0E"
+                                    border.width: 1
+                                    border.color: "#2A2A2A"
+
+                                    Rectangle {
+                                        width: 5
+                                        height: 26
+                                        anchors.right: parent.right
+                                        anchors.rightMargin: -6
+                                        anchors.verticalCenter: parent.verticalCenter
+                                        radius: 2
+                                        color: "#2A2A2A"
+                                    }
+
+                                    Rectangle {
+                                        x: 9
+                                        y: 9
+                                        width: Math.max(0, Math.min(parent.width - 18, (parent.width - 18) * root.batteryPercent / 100))
+                                        height: parent.height - 18
+                                        radius: 9
+                                        color: root.batteryPresent
+                                            ? (root.batteryState === "charging" ? "#C8A85E" : "#6E6E6E")
+                                            : "#202020"
+
+                                        Behavior on width {
+                                            NumberAnimation { duration: 220; easing.type: Easing.OutCubic }
+                                        }
+                                    }
+
+                                    Text {
+                                        anchors.centerIn: parent
+                                        text: root.batteryPresent
+                                            ? root.batteryPercent + "%"
+                                            : "AC"
+                                        color: "#FFFFFF"
+                                        font.pixelSize: 27
+                                        font.weight: Font.DemiBold
+                                    }
+                                }
+                            }
+
+                            Column {
+                                width: parent.width
+                                spacing: 2
+
+                                Text {
+                                    width: parent.width
+                                    horizontalAlignment: Text.AlignHCenter
+                                    text: root.batteryPresent
+                                        ? root.batteryStateLabel
+                                        : "CONNECTED TO AC POWER"
+                                    color: "#D2D2D2"
+                                    font.pixelSize: 10
+                                    font.weight: Font.DemiBold
+                                    font.letterSpacing: 0.8
+                                }
+
+                                Text {
+                                    width: parent.width
+                                    horizontalAlignment: Text.AlignHCenter
+                                    text: root.batteryPresent
+                                        ? (root.batteryState === "charging" ? "Power is flowing into the battery" : "Battery telemetry from the system")
+                                        : "Battery telemetry will appear when a battery is detected"
+                                    color: "#525252"
+                                    font.pixelSize: 8
+                                }
+                            }
+
+                            Row {
+                                width: parent.width
+                                height: 64
+                                spacing: 8
+
+                                MetricTile {
+                                    label: "TIME"
+                                    value: root.batteryTime
+                                }
+
+                                MetricTile {
+                                    label: "POWER"
+                                    value: root.batteryRate
+                                }
+
+                                MetricTile {
+                                    label: "HEALTH"
+                                    value: root.batteryCapacity
+                                }
+                            }
+                        }
+                    }
+
+                    Rectangle {
+                        width: parent.width - batteryPanel.width - 14
+                        height: parent.height
+                        radius: 18
+                        color: "#080808"
+                        border.width: 1
+                        border.color: "#171717"
+
+                        Column {
+                            anchors.fill: parent
+                            anchors.margins: 18
+                            spacing: 9
+
+                            Row {
+                                width: parent.width
+                                height: 28
+
+                                Column {
+                                    spacing: 2
+
+                                    Text {
+                                        text: "POWER MODES"
+                                        color: "#B0B0B0"
+                                        font.pixelSize: 9
+                                        font.weight: Font.DemiBold
+                                        font.letterSpacing: 1.4
+                                    }
+
+                                    Text {
+                                        text: "Choose how A16EEN prioritizes speed and battery"
+                                        color: "#454545"
+                                        font.pixelSize: 7
+                                    }
+                                }
+
+                                Item { width: 1; height: 1 }
+                            }
+
+                            PowerModeRow {
+                                title: "PERFORMANCE"
+                                subtitle: "Maximum responsiveness"
+                                detail: "Live wallpaper runs • system checks every 1s"
+                                profile: "performance"
+                                active: root.powerProfileIsActive("performance")
+                            }
+
+                            PowerModeRow {
+                                title: "BALANCED"
+                                subtitle: "Adaptive everyday mode"
+                                detail: "Wallpaper pauses while using apps • checks every 3s"
+                                profile: "balanced"
+                                active: root.powerProfileIsActive("balanced")
+                            }
+
+                            PowerModeRow {
+                                title: "ECO"
+                                subtitle: "Maximum battery saving"
+                                detail: "Wallpaper stays static • system checks every 7s"
+                                profile: "power-saver"
+                                active: root.powerProfileIsActive("power-saver")
+                            }
+                        }
+                    }
+                }
+
+                // A16EEN effects summary.
+                Rectangle {
+                    width: parent.width
+                    height: 58
+                    radius: 15
+                    color: "#090909"
+                    border.width: 1
+                    border.color: "#171717"
+
+                    Row {
+                        anchors.fill: parent
+                        anchors.leftMargin: 18
+                        anchors.rightMargin: 18
+                        spacing: 12
+
+                        EffectChip {
+                            title: "LIVE WALLPAPER"
+                            value: root.wallpaperModeLabel
+                        }
+
+                        EffectChip {
+                            title: "A16EEN MONITOR"
+                            value: root.monitorModeLabel
+                        }
+
+                        Item {
+                            width: parent.width - 430
+                            height: 1
+                        }
+
+                        Text {
+                            width: 190
+                            anchors.verticalCenter: parent.verticalCenter
+                            horizontalAlignment: Text.AlignRight
+                            text: root.powerStatus
+                            color: "#4D4D4D"
+                            font.pixelSize: 7
+                            font.weight: Font.DemiBold
+                            font.letterSpacing: 0.8
+                            elide: Text.ElideRight
+                        }
+                    }
+                }
+
+                // Clean footer with no overlap.
+                Row {
+                    width: parent.width
+                    height: 40
+                    spacing: 10
+
+                    Rectangle {
+                        width: 40
+                        height: 40
+                        radius: 12
+                        color: "#0A0A0A"
+                        border.width: 1
+                        border.color: "#1D1D1D"
 
                         Text {
                             anchors.centerIn: parent
                             text: "←"
-                            color: "#5A5A5A"
-                            font.pixelSize: 12
+                            color: "#9A9A9A"
+                            font.pixelSize: 14
                             font.weight: Font.DemiBold
                         }
 
@@ -519,16 +902,35 @@ PanelWindow {
                         }
                     }
 
-                    Text {
-                        anchors.left: parent.left
-                        anchors.leftMargin: 14
+                    Column {
                         anchors.verticalCenter: parent.verticalCenter
-                        text: "Return to command search"
-                        color: "#444444"
-                        font.pixelSize: 9
+                        spacing: 2
+
+                        Text {
+                            text: "COMMAND SEARCH"
+                            color: "#666666"
+                            font.pixelSize: 7
+                            font.weight: Font.DemiBold
+                            font.letterSpacing: 1.0
+                        }
+
+                        Text {
+                            text: "Return to / commands"
+                            color: "#3F3F3F"
+                            font.pixelSize: 8
+                        }
                     }
 
-                    Item { width: 1; height: 1 }
+                    Item { width: parent.width - 180; height: 1 }
+
+                    Text {
+                        anchors.verticalCenter: parent.verticalCenter
+                        text: "POWERPROFILES"
+                        color: "#2F2F2F"
+                        font.pixelSize: 7
+                        font.weight: Font.DemiBold
+                        font.letterSpacing: 1.0
+                    }
                 }
             }
         }
@@ -537,12 +939,7 @@ PanelWindow {
     MouseArea {
         z: -1
         anchors.fill: parent
-        onClicked: {
-            if (root.powerViewOpen)
-                root.closeRequested()
-            else
-                root.closeRequested()
-        }
+        onClicked: root.closeRequested()
     }
 
     Keys.onEscapePressed: {
@@ -552,34 +949,111 @@ PanelWindow {
             root.closeRequested()
     }
 
-    component PowerCard: Rectangle {
+    component MetricTile: Rectangle {
+        required property string label
+        required property string value
+
+        width: (parent.width - 16) / 3
+        height: 64
+        radius: 11
+        color: "#0C0C0C"
+        border.width: 1
+        border.color: "#151515"
+
+        Column {
+            anchors.fill: parent
+            anchors.margins: 9
+            spacing: 5
+
+            Text {
+                text: parent.parent.label
+                color: "#414141"
+                font.pixelSize: 7
+                font.weight: Font.DemiBold
+                font.letterSpacing: 0.9
+            }
+
+            Text {
+                width: parent.width
+                text: parent.parent.value
+                color: "#C8C8C8"
+                font.pixelSize: 9
+                font.weight: Font.DemiBold
+                elide: Text.ElideRight
+            }
+        }
+    }
+
+    component EffectChip: Rectangle {
+        required property string title
+        required property string value
+
+        width: 125
+        height: 38
+        anchors.verticalCenter: parent.verticalCenter
+        radius: 10
+        color: "#0C0C0C"
+        border.width: 1
+        border.color: "#151515"
+
+        Column {
+            anchors.centerIn: parent
+            spacing: 2
+
+            Text {
+                width: 110
+                horizontalAlignment: Text.AlignHCenter
+                text: parent.parent.title
+                color: "#414141"
+                font.pixelSize: 6
+                font.weight: Font.DemiBold
+                font.letterSpacing: 0.8
+            }
+
+            Text {
+                width: 110
+                horizontalAlignment: Text.AlignHCenter
+                text: parent.parent.value
+                color: "#BBBBBB"
+                font.pixelSize: 7
+                font.weight: Font.DemiBold
+                elide: Text.ElideRight
+            }
+        }
+    }
+
+    component PowerModeRow: Rectangle {
         required property string title
         required property string subtitle
-        required property var details
+        required property string detail
         required property string profile
         required property bool active
 
-        width: (parent.width - 24) / 3
-        height: 250
-        radius: 18
-        color: active ? "#111111" : "#080808"
-        border.width: active ? 1 : 0
-        border.color: "#303030"
+        width: parent.width
+        height: 82
+        radius: 15
+        color: active ? "#111111" : "#090909"
+        border.width: 1
+        border.color: active ? "#303030" : "#151515"
 
         Behavior on color {
             ColorAnimation { duration: 140 }
         }
 
-        Column {
+        Row {
             anchors.fill: parent
-            anchors.margins: 20
-            spacing: 10
+            anchors.leftMargin: 14
+            anchors.rightMargin: 14
+            spacing: 13
 
             Rectangle {
                 width: 42
                 height: 42
+                anchors.verticalCenter: parent.verticalCenter
                 radius: 12
-                color: active ? "#222222" : "#101010"
+                color: active ? "#222222" : "#0E0E0E"
+                border.width: 1
+                border.color: active ? "#373737" : "#191919"
 
                 Text {
                     anchors.centerIn: parent
@@ -590,50 +1064,67 @@ PanelWindow {
                 }
             }
 
-            Text {
-                text: parent.parent.title
-                color: "#FFFFFF"
-                font.pixelSize: 12
-                font.weight: Font.DemiBold
-                font.letterSpacing: 0.9
-            }
-
-            Text {
-                width: parent.width
-                text: parent.parent.subtitle
-                color: "#777777"
-                font.pixelSize: 9
-                wrapMode: Text.WordWrap
-            }
-
             Column {
-                width: parent.width
-                spacing: 5
+                width: parent.width - 170
+                anchors.verticalCenter: parent.verticalCenter
+                spacing: 4
 
-                Repeater {
-                    model: parent.parent.details
+                Text {
+                    text: parent.parent.parent.title
+                    color: "#FFFFFF"
+                    font.pixelSize: 10
+                    font.weight: Font.DemiBold
+                    font.letterSpacing: 0.8
+                }
 
-                    delegate: Text {
-                        width: parent.width
-                        text: "•  " + modelData
-                        color: "#4F4F4F"
-                        font.pixelSize: 8
-                        wrapMode: Text.WordWrap
-                    }
+                Text {
+                    text: parent.parent.parent.subtitle
+                    color: "#727272"
+                    font.pixelSize: 8
+                    font.weight: Font.DemiBold
+                }
+
+                Text {
+                    width: parent.width
+                    text: parent.parent.parent.detail
+                    color: "#454545"
+                    font.pixelSize: 7
+                    elide: Text.ElideRight
                 }
             }
 
-            Item {
-                height: 1
-                width: 1
-            }
+            Column {
+                width: 90
+                anchors.verticalCenter: parent.verticalCenter
+                spacing: 5
 
-            Text {
-                text: active ? "ACTIVE" : "SELECT"
-                color: active ? "#D7B56D" : "#555555"
-                font.pixelSize: 8
-                font.weight: Font.DemiBold
-                font.letterSpacing: 1.2
+                Rectangle {
+                    width: 90
+                    height: 24
+                    radius: 8
+                    color: active ? "#1A1A1A" : "#0B0B0B"
+                    border.width: 1
+                    border.color: active ? "#333333" : "#171717"
+
+                    Text {
+                        anchors.centerIn: parent
+                        text: active ? "ACTIVE" : "SELECT"
+                        color: active ? "#D7B56D" : "#555555"
+                        font.pixelSize: 7
+                        font.weight: Font.DemiBold
+                        font.letterSpacing: 1.0
+                    }
+                }
+
+                Text {
+                    width: 90
+                    horizontalAlignment: Text.AlignRight
+                    text: profile === "power-saver" ? "ECO" : profile.toUpperCase()
+                    color: "#353535"
+                    font.pixelSize: 6
+                    font.weight: Font.DemiBold
+                    font.letterSpacing: 0.7
+                }
             }
         }
 
