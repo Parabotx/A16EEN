@@ -446,7 +446,7 @@ PanelWindow {
         radius: root.powerViewOpen || root.controlViewOpen ? 26 : 18
         color: root.surface
         border.width: 1
-        border.color: root.widgetViewOpen ? "#E1E6EC" : "#202020"
+        border.color: root.widgetViewOpen || root.controlViewOpen ? "#E1E6EC" : "#202020"
         clip: true
 
         Behavior on width {
