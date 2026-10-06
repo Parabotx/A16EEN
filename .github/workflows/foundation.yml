@@ -93,7 +93,7 @@ jobs:
           grep -Fq 'iconColor: "#111111"' quickshell/a16een/ui/Dock.qml
           ! grep -Fq '#2F6FED' quickshell/a16een/ui/Dock.qml
           ! grep -Fq 'width: 20' quickshell/a16een/ui/Dock.qml
-          grep -Fq 'Super+S repeat=false hotkey-overlay-title="A16EEN Screenshot Center"' niri/config.kdl
+          grep -Fq 'Super+S allow-inhibiting=false repeat=false hotkey-overlay-title="A16EEN Screenshot Center"' niri/config.kdl
           grep -Fq 'Super+Space repeat=false hotkey-overlay-title="A16EEN Application Launcher"' niri/config.kdl
           grep -Fq 'Super+Slash repeat=false hotkey-overlay-title="A16EEN Command Center"' niri/config.kdl
           grep -Fq 'Print { screenshot; }' niri/config.kdl
