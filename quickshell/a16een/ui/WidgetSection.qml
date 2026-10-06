@@ -55,7 +55,7 @@ Item {
             root.workspaceWidgetEnabledRequested(next)
     }
 
-    focus: true
+    focus: visible
     activeFocusOnTab: true
 
     Rectangle {
