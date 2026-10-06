@@ -144,6 +144,170 @@ cmd_snapshot() {
     printf 'dnd=%s\n' "$dnd"
 }
 
+wifi_device() {
+    nmcli -t -f DEVICE,TYPE,STATE,CONNECTION device status 2>/dev/null |
+        awk -F: '$2=="wifi" {print $1; exit}'
+}
+
+wifi_detail() {
+    local device state connection
+    device=$(wifi_device)
+    if [ -z "$device" ]; then
+        printf 'state=unavailable\nconnection=Not connected\ndevice=—\n'
+        return
+    fi
+
+    state=$(nmcli -t -f DEVICE,STATE device status 2>/dev/null |
+        awk -F: -v d="$device" '$1==d {print tolower($2); exit}')
+    connection=$(nmcli -t -f DEVICE,CONNECTION device status 2>/dev/null |
+        awk -F: -v d="$device" '$1==d {print $2; exit}')
+
+    printf 'state=%s\n' "${state:-disconnected}"
+    printf 'connection=%s\n' "${connection:-Not connected}"
+    printf 'device=%s\n' "$device"
+}
+
+wifi_networks() {
+    command -v nmcli >/dev/null 2>&1 || return 1
+    nmcli -t --separator '|' -f IN-USE,SSID,SIGNAL,SECURITY device wifi list --rescan no 2>/dev/null |
+        awk -F'|' 'length($2) > 0 {print $2 "|" $3 "|" $4 "|" $1}' |
+        awk '!seen[$0]++'
+}
+
+wifi_connect() {
+    local ssid="${2:-}"
+    local password="${3:-}"
+
+    [ -n "$ssid" ] || return 1
+
+    if [ -n "$password" ]; then
+        nmcli device wifi connect "$ssid" password "$password" >/dev/null 2>&1
+    else
+        nmcli device wifi connect "$ssid" >/dev/null 2>&1
+    fi
+}
+
+wifi_disconnect() {
+    local device
+    device=$(wifi_device)
+    [ -n "$device" ] || return 1
+    nmcli device disconnect "$device" >/dev/null 2>&1
+}
+
+wifi_saved() {
+    nmcli -t --separator '|' -f NAME,TYPE connection show 2>/dev/null |
+        awk -F'|' '$2=="802-11-wireless" {print $1}'
+}
+
+bluetooth_devices() {
+    command -v bluetoothctl >/dev/null 2>&1 || return 1
+
+    bluetoothctl devices Paired 2>/dev/null |
+        sed 's/^Device //' |
+        while read -r mac name; do
+            [ -n "$mac" ] || continue
+            local info connected trusted
+            info=$(bluetoothctl info "$mac" 2>/dev/null || true)
+            connected=$(printf '%s\n' "$info" | awk '/Connected:/ {print tolower($2); exit}')
+            trusted=$(printf '%s\n' "$info" | awk '/Trusted:/ {print tolower($2); exit}')
+            printf '%s|%s|%s|%s\n' "$mac" "$name" "${connected:-no}" "${trusted:-no}"
+        done
+}
+
+bluetooth_toggle() {
+    local state
+    state=$(cmd_bluetooth_status)
+    case "$state" in
+        on) bluetoothctl power off >/dev/null 2>&1 ;;
+        off) bluetoothctl power on >/dev/null 2>&1 ;;
+        *) return 1 ;;
+    esac
+}
+
+bluetooth_connect() {
+    bluetoothctl connect "${2:-}" >/dev/null 2>&1
+}
+
+bluetooth_disconnect() {
+    bluetoothctl disconnect "${2:-}" >/dev/null 2>&1
+}
+
+bluetooth_scan() {
+    command -v bluetoothctl >/dev/null 2>&1 || return 1
+    (timeout 7 bluetoothctl scan on >/dev/null 2>&1 || true) &
+}
+
+audio_detail() {
+    local output percent muted sink
+    output=$(wpctl get-volume @DEFAULT_AUDIO_SINK@ 2>/dev/null || true)
+    percent=$(printf '%s\n' "$output" | awk '{for (i=1;i<=NF;i++) if ($i ~ /^[0-9]+\\.[0-9]+$/) {printf "%d", $i*100+0.5; exit}}')
+    muted=0
+    printf '%s\n' "$output" | grep -q '\[MUTED\]' && muted=1
+
+    sink=$(wpctl inspect @DEFAULT_AUDIO_SINK@ 2>/dev/null |
+        awk -F'= ' '/node.description/ {print $2; exit}' |
+        sed 's/^"//; s/"$//')
+
+    printf 'volume=%s\n' "${percent:-0}"
+    printf 'muted=%s\n' "$muted"
+    printf 'sink=%s\n' "${sink:-Default output}"
+}
+
+audio_set() {
+    local value="${2:-}"
+    [[ "$value" =~ ^[0-9]+$ ]] || return 1
+    (( value = value < 0 ? 0 : value > 100 ? 100 : value ))
+    wpctl set-volume @DEFAULT_AUDIO_SINK@ "${value}%" >/dev/null 2>&1
+}
+
+brightness_detail() {
+    printf 'percent=%s\n' "$(cmd_brightness_status)"
+}
+
+battery_detail() {
+    local info percent state time rate capacity
+    info=$(upower -i /org/freedesktop/UPower/devices/DisplayDevice 2>/dev/null || true)
+    percent=$(printf '%s\n' "$info" | awk -F: '/^[[:space:]]*percentage:/ {gsub(/[[:space:]]*%/, "", $2); print $2; exit}')
+    state=$(printf '%s\n' "$info" | awk -F: '/^[[:space:]]*state:/ {gsub(/^[[:space:]]+|[[:space:]]+$/, "", $2); print tolower($2); exit}')
+    time=$(printf '%s\n' "$info" | awk -F: '/^[[:space:]]*(time to empty|time to full):/ {gsub(/^[[:space:]]+/, "", $2); print $2; exit}')
+    rate=$(printf '%s\n' "$info" | awk -F: '/^[[:space:]]*energy-rate:/ {gsub(/^[[:space:]]+/, "", $2); print $2; exit}')
+    capacity=$(printf '%s\n' "$info" | awk -F: '/^[[:space:]]*capacity:/ {gsub(/^[[:space:]]+/, "", $2); print $2; exit}')
+
+    printf 'percent=%s\n' "${percent:-0}"
+    printf 'state=%s\n' "${state:-unknown}"
+    printf 'time=%s\n' "${time:-—}"
+    printf 'rate=%s\n' "${rate:-—}"
+    printf 'capacity=%s\n' "${capacity:-—}"
+}
+
+night_detail() {
+    printf 'state=%s\n' "$(cmd_night_light_status)"
+    printf 'temperature=4000K\n'
+    printf 'schedule=06:30 → 18:30\n'
+}
+
+dnd_detail() {
+    printf 'state=%s\n' "$(cmd_dnd_status)"
+    printf 'behavior=Suppress A16EEN notification toasts\n'
+}
+
+control_detail() {
+    case "${1:-}" in
+        wifi) wifi_detail ;;
+        bluetooth)
+            cmd_bluetooth_status | sed 's/^/state=/'
+            printf 'devices=paired\n'
+            bluetooth_devices
+            ;;
+        audio) audio_detail ;;
+        brightness) brightness_detail ;;
+        night-light) night_detail ;;
+        battery) battery_detail ;;
+        dnd) dnd_detail ;;
+        *) return 1 ;;
+    esac
+}
+
 toggle_wifi() {
     local state
     state=$(cmd_wifi_status)
@@ -155,13 +319,7 @@ toggle_wifi() {
 }
 
 toggle_bluetooth() {
-    local state
-    state=$(cmd_bluetooth_status)
-    case "$state" in
-        on) bluetoothctl power off >/dev/null 2>&1 ;;
-        off) bluetoothctl power on >/dev/null 2>&1 ;;
-        *) return 1 ;;
-    esac
+    bluetooth_toggle
 }
 
 toggle_audio() {
@@ -206,42 +364,57 @@ case "${1:-snapshot}" in
             status) cmd_wifi_status ;;
             name) cmd_wifi_name ;;
             toggle) toggle_wifi ;;
+            detail) wifi_detail ;;
+            networks) wifi_networks ;;
+            saved) wifi_saved ;;
+            connect) wifi_connect "$@" ;;
+            disconnect) wifi_disconnect ;;
         esac
         ;;
     bluetooth)
         case "${2:-status}" in
             status) cmd_bluetooth_status ;;
-            toggle) toggle_bluetooth ;;
+            toggle) bluetooth_toggle ;;
+            detail) control_detail bluetooth ;;
+            devices) bluetooth_devices ;;
+            connect) bluetooth_connect "$@" ;;
+            disconnect) bluetooth_disconnect "$@" ;;
+            scan) bluetooth_scan ;;
         esac
         ;;
     audio)
         case "${2:-status}" in
             status) cmd_audio_status ;;
             toggle) toggle_audio ;;
+            detail) audio_detail ;;
+            set) audio_set "$@" ;;
         esac
         ;;
     brightness)
         case "${2:-status}" in
             status) cmd_brightness_status ;;
+            detail) brightness_detail ;;
             set) set_brightness "${3:-}" ;;
         esac
         ;;
     night-light)
         case "${2:-status}" in
             status) cmd_night_light_status ;;
+            detail) night_detail ;;
             toggle) toggle_night_light ;;
         esac
         ;;
     dnd)
-        case "${2:-status}" in
+        case "${2:-status|get}" in
             status|get) cmd_dnd_status ;;
+            detail) dnd_detail ;;
             toggle) toggle_dnd ;;
             on) write_flag "$DND_STATE" 1 ;;
             off) write_flag "$DND_STATE" 0 ;;
         esac
         ;;
     *)
-        echo "Usage: a16een-control {snapshot|wifi|bluetooth|audio|brightness|night-light|dnd}" >&2
+        echo "Usage: a16een-control {snapshot|wifi|bluetooth|audio|brightness|battery|night-light|dnd}" >&2
         exit 1
         ;;
 esac
