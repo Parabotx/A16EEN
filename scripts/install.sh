@@ -186,6 +186,7 @@ else
     cp "$ROOT_DIR/niri/config.kdl" "$TMP_DEPLOY/config.kdl"
     cp "$ROOT_DIR/quickshell/a16een/shell.qml" "$TMP_DEPLOY/shell.qml"
     cp "$ROOT_DIR/quickshell/a16een/ui/"*.qml "$TMP_DEPLOY/ui/"
+    cp "$ROOT_DIR/quickshell/a16een/ui/"*.js "$TMP_DEPLOY/ui/"
     cp "$ROOT_DIR/quickshell/a16een/assets/icons/"*.svg "$TMP_DEPLOY/assets/icons/"
 
     # Ship every supported built-in wallpaper from the dedicated repository folder.
@@ -244,6 +245,7 @@ else
     cp "$TMP_DEPLOY/config.kdl" "$NIRI_DIR/config.kdl"
     cp "$TMP_DEPLOY/shell.qml" "$QS_DIR/shell.qml"
     cp "$TMP_DEPLOY/ui/"*.qml "$QS_DIR/ui/"
+    cp "$TMP_DEPLOY/ui/"*.js "$QS_DIR/ui/"
 
     # Replace only the built-in runtime library. Personal wallpapers live elsewhere.
     find "$QS_DIR/assets/wallpapers" -type f -delete
