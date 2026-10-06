@@ -478,7 +478,12 @@ Item {
         }
 
         Row {
-            width: parent.width
+            anchors.left: parent.left
+            anchors.right: parent.right
+            anchors.bottom: parent.bottom
+            anchors.leftMargin: 22
+            anchors.rightMargin: 22
+            anchors.bottomMargin: 22
             height: 36
             spacing: 9
 
