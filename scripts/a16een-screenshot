@@ -1,11 +1,11 @@
 #!/bin/bash
 set -euo pipefail
 
-CONFIG_DIR="\${XDG_CONFIG_HOME:-$HOME/.config}/a16een"
-STATE_DIR="\${XDG_STATE_HOME:-$HOME/.local/state}/a16een"
+CONFIG_DIR="${XDG_CONFIG_HOME:-$HOME/.config}/a16een"
+STATE_DIR="${XDG_STATE_HOME:-$HOME/.local/state}/a16een"
 SCREENSHOT_STATE="$STATE_DIR/screenshot.conf"
 QS_CONFIG="$CONFIG_DIR/quickshell/a16een"
-TEMP_DIR="\${XDG_RUNTIME_DIR:-/tmp}/a16een-screenshots"
+TEMP_DIR="${XDG_RUNTIME_DIR:-/tmp}/a16een-screenshots"
 
 mkdir -p "$STATE_DIR" "$TEMP_DIR"
 
