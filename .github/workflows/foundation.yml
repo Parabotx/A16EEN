@@ -29,6 +29,7 @@ jobs:
           bash -n scripts/a16een-wallpaper
           bash -n scripts/a16een-icons
           bash -n scripts/a16een-screenshot
+          bash -n scripts/a16een-control
 
       - name: Validate foundation files
         run: |
@@ -43,7 +44,9 @@ jobs:
           test -f quickshell/a16een/ui/ScreenshotCenter.qml
           test -f quickshell/a16een/ui/ScreenshotSettings.qml
           test -f quickshell/a16een/ui/ScreenshotPreview.qml
+          test -f quickshell/a16een/ui/ControlCenterSection.qml
           test -f scripts/a16een-screenshot
+          test -f scripts/a16een-control
           test -f quickshell/a16een/assets/icons/lucide-monitor.svg
           test -f quickshell/a16een/assets/icons/lucide-crop.svg
           test -f quickshell/a16een/assets/icons/lucide-app-window.svg
@@ -51,6 +54,15 @@ jobs:
           test -f quickshell/a16een/assets/icons/lucide-folder-open.svg
           test -f quickshell/a16een/assets/icons/lucide-clipboard.svg
           test -f quickshell/a16een/assets/icons/lucide-mouse-pointer.svg
+          test -f quickshell/a16een/assets/icons/lucide-wifi.svg
+          test -f quickshell/a16een/assets/icons/lucide-bluetooth.svg
+          test -f quickshell/a16een/assets/icons/lucide-volume-2.svg
+          test -f quickshell/a16een/assets/icons/lucide-sun.svg
+          test -f quickshell/a16een/assets/icons/lucide-moon.svg
+          test -f quickshell/a16een/assets/icons/lucide-battery.svg
+          test -f quickshell/a16een/assets/icons/lucide-bell-off.svg
+          test -f quickshell/a16een/assets/icons/lucide-sliders-horizontal.svg
+          test -f quickshell/a16een/assets/icons/lucide-arrow-left.svg
           test -f quickshell/a16een/ui/WidgetCatalog.js
           test -f quickshell/a16een/ui/WallpaperPicker.qml
           test -f quickshell/a16een/ui/NotificationToast.qml
@@ -83,6 +95,8 @@ jobs:
           grep -Fq 'grim' scripts/install.sh
           grep -Fq 'wl-clipboard' scripts/install.sh
           grep -Fq 'jq' scripts/install.sh
+          grep -Fq 'wlsunset' scripts/install.sh
+          grep -Fq 'a16een-control' scripts/install.sh
           grep -Fq 'a16een-screenshot' scripts/install.sh
           grep -Fq 'USER_WALLPAPER_DIR="$HOME/Pictures/a16een"' scripts/install.sh
           grep -Fq 'property bool wallpaperPickerOpen' quickshell/a16een/shell.qml
@@ -102,6 +116,9 @@ jobs:
           grep -Fq 'target: "command-center"' quickshell/a16een/shell.qml
           grep -Fq 'property bool commandCenterOpen' quickshell/a16een/shell.qml
           grep -Fq 'property bool screenshotCenterOpen' quickshell/a16een/shell.qml
+          grep -Fq 'property bool doNotDisturb' quickshell/a16een/shell.qml
+          grep -Fq 'id: dndReader' quickshell/a16een/shell.qml
+          grep -Fq 'function setDoNotDisturb(enabled)' quickshell/a16een/shell.qml
           grep -Fq 'target: "screenshot"' quickshell/a16een/shell.qml
           grep -Fq 'ScreenshotCenter {' quickshell/a16een/shell.qml
           grep -Fq 'visible: root.opened' quickshell/a16een/ui/CommandCenter.qml
@@ -117,11 +134,16 @@ jobs:
           grep -Fq 'COPY TO CLIPBOARD' quickshell/a16een/ui/ScreenshotSettings.qml
           grep -Fq 'interval: 2000' quickshell/a16een/ui/ScreenshotPreview.qml
           grep -Fq 'xdg-open' quickshell/a16een/ui/ScreenshotPreview.qml
+          grep -Fq 'onDoNotDisturbRequested: root.setDoNotDisturb(enabled)' quickshell/a16een/shell.qml
           grep -Fq 'ipc call screenshot preview' scripts/a16een-screenshot
           grep -Fq 'grim -g' scripts/a16een-screenshot
           grep -Fq 'niri msg action screenshot-screen' scripts/a16een-screenshot
           grep -Fq 'niri msg action screenshot-window' scripts/a16een-screenshot
           grep -Fq 'signal screenshotRequested()' quickshell/a16een/ui/CommandCenter.qml
+          grep -Fq 'signal doNotDisturbRequested(bool enabled)' quickshell/a16een/ui/CommandCenter.qml
+          grep -Fq 'id: "controls"' quickshell/a16een/ui/CommandCenter.qml
+          grep -Fq 'ControlCenterSection {' quickshell/a16een/ui/CommandCenter.qml
+          grep -Fq 'lucide-sliders-horizontal.svg' quickshell/a16een/ui/CommandCenter.qml
           grep -Fq 'id: "screenshot"' quickshell/a16een/ui/CommandCenter.qml
           grep -Fq 'text: "/"' quickshell/a16een/ui/CommandCenter.qml
           grep -Fq 'text: "search commands"' quickshell/a16een/ui/CommandCenter.qml
