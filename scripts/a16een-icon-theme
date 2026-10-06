@@ -195,11 +195,22 @@ write_gtk_theme() {
     local theme="$1"
     local settings="$2"
 
-    mkdir -p "$(dirname "$settings")"
-
     if [[ "$theme" == "system" ]]; then
-        return
+        local dirname_name backup
+        dirname_name="$(basename "$(dirname "$settings")")"
+        backup="$BACKUP_DIR/$dirname_name.settings.ini"
+
+        if [[ -f "$backup" ]]; then
+            mkdir -p "$(dirname "$settings")"
+            cp "$backup" "$settings"
+        elif [[ -f "$settings" ]]; then
+            sed -i '/^[[:space:]]*gtk-icon-theme-name[[:space:]]*=/d' "$settings"
+        fi
+
+        return 0
     fi
+
+    mkdir -p "$(dirname "$settings")"
 
     if [[ -f "$settings" ]]; then
         sed -i '/^[[:space:]]*gtk-icon-theme-name[[:space:]]*=/d' "$settings"
@@ -266,6 +277,12 @@ set_gsettings_theme() {
     fi
 
     gsettings set org.gnome.desktop.interface icon-theme "$theme" >/dev/null 2>&1 || true
+}
+
+theme_state_valid() {
+    local theme="$1"
+    [[ "$theme" == "system" ]] && return 0
+    theme_installed "$theme"
 }
 
 apply_theme() {
