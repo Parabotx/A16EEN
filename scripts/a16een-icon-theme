@@ -7,6 +7,7 @@ GTK3_SETTINGS="$HOME/.config/gtk-3.0/settings.ini"
 GTK4_SETTINGS="$HOME/.config/gtk-4.0/settings.ini"
 BACKUP_DIR="$STATE_DIR/icon-theme-backup"
 CACHE_DIR="${XDG_CACHE_HOME:-$HOME/.cache}/a16een/icon-themes"
+CACHE_VERSION="v2"
 
 readonly TOKYO_API="https://api.github.com/repos/ljmill/tokyo-night-icons/releases/latest"
 
@@ -117,7 +118,7 @@ build_icon_index() {
     [[ -n "$primary_dir" && -d "$primary_dir" ]] || return 1
 
     mkdir -p "$CACHE_DIR"
-    local cache="$CACHE_DIR/$(cache_key "$theme_name").tsv"
+    local cache="$CACHE_DIR/${CACHE_VERSION}-$(cache_key "$theme_name").tsv"
     if [[ -s "$cache" ]]; then
         printf "%s\n" "$cache"
         return 0
