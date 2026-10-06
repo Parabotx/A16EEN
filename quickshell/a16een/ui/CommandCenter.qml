@@ -34,6 +34,8 @@ PanelWindow {
     signal launcherRequested()
     signal dashboardRequested()
     signal wallpaperRequested()
+    signal widgetsRequested()
+    signal widgetsCloseRequested()
     signal timeWidgetEnabledRequested(bool enabled)
     signal pulseWidgetEnabledRequested(bool enabled)
     signal workspaceWidgetEnabledRequested(bool enabled)
