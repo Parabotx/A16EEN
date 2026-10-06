@@ -19,6 +19,14 @@ ShellRoot {
     property string searchText: ""
     property string powerProfile: "balanced"
 
+    // Widget state lives in the shell; rendering and management stay modular.
+    property bool widgetsCenterOpen: false
+    property bool timeWidgetEnabled: true
+    property bool pulseWidgetEnabled: false
+    property bool workspaceWidgetEnabled: false
+    property bool timeUse24Hour: true
+    property bool timeShowSeconds: false
+
     property var workspaces: []
     property var windows: []
     property int focusedWorkspaceId: -1
@@ -33,6 +41,7 @@ ShellRoot {
         && !root.dashboardOpen
         && !root.commandCenterOpen
         && !root.wallpaperPickerOpen
+        && !root.widgetsCenterOpen
 
     readonly property bool wallpaperAnimationAllowed: {
         switch (root.powerProfile) {
@@ -194,6 +203,7 @@ ShellRoot {
                 root.dashboardOpen = false
                 root.commandCenterOpen = false
                 root.wallpaperPickerOpen = false
+                root.widgetsCenterOpen = false
             }
         }
 
@@ -202,6 +212,7 @@ ShellRoot {
             root.dashboardOpen = false
             root.commandCenterOpen = false
             root.wallpaperPickerOpen = false
+            root.widgetsCenterOpen = false
         }
 
         function close(): void {
@@ -228,6 +239,7 @@ ShellRoot {
                 root.launcherOpen = false
                 root.commandCenterOpen = false
                 root.wallpaperPickerOpen = false
+                root.widgetsCenterOpen = false
             }
         }
 
@@ -236,6 +248,7 @@ ShellRoot {
             root.launcherOpen = false
             root.commandCenterOpen = false
             root.wallpaperPickerOpen = false
+            root.widgetsCenterOpen = false
         }
 
         function close(): void {
@@ -253,6 +266,32 @@ ShellRoot {
     }
 
     IpcHandler {
+        target: "widgets"
+
+        function toggle(): void {
+            root.widgetsCenterOpen = !root.widgetsCenterOpen
+            if (root.widgetsCenterOpen) {
+                root.launcherOpen = false
+                root.dashboardOpen = false
+                root.commandCenterOpen = false
+                root.wallpaperPickerOpen = false
+            }
+        }
+
+        function open(): void {
+            root.widgetsCenterOpen = true
+            root.launcherOpen = false
+            root.dashboardOpen = false
+            root.commandCenterOpen = false
+            root.wallpaperPickerOpen = false
+        }
+
+        function close(): void {
+            root.widgetsCenterOpen = false
+        }
+    }
+
+    IpcHandler {
         target: "command-center"
 
         function toggle(): void {
@@ -261,6 +300,7 @@ ShellRoot {
                 root.launcherOpen = false
                 root.dashboardOpen = false
                 root.wallpaperPickerOpen = false
+                root.widgetsCenterOpen = false
             }
         }
 
@@ -269,6 +309,7 @@ ShellRoot {
             root.launcherOpen = false
             root.dashboardOpen = false
             root.wallpaperPickerOpen = false
+            root.widgetsCenterOpen = false
         }
 
         function close(): void {
@@ -383,6 +424,61 @@ ShellRoot {
         }
     }
 
+    Loader {
+        id: widgetHostLoader
+        active: true
+        source: Qt.resolvedUrl("ui/WidgetHost.qml")
+
+        onLoaded: {
+            item.modelData = root.primaryScreen
+            item.timeEnabled = root.timeWidgetEnabled
+            item.pulseEnabled = root.pulseWidgetEnabled
+            item.workspaceEnabled = root.workspaceWidgetEnabled
+            item.timeUse24Hour = root.timeUse24Hour
+            item.timeShowSeconds = root.timeShowSeconds
+            item.systemLoad = root.systemLoad
+            item.volumePercent = root.volumePercent
+            item.volumeMuted = root.volumeMuted
+            item.workspaces = root.workspaces
+            item.focusedWorkspaceId = root.focusedWorkspaceId
+        }
+    }
+
+    Connections {
+        target: root
+
+        function onTimeWidgetEnabledChanged() {
+            if (widgetHostLoader.item) widgetHostLoader.item.timeEnabled = root.timeWidgetEnabled
+        }
+        function onPulseWidgetEnabledChanged() {
+            if (widgetHostLoader.item) widgetHostLoader.item.pulseEnabled = root.pulseWidgetEnabled
+        }
+        function onWorkspaceWidgetEnabledChanged() {
+            if (widgetHostLoader.item) widgetHostLoader.item.workspaceEnabled = root.workspaceWidgetEnabled
+        }
+        function onTimeUse24HourChanged() {
+            if (widgetHostLoader.item) widgetHostLoader.item.timeUse24Hour = root.timeUse24Hour
+        }
+        function onTimeShowSecondsChanged() {
+            if (widgetHostLoader.item) widgetHostLoader.item.timeShowSeconds = root.timeShowSeconds
+        }
+        function onSystemLoadChanged() {
+            if (widgetHostLoader.item) widgetHostLoader.item.systemLoad = root.systemLoad
+        }
+        function onVolumePercentChanged() {
+            if (widgetHostLoader.item) widgetHostLoader.item.volumePercent = root.volumePercent
+        }
+        function onVolumeMutedChanged() {
+            if (widgetHostLoader.item) widgetHostLoader.item.volumeMuted = root.volumeMuted
+        }
+        function onWorkspacesChanged() {
+            if (widgetHostLoader.item) widgetHostLoader.item.workspaces = root.workspaces
+        }
+        function onFocusedWorkspaceIdChanged() {
+            if (widgetHostLoader.item) widgetHostLoader.item.focusedWorkspaceId = root.focusedWorkspaceId
+        }
+    }
+
     Variants {
         model: Quickshell.screens
 
@@ -397,6 +493,7 @@ ShellRoot {
                 root.dashboardOpen = false
                 root.commandCenterOpen = false
                 root.wallpaperPickerOpen = false
+                root.widgetsCenterOpen = false
             }
         }
     }
@@ -418,6 +515,44 @@ ShellRoot {
         onWallpaperRequested: {
             root.commandCenterOpen = false
             root.wallpaperPickerOpen = true
+        }
+    }
+
+    Loader {
+        id: widgetManagerLoader
+        active: root.widgetsCenterOpen
+        source: Qt.resolvedUrl("ui/WidgetManager.qml")
+
+        onLoaded: {
+            item.modelData = root.primaryScreen
+            item.opened = root.widgetsCenterOpen
+            item.timeEnabled = root.timeWidgetEnabled
+            item.pulseEnabled = root.pulseWidgetEnabled
+            item.workspaceEnabled = root.workspaceWidgetEnabled
+            item.timeUse24Hour = root.timeUse24Hour
+            item.timeShowSeconds = root.timeShowSeconds
+        }
+    }
+
+    Connections {
+        target: widgetManagerLoader.item
+
+        function onCloseRequested() {
+            root.widgetsCenterOpen = false
+        }
+        function onWidgetEnabledRequested(widgetId, enabled) {
+            if (widgetId === "time")
+                root.timeWidgetEnabled = enabled
+            else if (widgetId === "pulse")
+                root.pulseWidgetEnabled = enabled
+            else if (widgetId === "workspaces")
+                root.workspaceWidgetEnabled = enabled
+        }
+        function onTimeUse24HourRequested(enabled) {
+            root.timeUse24Hour = enabled
+        }
+        function onTimeShowSecondsRequested(enabled) {
+            root.timeShowSeconds = enabled
         }
     }
 
