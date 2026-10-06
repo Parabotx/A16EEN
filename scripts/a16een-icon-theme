@@ -374,6 +374,6 @@ case "${1:-list}" in
         cleanup_installed
         ;;
     *)
-        die "usage: a16een-icon-theme {list|current|path|installed|install|set}"
+        die "usage: a16een-icon-theme {list|current|path|installed|install|set|cleanup}"
         ;;
 esac
