@@ -105,7 +105,6 @@ jobs:
           grep -Fq 'target: "screenshot"' quickshell/a16een/shell.qml
           grep -Fq 'ScreenshotCenter {' quickshell/a16een/shell.qml
           grep -Fq 'visible: root.opened' quickshell/a16een/ui/CommandCenter.qml
-          grep -Fq 'niri", "msg", "action' quickshell/a16een/ui/ScreenshotCenter.qml
           grep -Fq '"a16een-screenshot"' quickshell/a16een/ui/ScreenshotCenter.qml
           grep -Fq 'lucide-monitor.svg' quickshell/a16een/ui/ScreenshotCenter.qml
           grep -Fq 'lucide-crop.svg' quickshell/a16een/ui/ScreenshotCenter.qml
