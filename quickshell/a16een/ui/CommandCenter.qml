@@ -27,6 +27,7 @@ PanelWindow {
     signal launcherRequested()
     signal dashboardRequested()
     signal wallpaperRequested()
+    signal widgetsRequested()
 
     readonly property color surface: "#000000"
     readonly property color borderColor: "#1A1A1A"
@@ -44,6 +45,7 @@ PanelWindow {
         { id: "dashboard", name: "dashboard", keywords: ["dashboard", "system"] },
         { id: "overview", name: "overview", keywords: ["overview", "workspaces", "windows"] },
         { id: "power", name: "power", keywords: ["power", "performance", "balanced", "battery", "energy", "eco", "power-saving", "power-saver"] },
+        { id: "widgets", name: "widgets", keywords: ["widgets", "widget", "clock", "time", "day", "date", "desktop"] },
         { id: "restart-shell", name: "restart-shell", keywords: ["restart", "shell", "reload", "quickshell"] },
         { id: "doctor", name: "doctor", keywords: ["doctor", "diagnostics", "health"] }
     ]
@@ -1158,6 +1160,10 @@ PanelWindow {
             break
         case "power":
             root.openPowerView()
+            break
+        case "widgets":
+            root.closeRequested()
+            root.widgetsRequested()
             break
         case "restart-shell":
             root.closeRequested()
