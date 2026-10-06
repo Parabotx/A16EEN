@@ -419,7 +419,7 @@ case "${1:-snapshot}" in
         esac
         ;;
     night-light)
- "${2:-status}" in
+        case "${2:-status}" in
             status) cmd_night_light_status ;;
             detail) night_detail ;;
             toggle) toggle_night_light ;;
