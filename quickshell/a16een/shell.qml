@@ -424,58 +424,37 @@ ShellRoot {
         }
     }
 
-    Loader {
-        id: widgetHostLoader
-        active: true
-        source: Qt.resolvedUrl("ui/WidgetHost.qml")
+    Variants {
+        model: Quickshell.screens
 
-        onLoaded: {
-            item.modelData = root.primaryScreen
-            item.timeEnabled = root.timeWidgetEnabled
-            item.pulseEnabled = root.pulseWidgetEnabled
-            item.workspaceEnabled = root.workspaceWidgetEnabled
-            item.timeUse24Hour = root.timeUse24Hour
-            item.timeShowSeconds = root.timeShowSeconds
-            item.systemLoad = root.systemLoad
-            item.volumePercent = root.volumePercent
-            item.volumeMuted = root.volumeMuted
-            item.workspaces = root.workspaces
-            item.focusedWorkspaceId = root.focusedWorkspaceId
+        TimeWidget {
+            modelData: modelData
+            widgetEnabled: root.timeWidgetEnabled
+            use24Hour: root.timeUse24Hour
+            showSeconds: root.timeShowSeconds
         }
     }
 
-    Connections {
-        target: root
+    Variants {
+        model: Quickshell.screens
 
-        function onTimeWidgetEnabledChanged() {
-            if (widgetHostLoader.item) widgetHostLoader.item.timeEnabled = root.timeWidgetEnabled
+        SystemPulseWidget {
+            modelData: modelData
+            widgetEnabled: root.pulseWidgetEnabled
+            systemLoad: root.systemLoad
+            volumePercent: root.volumePercent
+            volumeMuted: root.volumeMuted
         }
-        function onPulseWidgetEnabledChanged() {
-            if (widgetHostLoader.item) widgetHostLoader.item.pulseEnabled = root.pulseWidgetEnabled
-        }
-        function onWorkspaceWidgetEnabledChanged() {
-            if (widgetHostLoader.item) widgetHostLoader.item.workspaceEnabled = root.workspaceWidgetEnabled
-        }
-        function onTimeUse24HourChanged() {
-            if (widgetHostLoader.item) widgetHostLoader.item.timeUse24Hour = root.timeUse24Hour
-        }
-        function onTimeShowSecondsChanged() {
-            if (widgetHostLoader.item) widgetHostLoader.item.timeShowSeconds = root.timeShowSeconds
-        }
-        function onSystemLoadChanged() {
-            if (widgetHostLoader.item) widgetHostLoader.item.systemLoad = root.systemLoad
-        }
-        function onVolumePercentChanged() {
-            if (widgetHostLoader.item) widgetHostLoader.item.volumePercent = root.volumePercent
-        }
-        function onVolumeMutedChanged() {
-            if (widgetHostLoader.item) widgetHostLoader.item.volumeMuted = root.volumeMuted
-        }
-        function onWorkspacesChanged() {
-            if (widgetHostLoader.item) widgetHostLoader.item.workspaces = root.workspaces
-        }
-        function onFocusedWorkspaceIdChanged() {
-            if (widgetHostLoader.item) widgetHostLoader.item.focusedWorkspaceId = root.focusedWorkspaceId
+    }
+
+    Variants {
+        model: Quickshell.screens
+
+        WorkspaceWidget {
+            modelData: modelData
+            widgetEnabled: root.workspaceWidgetEnabled
+            workspaces: root.workspaces
+            focusedWorkspaceId: root.focusedWorkspaceId
         }
     }
 
@@ -501,65 +480,45 @@ ShellRoot {
     CommandCenter {
         modelData: root.primaryScreen
         opened: root.commandCenterOpen
+        widgetViewOpen: root.widgetsCenterOpen
+        timeWidgetEnabled: root.timeWidgetEnabled
+        pulseWidgetEnabled: root.pulseWidgetEnabled
+        workspaceWidgetEnabled: root.workspaceWidgetEnabled
+        timeUse24Hour: root.timeUse24Hour
+        timeShowSeconds: root.timeShowSeconds
+
         onCloseRequested: root.commandCenterOpen = false
+
         onLauncherRequested: {
             root.commandCenterOpen = false
             root.wallpaperPickerOpen = false
             root.launcherOpen = true
         }
+
         onDashboardRequested: {
             root.commandCenterOpen = false
             root.wallpaperPickerOpen = false
             root.dashboardOpen = true
         }
+
         onWallpaperRequested: {
             root.commandCenterOpen = false
             root.wallpaperPickerOpen = true
         }
+
         onWidgetsRequested: {
             root.widgetsCenterOpen = true
-            root.launcherOpen = false
-            root.dashboardOpen = false
-            root.commandCenterOpen = false
-            root.wallpaperPickerOpen = false
         }
-    }
 
-    Loader {
-        id: widgetManagerLoader
-        active: root.widgetsCenterOpen && root.primaryScreen !== null
-        source: Qt.resolvedUrl("ui/WidgetManager.qml")
-
-        onLoaded: {
-            item.opened = root.widgetsCenterOpen
-            item.timeEnabled = root.timeWidgetEnabled
-            item.pulseEnabled = root.pulseWidgetEnabled
-            item.workspaceEnabled = root.workspaceWidgetEnabled
-            item.timeUse24Hour = root.timeUse24Hour
-            item.timeShowSeconds = root.timeShowSeconds
-        }
-    }
-
-    Connections {
-        target: widgetManagerLoader.item
-
-        function onCloseRequested() {
+        onWidgetsCloseRequested: {
             root.widgetsCenterOpen = false
         }
-        function onWidgetEnabledRequested(widgetId, enabled) {
-            if (widgetId === "time")
-                root.timeWidgetEnabled = enabled
-            else if (widgetId === "pulse")
-                root.pulseWidgetEnabled = enabled
-            else if (widgetId === "workspaces")
-                root.workspaceWidgetEnabled = enabled
-        }
-        function onTimeUse24HourRequested(enabled) {
-            root.timeUse24Hour = enabled
-        }
-        function onTimeShowSecondsRequested(enabled) {
-            root.timeShowSeconds = enabled
-        }
+
+        onTimeWidgetEnabledRequested: root.timeWidgetEnabled = enabled
+        onPulseWidgetEnabledRequested: root.pulseWidgetEnabled = enabled
+        onWorkspaceWidgetEnabledRequested: root.workspaceWidgetEnabled = enabled
+        onTimeUse24HourRequested: root.timeUse24Hour = enabled
+        onTimeShowSecondsRequested: root.timeShowSeconds = enabled
     }
 
     WallpaperPicker {
