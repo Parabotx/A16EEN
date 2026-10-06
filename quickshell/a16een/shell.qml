@@ -516,6 +516,13 @@ ShellRoot {
             root.commandCenterOpen = false
             root.wallpaperPickerOpen = true
         }
+        onWidgetsRequested: {
+            root.widgetsCenterOpen = true
+            root.launcherOpen = false
+            root.dashboardOpen = false
+            root.commandCenterOpen = false
+            root.wallpaperPickerOpen = false
+        }
     }
 
     Loader {
