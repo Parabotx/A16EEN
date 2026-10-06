@@ -58,7 +58,9 @@ Item {
         anchors.fill: parent
 
         Column {
-            anchors.centerIn: parent
+            anchors.horizontalCenter: parent.horizontalCenter
+            anchors.top: parent.top
+            anchors.topMargin: Math.max(72, Math.min(110, parent.height * 0.08))
             width: Math.min(860, parent.width - 80)
             spacing: 10
 
