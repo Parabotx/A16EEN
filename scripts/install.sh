@@ -39,12 +39,6 @@ qt6-imageformats
 qt6-svg
 hicolor-icon-theme
 adwaita-icon-theme
-papirus-icon-theme
-breeze-icons
-elementary-icon-theme
-tela-circle-icon-theme-standard
-tela-circle-icon-theme-blue
-tela-circle-icon-theme-dracula
 power-profiles-daemon
 inter-font
 ttf-lato
