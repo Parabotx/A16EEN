@@ -50,6 +50,7 @@ PanelWindow {
     signal workspaceWidgetEnabledRequested(bool enabled)
     signal timeUse24HourRequested(bool enabled)
     signal timeShowSecondsRequested(bool enabled)
+    signal iconThemeChanged(string themeId)
 
     readonly property color surface: root.widgetViewOpen || root.controlViewOpen || root.iconThemeViewOpen ? "#FFFFFF" : "#000000"
     readonly property color borderColor: "#1A1A1A"
@@ -502,6 +503,7 @@ PanelWindow {
             visible: root.iconThemeViewOpen
             active: root.iconThemeViewOpen
             onBackRequested: root.closeIconThemeView()
+            onThemeChangeRequested: root.iconThemeChanged(themeId)
         }
 
         ControlCenterSection {
