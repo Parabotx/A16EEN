@@ -58,6 +58,9 @@ PanelWindow {
             areaCaptureProcess.running = false
         if (captureProcess.running)
             captureProcess.running = false
+        if (root.snapshotPath.length)
+            Quickshell.execDetached(["rm", "-f", root.snapshotPath])
+        root.snapshotPath = ""
         root.phase = 0
         root.closeRequested()
     }
