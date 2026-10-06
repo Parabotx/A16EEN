@@ -39,6 +39,16 @@ jobs:
           ! grep -Fq 'tela-circle-icon-theme-dracula' scripts/install.sh
           grep -Fq 'split("\\n")' quickshell/a16een/ui/ControlDetailSection.qml
           grep -Fq 'split("\n")' quickshell/a16een/ui/IconThemeSection.qml
+          grep -Fq 'property int iconThemeRevision' quickshell/a16een/ui/Launcher.qml
+          grep -Fq 'property string iconThemeName' quickshell/a16een/ui/Launcher.qml
+          grep -Fq 'a16een-icon-theme", "resolve"' quickshell/a16een/ui/Launcher.qml
+          grep -Fq 'source: root.iconSource(appTile.entry.icon)' quickshell/a16een/ui/Launcher.qml
+          grep -Fq 'onIconThemeChanged: root.iconThemeRevision++' quickshell/a16een/shell.qml
+          ! grep -Fq 'restart-shell' quickshell/a16een/ui/IconThemeSection.qml
+          grep -Fq 'resolve)' scripts/a16een-icon-theme
+          grep -Fq 'build_icon_index()' scripts/a16een-icon-theme
+          grep -Fq 'system_theme_name()' scripts/a16een-icon-theme
+          ! grep -Fq 'pacman -Syu --needed "$package"' scripts/a16een-icon-theme
           ! grep -Fq 'pacman -Syu --needed "$package"' scripts/a16een-icon-theme
           grep -Fq 'pacman -S --needed "$package"' scripts/a16een-icon-theme
           grep -Fq ': "INSTALL"' quickshell/a16een/ui/IconThemeSection.qml
