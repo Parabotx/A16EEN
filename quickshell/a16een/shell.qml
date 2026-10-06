@@ -310,13 +310,14 @@ ShellRoot {
         target: "screenshot"
 
         function toggle(): void {
-            if (root.screenshotCenterOpen) {
+            if (root.screenshotCenterOpen || root.screenshotSettingsOpen) {
                 root.screenshotCenterOpen = false
+                root.screenshotSettingsOpen = false
                 return
             }
 
-            root.screenshotSettingsOpen = false
             root.screenshotCenterOpen = true
+            root.screenshotSettingsOpen = false
             root.launcherOpen = false
             root.dashboardOpen = false
             root.commandCenterOpen = false
@@ -325,8 +326,8 @@ ShellRoot {
         }
 
         function open(): void {
-            root.screenshotSettingsOpen = false
             root.screenshotCenterOpen = true
+            root.screenshotSettingsOpen = false
             root.launcherOpen = false
             root.dashboardOpen = false
             root.commandCenterOpen = false
@@ -339,21 +340,21 @@ ShellRoot {
             root.screenshotSettingsOpen = false
         }
 
-        function preview(path: string): void {
-            if (path.length) {
-                root.screenshotPreviewPath = path
-                root.screenshotPreviewOpen = true
-            }
-        }
-
         function settings(): void {
-            root.screenshotSettingsOpen = true
             root.screenshotCenterOpen = false
+            root.screenshotSettingsOpen = true
             root.launcherOpen = false
             root.dashboardOpen = false
             root.commandCenterOpen = false
             root.wallpaperPickerOpen = false
             root.widgetsCenterOpen = false
+        }
+
+        function preview(path: string): void {
+            if (path.length) {
+                root.screenshotPreviewPath = path
+                root.screenshotPreviewOpen = true
+            }
         }
     }
 
@@ -582,6 +583,17 @@ ShellRoot {
         onScreenshotRequested: {
             root.commandCenterOpen = false
             root.screenshotCenterOpen = true
+            root.screenshotSettingsOpen = false
+            root.launcherOpen = false
+            root.dashboardOpen = false
+            root.wallpaperPickerOpen = false
+            root.widgetsCenterOpen = false
+        }
+
+        onScreenshotSettingsRequested: {
+            root.commandCenterOpen = false
+            root.screenshotCenterOpen = false
+            root.screenshotSettingsOpen = true
             root.launcherOpen = false
             root.dashboardOpen = false
             root.wallpaperPickerOpen = false
@@ -591,6 +603,8 @@ ShellRoot {
         onWidgetsRequested: {
             root.widgetsCenterOpen = true
             root.commandCenterOpen = true
+            root.screenshotCenterOpen = false
+            root.screenshotSettingsOpen = false
             root.launcherOpen = false
             root.dashboardOpen = false
             root.wallpaperPickerOpen = false
