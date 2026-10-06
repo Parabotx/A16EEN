@@ -1,11 +1,11 @@
 #!/bin/bash
 set -euo pipefail
 
-CONFIG_DIR="${XDG_CONFIG_HOME:-$HOME/.config}/a16een"
-STATE_DIR="${XDG_STATE_HOME:-$HOME/.local/state}/a16een"
+CONFIG_DIR="\${XDG_CONFIG_HOME:-$HOME/.config}/a16een"
+STATE_DIR="\${XDG_STATE_HOME:-$HOME/.local/state}/a16een"
 SCREENSHOT_STATE="$STATE_DIR/screenshot.conf"
 QS_CONFIG="$CONFIG_DIR/quickshell/a16een"
-TEMP_DIR="${XDG_RUNTIME_DIR:-/tmp}/a16een-screenshots"
+TEMP_DIR="\${XDG_RUNTIME_DIR:-/tmp}/a16een-screenshots"
 
 mkdir -p "$STATE_DIR" "$TEMP_DIR"
 
@@ -24,17 +24,22 @@ get_setting() {
     awk -F= -v key="$key" '$1 == key {value=$0; sub(/^[^=]*=/, "", value); print value; exit}' "$SCREENSHOT_STATE"
 }
 
+if ! grep -q '^save=' "$SCREENSHOT_STATE"; then
+    tmp="$(mktemp "$STATE_DIR/screenshot.conf.XXXXXX")"
+    {
+        printf '%s\n' 'save=true'
+        cat "$SCREENSHOT_STATE"
+    } > "$tmp"
+    mv "$tmp" "$SCREENSHOT_STATE"
+fi
+
 expand_path() {
     local value="$1"
     case "$value" in
-        "~") printf '%s
-' "$HOME" ;;
-        "~/"*) printf '%s/%s
-' "$HOME" "${value#~/}" ;;
-        "") printf '%s
-' "$HOME/Pictures/Screenshots" ;;
-        *) printf '%s
-' "$value" ;;
+        "~") printf '%s\n' "$HOME" ;;
+        "~/"*) printf '%s/%s\n' "$HOME" "${value#~/}" ;;
+        "") printf '%s\n' "$HOME/Pictures/Screenshots" ;;
+        *) printf '%s\n' "$value" ;;
     esac
 }
 
@@ -57,77 +62,30 @@ notify_preview() {
     qs -c "$QS_CONFIG" ipc call screenshot preview "$path" >/dev/null 2>&1 || true
 }
 
-prepare_target() {
-    local base
-    base="$(date '+A16EEN %Y-%m-%d %H-%M-%S')"
-    local destination
-    destination="$(expand_path "$(get_setting save_dir)")"
-    mkdir -p "$destination"
-    if [[ "$(get_setting save_dir)" == "/dev/null" || "$(get_setting save_dir)" == "off" ]]; then
-        printf '%s/%s.png
-' "$TEMP_DIR" "$base"
-    else
-        printf '%s/%s.png
-' "$destination" "$base"
-    fi
-}
-
-capture_niri() {
-    local kind="$1"
-    local output="$2"
-    local pointer
-    pointer="$(get_setting pointer)"
-
-    local args=(niri msg action)
-    if [[ "$kind" == "screen" ]]; then
-        args+=(screenshot-screen --path "$output" --show-pointer="$pointer")
-    else
-        local id="$2"
-        output="$(mktemp "$TEMP_DIR/window-XXXXXX.png")"
-        local selected
-        selected="$(niri msg --json pick-window | jq -r '.id // empty')"
-        [[ -n "$selected" ]] || exit 0
-        args+=(screenshot-window --id "$selected" --path "$output" --show-pointer="$pointer")
-    fi
-
-    "${args[@]}"
-}
-
 finalize_capture() {
-    local path="$1"
+    local source="$1"
+    local output="$source"
     local save_dir
-    save_dir="$(expand_path "$(get_setting save_dir)")"
-    local persist=true
 
-    if [[ "$(get_setting save)" != "true" ]]; then
-        persist=false
-        path="$TEMP_DIR/last.png"
-        cp "$1" "$path"
-    else
+    if [[ "$(get_setting save)" == "true" ]]; then
+        save_dir="$(expand_path "$(get_setting save_dir)")"
         mkdir -p "$save_dir"
-        local name
-        name="$(basename "$1")"
-        local destination="$save_dir/$name"
-        if [[ "$destination" != "$1" ]]; then
-            mv -f "$1" "$destination"
-            path="$destination"
-        fi
+        output="$save_dir/A16EEN $(date '+%Y-%m-%d %H-%M-%S-%N').png"
+        mv -f "$source" "$output"
+    else
+        output="$TEMP_DIR/last.png"
+        cp -f "$source" "$output"
+        rm -f "$source"
     fi
 
     if [[ "$(get_setting clipboard)" == "true" ]]; then
-        wl-copy --type image/png < "$path"
+        wl-copy --type image/png < "$output"
     else
         wl-copy --clear >/dev/null 2>&1 || true
     fi
 
-    notify_preview "$path"
-
-    if [[ "$persist" == false ]]; then
-        rm -f "$1" 2>/dev/null || true
-    fi
-
-    printf '%s
-' "$path"
+    notify_preview "$output"
+    printf '%s\n' "$output"
 }
 
 case "${1:-}" in
@@ -141,15 +99,24 @@ case "${1:-}" in
                 key="$3"
                 value="$4"
                 case "$key" in
-                    save) [[ "$value" == "true" || "$value" == "false" ]] || exit 2 ;;
-                    save_dir) value="$(expand_path "$value")" ;;
-                    clipboard|pointer) [[ "$value" == "true" || "$value" == "false" ]] || exit 2 ;;
-                    delay) [[ "$value" =~ ^(0|3|5)$ ]] || exit 2 ;;
-                    *) exit 2 ;;
+                    save|clipboard|pointer)
+                        [[ "$value" == "true" || "$value" == "false" ]] || exit 2
+                        ;;
+                    save_dir)
+                        value="$(expand_path "$value")"
+                        ;;
+                    delay)
+                        [[ "$value" =~ ^(0|3|5)$ ]] || exit 2
+                        ;;
+                    *)
+                        exit 2
+                        ;;
                 esac
                 write_setting "$key" "$value"
                 ;;
-            *) exit 2 ;;
+            *)
+                exit 2
+                ;;
         esac
         ;;
     prepare-area)
@@ -159,8 +126,7 @@ case "${1:-}" in
         else
             grim "$tmp"
         fi
-        printf '%s
-' "$tmp"
+        printf '%s\n' "$tmp"
         ;;
     screen)
         delay="$(get_setting delay)"
@@ -183,7 +149,10 @@ case "${1:-}" in
     area)
         [[ $# -eq 6 ]] || exit 2
         snapshot="$2"
-        x="$3"; y="$4"; width="$5"; height="$6"
+        x="$3"
+        y="$4"
+        width="$5"
+        height="$6"
         tmp="$TEMP_DIR/area-$(date +%s%N).png"
         grim -g "${x},${y} ${width}x${height}" "$tmp" >/dev/null
         finalize_capture "$tmp"
