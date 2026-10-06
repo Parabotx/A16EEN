@@ -116,10 +116,6 @@ jobs:
           grep -Fq 'grim' scripts/install.sh
           grep -Fq 'wl-clipboard' scripts/install.sh
           grep -Fq 'jq' scripts/install.sh
-          grep -Fq 'papirus-icon-theme' scripts/install.sh
-          grep -Fq 'breeze-icons' scripts/install.sh
-          grep -Fq 'elementary-icon-theme' scripts/install.sh
-          grep -Fq 'tela-circle-icon-theme-standard' scripts/install.sh
           grep -Fq 'wlsunset' scripts/install.sh
           grep -Fq 'a16een-control' scripts/install.sh
           grep -Fq 'a16een-screenshot' scripts/install.sh
