@@ -35,6 +35,8 @@ PanelWindow {
     signal launcherRequested()
     signal dashboardRequested()
     signal wallpaperRequested()
+    signal widgetsRequested()
+    signal widgetsCloseRequested()
     signal editorialTimeWidgetEnabledRequested(bool enabled)
     signal calendarWidgetEnabledRequested(bool enabled)
     signal pulseWidgetEnabledRequested(bool enabled)
@@ -261,15 +263,15 @@ PanelWindow {
     }
 
     function openWidgetView() {
-        root.widgetViewOpen = true
         root.powerViewOpen = false
         root.commandText = "/widgets"
         root.selectedCommandIndex = 0
+        root.widgetsRequested()
         Qt.callLater(() => widgetSection.forceActiveFocus())
     }
 
     function closeWidgetView() {
-        root.widgetViewOpen = false
+        root.widgetsCloseRequested()
         root.commandText = "/"
         root.selectedCommandIndex = 0
         Qt.callLater(() => search.forceActiveFocus())
