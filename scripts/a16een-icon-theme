@@ -301,26 +301,25 @@ cleanup_installed() {
         "tela-circle-icon-theme-blue"
         "tela-circle-icon-theme-dracula"
     )
-    local installed=()
+    local found=0
 
+    echo "Checking optional A16EEN icon theme packages..."
     for package in "${packages[@]}"; do
         if pacman -Q "$package" >/dev/null 2>&1; then
-            installed+=("$package")
+            found=1
+            echo
+            echo "Removing $package..."
+            if ! sudo pacman -R "$package"; then
+                echo "Keeping $package because pacman did not allow its removal." >&2
+            fi
         fi
     done
 
-    if [[ ${#installed[@]} -eq 0 ]]; then
+    if [[ "$found" -eq 0 ]]; then
         printf 'No optional A16EEN icon theme packages are installed.\n'
-        return 0
     fi
-
-    echo "Installed optional icon theme packages:"
-    printf '  %s\n' "${installed[@]}"
-    echo
-    echo "A16EEN does not need these packages for normal operation."
-    echo "pacman will refuse to remove a package required by another installed package."
-    sudo pacman -R "${installed[@]}"
 }
+
 
 apply_theme() {
     local id="$1"
