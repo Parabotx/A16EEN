@@ -35,8 +35,7 @@ PanelWindow {
         { id: "launcher", name: "launcher", keywords: ["launcher", "applications", "apps"] },
         { id: "dashboard", name: "dashboard", keywords: ["dashboard", "system"] },
         { id: "overview", name: "overview", keywords: ["overview", "workspaces", "windows"] },
-        { id: "power", name: "power", keywords: ["power", "performance", "balanced", "battery", "energy", "eco", "power-saving"] },
-        { id: "battery-saving", name: "battery-saving", keywords: ["battery", "saving", "power", "eco", "power-saver"] },
+        { id: "power", name: "power", keywords: ["power", "performance", "balanced", "battery", "energy", "eco", "power-saving", "power-saver"] },
         { id: "restart-shell", name: "restart-shell", keywords: ["restart", "shell", "reload", "quickshell"] },
         { id: "doctor", name: "doctor", keywords: ["doctor", "diagnostics", "health"] }
     ]
@@ -93,8 +92,7 @@ PanelWindow {
         root.powerStatus = "APPLYING " + profile.toUpperCase()
 
         profileWriter.running = false
-        profileWriter.running = true
-        powerRefreshTimer.restart()
+        Qt.callLater(() => profileWriter.running = true)
     }
 
     function powerProfileIsActive(profile) {
@@ -175,11 +173,19 @@ PanelWindow {
                     root.powerStatus = "FAILED TO APPLY PROFILE"
             }
         }
+
+        onRunningChanged: {
+            if (!running && root.pendingPowerProfile.length) {
+                root.currentPowerProfile = root.pendingPowerProfile
+                root.powerStatus = "VERIFYING SYSTEM PROFILE"
+                powerRefreshTimer.restart()
+            }
+        }
     }
 
     Timer {
         id: powerRefreshTimer
-        interval: 280
+        interval: 450
         repeat: false
 
         onTriggered: {
@@ -451,24 +457,36 @@ PanelWindow {
 
                     PowerCard {
                         title: "PERFORMANCE"
-                        subtitle: "Maximum responsiveness"
-                        detail: "Full desktop animation"
+                        subtitle: "Maximum system performance"
+                        details: [
+                            "CPU / system: performance priority",
+                            "Live wallpaper: keeps moving with normal windows",
+                            "Monitoring: updates every 1 second"
+                        ]
                         profile: "performance"
                         active: root.powerProfileIsActive("performance")
                     }
 
                     PowerCard {
                         title: "BALANCED"
-                        subtitle: "Everyday efficiency"
-                        detail: "Adaptive desktop animation"
+                        subtitle: "Adaptive everyday mode"
+                        details: [
+                            "CPU / system: balanced efficiency",
+                            "Live wallpaper: pauses while an app is focused",
+                            "Monitoring: updates every 3 seconds"
+                        ]
                         profile: "balanced"
                         active: root.powerProfileIsActive("balanced")
                     }
 
                     PowerCard {
                         title: "ECO"
-                        subtitle: "Maximum power saving"
-                        detail: "Animated wallpapers paused"
+                        subtitle: "Maximum battery saving"
+                        details: [
+                            "CPU / system: power-saver priority",
+                            "Live wallpaper: always static",
+                            "Monitoring: updates every 7 seconds"
+                        ]
                         profile: "power-saver"
                         active: root.powerProfileIsActive("power-saver")
                     }
@@ -488,11 +506,10 @@ PanelWindow {
 
                         Text {
                             anchors.centerIn: parent
-                            text: "ESC"
+                            text: "←"
                             color: "#5A5A5A"
-                            font.pixelSize: 8
+                            font.pixelSize: 12
                             font.weight: Font.DemiBold
-                            font.letterSpacing: 1.2
                         }
 
                         MouseArea {
@@ -538,7 +555,7 @@ PanelWindow {
     component PowerCard: Rectangle {
         required property string title
         required property string subtitle
-        required property string detail
+        required property var details
         required property string profile
         required property bool active
 
@@ -556,7 +573,7 @@ PanelWindow {
         Column {
             anchors.fill: parent
             anchors.margins: 20
-            spacing: 14
+            spacing: 10
 
             Rectangle {
                 width: 42
@@ -584,17 +601,26 @@ PanelWindow {
             Text {
                 width: parent.width
                 text: parent.parent.subtitle
-                color: "#666666"
+                color: "#777777"
                 font.pixelSize: 9
                 wrapMode: Text.WordWrap
             }
 
-            Text {
+            Column {
                 width: parent.width
-                text: parent.parent.detail
-                color: "#3F3F3F"
-                font.pixelSize: 8
-                wrapMode: Text.WordWrap
+                spacing: 5
+
+                Repeater {
+                    model: parent.parent.details
+
+                    delegate: Text {
+                        width: parent.width
+                        text: "•  " + modelData
+                        color: "#4F4F4F"
+                        font.pixelSize: 8
+                        wrapMode: Text.WordWrap
+                    }
+                }
             }
 
             Item {
@@ -640,7 +666,6 @@ PanelWindow {
             Quickshell.execDetached(["niri", "msg", "action", "toggle-overview"])
             break
         case "power":
-        case "battery-saving":
             root.openPowerView()
             break
         case "restart-shell":
