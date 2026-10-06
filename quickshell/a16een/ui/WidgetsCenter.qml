@@ -219,7 +219,7 @@ PanelWindow {
                                 title: modelData.title
                                 subtitle: modelData.subtitle
                                 detail: modelData.detail
-                                enabled: modelData.enabled
+                                widgetEnabled: modelData.enabled
                                 available: modelData.available
                                 widgetId: modelData.id
                             }
@@ -501,16 +501,16 @@ PanelWindow {
         required property string title
         required property string subtitle
         required property string detail
-        required property bool enabled
+        required property bool widgetEnabled
         required property bool available
         required property string widgetId
 
         width: parent.width
         height: 82
         radius: 15
-        color: enabled ? "#111111" : "#090909"
+        color: widgetEnabled ? "#111111" : "#090909"
         border.width: 1
-        border.color: enabled ? "#303030" : "#151515"
+        border.color: widgetEnabled ? "#303030" : "#151515"
 
         Row {
             anchors.fill: parent
@@ -523,9 +523,9 @@ PanelWindow {
                 height: 38
                 anchors.verticalCenter: parent.verticalCenter
                 radius: 11
-                color: enabled ? "#202020" : "#0E0E0E"
+                color: widgetEnabled ? "#202020" : "#0E0E0E"
                 border.width: 1
-                border.color: enabled ? "#343434" : "#191919"
+                border.color: widgetEnabled ? "#343434" : "#191919"
 
                 Text {
                     anchors.centerIn: parent
@@ -534,7 +534,7 @@ PanelWindow {
                         : parent.parent.parent.widgetId === "pulse"
                             ? "P"
                             : "W"
-                    color: enabled ? "#D7B56D" : "#5E5E5E"
+                    color: widgetEnabled ? "#D7B56D" : "#5E5E5E"
                     font.pixelSize: 11
                     font.weight: Font.DemiBold
                 }
@@ -569,7 +569,7 @@ PanelWindow {
 
             Toggle {
                 anchors.verticalCenter: parent.verticalCenter
-                checked: parent.parent.enabled
+                checked: parent.parent.widgetEnabled
                 onClicked: {
                     if (widgetId === "time")
                         root.timeWidgetEnabledRequested(!root.timeWidgetEnabled)
