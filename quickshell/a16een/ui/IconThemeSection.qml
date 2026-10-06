@@ -37,7 +37,7 @@ Item {
 
     function parseThemes(output) {
         const result = []
-        const lines = String(output || "").split("\\n")
+        const lines = String(output || "").split("\n")
 
         for (const raw of lines) {
             if (!raw.trim())
@@ -116,14 +116,7 @@ Item {
         id: actionProcess
         command: {
             const theme = String(root.actionId || "")
-            if (!theme)
-                return ["true"]
-
-            const selected = root.themes.find(item => item.id === theme)
-            if (selected && selected.installed)
-                return ["a16een-icon-theme", "set", theme]
-
-            return ["a16een-icon-theme", "set", theme]
+            return theme ? ["a16een-icon-theme", "set", theme] : ["true"]
         }
         running: false
 
@@ -132,7 +125,7 @@ Item {
         stderr: StdioCollector {
             onStreamFinished: {
                 if (text.trim().length)
-                    root.statusMessage = "THEME CHANGE FAILED"
+                    root.statusMessage = "INSTALL / APPLY ERROR"
             }
         }
 
@@ -141,7 +134,7 @@ Item {
                 root.statusMessage = "RELOADING A16EEN"
                 Quickshell.execDetached(["a16een", "restart-shell"])
             } else {
-                root.statusMessage = "THEME CHANGE FAILED"
+                root.statusMessage = "INSTALL / APPLY ERROR"
                 root.currentThemeReader.running = true
                 root.themeReader.running = true
             }
@@ -365,9 +358,7 @@ Item {
                                         ? "ACTIVE"
                                         : modelData.installed
                                             ? "APPLY"
-                                            : modelData.id === "tokyo-night"
-                                                ? "INSTALL"
-                                                : "MISSING"
+                                            : "INSTALL"
                                     color: active ? "#FFFFFF" : root.textPrimary
                                     font.pixelSize: 7
                                     font.weight: Font.DemiBold
