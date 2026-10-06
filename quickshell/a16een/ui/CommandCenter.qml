@@ -234,6 +234,7 @@ PanelWindow {
     }
 
     function openPowerView() {
+        root.widgetsCloseRequested()
         root.powerViewOpen = true
         root.commandText = "/power"
         root.selectedCommandIndex = 0
@@ -255,7 +256,6 @@ PanelWindow {
 
     function closePowerView() {
         root.powerViewOpen = false
-        root.widgetViewOpen = false
         root.commandText = "/"
         root.selectedCommandIndex = 0
         root.powerStatus = "READY"
@@ -1243,14 +1243,12 @@ PanelWindow {
     onOpenedChanged: {
         if (!opened) {
             root.powerViewOpen = false
-            root.widgetViewOpen = false
             root.commandText = "/"
             root.selectedCommandIndex = 0
             return
         }
 
         root.powerViewOpen = false
-        root.widgetViewOpen = false
         root.commandText = "/"
         root.selectedCommandIndex = 0
         search.text = "/"
