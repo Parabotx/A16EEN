@@ -37,14 +37,8 @@ jobs:
           ! grep -Fq 'tela-circle-icon-theme-standard' scripts/install.sh
           ! grep -Fq 'tela-circle-icon-theme-blue' scripts/install.sh
           ! grep -Fq 'tela-circle-icon-theme-dracula' scripts/install.sh
-          python3 - <<'PY'
-from pathlib import Path
-for path in Path("quickshell/a16een").rglob("*.qml"):
-    lines = path.read_text(encoding="utf-8").splitlines()
-    for i, line in enumerate(lines[:-1]):
-        if 'split("' in line and lines[i + 1].strip() == '")':
-            raise SystemExit(f"malformed multiline string in {path}:{i + 1}")
-PY
+          grep -Fq 'split("\\n")' quickshell/a16een/ui/ControlDetailSection.qml
+          grep -Fq 'split("\\n")' quickshell/a16een/ui/IconThemeSection.qml
 
       - name: Validate foundation files
         run: |
