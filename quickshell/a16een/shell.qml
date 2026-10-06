@@ -44,6 +44,7 @@ ShellRoot {
         && !root.commandCenterOpen
         && !root.wallpaperPickerOpen
         && !root.widgetsCenterOpen
+        && !root.screenshotCenterOpen
 
     readonly property bool wallpaperAnimationAllowed: {
         switch (root.powerProfile) {
