@@ -35,8 +35,6 @@ PanelWindow {
     signal launcherRequested()
     signal dashboardRequested()
     signal wallpaperRequested()
-    signal widgetsRequested()
-    signal widgetsCloseRequested()
     signal editorialTimeWidgetEnabledRequested(bool enabled)
     signal calendarWidgetEnabledRequested(bool enabled)
     signal pulseWidgetEnabledRequested(bool enabled)
@@ -414,33 +412,25 @@ PanelWindow {
             z: -1
         }
 
-        Connections {
-            target: root
+        WidgetSection {
+            id: widgetSection
+            anchors.fill: parent
+            visible: root.widgetViewOpen
 
-            function onTimeWidgetEnabledChanged() {
-                if (widgetSectionLoader.item)
-                    widgetSectionLoader.item.timeEnabled = root.timeWidgetEnabled
-            }
+            editorialTimeEnabled: root.editorialTimeWidgetEnabled
+            calendarEnabled: root.calendarWidgetEnabled
+            pulseEnabled: root.pulseWidgetEnabled
+            workspaceEnabled: root.workspaceWidgetEnabled
+            timeUse24Hour: root.timeUse24Hour
+            timeShowSeconds: root.timeShowSeconds
 
-            function onPulseWidgetEnabledChanged() {
-                if (widgetSectionLoader.item)
-                    widgetSectionLoader.item.pulseEnabled = root.pulseWidgetEnabled
-            }
-
-            function onWorkspaceWidgetEnabledChanged() {
-                if (widgetSectionLoader.item)
-                    widgetSectionLoader.item.workspaceEnabled = root.workspaceWidgetEnabled
-            }
-
-            function onTimeUse24HourChanged() {
-                if (widgetSectionLoader.item)
-                    widgetSectionLoader.item.timeUse24Hour = root.timeUse24Hour
-            }
-
-            function onTimeShowSecondsChanged() {
-                if (widgetSectionLoader.item)
-                    widgetSectionLoader.item.timeShowSeconds = root.timeShowSeconds
-            }
+            onBackRequested: root.closeWidgetView()
+            onEditorialTimeWidgetEnabledRequested: root.editorialTimeWidgetEnabledRequested(enabled)
+            onCalendarWidgetEnabledRequested: root.calendarWidgetEnabledRequested(enabled)
+            onPulseWidgetEnabledRequested: root.pulseWidgetEnabledRequested(enabled)
+            onWorkspaceWidgetEnabledRequested: root.workspaceWidgetEnabledRequested(enabled)
+            onTimeUse24HourRequested: root.timeUse24HourRequested(enabled)
+            onTimeShowSecondsRequested: root.timeShowSecondsRequested(enabled)
         }
 
         // Normal command search.
@@ -598,27 +588,6 @@ PanelWindow {
             id: powerView
             anchors.fill: parent
             visible: root.powerViewOpen
-
-        WidgetSection {
-            id: widgetSection
-            anchors.fill: parent
-            visible: root.widgetViewOpen
-
-            editorialTimeEnabled: root.editorialTimeWidgetEnabled
-            calendarEnabled: root.calendarWidgetEnabled
-            pulseEnabled: root.pulseWidgetEnabled
-            workspaceEnabled: root.workspaceWidgetEnabled
-            timeUse24Hour: root.timeUse24Hour
-            timeShowSeconds: root.timeShowSeconds
-
-            onBackRequested: root.closeWidgetView()
-            onEditorialTimeWidgetEnabledRequested: root.editorialTimeWidgetEnabledRequested(enabled)
-            onCalendarWidgetEnabledRequested: root.calendarWidgetEnabledRequested(enabled)
-            onPulseWidgetEnabledRequested: root.pulseWidgetEnabledRequested(enabled)
-            onWorkspaceWidgetEnabledRequested: root.workspaceWidgetEnabledRequested(enabled)
-            onTimeUse24HourRequested: root.timeUse24HourRequested(enabled)
-            onTimeShowSecondsRequested: root.timeShowSecondsRequested(enabled)
-        }
 
             Column {
                 anchors.fill: parent
