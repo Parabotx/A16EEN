@@ -22,6 +22,7 @@ Desktop
   center                      Center the focused column
   workspace <1-9>             Focus a workspace
   restart-shell               Restart only the A16EEN Quickshell shell
+  widgets                     Open the A16EEN widget manager
 
 Session
   lock                        Lock the current session
@@ -195,6 +196,13 @@ case "$command" in
         ensure_desktop_session
         require_cmd qs
         exec qs ipc call launcher toggle
+        ;;
+
+    widgets)
+        require_no_args "$@"
+        ensure_desktop_session
+        require_cmd qs
+        exec qs ipc call widgets open
         ;;
 
     dashboard|control-center|controls)
