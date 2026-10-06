@@ -49,6 +49,7 @@ theme_path() {
 
 list_themes() {
     local papirus_installed=0
+    local papirus_dark_installed=0
     local breeze_installed=0
     local elementary_installed=0
     local tela_installed=0
@@ -57,7 +58,7 @@ list_themes() {
     local tokyo_installed=0
 
     theme_installed "Papirus" && papirus_installed=1 || true
-    theme_installed "Papirus-Dark" && papirus_installed=1 || true
+    theme_installed "Papirus-Dark" && papirus_dark_installed=1 || true
     theme_installed "breeze" && breeze_installed=1 || true
     theme_installed "elementary" && elementary_installed=1 || true
     theme_installed "Tela-circle" && tela_installed=1 || true
@@ -68,7 +69,7 @@ list_themes() {
     printf '%s\n' \
         'system|System Default|Use the desktop and Qt platform default|1|system' \
         "papirus|Papirus|Clean, modern full icon family|$papirus_installed|Papirus" \
-        "papirus-dark|Papirus Dark|Dark folders with crisp application icons|$papirus_installed|Papirus-Dark" \
+        "papirus-dark|Papirus Dark|Dark folders with crisp application icons|$papirus_dark_installed|Papirus-Dark" \
         "breeze|Breeze|KDE-style clean and balanced icons|$breeze_installed|breeze" \
         "elementary|Elementary|Minimal, polished vector icon system|$elementary_installed|elementary" \
         "tela-circle|Tela Circle|Colorful circular application icons|$tela_installed|Tela-circle" \
