@@ -70,12 +70,7 @@ Item {
         if (!theme || actionProcess.running)
             return
 
-        if (!theme.installed && theme.id !== "tokyo-night") {
-            root.statusMessage = "RUN A16EEN UPDATE TO INSTALL " + theme.name.toUpperCase()
-            return
-        }
-
-        root.statusMessage = theme.id === "tokyo-night" && !theme.installed
+        root.statusMessage = !theme.installed
             ? "INSTALLING " + theme.name.toUpperCase()
             : "APPLYING " + theme.name.toUpperCase()
 
@@ -330,16 +325,7 @@ Item {
                                     anchors.centerIn: parent
                                     implicitWidth: 22
                                     implicitHeight: 22
-                                    source: {
-                                        switch (modelData.id) {
-                                        case "tokyo-night": return Quickshell.iconPath("folder", "inode-directory")
-                                        case "papirus":
-                                        case "papirus-dark": return Quickshell.iconPath("folder", "inode-directory")
-                                        case "breeze": return Quickshell.iconPath("folder", "inode-directory")
-                                        case "elementary": return Quickshell.iconPath("folder", "inode-directory")
-                                        default: return Quickshell.iconPath("folder", "inode-directory")
-                                        }
-                                    }
+                                    source: root.iconSource("folder")
                                 }
                             }
 
