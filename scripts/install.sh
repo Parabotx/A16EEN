@@ -37,6 +37,14 @@ xdg-desktop-portal-gtk
 xdg-utils
 qt6-imageformats
 qt6-svg
+hicolor-icon-theme
+adwaita-icon-theme
+papirus-icon-theme
+breeze-icons
+elementary-icon-theme
+tela-circle-icon-theme-standard
+tela-circle-icon-theme-blue
+tela-circle-icon-theme-dracula
 power-profiles-daemon
 inter-font
 ttf-lato
@@ -293,6 +301,7 @@ sudo install -Dm755 "$ROOT_DIR/scripts/a16een" /usr/local/bin/a16een
 sudo install -Dm755 "$ROOT_DIR/scripts/a16een-wallpaper" /usr/local/bin/a16een-wallpaper
 sudo install -Dm755 "$ROOT_DIR/scripts/a16een-screenshot" /usr/local/bin/a16een-screenshot
 sudo install -Dm755 "$ROOT_DIR/scripts/a16een-control" /usr/local/bin/a16een-control
+sudo install -Dm755 "$ROOT_DIR/scripts/a16een-icon-theme" /usr/local/bin/a16een-icon-theme
 sudo install -Dm755 "$ROOT_DIR/scripts/a16een-icons" /usr/local/bin/a16een-icons
 sudo install -Dm755 "$ROOT_DIR/scripts/a16een-update" /usr/local/bin/a16een-update
 sudo install -Dm755 "$ROOT_DIR/scripts/a16een-doctor" /usr/local/bin/a16een-doctor
