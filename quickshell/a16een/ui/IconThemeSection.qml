@@ -133,20 +133,23 @@ Item {
         }
         running: false
 
-        stdout: StdioCollector {
-            onStreamFinished: {
-                root.statusMessage = "RELOADING A16EEN"
-                Quickshell.execDetached(["a16een", "restart-shell"])
-            }
-        }
+        stdout: StdioCollector { }
 
         stderr: StdioCollector {
             onStreamFinished: {
-                if (text.trim().length) {
+                if (text.trim().length)
                     root.statusMessage = "THEME CHANGE FAILED"
-                    root.currentThemeReader.running = true
-                    root.themeReader.running = true
-                }
+            }
+        }
+
+        onExited: function(exitCode, exitStatus) {
+            if (exitCode === 0) {
+                root.statusMessage = "RELOADING A16EEN"
+                Quickshell.execDetached(["a16een", "restart-shell"])
+            } else {
+                root.statusMessage = "THEME CHANGE FAILED"
+                root.currentThemeReader.running = true
+                root.themeReader.running = true
             }
         }
     }
@@ -341,7 +344,7 @@ Item {
                             }
 
                             Column {
-                                Layout.alignment: Qt.AlignVCenter
+                                anchors.verticalCenter: parent.verticalCenter
                                 width: parent.width - 225
                                 spacing: 4
 
