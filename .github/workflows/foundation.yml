@@ -39,6 +39,7 @@ jobs:
           test -f quickshell/a16een/ui/Dock.qml
           test -f quickshell/a16een/ui/Dashboard.qml
           test -f quickshell/a16een/ui/CommandCenter.qml
+          test -f quickshell/a16een/ui/WidgetCatalog.js
           test -f quickshell/a16een/ui/WallpaperPicker.qml
           test -f quickshell/a16een/ui/NotificationToast.qml
           test -f quickshell/a16een/assets/wallpapers/default.png
@@ -71,6 +72,7 @@ jobs:
           grep -Fq 'property bool wallpaperPickerOpen' quickshell/a16een/shell.qml
           grep -Fq 'WallpaperPicker {' quickshell/a16een/shell.qml
           grep -Fq 'cp "$ROOT_DIR/quickshell/a16een/ui/"*.qml "$TMP_DEPLOY/ui/"' scripts/install.sh
+          grep -Fq 'cp "$ROOT_DIR/quickshell/a16een/ui/"*.js "$TMP_DEPLOY/ui/"' scripts/install.sh
           grep -Fq 'dockBackground: "#FFFFFF"' quickshell/a16een/ui/Dock.qml
           grep -Fq 'iconColor: "#111111"' quickshell/a16een/ui/Dock.qml
           ! grep -Fq '#2F6FED' quickshell/a16een/ui/Dock.qml
