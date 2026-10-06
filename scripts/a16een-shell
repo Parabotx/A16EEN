@@ -6,8 +6,19 @@ QUICKSHELL_DIR="${A16EEN_QUICKSHELL_DIR:-$CONFIG_DIR/quickshell/a16een}"
 STATE_DIR="${XDG_STATE_HOME:-$HOME/.local/state}/a16een"
 LOG_DIR="$STATE_DIR/logs"
 LOG_FILE="$LOG_DIR/shell.log"
+ICON_THEME_STATE="$STATE_DIR/icon-theme"
 
 mkdir -p "$LOG_DIR"
+
+# Quickshell reads QS_ICON_THEME at process startup. A16EEN's icon-theme manager
+# persists the selected theme here, so a shell restart applies it consistently
+# to the launcher and other Quickshell icon consumers.
+if [[ -s "$ICON_THEME_STATE" ]]; then
+    QS_ICON_THEME="$(head -n 1 "$ICON_THEME_STATE")"
+    if [[ -n "$QS_ICON_THEME" ]]; then
+        export QS_ICON_THEME
+    fi
+fi
 
 if ! command -v qs >/dev/null 2>&1; then
     printf '%s\n' "A16EEN shell cannot start: 'qs' was not found." >&2
