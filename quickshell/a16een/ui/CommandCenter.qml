@@ -10,6 +10,8 @@ PanelWindow {
     property bool opened: false
     property bool powerViewOpen: false
     property bool widgetViewOpen: false
+    property bool controlViewOpen: false
+    property bool doNotDisturb: false
     property string commandText: "/"
     property int selectedCommandIndex: 0
 
@@ -39,6 +41,7 @@ PanelWindow {
     signal screenshotSettingsRequested()
     signal widgetsRequested()
     signal widgetsCloseRequested()
+    signal doNotDisturbRequested(bool enabled)
     signal editorialTimeWidgetEnabledRequested(bool enabled)
     signal calendarWidgetEnabledRequested(bool enabled)
     signal pulseWidgetEnabledRequested(bool enabled)
@@ -64,6 +67,7 @@ PanelWindow {
         { id: "dashboard", name: "dashboard", keywords: ["dashboard", "system"] },
         { id: "overview", name: "overview", keywords: ["overview", "workspaces", "windows"] },
         { id: "power", name: "power", keywords: ["power", "performance", "balanced", "battery", "energy", "eco", "power-saving", "power-saver"] },
+        { id: "controls", name: "controls", keywords: ["controls", "control center", "wifi", "wi-fi", "bluetooth", "audio", "volume", "brightness", "night light", "battery", "do not disturb", "dnd"] },
         { id: "widgets", name: "widgets", keywords: ["widgets", "widget", "clock", "time", "day", "date", "desktop", "modules"] },
         { id: "restart-shell", name: "restart-shell", keywords: ["restart", "shell", "reload", "quickshell"] },
         { id: "doctor", name: "doctor", keywords: ["doctor", "diagnostics", "health"] }
@@ -239,6 +243,7 @@ PanelWindow {
 
     function openPowerView() {
         root.widgetsCloseRequested()
+        root.controlViewOpen = false
         root.powerViewOpen = true
         root.commandText = "/power"
         root.selectedCommandIndex = 0
@@ -266,8 +271,28 @@ PanelWindow {
         Qt.callLater(() => search.forceActiveFocus())
     }
 
+    function openControlView() {
+        root.powerViewOpen = false
+        root.widgetViewOpen = false
+        root.controlViewOpen = true
+        root.commandText = "/controls"
+        root.selectedCommandIndex = 0
+        Qt.callLater(() => {
+            if (root.controlViewOpen)
+                controlSection.forceActiveFocus()
+        })
+    }
+
+    function closeControlView() {
+        root.controlViewOpen = false
+        root.commandText = "/"
+        root.selectedCommandIndex = 0
+        Qt.callLater(() => search.forceActiveFocus())
+    }
+
     function openWidgetView() {
         root.powerViewOpen = false
+        root.controlViewOpen = false
         root.commandText = "/widgets"
         root.selectedCommandIndex = 0
         root.widgetsRequested()
@@ -387,15 +412,15 @@ PanelWindow {
 
     Rectangle {
         id: card
-        width: root.powerViewOpen || root.widgetViewOpen
+        width: root.powerViewOpen || root.widgetViewOpen || root.controlViewOpen
             ? Math.min(940, parent.width - 72)
             : Math.min(500, parent.width - 48)
-        height: root.powerViewOpen || root.widgetViewOpen
+        height: root.powerViewOpen || root.widgetViewOpen || root.controlViewOpen
             ? Math.min(640, parent.height - 80)
             : 326
         anchors.centerIn: parent
-        anchors.verticalCenterOffset: root.powerViewOpen ? 0 : 185
-        radius: root.powerViewOpen ? 26 : 18
+        anchors.verticalCenterOffset: root.powerViewOpen || root.controlViewOpen ? 0 : 185
+        radius: root.powerViewOpen || root.controlViewOpen ? 26 : 18
         color: root.surface
         border.width: 1
         border.color: root.widgetViewOpen ? "#E1E6EC" : "#202020"
@@ -416,9 +441,21 @@ PanelWindow {
         Rectangle {
             anchors.fill: parent
             anchors.margins: -5
-            radius: root.powerViewOpen ? 31 : 23
+            radius: root.powerViewOpen || root.controlViewOpen ? 31 : 23
             color: "#16000000"
             z: -1
+        }
+
+        ControlCenterSection {
+            id: controlSection
+            anchors.fill: parent
+            visible: root.controlViewOpen
+            active: root.controlViewOpen
+            doNotDisturb: root.doNotDisturb
+
+            onBackRequested: root.closeControlView()
+            onDoNotDisturbRequested: root.doNotDisturbRequested(enabled)
+            onBatteryRequested: root.openPowerView()
         }
 
         WidgetSection {
@@ -445,7 +482,7 @@ PanelWindow {
         // Normal command search.
         Item {
             anchors.fill: parent
-            visible: !root.powerViewOpen && !root.widgetViewOpen
+            visible: !root.powerViewOpen && !root.widgetViewOpen && !root.controlViewOpen
 
             Rectangle {
                 id: searchBox
@@ -464,13 +501,13 @@ PanelWindow {
                     id: search
                     anchors.fill: parent
                     anchors.leftMargin: 14
-                    anchors.rightMargin: 12
+                    anchors.rightMargin: 58
                     color: root.primaryText
                     selectionColor: "#FFFFFF20"
                     selectedTextColor: root.primaryText
                     font.pixelSize: 12
                     clip: true
-                    focus: root.opened && !root.powerViewOpen && !root.widgetViewOpen
+                    focus: root.opened && !root.powerViewOpen && !root.widgetViewOpen && !root.controlViewOpen
                     activeFocusOnPress: true
                     verticalAlignment: Text.AlignVCenter
                     selectByMouse: true
@@ -525,6 +562,41 @@ PanelWindow {
                     color: root.secondaryText
                     font.pixelSize: 12
                     visible: search.text === "/"
+                }
+
+                Rectangle {
+                    id: controlsButton
+                    anchors.right: parent.right
+                    anchors.rightMargin: 6
+                    anchors.verticalCenter: parent.verticalCenter
+                    width: 36
+                    height: 36
+                    radius: 10
+                    color: controlsMouse.containsMouse ? "#161616" : "#0E0E0E"
+                    border.width: 1
+                    border.color: controlsMouse.containsMouse ? "#303030" : "#1C1C1C"
+
+                    Behavior on color { ColorAnimation { duration: 100 } }
+                    Behavior on border.color { ColorAnimation { duration: 100 } }
+
+                    Image {
+                        anchors.centerIn: parent
+                        width: 16
+                        height: 16
+                        source: Qt.resolvedUrl("../assets/icons/lucide-sliders-horizontal.svg")
+                        fillMode: Image.PreserveAspectFit
+                        smooth: true
+                        opacity: 0.88
+                    }
+
+                    MouseArea {
+                        id: controlsMouse
+                        anchors.fill: parent
+                        hoverEnabled: true
+                        acceptedButtons: Qt.LeftButton
+                        cursorShape: Qt.PointingHandCursor
+                        onClicked: root.openControlView()
+                    }
                 }
             }
 
@@ -1230,6 +1302,9 @@ PanelWindow {
         case "power":
             root.openPowerView()
             break
+        case "controls":
+            root.openControlView()
+            break
         case "widgets":
             root.openWidgetView()
             break
@@ -1246,8 +1321,9 @@ PanelWindow {
 
     onWidgetViewOpenChanged: {
         if (root.widgetViewOpen) {
+            root.controlViewOpen = false
             Qt.callLater(() => widgetSection.forceActiveFocus())
-        } else if (root.opened && !root.powerViewOpen) {
+        } else if (root.opened && !root.powerViewOpen && !root.controlViewOpen) {
             Qt.callLater(() => search.forceActiveFocus())
         }
     }
@@ -1255,12 +1331,14 @@ PanelWindow {
     onOpenedChanged: {
         if (!opened) {
             root.powerViewOpen = false
+            root.controlViewOpen = false
             root.commandText = "/"
             root.selectedCommandIndex = 0
             return
         }
 
         root.powerViewOpen = false
+        root.controlViewOpen = false
         root.commandText = "/"
         root.selectedCommandIndex = 0
         search.text = "/"
