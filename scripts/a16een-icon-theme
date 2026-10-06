@@ -285,6 +285,37 @@ theme_state_valid() {
     theme_installed "$theme"
 }
 
+cleanup_installed() {
+    command -v pacman >/dev/null 2>&1 || die "pacman is required for icon-theme cleanup."
+
+    local packages=(
+        "breeze-icons"
+        "elementary-icon-theme"
+        "tela-circle-icon-theme-standard"
+        "tela-circle-icon-theme-blue"
+        "tela-circle-icon-theme-dracula"
+    )
+    local installed=()
+
+    for package in "${packages[@]}"; do
+        if pacman -Q "$package" >/dev/null 2>&1; then
+            installed+=("$package")
+        fi
+    done
+
+    if [[ ${#installed[@]} -eq 0 ]]; then
+        printf 'No optional A16EEN icon theme packages are installed.\n'
+        return 0
+    fi
+
+    echo "Installed optional icon theme packages:"
+    printf '  %s\n' "${installed[@]}"
+    echo
+    echo "A16EEN does not need these packages for normal operation."
+    echo "pacman will refuse to remove a package required by another installed package."
+    sudo pacman -R "${installed[@]}"
+}
+
 apply_theme() {
     local id="$1"
     local record name theme_name
@@ -332,6 +363,10 @@ case "${1:-list}" in
     set)
         [[ $# -ge 2 ]] || die "usage: a16een-icon-theme set <theme-id>"
         apply_theme "$2"
+        ;;
+    cleanup)
+        [[ $# -eq 1 ]] || die "usage: a16een-icon-theme cleanup"
+        cleanup_installed
         ;;
     *)
         die "usage: a16een-icon-theme {list|current|path|installed|install|set}"
