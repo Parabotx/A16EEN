@@ -5,7 +5,7 @@ import Quickshell.Wayland
 PanelWindow {
     id: root
 
-    required property var modelData
+    property var modelData: null
     property bool widgetEnabled: false
     property real systemLoad: 0
     property int volumePercent: 0
