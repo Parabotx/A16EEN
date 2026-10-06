@@ -10,6 +10,9 @@ ICON_THEME_STATE="$STATE_DIR/icon-theme"
 
 mkdir -p "$LOG_DIR"
 
+# Keep shell restarts/reloads silent; A16EEN renders its own UI feedback.
+export QS_NO_RELOAD_POPUP=1
+
 # Quickshell reads QS_ICON_THEME at process startup. A16EEN's icon-theme manager
 # persists the selected theme here, so a shell restart applies it consistently
 # to the launcher and other Quickshell icon consumers.
