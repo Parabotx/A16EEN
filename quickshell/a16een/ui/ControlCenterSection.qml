@@ -414,18 +414,6 @@ Item {
                     }
 
                     MouseArea {
-                        id: brightnessMouse
-                        visible: modelData.key === "brightness"
-                        x: 16
-                        y: parent.height - 48
-                        width: parent.width - 32
-                        height: 30
-                        acceptedButtons: Qt.LeftButton
-                        cursorShape: Qt.PointingHandCursor
-                        onPressed: root.adjustBrightness((mouse.x / width) * 100)
-                    }
-
-                    MouseArea {
                         id: tileMouse
                         anchors.fill: parent
                         z: 1
