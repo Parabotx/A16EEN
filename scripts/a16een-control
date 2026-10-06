@@ -175,8 +175,8 @@ wifi_networks() {
 }
 
 wifi_connect() {
-    local ssid="${2:-}"
-    local password="${3:-}"
+    local ssid="${3:-}"
+    local password="${4:-}"
 
     [ -n "$ssid" ] || return 1
 
@@ -204,7 +204,7 @@ wifi_rescan() {
 }
 
 bluetooth_pair() {
-    bluetoothctl pair "${2:-}" >/dev/null 2>&1
+    bluetoothctl pair "${3:-}" >/dev/null 2>&1
 }
 
 wifi_saved() {
@@ -238,11 +238,11 @@ bluetooth_toggle() {
 }
 
 bluetooth_connect() {
-    bluetoothctl connect "${2:-}" >/dev/null 2>&1
+    bluetoothctl connect "${3:-}" >/dev/null 2>&1
 }
 
 bluetooth_disconnect() {
-    bluetoothctl disconnect "${2:-}" >/dev/null 2>&1
+    bluetoothctl disconnect "${3:-}" >/dev/null 2>&1
 }
 
 bluetooth_scan() {
@@ -267,7 +267,7 @@ audio_detail() {
 }
 
 audio_set() {
-    local value="${2:-}"
+    local value="${3:-}"
     [[ "$value" =~ ^[0-9]+$ ]] || return 1
     (( value = value < 0 ? 0 : value > 100 ? 100 : value ))
     wpctl set-volume @DEFAULT_AUDIO_SINK@ "${value}%" >/dev/null 2>&1
@@ -412,8 +412,14 @@ case "${1:-snapshot}" in
             set) set_brightness "${3:-}" ;;
         esac
         ;;
-    night-light)
+    battery)
         case "${2:-status}" in
+            status) cmd_battery_status ;;
+            detail) battery_detail ;;
+        esac
+        ;;
+    night-light)
+ "${2:-status}" in
             status) cmd_night_light_status ;;
             detail) night_detail ;;
             toggle) toggle_night_light ;;
