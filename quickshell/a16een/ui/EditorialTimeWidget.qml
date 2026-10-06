@@ -1,11 +1,8 @@
 import QtQuick
-import Quickshell
-import Quickshell.Wayland
 
-PanelWindow {
+Item {
     id: root
 
-    property var modelData: null
     property bool widgetEnabled: true
     property bool use24Hour: true
     property bool showSeconds: false
@@ -48,21 +45,7 @@ PanelWindow {
         return value < 10 ? "0" + value : String(value)
     }
 
-    screen: root.modelData
-    visible: root.widgetEnabled && root.modelData !== null
-    color: "transparent"
-    aboveWindows: false
-    exclusiveZone: 0
-
-    anchors {
-        top: true
-        right: true
-        bottom: true
-        left: true
-    }
-
-    WlrLayershell.layer: WlrLayer.Bottom
-    WlrLayershell.namespace: "a16een-widget-editorial-time"
+    visible: root.widgetEnabled
 
     Timer {
         interval: root.showSeconds ? 250 : 1000
