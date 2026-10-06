@@ -203,7 +203,7 @@ jobs:
       - name: Validate no legacy wallpaper reference
         run: |
           set -euo pipefail
-          if grep -RIn --exclude-dir=.git 'default\.webp' .; then
+          if grep -RIn --exclude-dir=.git --exclude='foundation.yml' 'default\.webp' .; then
             echo "Legacy default.webp reference found." >&2
             exit 1
           fi
