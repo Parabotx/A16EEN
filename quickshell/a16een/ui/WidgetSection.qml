@@ -102,7 +102,7 @@ Item {
                 }
             }
 
-            Item { Layout.fillWidth: true; width: Math.max(1, parent.width - 185); height: 1 }
+            Item { width: Math.max(1, parent.width - 185); height: 1 }
 
             Rectangle {
                 width: 135
