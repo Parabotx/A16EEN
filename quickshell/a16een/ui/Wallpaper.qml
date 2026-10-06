@@ -8,7 +8,9 @@ PanelWindow {
     required property var modelData
     required property string currentWallpaperPath
     required property bool desktopAnimationAllowed
-
+    property bool editorialTimeWidgetEnabled: true
+    property bool timeUse24Hour: true
+    property bool timeShowSeconds: false
 
     readonly property string fallbackPath: Qt.resolvedUrl("../assets/wallpapers/default.png")
     readonly property string activePath: root.currentWallpaperPath.length
@@ -35,7 +37,6 @@ PanelWindow {
         color: "#050608"
     }
 
-    // Keep the existing static wallpaper path untouched.
     Image {
         id: staticWallpaper
         anchors.fill: parent
@@ -47,8 +48,6 @@ PanelWindow {
         visible: !root.isGif && status === Image.Ready
     }
 
-    // Qt 6.11 AnimatedImage already plays and loops continuously by default.
-    // Do not use the Qt 6.12-only 'loops' property here.
     AnimatedImage {
         id: animatedWallpaper
         anchors.fill: parent
@@ -65,5 +64,12 @@ PanelWindow {
         anchors.fill: parent
         color: "#050608"
         opacity: 0.22
+    }
+
+    EditorialTimeWidget {
+        anchors.fill: parent
+        widgetEnabled: root.editorialTimeWidgetEnabled
+        use24Hour: root.timeUse24Hour
+        showSeconds: root.timeShowSeconds
     }
 }
