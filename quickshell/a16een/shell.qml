@@ -21,7 +21,8 @@ ShellRoot {
 
     // Widget state lives in the shell; rendering and management stay modular.
     property bool widgetsCenterOpen: false
-    property bool timeWidgetEnabled: true
+    property bool editorialTimeWidgetEnabled: true
+    property bool calendarWidgetEnabled: false
     property bool pulseWidgetEnabled: false
     property bool workspaceWidgetEnabled: false
     property bool timeUse24Hour: true
@@ -430,9 +431,20 @@ ShellRoot {
     Variants {
         model: Quickshell.screens
 
-        TimeWidget {
+        EditorialTimeWidget {
             modelData: modelData
-            widgetEnabled: root.timeWidgetEnabled
+            widgetEnabled: root.editorialTimeWidgetEnabled
+            use24Hour: root.timeUse24Hour
+            showSeconds: root.timeShowSeconds
+        }
+    }
+
+    Variants {
+        model: Quickshell.screens
+
+        CalendarWidget {
+            modelData: modelData
+            widgetEnabled: root.calendarWidgetEnabled
             use24Hour: root.timeUse24Hour
             showSeconds: root.timeShowSeconds
         }
