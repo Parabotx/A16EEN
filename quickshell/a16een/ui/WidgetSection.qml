@@ -55,9 +55,9 @@ Item {
             width: parent.width
             height: 58
             radius: 15
-            color: "#FFFFFF"
+            color: "#18212B"
             border.width: 1
-            border.color: "#1A1A1A"
+            border.color: "#E1E6EC"
 
             Row {
                 anchors.fill: parent
@@ -70,7 +70,7 @@ Item {
 
                     Text {
                         text: "WIDGETS"
-                        color: "#FFFFFF"
+                        color: "#18212B"
                         font.pixelSize: 15
                         font.weight: Font.DemiBold
                         font.letterSpacing: 1.5
@@ -132,9 +132,9 @@ Item {
                 width: 310
                 height: parent.height
                 radius: 16
-                color: "#FFFFFF"
+                color: "#18212B"
                 border.width: 1
-                border.color: "#E2E7EC"
+                border.color: "#EEF2F6"
 
                 Column {
                     anchors.fill: parent
@@ -205,7 +205,7 @@ Item {
 
                                     Text {
                                         text: modelData.title
-                                        color: "#FFFFFF"
+                                        color: "#18212B"
                                         font.pixelSize: 8
                                         font.weight: Font.DemiBold
                                     }
@@ -261,9 +261,9 @@ Item {
                 width: parent.width - 322
                 height: parent.height
                 radius: 16
-                color: "#FFFFFF"
+                color: "#18212B"
                 border.width: 1
-                border.color: "#E2E7EC"
+                border.color: "#EEF2F6"
 
                 Column {
                     anchors.fill: parent
@@ -272,7 +272,7 @@ Item {
 
                     Text {
                         text: "TIME & DATE"
-                        color: "#FFFFFF"
+                        color: "#18212B"
                         font.pixelSize: 10
                         font.weight: Font.DemiBold
                         font.letterSpacing: 1
@@ -288,9 +288,9 @@ Item {
                         width: parent.width
                         height: 90
                         radius: 14
-                        color: "#F7F9FB"
+                        color: "#F8FAFC"
                         border.width: 1
-                        border.color: "#1A1A1A"
+                        border.color: "#E1E6EC"
 
                         Row {
                             anchors.fill: parent
@@ -303,7 +303,7 @@ Item {
 
                                 Text {
                                     text: root.editorialTimeEnabled ? "EDITORIAL TIME" : "TIME DISABLED"
-                                    color: "#FFFFFF"
+                                    color: "#18212B"
                                     font.pixelSize: 11
                                     font.weight: Font.DemiBold
                                 }
@@ -396,9 +396,9 @@ Item {
                         width: parent.width
                         height: 52
                         radius: 12
-                        color: "#F7F9FB"
+                        color: "#F8FAFC"
                         border.width: 1
-                        border.color: "#E2E7EC"
+                        border.color: "#EEF2F6"
 
                         Row {
                             anchors.fill: parent
@@ -482,9 +482,9 @@ Item {
                 width: 38
                 height: 36
                 radius: 11
-                color: "#F7F9FB"
+                color: "#F8FAFC"
                 border.width: 1
-                border.color: "#1D1D1D"
+                border.color: "#DDE3EA"
 
                 Text {
                     anchors.centerIn: parent
