@@ -30,6 +30,7 @@ jobs:
           bash -n scripts/a16een-icons
           bash -n scripts/a16een-screenshot
           bash -n scripts/a16een-control
+          bash -n scripts/a16een-icon-theme
 
       - name: Validate foundation files
         run: |
@@ -46,8 +47,10 @@ jobs:
           test -f quickshell/a16een/ui/ScreenshotPreview.qml
           test -f quickshell/a16een/ui/ControlCenterSection.qml
           test -f quickshell/a16een/ui/ControlDetailSection.qml
+          test -f quickshell/a16een/ui/IconThemeSection.qml
           test -f scripts/a16een-screenshot
           test -f scripts/a16een-control
+          test -f scripts/a16een-icon-theme
           test -f quickshell/a16een/assets/icons/lucide-monitor.svg
           test -f quickshell/a16een/assets/icons/lucide-crop.svg
           test -f quickshell/a16een/assets/icons/lucide-app-window.svg
@@ -72,6 +75,7 @@ jobs:
           test -f quickshell/a16een/assets/icons/lucide-moon-dark.svg
           test -f quickshell/a16een/assets/icons/lucide-battery-dark.svg
           test -f quickshell/a16een/assets/icons/lucide-bell-off-dark.svg
+          test -f quickshell/a16een/assets/icons/lucide-palette.svg
           test -f quickshell/a16een/ui/WidgetCatalog.js
           test -f quickshell/a16een/ui/WallpaperPicker.qml
           test -f quickshell/a16een/ui/NotificationToast.qml
@@ -104,6 +108,10 @@ jobs:
           grep -Fq 'grim' scripts/install.sh
           grep -Fq 'wl-clipboard' scripts/install.sh
           grep -Fq 'jq' scripts/install.sh
+          grep -Fq 'papirus-icon-theme' scripts/install.sh
+          grep -Fq 'breeze-icons' scripts/install.sh
+          grep -Fq 'elementary-icon-theme' scripts/install.sh
+          grep -Fq 'tela-circle-icon-theme-standard' scripts/install.sh
           grep -Fq 'wlsunset' scripts/install.sh
           grep -Fq 'a16een-control' scripts/install.sh
           grep -Fq 'a16een-screenshot' scripts/install.sh
@@ -156,6 +164,8 @@ jobs:
           grep -Fq 'signal doNotDisturbRequested(bool enabled)' quickshell/a16een/ui/CommandCenter.qml
           grep -Fq 'onControlRequested: root.openControlDetail(key)' quickshell/a16een/ui/CommandCenter.qml
           grep -Fq 'id: "controls"' quickshell/a16een/ui/CommandCenter.qml
+          grep -Fq 'id: "icons"' quickshell/a16een/ui/CommandCenter.qml
+          grep -Fq 'IconThemeSection {' quickshell/a16een/ui/CommandCenter.qml
           grep -Fq 'ControlCenterSection {' quickshell/a16een/ui/CommandCenter.qml
           grep -Fq 'ControlDetailSection {' quickshell/a16een/ui/CommandCenter.qml
           grep -Fq 'id: "wifi"' quickshell/a16een/ui/CommandCenter.qml
@@ -266,6 +276,8 @@ jobs:
           grep -Fq 'bash "$ROOT_DIR/scripts/a16een-icons"' scripts/install.sh
           grep -Fq 'niri msg action load-config-file' scripts/install.sh
           grep -Fq 'a16een-shell' scripts/install.sh
+          grep -Fq 'QS_ICON_THEME' scripts/a16een-shell
+          grep -Fq 'a16een-icon-theme' scripts/install.sh
           grep -Fq 'inter-font' scripts/install.sh
           grep -Fq 'ttf-lato' scripts/install.sh
           grep -Fq 'adobe-source-sans-fonts' scripts/install.sh
