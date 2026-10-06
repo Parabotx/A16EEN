@@ -1,6 +1,7 @@
 import QtQuick
 import QtQuick.Layouts
 import Quickshell
+import Quickshell.Io
 import Quickshell.Wayland
 import Quickshell.Widgets
 
@@ -11,6 +12,9 @@ PanelWindow {
     property bool opened: false
     property string searchText: ""
     property string launchError: ""
+    property int iconThemeRevision: 0
+    property string iconThemeName: "system"
+    property var resolvedIconPaths: ({})
 
     signal closeRequested()
 
@@ -44,6 +48,43 @@ PanelWindow {
         ? WlrKeyboardFocus.OnDemand
         : WlrKeyboardFocus.None
 
+    function parseIconTheme(output) {
+        root.iconThemeName = String(output || "").trim() || "system"
+        root.resolvedIconPaths = ({})
+        root.iconResolver.running = true
+    }
+
+    function parseIconPaths(output) {
+        const result = {}
+        const lines = String(output || "").split("\n")
+
+        for (const raw of lines) {
+            const tab = raw.indexOf("\t")
+            if (tab < 0)
+                continue
+
+            const name = raw.slice(0, tab)
+            const path = raw.slice(tab + 1)
+            if (name && path)
+                result[name] = path
+        }
+
+        root.resolvedIconPaths = result
+    }
+
+    function refreshIconTheme() {
+        if (!root.iconThemeReader.running && !root.iconResolver.running)
+            root.iconThemeReader.running = true
+    }
+
+    function iconSource(iconName) {
+        const name = String(iconName || "")
+        if (!name)
+            return Quickshell.iconPath("application-x-executable", "application-x-executable")
+
+        return root.resolvedIconPaths[name]
+            || Quickshell.iconPath(name, "application-x-executable")
+    }
     function launch(entry) {
         root.launchError = ""
 
@@ -63,6 +104,31 @@ PanelWindow {
         }
     }
 
+    Process {
+        id: iconThemeReader
+        command: ["a16een-icon-theme", "current"]
+        running: false
+
+        stdout: StdioCollector {
+            onStreamFinished: root.parseIconTheme(text)
+        }
+    }
+
+    Process {
+        id: iconResolver
+        command: {
+            const icons = [...DesktopEntries.applications.values]
+                .map(entry => String(entry.icon || ""))
+                .filter(Boolean)
+                .filter((value, index, values) => values.indexOf(value) === index)
+            return ["a16een-icon-theme", "resolve", root.iconThemeName, ...icons]
+        }
+        running: false
+
+        stdout: StdioCollector {
+            onStreamFinished: root.parseIconPaths(text)
+        }
+    }
     Rectangle {
         anchors.fill: parent
         color: "#000000"
@@ -143,7 +209,11 @@ PanelWindow {
                         root.launchError = ""
                     }
 
-                    Keys.onEscapePressed: root.closeRequested()
+                    Component.onCompleted: root.refreshIconTheme()
+
+    onIconThemeRevisionChanged: root.refreshIconTheme()
+
+    Keys.onEscapePressed: root.closeRequested()
 
                     Keys.onReturnPressed: {
                         if (appGrid.currentItem && appGrid.currentItem.entry)
@@ -203,6 +273,7 @@ PanelWindow {
                 currentIndex: count > 0 ? 0 : -1
 
                 model: ScriptModel {
+                    id: appModel
                     objectProp: "id"
                     values: [...DesktopEntries.applications.values]
                         .filter(entry => {
@@ -258,10 +329,7 @@ PanelWindow {
                                 anchors.centerIn: parent
                                 implicitWidth: 28
                                 implicitHeight: 28
-                                source: Quickshell.iconPath(
-                                    appTile.entry.icon,
-                                    "application-x-executable"
-                                )
+                                source: root.iconSource(appTile.entry.icon)
                             }
                         }
 
