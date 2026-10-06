@@ -181,6 +181,9 @@ Item {
 
     function parseBluetoothDevices(output) {
         const result = []
+        const state = root.parseKeyValue(output, "state")
+        if (state.length)
+            root.bluetoothState = root.normalizeState(state)
         const lines = String(output || "").split("
 ")
         for (const raw of lines) {
@@ -200,7 +203,7 @@ Item {
     }
 
     function connectWifi() {
-        if (!root.wifiSelectedSsid.length || wifiPasswordInput.visible && !root.wifiPassword.length && root.wifiSelectedSecurity !== "--")
+        if (!root.wifiSelectedSsid.length || (wifiPasswordInput.visible && !root.wifiPassword.length && root.wifiSelectedSecurity !== "--"))
             return
         root.wifiConnecting = true
         const password = root.wifiSelectedSecurity === "--" || root.wifiSelectedSecurity === "" ? "" : root.wifiPassword
@@ -344,7 +347,7 @@ Item {
                     anchors.centerIn: parent
                     width: 17
                     height: 17
-                    source: root.iconSource("arrow-left")
+                    source: Qt.resolvedUrl("../assets/icons/lucide-arrow-left-dark.svg")
                     fillMode: Image.PreserveAspectFit
                     smooth: true
                 }
@@ -401,7 +404,7 @@ Item {
                     y: 21
                     width: 22
                     height: 22
-                    source: root.iconSource("wifi")
+                    source: Qt.resolvedUrl("../assets/icons/lucide-wifi-dark.svg")
                     opacity: 0.84
                 }
 
