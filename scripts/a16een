@@ -59,7 +59,8 @@ Maintenance
   icons                       Sync A16EEN's pinned SVG icon set
   icons theme list            List available app/folder icon themes
   icons theme current         Show the active icon theme
-  icons theme set <theme>     Apply an icon theme
+  icons theme set <theme>     Install if needed and apply an icon theme
+  icons theme cleanup         Remove optional A16EEN-installed icon themes
   update                      Check for and apply A16EEN updates
   rollback                    Restore the latest known-good A16EEN revision
   doctor                      Run A16EEN diagnostics
