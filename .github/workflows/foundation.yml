@@ -39,6 +39,7 @@ jobs:
           test -f quickshell/a16een/ui/Dock.qml
           test -f quickshell/a16een/ui/Dashboard.qml
           test -f quickshell/a16een/ui/CommandCenter.qml
+          test -f quickshell/a16een/ui/ScreenshotCenter.qml
           test -f quickshell/a16een/ui/WidgetCatalog.js
           test -f quickshell/a16een/ui/WallpaperPicker.qml
           test -f quickshell/a16een/ui/NotificationToast.qml
@@ -77,11 +78,24 @@ jobs:
           grep -Fq 'iconColor: "#111111"' quickshell/a16een/ui/Dock.qml
           ! grep -Fq '#2F6FED' quickshell/a16een/ui/Dock.qml
           ! grep -Fq 'width: 20' quickshell/a16een/ui/Dock.qml
+          grep -Fq 'Super+S repeat=false hotkey-overlay-title="A16EEN Screenshot Center"' niri/config.kdl
           grep -Fq 'Super+Space repeat=false hotkey-overlay-title="A16EEN Application Launcher"' niri/config.kdl
           grep -Fq 'Super+Slash repeat=false hotkey-overlay-title="A16EEN Command Center"' niri/config.kdl
+          grep -Fq 'Print { screenshot; }' niri/config.kdl
+          grep -Fq 'screenshot-screen' niri/config.kdl
+          grep -Fq 'screenshot-window' niri/config.kdl
           grep -Fq 'target: "command-center"' quickshell/a16een/shell.qml
           grep -Fq 'property bool commandCenterOpen' quickshell/a16een/shell.qml
+          grep -Fq 'property bool screenshotCenterOpen' quickshell/a16een/shell.qml
+          grep -Fq 'target: "screenshot"' quickshell/a16een/shell.qml
+          grep -Fq 'ScreenshotCenter {' quickshell/a16een/shell.qml
           grep -Fq 'visible: root.opened' quickshell/a16een/ui/CommandCenter.qml
+          grep -Fq 'niri", "msg", "action' quickshell/a16een/ui/ScreenshotCenter.qml
+          grep -Fq '"pick-window"' quickshell/a16een/ui/ScreenshotCenter.qml
+          grep -Fq '"write-to-disk=false"' quickshell/a16een/ui/ScreenshotCenter.qml
+          grep -Fq '"show-pointer=false"' quickshell/a16een/ui/ScreenshotCenter.qml
+          grep -Fq 'signal screenshotRequested()' quickshell/a16een/ui/CommandCenter.qml
+          grep -Fq 'id: "screenshot"' quickshell/a16een/ui/CommandCenter.qml
           grep -Fq 'text: "/"' quickshell/a16een/ui/CommandCenter.qml
           grep -Fq 'text: "search commands"' quickshell/a16een/ui/CommandCenter.qml
           grep -Fq 'signal wallpaperRequested()' quickshell/a16een/ui/CommandCenter.qml
