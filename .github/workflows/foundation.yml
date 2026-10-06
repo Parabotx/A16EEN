@@ -144,10 +144,10 @@ jobs:
           grep -Fq 'interval: 2000' quickshell/a16een/ui/ScreenshotPreview.qml
           grep -Fq 'xdg-open' quickshell/a16een/ui/ScreenshotPreview.qml
           grep -Fq 'onDoNotDisturbRequested: root.setDoNotDisturb(enabled)' quickshell/a16een/shell.qml
-          grep -Fq 'wifi connect' scripts/a16een-control
-          grep -Fq 'wifi disconnect' scripts/a16een-control
-          grep -Fq 'bluetooth pair' scripts/a16een-control
-          grep -Fq 'bluetooth scan' scripts/a16een-control
+          grep -Fq 'wifi_connect()' scripts/a16een-control
+          grep -Fq 'wifi_disconnect()' scripts/a16een-control
+          grep -Fq 'bluetooth_pair()' scripts/a16een-control
+          grep -Fq 'bluetooth_scan()' scripts/a16een-control
           grep -Fq 'ipc call screenshot preview' scripts/a16een-screenshot
           grep -Fq 'grim -g' scripts/a16een-screenshot
           grep -Fq 'niri msg action screenshot-screen' scripts/a16een-screenshot
