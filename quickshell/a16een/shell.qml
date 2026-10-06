@@ -517,6 +517,9 @@ ShellRoot {
         onWidgetsRequested: {
             root.widgetsCenterOpen = true
             root.commandCenterOpen = true
+            root.launcherOpen = false
+            root.dashboardOpen = false
+            root.wallpaperPickerOpen = false
         }
 
         onWidgetsCloseRequested: {
