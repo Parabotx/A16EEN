@@ -92,8 +92,8 @@ jobs:
           grep -Fq 'visible: root.opened' quickshell/a16een/ui/CommandCenter.qml
           grep -Fq 'niri", "msg", "action' quickshell/a16een/ui/ScreenshotCenter.qml
           grep -Fq '"pick-window"' quickshell/a16een/ui/ScreenshotCenter.qml
-          grep -Fq '"write-to-disk=false"' quickshell/a16een/ui/ScreenshotCenter.qml
-          grep -Fq '"show-pointer=false"' quickshell/a16een/ui/ScreenshotCenter.qml
+          grep -Fq '"--write-to-disk=false"' quickshell/a16een/ui/ScreenshotCenter.qml
+          grep -Fq '"--show-pointer=false"' quickshell/a16een/ui/ScreenshotCenter.qml
           grep -Fq 'signal screenshotRequested()' quickshell/a16een/ui/CommandCenter.qml
           grep -Fq 'id: "screenshot"' quickshell/a16een/ui/CommandCenter.qml
           grep -Fq 'text: "/"' quickshell/a16een/ui/CommandCenter.qml
