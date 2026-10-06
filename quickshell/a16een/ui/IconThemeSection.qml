@@ -131,7 +131,16 @@ Item {
 
         onExited: function(exitCode, exitStatus) {
             if (exitCode === 0) {
-                root.statusMessage = "RELOADING A16EEN"
+                const selected = root.themes.find(item => item.id === root.actionId)
+                if (selected) {
+                    root.currentTheme = selected.id === "system" ? "system" : selected.themeName
+                    root.statusMessage = "APPLIED " + selected.name.toUpperCase()
+                    root.themeChangeRequested(selected.id)
+                } else {
+                    root.statusMessage = "THEME APPLIED"
+                }
+                // Quickshell reads QS_ICON_THEME when its process starts.
+                // The supervisor now re-reads the state before each launch.
                 Quickshell.execDetached(["a16een", "restart-shell"])
             } else {
                 root.statusMessage = "INSTALL / APPLY ERROR"
