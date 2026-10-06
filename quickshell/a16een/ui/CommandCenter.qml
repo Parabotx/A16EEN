@@ -9,6 +9,7 @@ PanelWindow {
     required property var modelData
     property bool opened: false
     property bool powerViewOpen: false
+    property bool widgetViewOpen: false
     property string commandText: "/"
     property int selectedCommandIndex: 0
 
@@ -27,7 +28,6 @@ PanelWindow {
     signal launcherRequested()
     signal dashboardRequested()
     signal wallpaperRequested()
-    signal widgetsRequested()
 
     readonly property color surface: "#000000"
     readonly property color borderColor: "#1A1A1A"
@@ -240,9 +240,25 @@ PanelWindow {
 
     function closePowerView() {
         root.powerViewOpen = false
+        root.widgetViewOpen = false
         root.commandText = "/"
         root.selectedCommandIndex = 0
         root.powerStatus = "READY"
+        Qt.callLater(() => search.forceActiveFocus())
+    }
+
+    function openWidgetView() {
+        root.widgetViewOpen = true
+        root.powerViewOpen = false
+        root.commandText = "/widgets"
+        root.selectedCommandIndex = 0
+        Qt.callLater(() => widgetSectionLoader.forceActiveFocus())
+    }
+
+    function closeWidgetView() {
+        root.widgetViewOpen = false
+        root.commandText = "/"
+        root.selectedCommandIndex = 0
         Qt.callLater(() => search.forceActiveFocus())
     }
 
@@ -349,10 +365,10 @@ PanelWindow {
 
     Rectangle {
         id: card
-        width: root.powerViewOpen
+        width: root.powerViewOpen || root.widgetViewOpen
             ? Math.min(940, parent.width - 72)
             : Math.min(500, parent.width - 48)
-        height: root.powerViewOpen
+        height: root.powerViewOpen || root.widgetViewOpen
             ? Math.min(640, parent.height - 80)
             : 326
         anchors.centerIn: parent
@@ -386,7 +402,7 @@ PanelWindow {
         // Normal command search.
         Item {
             anchors.fill: parent
-            visible: !root.powerViewOpen
+            visible: !root.powerViewOpen && !root.widgetViewOpen
 
             Rectangle {
                 id: searchBox
@@ -538,6 +554,30 @@ PanelWindow {
             id: powerView
             anchors.fill: parent
             visible: root.powerViewOpen
+
+        Loader {
+            id: widgetSectionLoader
+            anchors.fill: parent
+            anchors.margins: 0
+            active: root.widgetViewOpen
+            visible: root.widgetViewOpen
+            source: "WidgetSection.qml"
+
+            onLoaded: {
+                item.timeEnabled = true
+                item.pulseEnabled = false
+                item.workspaceEnabled = false
+                item.timeUse24Hour = true
+                item.timeShowSeconds = false
+
+                item.backRequested.connect(root.closeWidgetView)
+                item.widgetEnabledRequested.connect((widgetId, enabled) => {
+                    if (widgetId === "time") root.timeWidgetEnabledRequested(enabled)
+                    else if (widgetId === "pulse") root.pulseWidgetEnabledRequested(enabled)
+                    else if (widgetId === "workspaces") root.workspaceWidgetEnabledRequested(enabled)
+                })
+            }
+        }
 
             Column {
                 anchors.fill: parent
@@ -947,6 +987,8 @@ PanelWindow {
     Keys.onEscapePressed: {
         if (root.powerViewOpen)
             root.closePowerView()
+        else if (root.widgetViewOpen)
+            root.closeWidgetView()
         else
             root.closeRequested()
     }
@@ -1162,8 +1204,7 @@ PanelWindow {
             root.openPowerView()
             break
         case "widgets":
-            root.closeRequested()
-            Quickshell.execDetached(["qs", "ipc", "call", "widgets", "open"])
+            root.openWidgetView()
             break
         case "restart-shell":
             root.closeRequested()
@@ -1179,6 +1220,7 @@ PanelWindow {
     onOpenedChanged: {
         if (!opened) {
             root.powerViewOpen = false
+            root.widgetViewOpen = false
             root.commandText = "/"
             root.selectedCommandIndex = 0
             return
