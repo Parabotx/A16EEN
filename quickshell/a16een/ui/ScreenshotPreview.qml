@@ -37,8 +37,8 @@ PanelWindow {
 
     Rectangle {
         id: card
-        width: 236
-        height: 142
+        width: 264
+        height: 164
         x: 22
         y: parent.height - height - 22
         radius: 16
@@ -48,23 +48,52 @@ PanelWindow {
 
         Image {
             id: previewImage
-            anchors.fill: parent
-            anchors.margins: 7
+            anchors.left: parent.left
+            anchors.right: parent.right
+            anchors.top: parent.top
+            anchors.leftMargin: 7
+            anchors.rightMargin: 7
+            anchors.topMargin: 7
+            height: 122
             source: root.imagePath
             fillMode: Image.PreserveAspectFit
             asynchronous: true
             cache: false
         }
 
+        Text {
+            anchors.left: parent.left
+            anchors.bottom: parent.bottom
+            anchors.leftMargin: 11
+            anchors.bottomMargin: 9
+            text: "A16EEN"
+            color: "#15171A"
+            font.pixelSize: 7
+            font.weight: Font.DemiBold
+            font.letterSpacing: 1.0
+        }
+
+        Text {
+            anchors.right: parent.right
+            anchors.bottom: parent.bottom
+            anchors.rightMargin: 11
+            anchors.bottomMargin: 9
+            text: "SCREENSHOT"
+            color: "#8A949F"
+            font.pixelSize: 6
+            font.weight: Font.DemiBold
+            font.letterSpacing: 0.8
+        }
+
         Rectangle {
             anchors.fill: parent
             radius: 16
-            color: previewMouse.containsMouse ? "#18000000" : "transparent"
+            color: previewMouse.containsMouse ? "#14000000" : "transparent"
 
             IconImage {
                 anchors.centerIn: parent
-                implicitWidth: 22
-                implicitHeight: 22
+                implicitWidth: 24
+                implicitHeight: 24
                 source: Quickshell.iconPath("image-x-generic", "image-x-generic")
                 visible: previewMouse.containsMouse
             }
@@ -74,11 +103,18 @@ PanelWindow {
                 anchors.fill: parent
                 hoverEnabled: true
                 cursorShape: Qt.PointingHandCursor
+                acceptedButtons: Qt.LeftButton
                 onClicked: {
+                    hideTimer.stop()
                     Quickshell.execDetached(["xdg-open", root.imagePath])
                     root.closeRequested()
                 }
             }
         }
+    }
+
+    onOpenedChanged: {
+        if (root.opened)
+            hideTimer.restart()
     }
 }
