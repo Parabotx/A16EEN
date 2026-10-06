@@ -1,0 +1,247 @@
+#!/bin/bash
+set -u
+
+STATE_DIR="${XDG_STATE_HOME:-$HOME/.local/state}/a16een"
+DND_STATE="$STATE_DIR/do-not-disturb"
+NIGHTLIGHT_PID="$STATE_DIR/night-light.pid"
+
+mkdir -p "$STATE_DIR"
+
+read_flag() {
+    [ -f "$1" ] && grep -qx '1' "$1"
+}
+
+write_flag() {
+    printf '%s\n' "$2" > "$1"
+}
+
+active_nightlight_pid() {
+    if [ -f "$NIGHTLIGHT_PID" ]; then
+        local pid
+        pid=$(cat "$NIGHTLIGHT_PID" 2>/dev/null || true)
+        if [[ "$pid" =~ ^[0-9]+$ ]] && kill -0 "$pid" 2>/dev/null; then
+            printf '%s\n' "$pid"
+            return 0
+        fi
+    fi
+
+    rm -f "$NIGHTLIGHT_PID"
+    return 1
+}
+
+cmd_wifi_status() {
+    command -v nmcli >/dev/null 2>&1 || { printf 'unavailable\n'; return; }
+    nmcli radio wifi 2>/dev/null | tr '[:upper:]' '[:lower:]' || printf 'unavailable\n'
+}
+
+cmd_wifi_name() {
+    command -v nmcli >/dev/null 2>&1 || { printf 'No adapter\n'; return; }
+    local name
+    name=$(nmcli -t -f DEVICE,TYPE,STATE,CONNECTION device 2>/dev/null |
+        awk -F: '$2=="wifi" && $3=="connected" {print $4; exit}')
+    printf '%s\n' "${name:-Not connected}"
+}
+
+cmd_bluetooth_status() {
+    command -v bluetoothctl >/dev/null 2>&1 || { printf 'unavailable\n'; return; }
+    bluetoothctl show 2>/dev/null |
+        awk '/Powered:/ {print tolower($2)=="yes" ? "on" : "off"; found=1} END {if (!found) print "unavailable"}'
+}
+
+cmd_audio_status() {
+    command -v wpctl >/dev/null 2>&1 || { printf 'unavailable 0\n'; return; }
+    local output value muted
+    output=$(wpctl get-volume @DEFAULT_AUDIO_SINK@ 2>/dev/null || true)
+    value=$(printf '%s\n' "$output" | awk '{for (i=1;i<=NF;i++) if ($i ~ /^[0-9]+\\.[0-9]+$/) {print $i; exit}}')
+    muted=0
+    printf '%s\n' "$output" | grep -q '\[MUTED\]' && muted=1
+    if [ -z "$value" ]; then
+        printf 'unavailable 0\n'
+    else
+        awk -v v="$value" -v m="$muted" 'BEGIN {printf "%d %d\\n", v*100+0.5, m}'
+    fi
+}
+
+cmd_brightness_status() {
+    if ! command -v brightnessctl >/dev/null 2>&1; then
+        printf 'unavailable\n'
+        return
+    fi
+
+    local current maximum
+    current=$(brightnessctl get 2>/dev/null || true)
+    maximum=$(brightnessctl max 2>/dev/null || true)
+
+    if [[ "$current" =~ ^[0-9]+$ ]] && [[ "$maximum" =~ ^[0-9]+$ ]] && [ "$maximum" -gt 0 ]; then
+        awk -v c="$current" -v m="$maximum" 'BEGIN {printf "%d\\n", (c/m)*100+0.5}'
+    else
+        printf 'unavailable\n'
+    fi
+}
+
+cmd_battery_status() {
+    if ! command -v upower >/dev/null 2>&1; then
+        printf 'unavailable 0 unknown\n'
+        return
+    fi
+
+    local info percent state
+    info=$(upower -i /org/freedesktop/UPower/devices/DisplayDevice 2>/dev/null || true)
+    percent=$(printf '%s\n' "$info" | awk -F: '/^[[:space:]]*percentage:/ {gsub(/[[:space:]]*%/, "", $2); print $2; exit}')
+    state=$(printf '%s\n' "$info" | awk -F: '/^[[:space:]]*state:/ {gsub(/^[[:space:]]+|[[:space:]]+$/, "", $2); print tolower($2); exit}')
+
+    if [[ "$percent" =~ ^[0-9]+$ ]]; then
+        printf '%s %s %s\n' "$percent" on-battery "${state:-unknown}"
+    else
+        printf 'unavailable 0 unknown\n'
+    fi
+}
+
+cmd_night_light_status() {
+    if active_nightlight_pid >/dev/null 2>&1; then
+        printf 'on\n'
+    else
+        printf 'off\n'
+    fi
+}
+
+cmd_dnd_status() {
+    if read_flag "$DND_STATE"; then
+        printf 'on\n'
+    else
+        printf 'off\n'
+    fi
+}
+
+cmd_snapshot() {
+    local wifi wifi_name bluetooth audio_percent audio_muted brightness battery battery_kind battery_state night_light dnd
+    wifi=$(cmd_wifi_status)
+    wifi_name=$(cmd_wifi_name)
+    bluetooth=$(cmd_bluetooth_status)
+
+    read -r audio_percent audio_muted < <(cmd_audio_status)
+    audio_percent="${audio_percent:-unavailable}"
+    audio_muted="${audio_muted:-0}"
+
+    brightness=$(cmd_brightness_status)
+    battery=$(cmd_battery_status)
+    read -r battery battery_kind battery_state <<< "$battery"
+    battery="${battery:-unavailable}"
+    battery_state="${battery_state:-unknown}"
+
+    night_light=$(cmd_night_light_status)
+    dnd=$(cmd_dnd_status)
+
+    printf 'wifi=%s\n' "$wifi"
+    printf 'wifi_name=%s\n' "$wifi_name"
+    printf 'bluetooth=%s\n' "$bluetooth"
+    printf 'audio=%s\n' "$audio_percent"
+    printf 'audio_muted=%s\n' "$audio_muted"
+    printf 'brightness=%s\n' "$brightness"
+    printf 'battery=%s\n' "$battery"
+    printf 'battery_state=%s\n' "$battery_state"
+    printf 'night_light=%s\n' "$night_light"
+    printf 'dnd=%s\n' "$dnd"
+}
+
+toggle_wifi() {
+    local state
+    state=$(cmd_wifi_status)
+    case "$state" in
+        enabled|on) nmcli radio wifi off >/dev/null 2>&1 ;;
+        disabled|off) nmcli radio wifi on >/dev/null 2>&1 ;;
+        *) return 1 ;;
+    esac
+}
+
+toggle_bluetooth() {
+    local state
+    state=$(cmd_bluetooth_status)
+    case "$state" in
+        on) bluetoothctl power off >/dev/null 2>&1 ;;
+        off) bluetoothctl power on >/dev/null 2>&1 ;;
+        *) return 1 ;;
+    esac
+}
+
+toggle_audio() {
+    command -v wpctl >/dev/null 2>&1 || return 1
+    wpctl set-mute @DEFAULT_AUDIO_SINK@ toggle >/dev/null 2>&1
+}
+
+set_brightness() {
+    command -v brightnessctl >/dev/null 2>&1 || return 1
+    local value="$1"
+    [[ "$value" =~ ^[0-9]+$ ]] || return 1
+    (( value = value < 0 ? 0 : value > 100 ? 100 : value ))
+    brightnessctl set "${value}%" >/dev/null 2>&1
+}
+
+toggle_night_light() {
+    if active_nightlight_pid >/dev/null 2>&1; then
+        local pid
+        pid=$(cat "$NIGHTLIGHT_PID")
+        kill "$pid" >/dev/null 2>&1 || true
+        rm -f "$NIGHTLIGHT_PID"
+        return 0
+    fi
+
+    command -v wlsunset >/dev/null 2>&1 || return 1
+    nohup wlsunset -S 06:30 -s 18:30 -T 6500 -t 4000 -d 300         >/dev/null 2>&1 < /dev/null &
+    printf '%s\n' "$!" > "$NIGHTLIGHT_PID"
+}
+
+toggle_dnd() {
+    if read_flag "$DND_STATE"; then
+        write_flag "$DND_STATE" 0
+    else
+        write_flag "$DND_STATE" 1
+    fi
+}
+
+case "${1:-snapshot}" in
+    snapshot) cmd_snapshot ;;
+    wifi)
+        case "${2:-status}" in
+            status) cmd_wifi_status ;;
+            name) cmd_wifi_name ;;
+            toggle) toggle_wifi ;;
+        esac
+        ;;
+    bluetooth)
+        case "${2:-status}" in
+            status) cmd_bluetooth_status ;;
+            toggle) toggle_bluetooth ;;
+        esac
+        ;;
+    audio)
+        case "${2:-status}" in
+            status) cmd_audio_status ;;
+            toggle) toggle_audio ;;
+        esac
+        ;;
+    brightness)
+        case "${2:-status}" in
+            status) cmd_brightness_status ;;
+            set) set_brightness "${3:-}" ;;
+        esac
+        ;;
+    night-light)
+        case "${2:-status}" in
+            status) cmd_night_light_status ;;
+            toggle) toggle_night_light ;;
+        esac
+        ;;
+    dnd)
+        case "${2:-status}" in
+            status|get) cmd_dnd_status ;;
+            toggle) toggle_dnd ;;
+            on) write_flag "$DND_STATE" 1 ;;
+            off) write_flag "$DND_STATE" 0 ;;
+        esac
+        ;;
+    *)
+        echo "Usage: a16een-control {snapshot|wifi|bluetooth|audio|brightness|night-light|dnd}" >&2
+        exit 1
+        ;;
+esac
