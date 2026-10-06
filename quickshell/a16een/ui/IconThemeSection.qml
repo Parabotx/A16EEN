@@ -341,8 +341,8 @@ Item {
                                 }
 
                                 Text {
-                                    visible: modelData.id === "tokyo-night" && !modelData.installed
-                                    text: "FIRST USE DOWNLOAD • UPSTREAM RELEASE"
+                                    visible: !modelData.installed
+                                    text: "FIRST USE INSTALL • THEME STORED LOCALLY"
                                     color: root.textMuted
                                     font.pixelSize: 6
                                     font.weight: Font.DemiBold
