@@ -267,7 +267,10 @@ PanelWindow {
         root.commandText = "/widgets"
         root.selectedCommandIndex = 0
         root.widgetsRequested()
-        Qt.callLater(() => widgetSection.forceActiveFocus())
+        Qt.callLater(() => {
+            if (root.widgetViewOpen)
+                widgetSection.forceActiveFocus()
+        })
     }
 
     function closeWidgetView() {
@@ -463,7 +466,7 @@ PanelWindow {
                     selectedTextColor: root.primaryText
                     font.pixelSize: 12
                     clip: true
-                    focus: root.opened && !root.powerViewOpen
+                    focus: root.opened && !root.powerViewOpen && !root.widgetViewOpen
                     activeFocusOnPress: true
                     verticalAlignment: Text.AlignVCenter
                     selectByMouse: true
@@ -1229,6 +1232,14 @@ PanelWindow {
         }
     }
 
+    onWidgetViewOpenChanged: {
+        if (root.widgetViewOpen) {
+            Qt.callLater(() => widgetSection.forceActiveFocus())
+        } else if (root.opened && !root.powerViewOpen) {
+            Qt.callLater(() => search.forceActiveFocus())
+        }
+    }
+
     onOpenedChanged: {
         if (!opened) {
             root.powerViewOpen = false
@@ -1239,10 +1250,14 @@ PanelWindow {
         }
 
         root.powerViewOpen = false
+        root.widgetViewOpen = false
         root.commandText = "/"
         root.selectedCommandIndex = 0
         search.text = "/"
 
-        Qt.callLater(() => search.forceActiveFocus())
+        Qt.callLater(() => {
+            if (root.opened && !root.widgetViewOpen && !root.powerViewOpen)
+                search.forceActiveFocus()
+        })
     }
 }
