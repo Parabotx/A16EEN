@@ -150,7 +150,7 @@ install_tokyo_night() {
         return 0
     fi
 
-    local download_url version tmp_dir archive extracted_dir
+    local download_url version tmp_dir archive extracted_dir theme_dir
     download_url=$(curl -fsSL --proto '=https' --tlsv1.2 "$TOKYO_API" |
         jq -r '.assets[] | select(.name == "TokyoNight-SE.tar.bz2") | .browser_download_url')
     version=$(curl -fsSL --proto '=https' --tlsv1.2 "$TOKYO_API" |
@@ -163,33 +163,39 @@ install_tokyo_night() {
         die "could not determine the Tokyo Night icon release version."
 
     tmp_dir=$(mktemp -d)
-    cleanup() {
-        rm -rf "$tmp_dir"
-    }
     archive="$tmp_dir/TokyoNight-SE.tar.bz2"
+    extracted_dir="$tmp_dir/extracted"
+    mkdir -p "$extracted_dir"
 
-    curl -fsSL         --proto '=https'         --tlsv1.2         "$download_url"         -o "$archive"
+    curl -fsSL \
+        --proto '=https' \
+        --tlsv1.2 \
+        "$download_url" \
+        -o "$archive"
 
     tar -tjf "$archive" >/dev/null 2>&1 ||
         die "downloaded Tokyo Night archive failed validation."
 
-    mkdir -p "$HOME/.local/share/icons"
-    tar -xjf "$archive" -C "$tmp_dir"
+    tar -xjf "$archive" -C "$extracted_dir"
 
-    extracted_dir="$tmp_dir/TokyoNight-SE"
-    [[ -f "$extracted_dir/index.theme" ]] ||
+    theme_dir=$(find "$extracted_dir" -type f -name index.theme -print -quit |
+        sed 's#/index.theme$##')
+
+    [[ -n "$theme_dir" && -f "$theme_dir/index.theme" ]] ||
         die "Tokyo Night archive did not contain a valid icon theme."
 
+    mkdir -p "$HOME/.local/share/icons"
     rm -rf "$HOME/.local/share/icons/TokyoNight-SE"
-    cp -a "$extracted_dir" "$HOME/.local/share/icons/TokyoNight-SE"
+    cp -a "$theme_dir" "$HOME/.local/share/icons/TokyoNight-SE"
 
     if command -v gtk-update-icon-cache >/dev/null 2>&1; then
         gtk-update-icon-cache -f -t "$HOME/.local/share/icons/TokyoNight-SE" >/dev/null 2>&1 || true
     fi
 
-    printf 'Installed Tokyo Night icon theme %s.\n' "$version"
     rm -rf "$tmp_dir"
+    printf 'Installed Tokyo Night icon theme %s.\\n' "$version"
 }
+
 
 write_gtk_theme() {
     local theme="$1"
