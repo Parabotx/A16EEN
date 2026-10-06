@@ -23,6 +23,7 @@ ShellRoot {
     property string searchText: ""
     property string powerProfile: "balanced"
     property bool doNotDisturb: false
+    property int iconThemeRevision: 0
 
     // Widget state lives in the shell; rendering and management stay modular.
     property bool widgetsCenterOpen: false
@@ -670,6 +671,7 @@ ShellRoot {
         onTimeShowSecondsRequested: root.timeShowSeconds = enabled
 
         onDoNotDisturbRequested: root.setDoNotDisturb(enabled)
+        onIconThemeChanged: root.iconThemeRevision++
     }
 
     ScreenshotCenter {
@@ -705,6 +707,7 @@ ShellRoot {
         modelData: root.primaryScreen
         opened: root.launcherOpen
         searchText: root.searchText
+        iconThemeRevision: root.iconThemeRevision
         onSearchTextChanged: root.searchText = searchText
         onCloseRequested: root.launcherOpen = false
     }
