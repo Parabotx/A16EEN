@@ -11,6 +11,7 @@ Item {
     signal backRequested()
     signal doNotDisturbRequested(bool enabled)
     signal batteryRequested()
+    signal controlRequested(string key)
 
     property string wifiState: "unavailable"
     property string wifiName: "Not connected"
@@ -24,14 +25,14 @@ Item {
     property bool nightLightEnabled: false
     property string statusMessage: "READING SYSTEM"
 
-    readonly property color page: "#08090B"
-    readonly property color tile: "#0D0F12"
-    readonly property color tileHover: "#12151A"
-    readonly property color tileActive: "#151A20"
-    readonly property color border: "#1C2026"
-    readonly property color textPrimary: "#F5F7FA"
-    readonly property color textSecondary: "#8E98A7"
-    readonly property color textMuted: "#515A67"
+    readonly property color page: "#FFFFFF"
+    readonly property color tile: "#F7F8FA"
+    readonly property color tileHover: "#EEF1F4"
+    readonly property color tileActive: "#F1F3F5"
+    readonly property color border: "#E1E5EA"
+    readonly property color textPrimary: "#111318"
+    readonly property color textSecondary: "#66707C"
+    readonly property color textMuted: "#8A939E"
     readonly property color accent: "#D7B56D"
 
     function iconSource(name) {
@@ -237,7 +238,7 @@ Item {
                     anchors.centerIn: parent
                     width: 17
                     height: 17
-                    source: root.iconSource("arrow-left")
+                    source: Qt.resolvedUrl("../assets/icons/lucide-arrow-left-dark.svg")
                     fillMode: Image.PreserveAspectFit
                     smooth: true
                 }
@@ -349,7 +350,7 @@ Item {
                         y: 16
                         width: 19
                         height: 19
-                        source: root.iconSource(modelData.icon)
+                        source: Qt.resolvedUrl("../assets/icons/lucide-" + modelData.icon + "-dark.svg")
                         fillMode: Image.PreserveAspectFit
                         smooth: true
                         opacity: 0.92
@@ -433,29 +434,7 @@ Item {
                         cursorShape: Qt.PointingHandCursor
                         onClicked: {
                             root.addPressFeedback(controlTile)
-
-                            switch (modelData.key) {
-                            case "wifi":
-                                root.runAction(["wifi", "toggle"])
-                                break
-                            case "bluetooth":
-                                root.runAction(["bluetooth", "toggle"])
-                                break
-                            case "audio":
-                                root.runAction(["audio", "toggle"])
-                                break
-                            case "brightness":
-                                break
-                            case "night":
-                                root.runAction(["night-light", "toggle"])
-                                break
-                            case "battery":
-                                root.batteryRequested()
-                                break
-                            case "dnd":
-                                root.doNotDisturbRequested(!root.doNotDisturb)
-                                break
-                            }
+                            root.controlRequested(modelData.key)
                         }
                     }
                 }
