@@ -38,7 +38,10 @@ jobs:
           ! grep -Fq 'tela-circle-icon-theme-blue' scripts/install.sh
           ! grep -Fq 'tela-circle-icon-theme-dracula' scripts/install.sh
           grep -Fq 'split("\\n")' quickshell/a16een/ui/ControlDetailSection.qml
-          grep -Fq 'split("\\n")' quickshell/a16een/ui/IconThemeSection.qml
+          grep -Fq 'split("\n")' quickshell/a16een/ui/IconThemeSection.qml
+          ! grep -Fq 'pacman -Syu --needed "$package"' scripts/a16een-icon-theme
+          grep -Fq 'pacman -S --needed "$package"' scripts/a16een-icon-theme
+          grep -Fq ': "INSTALL"' quickshell/a16een/ui/IconThemeSection.qml
 
       - name: Validate foundation files
         run: |
