@@ -101,7 +101,21 @@ ensure_package() {
     fi
 
     command -v pacman >/dev/null 2>&1 || die "pacman is required to install $package."
-    sudo pacman -Syu --needed "$package"
+
+    # Never perform a full system upgrade just to install an icon theme.
+    if sudo -n true >/dev/null 2>&1; then
+        sudo pacman -S --needed "$package"
+        return 0
+    fi
+
+    # Quickshell has no TTY for sudo. Use a graphical Foot terminal only when
+    # authentication is actually required, then return to the same GUI flow.
+    if [[ -n "${WAYLAND_DISPLAY:-}" ]] && command -v foot >/dev/null 2>&1; then
+        foot --title="A16EEN • Installing Icon Theme" bash -lc "set -e; sudo pacman -S --needed \"$package\""
+        return 0
+    fi
+
+    sudo pacman -S --needed "$package"
 }
 
 ensure_theme_installed() {
