@@ -14,7 +14,6 @@ PanelWindow {
     signal launcherRequested()
     signal dashboardRequested()
     signal wallpaperRequested()
-    signal powerRequested()
 
     readonly property color surface: "#000000"
     readonly property color borderColor: "#1A1A1A"
@@ -29,8 +28,6 @@ PanelWindow {
         { id: "wallpaper", name: "wallpaper", keywords: ["wallpaper", "background", "image"] },
         { id: "launcher", name: "launcher", keywords: ["launcher", "applications", "apps"] },
         { id: "dashboard", name: "dashboard", keywords: ["dashboard", "system"] },
-        { id: "power", name: "power", keywords: ["power", "battery", "performance", "balanced", "eco", "power saving"] },
-        { id: "battery-saving", name: "battery-saving", keywords: ["battery", "saving", "power saver", "eco"] },
         { id: "overview", name: "overview", keywords: ["overview", "workspaces", "windows"] },
         { id: "restart-shell", name: "restart-shell", keywords: ["restart", "shell", "reload", "quickshell"] },
         { id: "doctor", name: "doctor", keywords: ["doctor", "diagnostics", "health"] }
@@ -270,11 +267,6 @@ PanelWindow {
         case "dashboard":
             root.closeRequested()
             root.dashboardRequested()
-            break
-        case "power":
-        case "battery-saving":
-            root.closeRequested()
-            root.powerRequested()
             break
         case "overview":
             root.closeRequested()
