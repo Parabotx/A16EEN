@@ -6,7 +6,6 @@ import "WidgetCatalog.js" as WidgetCatalog
 PanelWindow {
     id: root
 
-    property var modelData: null
     property bool opened: false
     property bool timeEnabled: true
     property bool pulseEnabled: false
@@ -35,8 +34,10 @@ PanelWindow {
         root.widgetEnabledRequested(id, !root.widgetEnabled(id))
     }
 
-    screen: root.modelData
-    visible: root.opened && root.modelData !== null
+    readonly property var targetScreen: Quickshell.screens.length > 0 ? Quickshell.screens[0] : null
+
+    screen: root.targetScreen
+    visible: root.opened && root.targetScreen !== null
     color: "transparent"
     focusable: root.opened
 
