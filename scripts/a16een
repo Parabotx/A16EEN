@@ -51,6 +51,8 @@ Hardware
   brightness up|down          Adjust screen brightness
   media play|pause|toggle     Control the active media player
   media next|previous         Skip to the next/previous track
+  power performance|balanced|eco  Set the A16EEN/system power profile
+  power status               Show the active power profile
 
 Maintenance
   icons                       Sync A16EEN's pinned SVG icon set
@@ -272,6 +274,27 @@ case "$command" in
         esac
         ;;
 
+    power|power-profile)
+        [[ $# -eq 1 ]] || die "usage: a16een power performance|balanced|eco|status"
+        require_cmd powerprofilesctl
+        case "$1" in
+            performance)
+                exec powerprofilesctl set performance
+                ;;
+            balanced)
+                exec powerprofilesctl set balanced
+                ;;
+            eco|saver|power-saver)
+                exec powerprofilesctl set power-saver
+                ;;
+            status)
+                exec powerprofilesctl get
+                ;;
+            *)
+                die "usage: a16een power performance|balanced|eco|status"
+                ;;
+        esac
+        ;;
     media)
         [[ $# -eq 1 ]] || die "usage: a16een media play|pause|toggle|next|previous"
         require_cmd playerctl
