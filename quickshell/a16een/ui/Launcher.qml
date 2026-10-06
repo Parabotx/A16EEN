@@ -209,9 +209,6 @@ PanelWindow {
                         root.launchError = ""
                     }
 
-                    Component.onCompleted: root.refreshIconTheme()
-
-    onIconThemeRevisionChanged: root.refreshIconTheme()
 
     Keys.onEscapePressed: root.closeRequested()
 
@@ -401,6 +398,9 @@ PanelWindow {
         onClicked: root.closeRequested()
     }
 
+    Component.onCompleted: root.refreshIconTheme()
+
+    onIconThemeRevisionChanged: root.refreshIconTheme()
     onOpenedChanged: {
         root.launchError = ""
 
