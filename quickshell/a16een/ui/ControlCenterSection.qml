@@ -427,7 +427,7 @@ Item {
                     MouseArea {
                         id: tileMouse
                         anchors.fill: parent
-                        z: -1
+                        z: 1
                         hoverEnabled: true
                         acceptedButtons: Qt.LeftButton
                         cursorShape: Qt.PointingHandCursor
