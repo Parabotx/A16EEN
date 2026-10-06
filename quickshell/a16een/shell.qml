@@ -15,7 +15,6 @@ ShellRoot {
     property bool dashboardOpen: false
     property bool commandCenterOpen: false
     property bool wallpaperPickerOpen: false
-    property bool powerCenterOpen: false
     property string wallpaperPath: ""
     property string searchText: ""
 
@@ -34,17 +33,6 @@ ShellRoot {
         && !root.commandCenterOpen
         && !root.wallpaperPickerOpen
 
-    readonly property string activePowerProfile:
-        PowerProfile.toString(PowerProfiles.profile).toLowerCase()
-    readonly property bool ecoMode: root.activePowerProfile === "powersaver"
-    readonly property bool balancedMode: root.activePowerProfile === "balanced"
-    readonly property bool performanceMode: root.activePowerProfile === "performance"
-    // Performance keeps animation alive unless fullscreen. Balanced only
-    // animates when the desktop is actually exposed. Eco disables it.
-    readonly property bool wallpaperAnimationAllowed:
-        !root.ecoMode
-        && !root.focusedWindowFullscreen
-        && (root.performanceMode || root.wallpaperDesktopActive)
     property string activeTitle: "A16EEN"
 
     property real systemLoad: 0
@@ -146,7 +134,6 @@ ShellRoot {
                 root.dashboardOpen = false
                 root.commandCenterOpen = false
                 root.wallpaperPickerOpen = false
-                root.powerCenterOpen = false
             }
         }
 
@@ -155,7 +142,6 @@ ShellRoot {
             root.dashboardOpen = false
             root.commandCenterOpen = false
             root.wallpaperPickerOpen = false
-                root.powerCenterOpen = false
         }
 
         function close(): void {
@@ -182,7 +168,6 @@ ShellRoot {
                 root.launcherOpen = false
                 root.commandCenterOpen = false
                 root.wallpaperPickerOpen = false
-                root.powerCenterOpen = false
             }
         }
 
@@ -191,7 +176,6 @@ ShellRoot {
             root.launcherOpen = false
             root.commandCenterOpen = false
             root.wallpaperPickerOpen = false
-                root.powerCenterOpen = false
         }
 
         function close(): void {
@@ -217,7 +201,6 @@ ShellRoot {
                 root.launcherOpen = false
                 root.dashboardOpen = false
                 root.wallpaperPickerOpen = false
-                root.powerCenterOpen = false
             }
         }
 
@@ -226,7 +209,6 @@ ShellRoot {
             root.launcherOpen = false
             root.dashboardOpen = false
             root.wallpaperPickerOpen = false
-                root.powerCenterOpen = false
         }
 
         function close(): void {
@@ -317,7 +299,7 @@ ShellRoot {
     }
 
     Timer {
-        interval: root.ecoMode ? 10000 : root.balancedMode ? 5000 : 3000
+        interval: 3000
         repeat: true
         running: true
 
@@ -336,7 +318,7 @@ ShellRoot {
         Wallpaper {
             modelData: modelData
             currentWallpaperPath: root.wallpaperPath
-            desktopAnimationAllowed: root.wallpaperAnimationAllowed
+            desktopAnimationAllowed: root.wallpaperDesktopActive
         }
     }
 
@@ -354,7 +336,6 @@ ShellRoot {
                 root.dashboardOpen = false
                 root.commandCenterOpen = false
                 root.wallpaperPickerOpen = false
-                root.powerCenterOpen = false
             }
         }
     }
@@ -366,38 +347,23 @@ ShellRoot {
         onLauncherRequested: {
             root.commandCenterOpen = false
             root.wallpaperPickerOpen = false
-                root.powerCenterOpen = false
             root.launcherOpen = true
         }
         onDashboardRequested: {
             root.commandCenterOpen = false
             root.wallpaperPickerOpen = false
-                root.powerCenterOpen = false
             root.dashboardOpen = true
         }
         onWallpaperRequested: {
             root.commandCenterOpen = false
-            root.powerCenterOpen = false
             root.wallpaperPickerOpen = true
-        }
-        onPowerRequested: {
-            root.commandCenterOpen = false
-            root.wallpaperPickerOpen = false
-                root.powerCenterOpen = false
-            root.powerCenterOpen = true
         }
     }
 
-    PowerCenter {
-        modelData: root.primaryScreen
-        opened: root.powerCenterOpen
-        onCloseRequested: root.powerCenterOpen = false
-    }
     WallpaperPicker {
         modelData: root.primaryScreen
         opened: root.wallpaperPickerOpen
         onCloseRequested: root.wallpaperPickerOpen = false
-                root.powerCenterOpen = false
     }
 
     Launcher {
