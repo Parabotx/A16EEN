@@ -79,6 +79,9 @@ xwayland-satellite {
 
 binds {
     // A16EEN UI
+    // Super+S opens the A16EEN screenshot center.
+    Super+S repeat=false hotkey-overlay-title="A16EEN Screenshot Center" { spawn-sh "qs -c \"$HOME/.config/a16een/quickshell/a16een\" ipc call screenshot toggle"; }
+
     // Super+Space opens the A16EEN application launcher.
     // Super+/ opens the A16EEN command center.
     Super+Space repeat=false hotkey-overlay-title="A16EEN Application Launcher" { spawn-sh "qs -c \"$HOME/.config/a16een/quickshell/a16een\" ipc call launcher open"; }
