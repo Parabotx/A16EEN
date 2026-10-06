@@ -9,6 +9,7 @@ PanelWindow {
 
     required property var modelData
     property bool opened: false
+    property bool saveToDisk: true
     property string saveDirectory: "~/Pictures/Screenshots"
     property bool copyToClipboard: true
     property bool showPointer: true
@@ -72,7 +73,9 @@ PanelWindow {
                     const key = parts[0]
                     const value = parts.slice(1).join("=")
 
-                    if (key === "save_dir")
+                    if (key === "save")
+                        root.saveToDisk = value === "true"
+                    else if (key === "save_dir")
                         root.saveDirectory = value
                     else if (key === "clipboard")
                         root.copyToClipboard = value === "true"
@@ -154,6 +157,70 @@ PanelWindow {
                         hoverEnabled: true
                         cursorShape: Qt.PointingHandCursor
                         onClicked: root.closeRequested()
+                    }
+                }
+            }
+
+            Rectangle {
+                width: parent.width
+                height: 56
+                radius: 13
+                color: root.soft
+                border.width: 1
+                border.color: root.border
+
+                Row {
+                    anchors.fill: parent
+                    anchors.leftMargin: 13
+                    anchors.rightMargin: 13
+                    spacing: 10
+
+                    IconImage {
+                        anchors.verticalCenter: parent.verticalCenter
+                        implicitWidth: 18
+                        implicitHeight: 18
+                        source: Qt.resolvedUrl("../assets/icons/lucide-folder-open.svg")
+                    }
+
+                    Text {
+                        anchors.verticalCenter: parent.verticalCenter
+                        text: "SAVE TO DISK"
+                        color: root.textPrimary
+                        font.pixelSize: 7
+                        font.weight: Font.DemiBold
+                        font.letterSpacing: 0.7
+                    }
+
+                    Item { width: parent.width - 185; height: 1 }
+
+                    Rectangle {
+                        width: 42
+                        height: 24
+                        anchors.verticalCenter: parent.verticalCenter
+                        radius: 12
+                        color: root.saveToDisk ? root.accent : "#D7DEE6"
+
+                        Rectangle {
+                            width: 18
+                            height: 18
+                            y: 3
+                            x: root.saveToDisk ? 21 : 3
+                            radius: 9
+                            color: "#FFFFFF"
+
+                            Behavior on x {
+                                NumberAnimation { duration: 130; easing.type: Easing.OutCubic }
+                            }
+                        }
+
+                        MouseArea {
+                            anchors.fill: parent
+                            cursorShape: Qt.PointingHandCursor
+                            onClicked: {
+                                root.saveToDisk = !root.saveToDisk
+                                root.saveSetting("save", root.saveToDisk)
+                            }
+                        }
                     }
                 }
             }
