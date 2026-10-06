@@ -28,6 +28,7 @@ jobs:
           bash -n scripts/a16een
           bash -n scripts/a16een-wallpaper
           bash -n scripts/a16een-icons
+          bash -n scripts/a16een-screenshot
 
       - name: Validate foundation files
         run: |
@@ -40,6 +41,16 @@ jobs:
           test -f quickshell/a16een/ui/Dashboard.qml
           test -f quickshell/a16een/ui/CommandCenter.qml
           test -f quickshell/a16een/ui/ScreenshotCenter.qml
+          test -f quickshell/a16een/ui/ScreenshotSettings.qml
+          test -f quickshell/a16een/ui/ScreenshotPreview.qml
+          test -f scripts/a16een-screenshot
+          test -f quickshell/a16een/assets/icons/lucide-monitor.svg
+          test -f quickshell/a16een/assets/icons/lucide-crop.svg
+          test -f quickshell/a16een/assets/icons/lucide-app-window.svg
+          test -f quickshell/a16een/assets/icons/lucide-settings.svg
+          test -f quickshell/a16een/assets/icons/lucide-folder-open.svg
+          test -f quickshell/a16een/assets/icons/lucide-clipboard.svg
+          test -f quickshell/a16een/assets/icons/lucide-mouse-pointer.svg
           test -f quickshell/a16een/ui/WidgetCatalog.js
           test -f quickshell/a16een/ui/WallpaperPicker.qml
           test -f quickshell/a16een/ui/NotificationToast.qml
@@ -69,6 +80,10 @@ jobs:
           grep -Fq 'import qs.ui' quickshell/a16een/shell.qml
           grep -Fq 'qt6-imageformats' scripts/install.sh
           grep -Fq 'qt6-svg' scripts/install.sh
+          grep -Fq 'grim' scripts/install.sh
+          grep -Fq 'wl-clipboard' scripts/install.sh
+          grep -Fq 'jq' scripts/install.sh
+          grep -Fq 'a16een-screenshot' scripts/install.sh
           grep -Fq 'USER_WALLPAPER_DIR="$HOME/Pictures/a16een"' scripts/install.sh
           grep -Fq 'property bool wallpaperPickerOpen' quickshell/a16een/shell.qml
           grep -Fq 'WallpaperPicker {' quickshell/a16een/shell.qml
@@ -91,9 +106,22 @@ jobs:
           grep -Fq 'ScreenshotCenter {' quickshell/a16een/shell.qml
           grep -Fq 'visible: root.opened' quickshell/a16een/ui/CommandCenter.qml
           grep -Fq 'niri", "msg", "action' quickshell/a16een/ui/ScreenshotCenter.qml
-          grep -Fq '"pick-window"' quickshell/a16een/ui/ScreenshotCenter.qml
-          grep -Fq '"--write-to-disk=false"' quickshell/a16een/ui/ScreenshotCenter.qml
-          grep -Fq '"--show-pointer=false"' quickshell/a16een/ui/ScreenshotCenter.qml
+          grep -Fq '"a16een-screenshot"' quickshell/a16een/ui/ScreenshotCenter.qml
+          grep -Fq 'lucide-monitor.svg' quickshell/a16een/ui/ScreenshotCenter.qml
+          grep -Fq 'lucide-crop.svg' quickshell/a16een/ui/ScreenshotCenter.qml
+          grep -Fq 'lucide-app-window.svg' quickshell/a16een/ui/ScreenshotCenter.qml
+          grep -Fq 'MultiEffect' quickshell/a16een/ui/ScreenshotCenter.qml
+          grep -Fq 'finishAreaSelection' quickshell/a16een/ui/ScreenshotCenter.qml
+          grep -Fq 'a16een-screenshot' quickshell/a16een/ui/ScreenshotSettings.qml
+          grep -Fq 'SAVE TO DISK' quickshell/a16een/ui/ScreenshotSettings.qml
+          grep -Fq 'SAVE LOCATION' quickshell/a16een/ui/ScreenshotSettings.qml
+          grep -Fq 'COPY TO CLIPBOARD' quickshell/a16een/ui/ScreenshotSettings.qml
+          grep -Fq 'interval: 2000' quickshell/a16een/ui/ScreenshotPreview.qml
+          grep -Fq 'xdg-open' quickshell/a16een/ui/ScreenshotPreview.qml
+          grep -Fq 'ipc call screenshot preview' scripts/a16een-screenshot
+          grep -Fq 'grim -g' scripts/a16een-screenshot
+          grep -Fq 'niri msg action screenshot-screen' scripts/a16een-screenshot
+          grep -Fq 'niri msg action screenshot-window' scripts/a16een-screenshot
           grep -Fq 'signal screenshotRequested()' quickshell/a16een/ui/CommandCenter.qml
           grep -Fq 'id: "screenshot"' quickshell/a16een/ui/CommandCenter.qml
           grep -Fq 'text: "/"' quickshell/a16een/ui/CommandCenter.qml
