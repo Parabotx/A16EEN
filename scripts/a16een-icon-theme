@@ -166,8 +166,6 @@ install_tokyo_night() {
     cleanup() {
         rm -rf "$tmp_dir"
     }
-    trap cleanup RETURN
-
     archive="$tmp_dir/TokyoNight-SE.tar.bz2"
 
     curl -fsSL         --proto '=https'         --tlsv1.2         "$download_url"         -o "$archive"
@@ -190,6 +188,7 @@ install_tokyo_night() {
     fi
 
     printf 'Installed Tokyo Night icon theme %s.\n' "$version"
+    rm -rf "$tmp_dir"
 }
 
 write_gtk_theme() {
