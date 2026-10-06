@@ -73,7 +73,8 @@ Item {
             }
 
             Row {
-                width: parent.width
+                anchors.horizontalCenter: parent.horizontalCenter
+                width: childrenRect.width
                 height: 112
                 spacing: 14
 
