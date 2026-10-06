@@ -48,7 +48,33 @@ theme_path() {
 }
 
 list_themes() {
-    printf '%s\n'         'system|System Default|Use the desktop and Qt platform default|1|system'         'papirus|Papirus|Clean, modern full icon family|1|Papirus'         'papirus-dark|Papirus Dark|Dark folders with crisp application icons|1|Papirus-Dark'         'breeze|Breeze|KDE-style clean and balanced icons|1|breeze'         'elementary|Elementary|Minimal, polished vector icon system|1|elementary'         'tela-circle|Tela Circle|Colorful circular application icons|1|Tela-circle'         'tela-circle-blue|Tela Circle Blue|Blue-accent circular application icons|1|Tela-circle-blue'         'tela-circle-dracula|Tela Circle Dracula|Dark Dracula-inspired circular icons|1|Tela-circle-dracula'         'tokyo-night|Tokyo Night|Tokyo Night themed app and folder icons|0|TokyoNight-SE'
+    local papirus_installed=0
+    local breeze_installed=0
+    local elementary_installed=0
+    local tela_installed=0
+    local tela_blue_installed=0
+    local tela_dracula_installed=0
+    local tokyo_installed=0
+
+    theme_installed "Papirus" && papirus_installed=1 || true
+    theme_installed "Papirus-Dark" && papirus_installed=1 || true
+    theme_installed "breeze" && breeze_installed=1 || true
+    theme_installed "elementary" && elementary_installed=1 || true
+    theme_installed "Tela-circle" && tela_installed=1 || true
+    theme_installed "Tela-circle-blue" && tela_blue_installed=1 || true
+    theme_installed "Tela-circle-dracula" && tela_dracula_installed=1 || true
+    theme_installed "TokyoNight-SE" && tokyo_installed=1 || true
+
+    printf '%s\n' \
+        'system|System Default|Use the desktop and Qt platform default|1|system' \
+        "papirus|Papirus|Clean, modern full icon family|$papirus_installed|Papirus" \
+        "papirus-dark|Papirus Dark|Dark folders with crisp application icons|$papirus_installed|Papirus-Dark" \
+        "breeze|Breeze|KDE-style clean and balanced icons|$breeze_installed|breeze" \
+        "elementary|Elementary|Minimal, polished vector icon system|$elementary_installed|elementary" \
+        "tela-circle|Tela Circle|Colorful circular application icons|$tela_installed|Tela-circle" \
+        "tela-circle-blue|Tela Circle Blue|Blue-accent circular application icons|$tela_blue_installed|Tela-circle-blue" \
+        "tela-circle-dracula|Tela Circle Dracula|Dark Dracula-inspired circular icons|$tela_dracula_installed|Tela-circle-dracula" \
+        "tokyo-night|Tokyo Night|Tokyo Night themed app and folder icons|$tokyo_installed|TokyoNight-SE"
 }
 
 theme_record() {
