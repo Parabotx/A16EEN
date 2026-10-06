@@ -17,6 +17,7 @@ ShellRoot {
     property bool wallpaperPickerOpen: false
     property string wallpaperPath: ""
     property string searchText: ""
+    property string powerProfile: "balanced"
 
     property var workspaces: []
     property var windows: []
@@ -32,6 +33,35 @@ ShellRoot {
         && !root.dashboardOpen
         && !root.commandCenterOpen
         && !root.wallpaperPickerOpen
+
+    readonly property bool wallpaperAnimationAllowed: {
+        switch (root.powerProfile) {
+        case "performance":
+            // Performance mode keeps live wallpapers running behind normal
+            // and half-open/floating windows. Only a true fullscreen window pauses it.
+            return !root.focusedWindowFullscreen
+        case "power-saver":
+            // Eco mode always freezes animated wallpapers.
+            return false
+        case "balanced":
+        default:
+            // Balanced mode pauses animation while the user is actively using
+            // an app or any A16EEN overlay.
+            return root.wallpaperDesktopActive
+        }
+    }
+
+    readonly property int systemMonitorInterval: {
+        switch (root.powerProfile) {
+        case "performance":
+            return 1000
+        case "power-saver":
+            return 7000
+        case "balanced":
+        default:
+            return 3000
+        }
+    }
 
     property string activeTitle: "A16EEN"
 
@@ -53,6 +83,36 @@ ShellRoot {
                 if (path.length)
                     root.wallpaperPath = path
             }
+        }
+    }
+
+    Process {
+        id: powerProfileProcess
+        command: ["powerprofilesctl", "get"]
+        running: true
+
+        stdout: StdioCollector {
+            onStreamFinished: {
+                const profile = String(text).trim().toLowerCase()
+
+                if (profile === "performance"
+                    || profile === "balanced"
+                    || profile === "power-saver") {
+                    root.powerProfile = profile
+                }
+            }
+        }
+    }
+
+    Timer {
+        id: powerProfileTimer
+        interval: 2000
+        repeat: true
+        running: true
+
+        onTriggered: {
+            powerProfileProcess.running = false
+            powerProfileProcess.running = true
         }
     }
 
@@ -299,7 +359,8 @@ ShellRoot {
     }
 
     Timer {
-        interval: 3000
+        id: systemMonitorTimer
+        interval: root.systemMonitorInterval
         repeat: true
         running: true
 
@@ -318,7 +379,7 @@ ShellRoot {
         Wallpaper {
             modelData: modelData
             currentWallpaperPath: root.wallpaperPath
-            desktopAnimationAllowed: root.wallpaperDesktopActive
+            desktopAnimationAllowed: root.wallpaperAnimationAllowed
         }
     }
 
