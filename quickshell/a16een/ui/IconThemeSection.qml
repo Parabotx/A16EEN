@@ -149,14 +149,6 @@ Item {
         }
     }
 
-    Timer {
-        id: refreshTimer
-        interval: 2400
-        repeat: true
-        running: root.active
-        onTriggered: root.loadThemes()
-    }
-
     Component.onCompleted: root.loadThemes()
 
     Item {
