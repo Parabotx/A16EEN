@@ -22,6 +22,7 @@ ShellRoot {
     property string wallpaperPath: ""
     property string searchText: ""
     property string powerProfile: "balanced"
+    property bool doNotDisturb: false
 
     // Widget state lives in the shell; rendering and management stay modular.
     property bool widgetsCenterOpen: false
@@ -389,6 +390,12 @@ ShellRoot {
         }
     }
 
+    function setDoNotDisturb(enabled) {
+        root.doNotDisturb = enabled
+        dndWriter.running = false
+        Qt.callLater(() => dndWriter.running = true)
+    }
+
     NotificationServer {
         id: notificationServer
 
@@ -400,6 +407,11 @@ ShellRoot {
         persistenceSupported: false
 
         onNotification: notification => {
+            if (root.doNotDisturb) {
+                notification.tracked = false
+                return
+            }
+
             if (root.latestNotification) root.latestNotification.tracked = false
             notification.tracked = true
             root.latestNotification = notification
@@ -452,6 +464,31 @@ ShellRoot {
             onStreamFinished: {
                 const pieces = text.trim().split(/\s+/)
                 if (pieces.length > 0) root.systemLoad = Number(pieces[0]) || 0
+            }
+        }
+    }
+
+    Process {
+        id: dndReader
+        command: ["a16een-control", "dnd", "get"]
+        running: true
+
+        stdout: StdioCollector {
+            onStreamFinished: {
+                root.doNotDisturb = text.trim().toLowerCase() === "on"
+            }
+        }
+    }
+
+    Process {
+        id: dndWriter
+        command: ["a16een-control", "dnd", root.doNotDisturb ? "on" : "off"]
+        running: false
+
+        onRunningChanged: {
+            if (!running && root.doNotDisturb && root.latestNotification) {
+                root.latestNotification.tracked = false
+                root.latestNotification = null
             }
         }
     }
@@ -562,6 +599,7 @@ ShellRoot {
         workspaceWidgetEnabled: root.workspaceWidgetEnabled
         timeUse24Hour: root.timeUse24Hour
         timeShowSeconds: root.timeShowSeconds
+        doNotDisturb: root.doNotDisturb
 
         onCloseRequested: root.commandCenterOpen = false
 
@@ -630,6 +668,8 @@ ShellRoot {
         onWorkspaceWidgetEnabledRequested: root.workspaceWidgetEnabled = enabled
         onTimeUse24HourRequested: root.timeUse24Hour = enabled
         onTimeShowSecondsRequested: root.timeShowSeconds = enabled
+
+        onDoNotDisturbRequested: root.setDoNotDisturb(enabled)
     }
 
     ScreenshotCenter {
