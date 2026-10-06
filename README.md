@@ -33,6 +33,24 @@ The project is being designed as a cohesive desktop product rather than a conven
 - Persistent user wallpaper collection with `a16een wallpaper`
 - Isolated configuration under `~/.config/a16een/`
 
+## Icon Themes
+
+A16EEN includes a graphical icon-theme switcher available from the Command Center with:
+
+    /icons
+
+The launcher already resolves application icons through Quickshell's system icon theme. A16EEN persists the selected theme and reloads its shell automatically when a theme changes.
+
+Curated themes include **System Default**, **Papirus**, **Papirus Dark**, **Breeze**, **Elementary**, **Tela Circle**, **Tela Circle Blue**, **Tela Circle Dracula**, and **Tokyo Night**. The major themes are installed from Arch's icon-theme packages; Tokyo Night is downloaded from its upstream `TokyoNight-SE` release the first time it is selected. Compatible GTK applications and file managers can also use the selected icon theme, so application and folder icons stay consistent.
+
+CLI equivalents:
+
+    a16een icons theme list
+    a16een icons theme current
+    a16een icons theme set papirus-dark
+
+Existing applications may need to be restarted before they redraw with the new icon theme.
+
 ## Wallpaper
 
 A16EEN keeps two wallpaper collections.
