@@ -45,6 +45,7 @@ jobs:
           test -f quickshell/a16een/ui/ScreenshotSettings.qml
           test -f quickshell/a16een/ui/ScreenshotPreview.qml
           test -f quickshell/a16een/ui/ControlCenterSection.qml
+          test -f quickshell/a16een/ui/ControlDetailSection.qml
           test -f scripts/a16een-screenshot
           test -f scripts/a16een-control
           test -f quickshell/a16een/assets/icons/lucide-monitor.svg
@@ -63,6 +64,14 @@ jobs:
           test -f quickshell/a16een/assets/icons/lucide-bell-off.svg
           test -f quickshell/a16een/assets/icons/lucide-sliders-horizontal.svg
           test -f quickshell/a16een/assets/icons/lucide-arrow-left.svg
+          test -f quickshell/a16een/assets/icons/lucide-arrow-left-dark.svg
+          test -f quickshell/a16een/assets/icons/lucide-wifi-dark.svg
+          test -f quickshell/a16een/assets/icons/lucide-bluetooth-dark.svg
+          test -f quickshell/a16een/assets/icons/lucide-volume-2-dark.svg
+          test -f quickshell/a16een/assets/icons/lucide-sun-dark.svg
+          test -f quickshell/a16een/assets/icons/lucide-moon-dark.svg
+          test -f quickshell/a16een/assets/icons/lucide-battery-dark.svg
+          test -f quickshell/a16een/assets/icons/lucide-bell-off-dark.svg
           test -f quickshell/a16een/ui/WidgetCatalog.js
           test -f quickshell/a16een/ui/WallpaperPicker.qml
           test -f quickshell/a16een/ui/NotificationToast.qml
@@ -135,14 +144,27 @@ jobs:
           grep -Fq 'interval: 2000' quickshell/a16een/ui/ScreenshotPreview.qml
           grep -Fq 'xdg-open' quickshell/a16een/ui/ScreenshotPreview.qml
           grep -Fq 'onDoNotDisturbRequested: root.setDoNotDisturb(enabled)' quickshell/a16een/shell.qml
+          grep -Fq 'wifi connect' scripts/a16een-control
+          grep -Fq 'wifi disconnect' scripts/a16een-control
+          grep -Fq 'bluetooth pair' scripts/a16een-control
+          grep -Fq 'bluetooth scan' scripts/a16een-control
           grep -Fq 'ipc call screenshot preview' scripts/a16een-screenshot
           grep -Fq 'grim -g' scripts/a16een-screenshot
           grep -Fq 'niri msg action screenshot-screen' scripts/a16een-screenshot
           grep -Fq 'niri msg action screenshot-window' scripts/a16een-screenshot
           grep -Fq 'signal screenshotRequested()' quickshell/a16een/ui/CommandCenter.qml
           grep -Fq 'signal doNotDisturbRequested(bool enabled)' quickshell/a16een/ui/CommandCenter.qml
+          grep -Fq 'onControlRequested: root.openControlDetail(key)' quickshell/a16een/ui/CommandCenter.qml
           grep -Fq 'id: "controls"' quickshell/a16een/ui/CommandCenter.qml
           grep -Fq 'ControlCenterSection {' quickshell/a16een/ui/CommandCenter.qml
+          grep -Fq 'ControlDetailSection {' quickshell/a16een/ui/CommandCenter.qml
+          grep -Fq 'id: "wifi"' quickshell/a16een/ui/CommandCenter.qml
+          grep -Fq 'id: "bluetooth"' quickshell/a16een/ui/CommandCenter.qml
+          grep -Fq 'id: "audio"' quickshell/a16een/ui/CommandCenter.qml
+          grep -Fq 'id: "brightness"' quickshell/a16een/ui/CommandCenter.qml
+          grep -Fq 'id: "night-light"' quickshell/a16een/ui/CommandCenter.qml
+          grep -Fq 'id: "battery"' quickshell/a16een/ui/CommandCenter.qml
+          grep -Fq 'id: "dnd"' quickshell/a16een/ui/CommandCenter.qml
           grep -Fq 'lucide-sliders-horizontal.svg' quickshell/a16een/ui/CommandCenter.qml
           grep -Fq 'id: "screenshot"' quickshell/a16een/ui/CommandCenter.qml
           grep -Fq 'text: "/"' quickshell/a16een/ui/CommandCenter.qml
