@@ -1163,7 +1163,7 @@ PanelWindow {
             break
         case "widgets":
             root.closeRequested()
-            root.widgetsRequested()
+            Quickshell.execDetached(["qs", "ipc", "call", "widgets", "open"])
             break
         case "restart-shell":
             root.closeRequested()
