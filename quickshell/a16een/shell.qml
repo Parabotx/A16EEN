@@ -146,6 +146,7 @@ ShellRoot {
                 root.dashboardOpen = false
                 root.commandCenterOpen = false
                 root.wallpaperPickerOpen = false
+                root.powerCenterOpen = false
             }
         }
 
@@ -154,6 +155,7 @@ ShellRoot {
             root.dashboardOpen = false
             root.commandCenterOpen = false
             root.wallpaperPickerOpen = false
+                root.powerCenterOpen = false
         }
 
         function close(): void {
@@ -180,6 +182,7 @@ ShellRoot {
                 root.launcherOpen = false
                 root.commandCenterOpen = false
                 root.wallpaperPickerOpen = false
+                root.powerCenterOpen = false
             }
         }
 
@@ -188,6 +191,7 @@ ShellRoot {
             root.launcherOpen = false
             root.commandCenterOpen = false
             root.wallpaperPickerOpen = false
+                root.powerCenterOpen = false
         }
 
         function close(): void {
@@ -213,6 +217,7 @@ ShellRoot {
                 root.launcherOpen = false
                 root.dashboardOpen = false
                 root.wallpaperPickerOpen = false
+                root.powerCenterOpen = false
             }
         }
 
@@ -221,6 +226,7 @@ ShellRoot {
             root.launcherOpen = false
             root.dashboardOpen = false
             root.wallpaperPickerOpen = false
+                root.powerCenterOpen = false
         }
 
         function close(): void {
@@ -348,6 +354,7 @@ ShellRoot {
                 root.dashboardOpen = false
                 root.commandCenterOpen = false
                 root.wallpaperPickerOpen = false
+                root.powerCenterOpen = false
             }
         }
     }
@@ -359,20 +366,24 @@ ShellRoot {
         onLauncherRequested: {
             root.commandCenterOpen = false
             root.wallpaperPickerOpen = false
+                root.powerCenterOpen = false
             root.launcherOpen = true
         }
         onDashboardRequested: {
             root.commandCenterOpen = false
             root.wallpaperPickerOpen = false
+                root.powerCenterOpen = false
             root.dashboardOpen = true
         }
         onWallpaperRequested: {
             root.commandCenterOpen = false
+            root.powerCenterOpen = false
             root.wallpaperPickerOpen = true
         }
         onPowerRequested: {
             root.commandCenterOpen = false
             root.wallpaperPickerOpen = false
+                root.powerCenterOpen = false
             root.powerCenterOpen = true
         }
     }
@@ -386,6 +397,7 @@ ShellRoot {
         modelData: root.primaryScreen
         opened: root.wallpaperPickerOpen
         onCloseRequested: root.wallpaperPickerOpen = false
+                root.powerCenterOpen = false
     }
 
     Launcher {
