@@ -274,6 +274,12 @@ case "$command" in
         esac
         ;;
 
+    battery-saving|battery-saver|power-save)
+        require_no_args "$@"
+        require_cmd powerprofilesctl
+        exec powerprofilesctl set power-saver
+        ;;
+
     power|power-profile)
         [[ $# -eq 1 ]] || die "usage: a16een power performance|balanced|eco|status"
         require_cmd powerprofilesctl
