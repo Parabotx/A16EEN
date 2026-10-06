@@ -272,6 +272,14 @@ if [ "${XDG_CURRENT_DESKTOP:-}" = "A16EEN" ] && command -v niri >/dev/null 2>&1;
     fi
 fi
 
+if command -v systemctl >/dev/null 2>&1 && command -v powerprofilesctl >/dev/null 2>&1; then
+    if sudo systemctl enable --now power-profiles-daemon.service >/dev/null 2>&1; then
+        echo "==> Power Profiles Daemon is enabled and active."
+    else
+        echo "WARNING: could not start power-profiles-daemon; A16EEN power commands may be unavailable until it is started." >&2
+    fi
+fi
+
 echo "==> Installing A16EEN session launcher, shell supervisor, updater and diagnostics"
 sudo install -Dm755 "$ROOT_DIR/scripts/start-a16een" /usr/local/bin/start-a16een
 sudo install -Dm755 "$ROOT_DIR/scripts/a16een-shell" /usr/local/bin/a16een-shell
