@@ -15,6 +15,7 @@ ShellRoot {
     property bool dashboardOpen: false
     property bool commandCenterOpen: false
     property bool wallpaperPickerOpen: false
+    property bool screenshotCenterOpen: false
     property string wallpaperPath: ""
     property string searchText: ""
     property string powerProfile: "balanced"
@@ -205,6 +206,7 @@ ShellRoot {
                 root.commandCenterOpen = false
                 root.wallpaperPickerOpen = false
                 root.widgetsCenterOpen = false
+                root.screenshotCenterOpen = false
             }
         }
 
@@ -214,6 +216,7 @@ ShellRoot {
             root.commandCenterOpen = false
             root.wallpaperPickerOpen = false
             root.widgetsCenterOpen = false
+            root.screenshotCenterOpen = false
         }
 
         function close(): void {
@@ -241,6 +244,7 @@ ShellRoot {
                 root.commandCenterOpen = false
                 root.wallpaperPickerOpen = false
                 root.widgetsCenterOpen = false
+                root.screenshotCenterOpen = false
             }
         }
 
@@ -250,6 +254,7 @@ ShellRoot {
             root.commandCenterOpen = false
             root.wallpaperPickerOpen = false
             root.widgetsCenterOpen = false
+            root.screenshotCenterOpen = false
         }
 
         function close(): void {
@@ -280,6 +285,7 @@ ShellRoot {
             root.launcherOpen = false
             root.dashboardOpen = false
             root.wallpaperPickerOpen = false
+            root.screenshotCenterOpen = false
         }
 
         function open(): void {
@@ -296,6 +302,37 @@ ShellRoot {
     }
 
     IpcHandler {
+        target: "screenshot"
+
+        function toggle(): void {
+            if (root.screenshotCenterOpen) {
+                root.screenshotCenterOpen = false
+                return
+            }
+
+            root.screenshotCenterOpen = true
+            root.launcherOpen = false
+            root.dashboardOpen = false
+            root.commandCenterOpen = false
+            root.wallpaperPickerOpen = false
+            root.widgetsCenterOpen = false
+        }
+
+        function open(): void {
+            root.screenshotCenterOpen = true
+            root.launcherOpen = false
+            root.dashboardOpen = false
+            root.commandCenterOpen = false
+            root.wallpaperPickerOpen = false
+            root.widgetsCenterOpen = false
+        }
+
+        function close(): void {
+            root.screenshotCenterOpen = false
+        }
+    }
+
+    IpcHandler {
         target: "command-center"
 
         function toggle(): void {
@@ -305,6 +342,8 @@ ShellRoot {
                 root.dashboardOpen = false
                 root.wallpaperPickerOpen = false
                 root.widgetsCenterOpen = false
+            root.screenshotCenterOpen = false
+                root.screenshotCenterOpen = false
             }
         }
 
@@ -514,6 +553,15 @@ ShellRoot {
             root.wallpaperPickerOpen = true
         }
 
+        onScreenshotRequested: {
+            root.commandCenterOpen = false
+            root.screenshotCenterOpen = true
+            root.launcherOpen = false
+            root.dashboardOpen = false
+            root.wallpaperPickerOpen = false
+            root.widgetsCenterOpen = false
+        }
+
         onWidgetsRequested: {
             root.widgetsCenterOpen = true
             root.commandCenterOpen = true
@@ -540,6 +588,13 @@ ShellRoot {
         onWorkspaceWidgetEnabledRequested: root.workspaceWidgetEnabled = enabled
         onTimeUse24HourRequested: root.timeUse24Hour = enabled
         onTimeShowSecondsRequested: root.timeShowSeconds = enabled
+    }
+
+    ScreenshotCenter {
+        modelData: root.primaryScreen
+        opened: root.screenshotCenterOpen
+        windows: root.windows
+        onCloseRequested: root.screenshotCenterOpen = false
     }
 
     WallpaperPicker {
