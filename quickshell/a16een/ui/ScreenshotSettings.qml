@@ -63,8 +63,7 @@ PanelWindow {
 
         stdout: StdioCollector {
             onStreamFinished: {
-                const lines = text.trim().split(/?
-/)
+                const lines = text.trim().split("\n")
                 for (const line of lines) {
                     const parts = line.split("=")
                     if (parts.length < 2)
