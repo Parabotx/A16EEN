@@ -48,6 +48,11 @@ jobs:
           grep -Fq 'resolve)' scripts/a16een-icon-theme
           grep -Fq 'build_icon_index()' scripts/a16een-icon-theme
           grep -Fq 'system_theme_name()' scripts/a16een-icon-theme
+          grep -Fq 'CACHE_VERSION="v2"' scripts/a16een-icon-theme
+          grep -Fq 'Inherits' scripts/a16een-icon-theme
+          grep -Fq '-type l' scripts/a16een-icon-theme
+          grep -Fq 'asynchronous: true' quickshell/a16een/ui/Launcher.qml
+          grep -Fq 'mipmap: true' quickshell/a16een/ui/Launcher.qml
           ! grep -Fq 'pacman -Syu --needed "$package"' scripts/a16een-icon-theme
           ! grep -Fq 'pacman -Syu --needed "$package"' scripts/a16een-icon-theme
           grep -Fq 'pacman -S --needed "$package"' scripts/a16een-icon-theme
