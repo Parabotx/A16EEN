@@ -49,6 +49,19 @@ PanelWindow {
         ? WlrKeyboardFocus.OnDemand
         : WlrKeyboardFocus.None
 
+    function cancelCapture() {
+        root.dragging = false
+        root.resetSelection()
+        if (areaPrepareProcess.running)
+            areaPrepareProcess.running = false
+        if (areaCaptureProcess.running)
+            areaCaptureProcess.running = false
+        if (captureProcess.running)
+            captureProcess.running = false
+        root.phase = 0
+        root.closeRequested()
+    }
+
     function resetSelection() {
         root.selectionX = 0
         root.selectionY = 0
@@ -341,7 +354,7 @@ PanelWindow {
         }
     }
 
-    Keys.onEscapePressed: root.closeRequested()
+    Keys.onEscapePressed: root.cancelCapture()
 
     onOpenedChanged: {
         if (root.opened) {
