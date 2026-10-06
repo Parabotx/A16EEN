@@ -255,6 +255,7 @@ PanelWindow {
         root.widgetsCloseRequested()
         root.controlViewOpen = false
         root.powerViewOpen = true
+        root.iconThemeViewOpen = false
         root.commandText = "/power"
         root.selectedCommandIndex = 0
         root.currentPowerProfile = ""
@@ -307,6 +308,7 @@ PanelWindow {
         root.powerViewOpen = false
         root.widgetViewOpen = false
         root.controlViewOpen = true
+        root.iconThemeViewOpen = false
         root.controlDetail = key
         root.commandText = "/" + key
         root.selectedCommandIndex = 0
@@ -576,7 +578,7 @@ PanelWindow {
                     selectedTextColor: root.primaryText
                     font.pixelSize: 12
                     clip: true
-                    focus: root.opened && !root.powerViewOpen && !root.widgetViewOpen && !root.controlViewOpen
+                    focus: root.opened && !root.powerViewOpen && !root.widgetViewOpen && !root.controlViewOpen && !root.iconThemeViewOpen
                     activeFocusOnPress: true
                     verticalAlignment: Text.AlignVCenter
                     selectByMouse: true
