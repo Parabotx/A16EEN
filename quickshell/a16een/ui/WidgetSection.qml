@@ -46,15 +46,6 @@ Item {
             root.workspaceWidgetEnabledRequested(next)
     }
 
-    Rectangle {
-        anchors.fill: parent
-        radius: 22
-        color: "#050505"
-        border.width: 1
-        border.color: "#222222"
-        clip: true
-    }
-
     Column {
         anchors.fill: parent
         anchors.margins: 22
@@ -64,7 +55,7 @@ Item {
             width: parent.width
             height: 58
             radius: 15
-            color: "#090909"
+            color: "#FFFFFF"
             border.width: 1
             border.color: "#1A1A1A"
 
@@ -87,7 +78,7 @@ Item {
 
                     Text {
                         text: "DESKTOP MODULES"
-                        color: "#4F4F4F"
+                        color: "#8A93A0"
                         font.pixelSize: 7
                         font.weight: Font.DemiBold
                         font.letterSpacing: 1.2
@@ -101,9 +92,9 @@ Item {
                     height: 38
                     anchors.verticalCenter: parent.verticalCenter
                     radius: 11
-                    color: "#101010"
+                    color: "#F5F7FA"
                     border.width: 1
-                    border.color: "#252525"
+                    border.color: "#DDE3EA"
 
                     Column {
                         anchors.centerIn: parent
@@ -123,7 +114,7 @@ Item {
                             width: 105
                             horizontalAlignment: Text.AlignHCenter
                             text: root.activeCount
-                            color: "#D7B56D"
+                            color: "#2F80ED"
                             font.pixelSize: 10
                             font.weight: Font.DemiBold
                         }
@@ -141,9 +132,9 @@ Item {
                 width: 310
                 height: parent.height
                 radius: 16
-                color: "#080808"
+                color: "#FFFFFF"
                 border.width: 1
-                border.color: "#181818"
+                border.color: "#E2E7EC"
 
                 Column {
                     anchors.fill: parent
@@ -152,7 +143,7 @@ Item {
 
                     Text {
                         text: "WIDGET REGISTRY"
-                        color: "#AFAFAF"
+                        color: "#525E6B"
                         font.pixelSize: 8
                         font.weight: Font.DemiBold
                         font.letterSpacing: 1.2
@@ -161,7 +152,7 @@ Item {
                     Text {
                         width: parent.width
                         text: "Choose which independent modules live on your desktop."
-                        color: "#434343"
+                        color: "#7A8693"
                         font.pixelSize: 7
                         wrapMode: Text.WordWrap
                     }
@@ -175,9 +166,9 @@ Item {
                             width: parent.width
                             height: 74
                             radius: 14
-                            color: root.widgetEnabled(modelData.id) ? "#111111" : "#090909"
+                            color: root.widgetEnabled(modelData.id) ? "#F0F4F8" : "#FFFFFF"
                             border.width: 1
-                            border.color: root.widgetEnabled(modelData.id) ? "#303030" : "#151515"
+                            border.color: root.widgetEnabled(modelData.id) ? "#C7D0DA" : "#D9E0E7"
 
                             Row {
                                 anchors.fill: parent
@@ -190,7 +181,7 @@ Item {
                                     height: 34
                                     anchors.verticalCenter: parent.verticalCenter
                                     radius: 10
-                                    color: root.widgetEnabled(modelData.id) ? "#202020" : "#101010"
+                                    color: root.widgetEnabled(modelData.id) ? "#EEF3F8" : "#F5F7FA"
 
                                     Text {
                                         anchors.centerIn: parent
@@ -201,7 +192,7 @@ Item {
                                                 : modelData.id === "pulse"
                                                     ? "P"
                                                     : "W"
-                                        color: root.widgetEnabled(modelData.id) ? "#D7B56D" : "#595959"
+                                        color: root.widgetEnabled(modelData.id) ? "#2F80ED" : "#8390A0"
                                         font.pixelSize: 10
                                         font.weight: Font.DemiBold
                                     }
@@ -221,14 +212,14 @@ Item {
 
                                     Text {
                                         text: modelData.subtitle
-                                        color: "#696969"
+                                        color: "#66717D"
                                         font.pixelSize: 6
                                     }
 
                                     Text {
                                         width: parent.width
                                         text: modelData.detail
-                                        color: "#404040"
+                                        color: "#89929E"
                                         font.pixelSize: 6
                                         elide: Text.ElideRight
                                     }
@@ -239,7 +230,7 @@ Item {
                                     height: 24
                                     anchors.verticalCenter: parent.verticalCenter
                                     radius: 12
-                                    color: root.widgetEnabled(modelData.id) ? "#D7B56D" : "#151515"
+                                    color: root.widgetEnabled(modelData.id) ? "#2F80ED" : "#D9E0E7"
 
                                     Rectangle {
                                         width: 18
@@ -247,7 +238,7 @@ Item {
                                         y: 3
                                         x: root.widgetEnabled(modelData.id) ? 21 : 3
                                         radius: 9
-                                        color: root.widgetEnabled(modelData.id) ? "#050505" : "#686868"
+                                        color: root.widgetEnabled(modelData.id) ? "#17202A" : "#7C8794"
 
                                         Behavior on x {
                                             NumberAnimation { duration: 130; easing.type: Easing.OutCubic }
@@ -270,9 +261,9 @@ Item {
                 width: parent.width - 322
                 height: parent.height
                 radius: 16
-                color: "#080808"
+                color: "#FFFFFF"
                 border.width: 1
-                border.color: "#181818"
+                border.color: "#E2E7EC"
 
                 Column {
                     anchors.fill: parent
@@ -297,7 +288,7 @@ Item {
                         width: parent.width
                         height: 90
                         radius: 14
-                        color: "#0A0A0A"
+                        color: "#F7F9FB"
                         border.width: 1
                         border.color: "#1A1A1A"
 
@@ -322,7 +313,7 @@ Item {
                                     text: root.editorialTimeEnabled
                                         ? "Wide, container-free clock that blends into the wallpaper."
                                         : "Enable it from the registry."
-                                    color: "#555555"
+                                    color: "#687582"
                                     font.pixelSize: 7
                                     wrapMode: Text.WordWrap
                                 }
@@ -333,7 +324,7 @@ Item {
                             Text {
                                 anchors.verticalCenter: parent.verticalCenter
                                 text: root.editorialTimeEnabled ? "DEFAULT" : "OFF"
-                                color: root.editorialTimeEnabled ? "#D7B56D" : "#505050"
+                                color: root.editorialTimeEnabled ? "#2F80ED" : "#505050"
                                 font.pixelSize: 7
                                 font.weight: Font.DemiBold
                                 font.letterSpacing: 1
@@ -343,7 +334,7 @@ Item {
 
                     Text {
                         text: "CLOCK FORMAT"
-                        color: "#6F6F6F"
+                        color: "#5E6A77"
                         font.pixelSize: 7
                         font.weight: Font.DemiBold
                         font.letterSpacing: 1
@@ -358,14 +349,14 @@ Item {
                             width: (parent.width - 7) / 2
                             height: 42
                             radius: 11
-                            color: root.timeUse24Hour ? "#181818" : "#0B0B0B"
+                            color: root.timeUse24Hour ? "#E2E7EC" : "#FFFFFF"
                             border.width: 1
-                            border.color: root.timeUse24Hour ? "#363636" : "#181818"
+                            border.color: root.timeUse24Hour ? "#B9C5D1" : "#E2E7EC"
 
                             Text {
                                 anchors.centerIn: parent
                                 text: "24 HOUR"
-                                color: root.timeUse24Hour ? "#D7B56D" : "#686868"
+                                color: root.timeUse24Hour ? "#2F80ED" : "#7C8794"
                                 font.pixelSize: 7
                                 font.weight: Font.DemiBold
                             }
@@ -381,14 +372,14 @@ Item {
                             width: (parent.width - 7) / 2
                             height: 42
                             radius: 11
-                            color: !root.timeUse24Hour ? "#181818" : "#0B0B0B"
+                            color: !root.timeUse24Hour ? "#E2E7EC" : "#FFFFFF"
                             border.width: 1
-                            border.color: !root.timeUse24Hour ? "#363636" : "#181818"
+                            border.color: !root.timeUse24Hour ? "#B9C5D1" : "#E2E7EC"
 
                             Text {
                                 anchors.centerIn: parent
                                 text: "12 HOUR"
-                                color: !root.timeUse24Hour ? "#D7B56D" : "#686868"
+                                color: !root.timeUse24Hour ? "#2F80ED" : "#7C8794"
                                 font.pixelSize: 7
                                 font.weight: Font.DemiBold
                             }
@@ -405,9 +396,9 @@ Item {
                         width: parent.width
                         height: 52
                         radius: 12
-                        color: "#0A0A0A"
+                        color: "#F7F9FB"
                         border.width: 1
-                        border.color: "#181818"
+                        border.color: "#E2E7EC"
 
                         Row {
                             anchors.fill: parent
@@ -439,7 +430,7 @@ Item {
                                 height: 24
                                 anchors.verticalCenter: parent.verticalCenter
                                 radius: 12
-                                color: root.timeShowSeconds ? "#D7B56D" : "#151515"
+                                color: root.timeShowSeconds ? "#2F80ED" : "#D9E0E7"
 
                                 Rectangle {
                                     width: 18
@@ -447,7 +438,7 @@ Item {
                                     y: 3
                                     x: root.timeShowSeconds ? 25 : 3
                                     radius: 9
-                                    color: root.timeShowSeconds ? "#050505" : "#686868"
+                                    color: root.timeShowSeconds ? "#17202A" : "#7C8794"
                                 }
 
                                 MouseArea {
@@ -462,13 +453,13 @@ Item {
                     Rectangle {
                         width: parent.width
                         height: 1
-                        color: "#171717"
+                        color: "#E5EAF0"
                     }
 
                     Text {
                         width: parent.width
                         text: "CALENDAR MODE IS AN INDEPENDENT WIDGET. TURN IT ON ONLY WHEN YOU WANT THE GLASS CALENDAR DESIGN."
-                        color: "#3D3D3D"
+                        color: "#7A8794"
                         font.pixelSize: 6
                         font.weight: Font.DemiBold
                         wrapMode: Text.WordWrap
@@ -491,7 +482,7 @@ Item {
                 width: 38
                 height: 36
                 radius: 11
-                color: "#0A0A0A"
+                color: "#F7F9FB"
                 border.width: 1
                 border.color: "#1D1D1D"
 
@@ -515,7 +506,7 @@ Item {
 
                 Text {
                     text: "BACK"
-                    color: "#666666"
+                    color: "#5F6C79"
                     font.pixelSize: 6
                     font.weight: Font.DemiBold
                     font.letterSpacing: 1
@@ -523,7 +514,7 @@ Item {
 
                 Text {
                     text: "Return to command search"
-                    color: "#3E3E3E"
+                    color: "#73808D"
                     font.pixelSize: 7
                 }
             }
@@ -533,7 +524,7 @@ Item {
             Text {
                 anchors.verticalCenter: parent.verticalCenter
                 text: root.activeCount + " ACTIVE"
-                color: "#383838"
+                color: "#52606E"
                 font.pixelSize: 6
                 font.weight: Font.DemiBold
                 font.letterSpacing: 0.8
