@@ -37,8 +37,7 @@ Item {
 
     function parseThemes(output) {
         const result = []
-        const lines = String(output || "").split("
-")
+        const lines = String(output || "").split("\\n")
 
         for (const raw of lines) {
             if (!raw.trim())
