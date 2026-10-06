@@ -44,7 +44,7 @@ PanelWindow {
     signal timeUse24HourRequested(bool enabled)
     signal timeShowSecondsRequested(bool enabled)
 
-    readonly property color surface: "#000000"
+    readonly property color surface: root.widgetViewOpen ? "#FFFFFF" : "#000000"
     readonly property color borderColor: "#1A1A1A"
     readonly property color fieldBackground: "#0A0A0A"
     readonly property color fieldBorder: "#1C1C1C"
@@ -391,7 +391,7 @@ PanelWindow {
         radius: root.powerViewOpen ? 26 : 18
         color: root.surface
         border.width: 1
-        border.color: "#202020"
+        border.color: root.widgetViewOpen ? "#E1E6EC" : "#202020"
         clip: true
 
         Behavior on width {
