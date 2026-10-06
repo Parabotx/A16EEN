@@ -33,6 +33,7 @@ xdg-desktop-portal-gtk
 xdg-utils
 qt6-imageformats
 qt6-svg
+power-profiles-daemon
 inter-font
 ttf-lato
 adobe-source-sans-fonts
