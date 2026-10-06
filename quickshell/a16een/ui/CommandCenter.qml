@@ -1344,7 +1344,7 @@ PanelWindow {
         search.text = "/"
 
         Qt.callLater(() => {
-            if (root.opened && !root.widgetViewOpen && !root.powerViewOpen)
+            if (root.opened && !root.widgetViewOpen && !root.powerViewOpen && !root.controlViewOpen)
                 search.forceActiveFocus()
         })
     }
