@@ -300,8 +300,10 @@ sudo install -Dm755 "$ROOT_DIR/scripts/a16een-icon-theme" /usr/local/bin/a16een-
 # The first revision with icon themes could leave a theme selected that is
 # expensive or incomplete. Reset once to the system default for a clean,
 # performance-safe migration. Users can select a theme again from /icons.
-if [ -f "$STATE_DIR/icon-theme" ] || [ -f "$STATE_DIR/previous-gsettings-icon-theme" ]; then
+if [ ! -f "$STATE_DIR/icon-theme-migration-v1" ] &&
+   { [ -f "$STATE_DIR/icon-theme" ] || [ -f "$STATE_DIR/previous-gsettings-icon-theme" ]; }; then
     /usr/local/bin/a16een-icon-theme set system >/dev/null 2>&1 || true
+    : > "$STATE_DIR/icon-theme-migration-v1"
 fi
 sudo install -Dm755 "$ROOT_DIR/scripts/a16een-icons" /usr/local/bin/a16een-icons
 sudo install -Dm755 "$ROOT_DIR/scripts/a16een-update" /usr/local/bin/a16een-update
