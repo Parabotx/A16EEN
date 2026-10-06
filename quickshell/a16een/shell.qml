@@ -16,6 +16,9 @@ ShellRoot {
     property bool commandCenterOpen: false
     property bool wallpaperPickerOpen: false
     property bool screenshotCenterOpen: false
+    property bool screenshotSettingsOpen: false
+    property bool screenshotPreviewOpen: false
+    property string screenshotPreviewPath: ""
     property string wallpaperPath: ""
     property string searchText: ""
     property string powerProfile: "balanced"
@@ -218,6 +221,7 @@ ShellRoot {
             root.wallpaperPickerOpen = false
             root.widgetsCenterOpen = false
             root.screenshotCenterOpen = false
+            root.screenshotSettingsOpen = false
         }
 
         function close(): void {
@@ -311,6 +315,7 @@ ShellRoot {
                 return
             }
 
+            root.screenshotSettingsOpen = false
             root.screenshotCenterOpen = true
             root.launcherOpen = false
             root.dashboardOpen = false
@@ -320,6 +325,7 @@ ShellRoot {
         }
 
         function open(): void {
+            root.screenshotSettingsOpen = false
             root.screenshotCenterOpen = true
             root.launcherOpen = false
             root.dashboardOpen = false
@@ -330,6 +336,24 @@ ShellRoot {
 
         function close(): void {
             root.screenshotCenterOpen = false
+            root.screenshotSettingsOpen = false
+        }
+
+        function preview(path: string): void {
+            if (path.length) {
+                root.screenshotPreviewPath = path
+                root.screenshotPreviewOpen = true
+            }
+        }
+
+        function settings(): void {
+            root.screenshotSettingsOpen = true
+            root.screenshotCenterOpen = false
+            root.launcherOpen = false
+            root.dashboardOpen = false
+            root.commandCenterOpen = false
+            root.wallpaperPickerOpen = false
+            root.widgetsCenterOpen = false
         }
     }
 
@@ -343,8 +367,8 @@ ShellRoot {
                 root.dashboardOpen = false
                 root.wallpaperPickerOpen = false
                 root.widgetsCenterOpen = false
-            root.screenshotCenterOpen = false
                 root.screenshotCenterOpen = false
+                root.screenshotSettingsOpen = false
             }
         }
 
@@ -354,6 +378,7 @@ ShellRoot {
             root.dashboardOpen = false
             root.wallpaperPickerOpen = false
             root.widgetsCenterOpen = false
+            root.screenshotSettingsOpen = false
         }
 
         function close(): void {
@@ -594,8 +619,24 @@ ShellRoot {
     ScreenshotCenter {
         modelData: root.primaryScreen
         opened: root.screenshotCenterOpen
-        windows: root.windows
         onCloseRequested: root.screenshotCenterOpen = false
+    }
+
+    ScreenshotSettings {
+        modelData: root.primaryScreen
+        opened: root.screenshotSettingsOpen
+        onCloseRequested: root.screenshotSettingsOpen = false
+    }
+
+    Variants {
+        model: Quickshell.screens
+
+        ScreenshotPreview {
+            modelData: modelData
+            opened: root.screenshotPreviewOpen
+            imagePath: root.screenshotPreviewPath
+            onCloseRequested: root.screenshotPreviewOpen = false
+        }
     }
 
     WallpaperPicker {
