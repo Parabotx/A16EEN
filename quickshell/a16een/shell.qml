@@ -18,6 +18,12 @@ ShellRoot {
     property string wallpaperPath: ""
     property string searchText: ""
     property string powerProfile: "balanced"
+    property bool widgetsCenterOpen: false
+    property bool timeWidgetEnabled: true
+    property bool pulseWidgetEnabled: false
+    property bool workspaceWidgetEnabled: false
+    property bool timeUse24Hour: true
+    property bool timeShowSeconds: false
 
     property var workspaces: []
     property var windows: []
@@ -33,6 +39,7 @@ ShellRoot {
         && !root.dashboardOpen
         && !root.commandCenterOpen
         && !root.wallpaperPickerOpen
+        && !root.widgetsCenterOpen
 
     readonly property bool wallpaperAnimationAllowed: {
         switch (root.powerProfile) {
@@ -194,6 +201,7 @@ ShellRoot {
                 root.dashboardOpen = false
                 root.commandCenterOpen = false
                 root.wallpaperPickerOpen = false
+                root.widgetsCenterOpen = false
             }
         }
 
@@ -202,6 +210,7 @@ ShellRoot {
             root.dashboardOpen = false
             root.commandCenterOpen = false
             root.wallpaperPickerOpen = false
+            root.widgetsCenterOpen = false
         }
 
         function close(): void {
@@ -228,6 +237,7 @@ ShellRoot {
                 root.launcherOpen = false
                 root.commandCenterOpen = false
                 root.wallpaperPickerOpen = false
+                root.widgetsCenterOpen = false
             }
         }
 
@@ -236,6 +246,7 @@ ShellRoot {
             root.launcherOpen = false
             root.commandCenterOpen = false
             root.wallpaperPickerOpen = false
+            root.widgetsCenterOpen = false
         }
 
         function close(): void {
@@ -261,6 +272,7 @@ ShellRoot {
                 root.launcherOpen = false
                 root.dashboardOpen = false
                 root.wallpaperPickerOpen = false
+                root.widgetsCenterOpen = false
             }
         }
 
@@ -269,6 +281,7 @@ ShellRoot {
             root.launcherOpen = false
             root.dashboardOpen = false
             root.wallpaperPickerOpen = false
+            root.widgetsCenterOpen = false
         }
 
         function close(): void {
@@ -386,6 +399,40 @@ ShellRoot {
     Variants {
         model: Quickshell.screens
 
+        TimeWidget {
+            modelData: modelData
+            widgetEnabled: root.timeWidgetEnabled
+            use24Hour: root.timeUse24Hour
+            showSeconds: root.timeShowSeconds
+        }
+    }
+
+    Variants {
+        model: Quickshell.screens
+
+        SystemPulseWidget {
+            modelData: modelData
+            widgetEnabled: root.pulseWidgetEnabled
+            systemLoad: root.systemLoad
+            volumePercent: root.volumePercent
+            volumeMuted: root.volumeMuted
+        }
+    }
+
+    Variants {
+        model: Quickshell.screens
+
+        WorkspaceWidget {
+            modelData: modelData
+            widgetEnabled: root.workspaceWidgetEnabled
+            workspaces: root.workspaces
+            focusedWorkspaceId: root.focusedWorkspaceId
+        }
+    }
+
+    Variants {
+        model: Quickshell.screens
+
         Dock {
             modelData: modelData
             workspaces: root.workspaces
@@ -419,6 +466,35 @@ ShellRoot {
             root.commandCenterOpen = false
             root.wallpaperPickerOpen = true
         }
+        onWidgetsRequested: {
+            root.commandCenterOpen = false
+            root.widgetsCenterOpen = true
+            root.launcherOpen = false
+            root.dashboardOpen = false
+            root.wallpaperPickerOpen = false
+        }
+    }
+
+    WidgetsCenter {
+        modelData: root.primaryScreen
+        opened: root.widgetsCenterOpen
+        timeWidgetEnabled: root.timeWidgetEnabled
+        pulseWidgetEnabled: root.pulseWidgetEnabled
+        workspaceWidgetEnabled: root.workspaceWidgetEnabled
+        timeUse24Hour: root.timeUse24Hour
+        timeShowSeconds: root.timeShowSeconds
+        systemLoad: root.systemLoad
+        volumePercent: root.volumePercent
+        volumeMuted: root.volumeMuted
+        workspaces: root.workspaces
+        focusedWorkspaceId: root.focusedWorkspaceId
+
+        onCloseRequested: root.widgetsCenterOpen = false
+        onTimeWidgetEnabledRequested: root.timeWidgetEnabled = enabled
+        onPulseWidgetEnabledRequested: root.pulseWidgetEnabled = enabled
+        onWorkspaceWidgetEnabledRequested: root.workspaceWidgetEnabled = enabled
+        onTimeUse24HourRequested: root.timeUse24Hour = enabled
+        onTimeShowSecondsRequested: root.timeShowSeconds = enabled
     }
 
     WallpaperPicker {
