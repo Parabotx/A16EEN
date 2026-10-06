@@ -33,6 +33,17 @@ ShellRoot {
         && !root.commandCenterOpen
         && !root.wallpaperPickerOpen
 
+    readonly property string activePowerProfile:
+        PowerProfile.toString(PowerProfiles.profile).toLowerCase()
+    readonly property bool ecoMode: root.activePowerProfile === "powersaver"
+    readonly property bool balancedMode: root.activePowerProfile === "balanced"
+    readonly property bool performanceMode: root.activePowerProfile === "performance"
+    // Performance keeps animation alive unless fullscreen. Balanced only
+    // animates when the desktop is actually exposed. Eco disables it.
+    readonly property bool wallpaperAnimationAllowed:
+        !root.ecoMode
+        && !root.focusedWindowFullscreen
+        && (root.performanceMode || root.wallpaperDesktopActive)
     property string activeTitle: "A16EEN"
 
     property real systemLoad: 0
@@ -299,7 +310,7 @@ ShellRoot {
     }
 
     Timer {
-        interval: 3000
+        interval: root.ecoMode ? 10000 : root.balancedMode ? 5000 : 3000
         repeat: true
         running: true
 
@@ -318,7 +329,7 @@ ShellRoot {
         Wallpaper {
             modelData: modelData
             currentWallpaperPath: root.wallpaperPath
-            desktopAnimationAllowed: root.wallpaperDesktopActive
+            desktopAnimationAllowed: root.wallpaperAnimationAllowed
         }
     }
 
