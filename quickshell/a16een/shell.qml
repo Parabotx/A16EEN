@@ -527,11 +527,10 @@ ShellRoot {
 
     Loader {
         id: widgetManagerLoader
-        active: root.widgetsCenterOpen
+        active: root.widgetsCenterOpen && root.primaryScreen !== null
         source: Qt.resolvedUrl("ui/WidgetManager.qml")
 
         onLoaded: {
-            item.modelData = root.primaryScreen
             item.opened = root.widgetsCenterOpen
             item.timeEnabled = root.timeWidgetEnabled
             item.pulseEnabled = root.pulseWidgetEnabled
