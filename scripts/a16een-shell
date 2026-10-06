@@ -13,30 +13,41 @@ mkdir -p "$LOG_DIR"
 # Keep shell restarts/reloads silent; A16EEN renders its own UI feedback.
 export QS_NO_RELOAD_POPUP=1
 
-# Quickshell reads QS_ICON_THEME at process startup. A16EEN's icon-theme manager
-# persists the selected theme here, so a shell restart applies it consistently
-# to the launcher and other Quickshell icon consumers.
-if [[ -s "$ICON_THEME_STATE" ]]; then
-    QS_ICON_THEME="$(head -n 1 "$ICON_THEME_STATE")"
+# Quickshell reads QS_ICON_THEME at process startup. Re-read the
+# persisted theme before every launch so a theme change made while the
+# supervisor is already running is picked up by the next shell.
+load_icon_theme() {
+    unset QS_ICON_THEME
 
-    # Only expose a theme to Quickshell when its actual index.theme exists.
-    # A stale/missing theme must never prevent the shell from rendering.
-    case "$QS_ICON_THEME" in
+    if [[ ! -s "$ICON_THEME_STATE" ]]; then
+        return 0
+    fi
+
+    local selected
+    selected="$(head -n 1 "$ICON_THEME_STATE" | tr -d "\r")"
+
+    case "$selected" in
         Papirus|Papirus-Dark|breeze|elementary|Tela-circle|Tela-circle-blue|Tela-circle-dracula|TokyoNight-SE)
-            if [[ -f "$HOME/.local/share/icons/$QS_ICON_THEME/index.theme" ]] ||
-               [[ -f "$HOME/.icons/$QS_ICON_THEME/index.theme" ]] ||
-               [[ -f "/usr/local/share/icons/$QS_ICON_THEME/index.theme" ]] ||
-               [[ -f "/usr/share/icons/$QS_ICON_THEME/index.theme" ]]; then
+            if [[ -f "$HOME/.local/share/icons/$selected/index.theme" ]] ||
+               [[ -f "$HOME/.icons/$selected/index.theme" ]] ||
+               [[ -f "/usr/local/share/icons/$selected/index.theme" ]] ||
+               [[ -f "/usr/share/icons/$selected/index.theme" ]]; then
+                QS_ICON_THEME="$selected"
                 export QS_ICON_THEME
             else
                 rm -f "$ICON_THEME_STATE"
             fi
             ;;
+        system|"")
+            # System Default leaves QS_ICON_THEME unset so Quickshell follows
+            # the normal Qt platform icon theme.
+            rm -f "$ICON_THEME_STATE"
+            ;;
         *)
             rm -f "$ICON_THEME_STATE"
             ;;
     esac
-fi
+}
 
 if ! command -v qs >/dev/null 2>&1; then
     printf '%s\n' "A16EEN shell cannot start: 'qs' was not found." >&2
@@ -54,6 +65,7 @@ attempt=0
 backoff=1
 
 while true; do
+    load_icon_theme
     timestamp="$(date '+%Y-%m-%d %H:%M:%S')"
     printf '[%s] starting Quickshell (attempt %d)\n' "$timestamp" "$((attempt + 1))" >>"$LOG_FILE"
 
