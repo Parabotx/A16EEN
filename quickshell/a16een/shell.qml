@@ -269,20 +269,23 @@ ShellRoot {
         target: "widgets"
 
         function toggle(): void {
-            root.widgetsCenterOpen = !root.widgetsCenterOpen
-            if (root.widgetsCenterOpen) {
-                root.launcherOpen = false
-                root.dashboardOpen = false
-                root.commandCenterOpen = false
-                root.wallpaperPickerOpen = false
+            if (root.commandCenterOpen && root.widgetsCenterOpen) {
+                root.widgetsCenterOpen = false
+                return
             }
+
+            root.widgetsCenterOpen = true
+            root.commandCenterOpen = true
+            root.launcherOpen = false
+            root.dashboardOpen = false
+            root.wallpaperPickerOpen = false
         }
 
         function open(): void {
             root.widgetsCenterOpen = true
+            root.commandCenterOpen = true
             root.launcherOpen = false
             root.dashboardOpen = false
-            root.commandCenterOpen = false
             root.wallpaperPickerOpen = false
         }
 
