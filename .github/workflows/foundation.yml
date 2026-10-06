@@ -91,8 +91,8 @@ jobs:
           grep -Fq 'root.wallpaperPickerOpen = true' quickshell/a16een/shell.qml
           grep -Fq 'a16een-wallpaper", "catalog' quickshell/a16een/ui/WallpaperPicker.qml
           grep -Fq 'modelData.path' quickshell/a16een/ui/WallpaperPicker.qml
-          grep -Fq 'preview.status !== Image.Ready && preview.status !== Image.Error' quickshell/a16een/ui/WallpaperPicker.qml
-          grep -Fq 'preview.status === Image.Error' quickshell/a16een/ui/WallpaperPicker.qml
+          grep -Fq 'staticPreview.status !== Image.Ready' quickshell/a16een/ui/WallpaperPicker.qml
+          grep -Fq 'staticPreview.status === Image.Error' quickshell/a16een/ui/WallpaperPicker.qml
           grep -Fq 'sourceSize.width: root.tileWidth * 2' quickshell/a16een/ui/WallpaperPicker.qml
           grep -Fq 'SequentialAnimation on opacity' quickshell/a16een/ui/WallpaperPicker.qml
           grep -Fq 'function apply(path: string): void' quickshell/a16een/shell.qml
@@ -101,13 +101,13 @@ jobs:
           ! grep -Fq 'wallpaperPathProcess' quickshell/a16een/ui/Wallpaper.qml
           grep -Fq 'retainWhileLoading: true' quickshell/a16een/ui/Wallpaper.qml
           grep -Fq 'modelData.displayName' quickshell/a16een/ui/WallpaperPicker.qml
-          grep -Fq 'find "$dir" -type f' scripts/a16een-wallpaper
+          grep -Fq 'find "$dir" -maxdepth 1 -type f -print0' scripts/a16een-wallpaper
           grep -Fq 'notify_shell()' scripts/a16een-wallpaper
           grep -Fq 'ipc call wallpaper apply' scripts/a16een-wallpaper
           ! grep -Fq 'restart_shell' scripts/a16een-wallpaper
           grep -Fq 'notify_shell "$path"' scripts/a16een-wallpaper
           ! grep -Fq 'sh", "-c"' quickshell/a16een/ui/CommandCenter.qml
-          grep -Fq 'anchors.verticalCenterOffset: 185' quickshell/a16een/ui/CommandCenter.qml
+          grep -Fq 'anchors.verticalCenterOffset: root.powerViewOpen ? 0 : 185' quickshell/a16een/ui/CommandCenter.qml
           grep -Fq 'ToplevelManager.activeToplevel' quickshell/a16een/shell.qml
           ! grep -Fq 'focusedWindowProcess' quickshell/a16een/shell.qml
           ! grep -Fq 'is_fullscreen' quickshell/a16een/shell.qml
@@ -129,7 +129,7 @@ jobs:
           grep -Fq 'Mod+6 { focus-workspace "music"; }' niri/config.kdl
           grep -Fq 'Mod+Shift+6 { move-column-to-workspace "music"; }' niri/config.kdl
           grep -Fq 'Dock {' quickshell/a16een/shell.qml
-          grep -Fq 'anchors.right: true' quickshell/a16een/ui/Dock.qml
+          grep -Fq 'right: true' quickshell/a16een/ui/Dock.qml
           grep -Fq 'width: 44' quickshell/a16een/ui/Dock.qml
           grep -Fq 'height: 260' quickshell/a16een/ui/Dock.qml
           ! grep -Fq 'D7B56D' quickshell/a16een/ui/Dock.qml
@@ -161,8 +161,8 @@ jobs:
           grep -Fq 'cellHeight: 72' quickshell/a16een/ui/Launcher.qml
           grep -Fq 'text: appTile.entry.name' quickshell/a16een/ui/Launcher.qml
           ! grep -Fq 'QUICK LAUNCH' quickshell/a16een/ui/Launcher.qml
-          grep -Fq 'width: 500' quickshell/a16een/ui/Launcher.qml
-          grep -Fq 'height: 380' quickshell/a16een/ui/Launcher.qml
+          grep -Fq 'width: Math.min(480, parent.width - 64)' quickshell/a16een/ui/Launcher.qml
+          grep -Fq 'height: Math.min(360, parent.height - 80)' quickshell/a16een/ui/Launcher.qml
           grep -Fq 'text: appTile.entry.name' quickshell/a16een/ui/Launcher.qml
           grep -Fq 'acceptedButtons: Qt.NoButton' quickshell/a16een/ui/Launcher.qml
           grep -Fq 'TextInput {' quickshell/a16een/ui/Launcher.qml
