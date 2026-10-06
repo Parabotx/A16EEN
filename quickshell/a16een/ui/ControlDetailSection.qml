@@ -251,6 +251,13 @@ Item {
     }
 
     Timer {
+        id: wifiScanRefresh
+        interval: 1400
+        repeat: false
+        onTriggered: wifiNetworksReader.running = true
+    }
+
+    Timer {
         id: bluetoothScanRefresh
         interval: 7200
         repeat: false
@@ -501,7 +508,7 @@ Item {
                         cursorShape: Qt.PointingHandCursor
                         onClicked: {
                             root.run(["wifi", "rescan"])
-                            wifiNetworksReader.running = true
+                            wifiScanRefresh.restart()
                         }
                     }
                 }
