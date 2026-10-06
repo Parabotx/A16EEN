@@ -186,6 +186,7 @@ PanelWindow {
             source: root.snapshotPath
             fillMode: Image.Stretch
             asynchronous: true
+            opacity: 0.0
             cache: false
         }
 
