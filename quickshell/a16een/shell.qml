@@ -531,8 +531,16 @@ ShellRoot {
             root.widgetsCenterOpen = false
         }
 
-        onEditorialTimeWidgetEnabledRequested: root.editorialTimeWidgetEnabled = enabled
-        onCalendarWidgetEnabledRequested: root.calendarWidgetEnabled = enabled
+        onEditorialTimeWidgetEnabledRequested: {
+            root.editorialTimeWidgetEnabled = enabled
+            if (enabled)
+                root.calendarWidgetEnabled = false
+        }
+        onCalendarWidgetEnabledRequested: {
+            root.calendarWidgetEnabled = enabled
+            if (enabled)
+                root.editorialTimeWidgetEnabled = false
+        }
         onPulseWidgetEnabledRequested: root.pulseWidgetEnabled = enabled
         onWorkspaceWidgetEnabledRequested: root.workspaceWidgetEnabled = enabled
         onTimeUse24HourRequested: root.timeUse24Hour = enabled
