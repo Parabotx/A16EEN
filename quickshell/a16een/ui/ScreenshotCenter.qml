@@ -102,28 +102,36 @@ PanelWindow {
         root.pendingKind = kind
         root.pendingWindowId = id || 0
         root.pendingDelay = root.delaySeconds
+        root.statusText = root.pendingDelay > 0
+            ? "CAPTURING IN " + root.pendingDelay + "S"
+            : "CAPTURING • " + root.modeTitle()
 
-        if (root.pendingDelay > 0) {
-            root.statusText = "CAPTURING IN " + root.pendingDelay + "S • MOVE AWAY FROM CONTROLS"
-            captureTimer.restart()
-        } else {
-            root.statusText = "CAPTURING • " + root.modeTitle()
-            captureTimer.interval = 110
-            captureTimer.restart()
-        }
+        captureTimer.interval = root.pendingDelay > 0 ? 1000 : 140
+        captureTimer.restart()
     }
 
     function beginCapture() {
-        root.closeRequested()
-
         if (root.captureMode === 2) {
             root.pendingKind = "window-pick"
-            root.pendingDelay = 0
+            root.pendingWindowId = 0
+            root.pendingDelay = root.delaySeconds
+            root.statusText = "CHOOSE A WINDOW"
+            root.closeRequested()
+            pickerTimer.interval = 140
             pickerTimer.restart()
             return
         }
 
-        root.scheduleCapture(root.captureMode === 1 ? "area" : "screen", 0)
+        root.pendingKind = root.captureMode === 1 ? "area" : "screen"
+        root.pendingWindowId = 0
+        root.pendingDelay = root.delaySeconds
+        root.statusText = root.pendingDelay > 0
+            ? "CAPTURING IN " + root.pendingDelay + "S"
+            : "CAPTURING • " + root.modeTitle()
+
+        root.closeRequested()
+        captureTimer.interval = root.pendingDelay > 0 ? 1000 : 140
+        captureTimer.restart()
     }
 
     function buildDelayStatus() {
@@ -171,6 +179,8 @@ PanelWindow {
                 root.runCaptureAction("window", root.pendingWindowId)
 
             root.pendingKind = ""
+            root.pendingWindowId = 0
+            root.pendingDelay = 0
         }
     }
 
@@ -196,7 +206,7 @@ PanelWindow {
                     ? "WINDOW SELECTED • CAPTURING IN " + root.delaySeconds + "S"
                     : "WINDOW SELECTED • CAPTURING"
 
-                captureTimer.interval = root.delaySeconds > 0 ? 1000 : 110
+                captureTimer.interval = root.delaySeconds > 0 ? 1000 : 140
                 captureTimer.restart()
             }
         }
@@ -807,17 +817,21 @@ PanelWindow {
 
     onOpenedChanged: {
         if (root.opened) {
+            if (root.pendingKind === "window-pick"
+                || root.pendingKind === "screen"
+                || root.pendingKind === "area")
+                return
+
             root.captureMode = 0
             root.delaySeconds = 0
             root.includePointer = true
             root.saveToDisk = true
             root.statusText = "LIVE DESKTOP • READY"
-            root.forceActiveFocus()
-        } else {
-            if (windowPickerProcess.running)
-                windowPickerProcess.running = false
+        } else if (root.pendingKind === "") {
             pickerTimer.stop()
             captureTimer.stop()
+            if (windowPickerProcess.running)
+                windowPickerProcess.running = false
         }
     }
 }
