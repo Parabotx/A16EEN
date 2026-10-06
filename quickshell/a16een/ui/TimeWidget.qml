@@ -5,7 +5,7 @@ import Quickshell.Wayland
 PanelWindow {
     id: root
 
-    required property var modelData
+    property var modelData: null
     property bool widgetEnabled: true
     property bool use24Hour: true
     property bool showSeconds: false
