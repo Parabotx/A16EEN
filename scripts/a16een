@@ -23,6 +23,7 @@ Desktop
   workspace <1-9>             Focus a workspace
   restart-shell               Restart only the A16EEN Quickshell shell
   widgets                     Open the A16EEN widget manager
+  presets                     Open and manage Workspace Presets
 
 Session
   lock                        Lock the current session
@@ -207,6 +208,13 @@ case "$command" in
         ensure_desktop_session
         require_cmd qs
         exec qs ipc call widgets open
+        ;;
+
+    presets|workspace-presets)
+        require_no_args "$@"
+        ensure_desktop_session
+        require_cmd qs
+        exec qs ipc call command-center toggle
         ;;
 
     dashboard|control-center|controls)
