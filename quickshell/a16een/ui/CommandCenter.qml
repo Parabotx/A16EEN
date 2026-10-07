@@ -22,6 +22,7 @@ PanelWindow {
     property bool calendarWidgetEnabled: false
     property bool pulseWidgetEnabled: false
     property bool workspaceWidgetEnabled: false
+    property bool tasksWidgetEnabled: false
     property bool timeUse24Hour: true
     property bool timeShowSeconds: false
 
@@ -49,6 +50,7 @@ PanelWindow {
     signal calendarWidgetEnabledRequested(bool enabled)
     signal pulseWidgetEnabledRequested(bool enabled)
     signal workspaceWidgetEnabledRequested(bool enabled)
+    signal tasksWidgetEnabledRequested(bool enabled)
     signal timeUse24HourRequested(bool enabled)
     signal timeShowSecondsRequested(bool enabled)
     signal iconThemeChanged(string themeId)
