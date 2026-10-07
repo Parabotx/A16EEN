@@ -242,6 +242,20 @@ ShellRoot {
     }
 
     IpcHandler {
+        target: "workspace-presets"
+
+        function open(): void {
+            root.commandCenterOpen = true
+            root.launcherOpen = false
+            root.dashboardOpen = false
+            root.wallpaperPickerOpen = false
+            root.widgetsCenterOpen = false
+            root.screenshotCenterOpen = false
+            root.screenshotSettingsOpen = false
+        }
+    }
+
+    IpcHandler {
         target: "dashboard"
 
         function toggle(): void {
