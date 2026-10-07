@@ -247,6 +247,9 @@ jobs:
           grep -Fq 'Mod+Shift+6 { move-column-to-workspace "music"; }' niri/config.kdl
           grep -Fq 'Dock {' quickshell/a16een/shell.qml
           grep -Fq 'right: true' quickshell/a16een/ui/Dock.qml
+          grep -Fq 'mask: Region {' quickshell/a16een/ui/Dock.qml
+          grep -Fq 'intersection: Intersection.Combine' quickshell/a16een/ui/Dock.qml
+          grep -Fq 'Only the visible dock and the 8px reveal strip' quickshell/a16een/ui/Dock.qml
           grep -Fq 'width: 44' quickshell/a16een/ui/Dock.qml
           grep -Fq 'height: 260' quickshell/a16een/ui/Dock.qml
           ! grep -Fq 'D7B56D' quickshell/a16een/ui/Dock.qml
