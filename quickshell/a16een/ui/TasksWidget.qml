@@ -487,8 +487,8 @@ PanelWindow {
     }
 
     function resetGeometry() {
-        root.widgetWidth = 860
-        root.widgetHeight = 580
+        root.widgetWidth = 1120
+        root.widgetHeight = 700
         root.widgetX = -1
         root.widgetY = 84
         root.clampGeometry()
@@ -671,7 +671,7 @@ PanelWindow {
                 id: workspace
                 width: parent.width - rail.width
                 height: parent.height
-                color: "#FFFFFFFF"
+                color: "transparent"
 
                 Column {
                     anchors.fill: parent
@@ -753,7 +753,7 @@ PanelWindow {
                                     }
 
                                     Text {
-                                        text: "Local time"
+                                        text: "Location"
                                         color: root.secondary
                                         font.pixelSize: 6
                                     }
@@ -847,7 +847,7 @@ PanelWindow {
 
                     Row {
                         width: parent.width
-                        height: parent.height - 190
+                        height: parent.height - 222
                         spacing: 10
 
                         Rectangle {
@@ -1156,7 +1156,7 @@ PanelWindow {
                                     width: parent.width
                                     columns: 7
                                     rows: 6
-                                    rowSpacing: 4
+                                    rowSpacing: 3
                                     columnSpacing: 1
 
                                     Repeater {
@@ -1164,7 +1164,7 @@ PanelWindow {
                                         delegate: Rectangle {
                                             required property var modelData
                                             width: (parent.width - 6) / 7
-                                            height: 29
+                                            height: 22
                                             radius: 8
                                             color: modelData.monthOffset === 0
                                                 && modelData.key === root.todayKey
@@ -1222,7 +1222,7 @@ PanelWindow {
                                 }
 
                                 Repeater {
-                                    model: root.activeTasks.slice(0, 4)
+                                    model: root.activeTasks.slice(0, 3)
                                     delegate: TimelineItem {
                                         task: modelData
                                     }
@@ -1665,7 +1665,7 @@ PanelWindow {
             Text {
                 text: label
                 color: active ? root.ink : root.secondary
-                font.pixelSize: 7
+                font.pixelSize: 8
                 font.weight: active ? Font.DemiBold : Font.Normal
                 anchors.verticalCenter: parent.verticalCenter
             }
@@ -1820,8 +1820,9 @@ PanelWindow {
                             id: categoryText
                             anchors.centerIn: parent
                             text: task.category
-                            color: root.secondary
+                            color: root.categoryInk(task.category)
                             font.pixelSize: 6
+                            font.weight: Font.DemiBold
                         }
                     }
                 }
@@ -1943,7 +1944,7 @@ PanelWindow {
         required property var task
 
         width: parent.width
-        height: 42
+        height: 34
 
         Rectangle {
             anchors.left: parent.left
