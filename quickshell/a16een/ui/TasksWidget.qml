@@ -11,6 +11,7 @@ PanelWindow {
 
     property var now: new Date()
     property var tasks: []
+    property string searchText: ""
     property bool completedExpanded: false
     property int menuTaskId: -1
 
@@ -20,30 +21,90 @@ PanelWindow {
     property string editorPriority: "Medium"
 
     property bool optionsOpen: false
+    property bool calendarOpen: false
     property bool storageReady: false
 
-    property int widgetWidth: 370
-    property int widgetHeight: 510
+    property int widgetWidth: 860
+    property int widgetHeight: 580
     property real widgetX: -1
     property real widgetY: 84
 
-    readonly property color surfaceColor: "#F7FAFCEA"
-    readonly property color surfaceBorder: "#D8E0E8"
-    readonly property color textColor: "#18212B"
-    readonly property color secondaryColor: "#687585"
-    readonly property color mutedColor: "#99A4B0"
-    readonly property color accentColor: "#4A8FE7"
-    readonly property color fieldColor: "#FDFEFF"
+    readonly property color glass: "#F8FAFCBF"
+    readonly property color glassStrong: "#FFFFFFE3"
+    readonly property color glassSoft: "#FFFFFF8E"
+    readonly property color glassPanel: "#FFFFFF72"
+    readonly property color border: "#D7DEE6"
+    readonly property color borderSoft: "#E3E8ED"
+    readonly property color ink: "#18212B"
+    readonly property color secondary: "#637181"
+    readonly property color muted: "#8D99A7"
+    readonly property color accent: "#3E8BEA"
+    readonly property color accentSoft: "#E9F3FF"
+    readonly property color canvas: "#F4F7FA"
+    readonly property color danger: "#B86161"
 
     readonly property string todayKey: root.dateKey(root.now)
-    readonly property var activeTasks: root.sortedTasks(root.tasks.filter(task =>
-        task.date === root.todayKey && !task.completed))
-    readonly property var completedTasks: root.sortedTasks(root.tasks.filter(task =>
-        task.date === root.todayKey && task.completed))
-    readonly property int todayTotal: root.activeTasks.length + root.completedTasks.length
+    readonly property var todayTasks: root.sortedTasks(
+        root.tasks.filter(task => task.date === root.todayKey))
+    readonly property var activeTasks: root.sortedTasks(
+        root.todayTasks.filter(task => !task.completed))
+    readonly property var completedTasks: root.sortedTasks(
+        root.todayTasks.filter(task => task.completed))
+
+    readonly property var visibleActiveTasks: root.activeTasks.filter(task =>
+        root.searchText.trim().length === 0
+        || String(task.title || "").toLowerCase().includes(root.searchText.trim().toLowerCase())
+        || String(task.category || "").toLowerCase().includes(root.searchText.trim().toLowerCase())
+        || String(task.notes || "").toLowerCase().includes(root.searchText.trim().toLowerCase()))
+
+    readonly property int todayTotal: root.todayTasks.length
     readonly property int completedCount: root.completedTasks.length
     readonly property real progress:
         root.todayTotal > 0 ? root.completedCount / root.todayTotal : 0
+
+    readonly property var calendarCells: {
+        const first = new Date(root.now.getFullYear(), root.now.getMonth(), 1)
+        const startIndex = (first.getDay() + 6) % 7
+        const daysInMonth = new Date(root.now.getFullYear(), root.now.getMonth() + 1, 0).getDate()
+        const daysInPrevious = new Date(root.now.getFullYear(), root.now.getMonth(), 0).getDate()
+        const cells = []
+
+        for (let i = 0; i < 35; i++) {
+            const offset = i - startIndex
+            if (offset < 0) {
+                cells.push({
+                    day: daysInPrevious + offset + 1,
+                    monthOffset: -1,
+                    key: ""
+                })
+            } else if (offset >= daysInMonth) {
+                cells.push({
+                    day: offset - daysInMonth + 1,
+                    monthOffset: 1,
+                    key: ""
+                })
+            } else {
+                const day = offset + 1
+                cells.push({
+                    day: day,
+                    monthOffset: 0,
+                    key: root.rootDateKey(day)
+                })
+            }
+        }
+
+        return cells
+    }
+
+    readonly property string monthTitle:
+        root.monthNames[root.now.getMonth()] + " " + root.now.getFullYear()
+
+    readonly property var monthNames: [
+        "January", "February", "March", "April", "May", "June",
+        "July", "August", "September", "October", "November", "December"
+    ]
+
+    readonly property var weekdayNames: ["MON", "TUE", "WED", "THU", "FRI", "SAT", "SUN"]
 
     screen: root.modelData
     visible: root.widgetEnabled && root.modelData !== null
@@ -63,12 +124,10 @@ PanelWindow {
 
     FileView {
         id: storage
-
         path: Quickshell.stateDir + "/tasks.json"
         preload: true
         printErrors: false
         atomicWrites: true
-
         onLoaded: root.loadState()
         onLoadFailed: root.initializeState()
     }
@@ -90,7 +149,22 @@ PanelWindow {
             + "-" + root.pad(value.getDate())
     }
 
-    function sortTasks(source) {
+    function rootDateKey(day) {
+        return root.now.getFullYear()
+            + "-" + root.pad(root.now.getMonth() + 1)
+            + "-" + root.pad(day)
+    }
+
+    function formatDateLabel() {
+        const dayNames = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"]
+        return dayNames[root.now.getDay()]
+            + ", "
+            + root.monthNames[root.now.getMonth()].slice(0, 3)
+            + " "
+            + root.now.getDate()
+    }
+
+    function sortedTasks(source) {
         const copy = source.slice()
         copy.sort((a, b) => {
             const at = String(a.time || "99:99").slice(0, 5)
@@ -111,7 +185,7 @@ PanelWindow {
                 category: "Work",
                 priority: "High",
                 notes: "",
-                completed: false
+                completed: true
             },
             {
                 id: Date.now() + 2,
@@ -152,6 +226,26 @@ PanelWindow {
                 priority: "Medium",
                 notes: "",
                 completed: false
+            },
+            {
+                id: Date.now() + 6,
+                title: "Learn something new",
+                date: root.todayKey,
+                time: "21:00 – 22:00",
+                category: "Personal",
+                priority: "Low",
+                notes: "",
+                completed: false
+            },
+            {
+                id: Date.now() + 7,
+                title: "Clean room",
+                date: root.todayKey,
+                time: "22:30 – 23:00",
+                category: "Home",
+                priority: "Low",
+                notes: "",
+                completed: false
             }
         ]
     }
@@ -170,36 +264,34 @@ PanelWindow {
     }
 
     function initializeState() {
-        if (root.storageReady)
-            return
+        if (root.storageReady) return
 
         root.storageReady = true
         root.tasks = root.defaultTasks()
         root.completedExpanded = false
+        root.widgetWidth = 860
+        root.widgetHeight = 580
         root.widgetX = -1
         root.widgetY = 84
-        root.widgetWidth = 370
-        root.widgetHeight = 510
         root.saveState()
     }
 
     function loadState() {
-        if (root.storageReady)
-            return
+        if (root.storageReady) return
 
         try {
             const parsed = JSON.parse(storage.text())
-            const loadedTasks = Array.isArray(parsed.tasks)
+            const loaded = Array.isArray(parsed.tasks)
                 ? parsed.tasks.map((task, index) =>
                     root.normalizeTask(task, Date.now() + index))
                 : []
 
-            root.tasks = loadedTasks.filter(task => task.title.length > 0)
+            root.tasks = loaded.filter(task => task.title.length > 0)
             root.completedExpanded = Boolean(parsed.completedExpanded)
+            root.widgetWidth = Math.max(660, Number(parsed.width) || 860)
+            root.widgetHeight = Math.max(480, Number(parsed.height) || 580)
             root.widgetX = Number.isFinite(Number(parsed.x)) ? Number(parsed.x) : -1
             root.widgetY = Number.isFinite(Number(parsed.y)) ? Number(parsed.y) : 84
-            root.widgetWidth = Math.max(320, Number(parsed.width) || 370)
-            root.widgetHeight = Math.max(420, Number(parsed.height) || 510)
             root.storageReady = true
             root.clampGeometry()
         } catch (error) {
@@ -208,11 +300,10 @@ PanelWindow {
     }
 
     function saveState() {
-        if (!root.storageReady)
-            return
+        if (!root.storageReady) return
 
         storage.setText(JSON.stringify({
-            version: 1,
+            version: 2,
             tasks: root.tasks,
             completedExpanded: root.completedExpanded,
             x: root.widgetX,
@@ -227,30 +318,28 @@ PanelWindow {
     }
 
     function clampGeometry() {
-        if (!root.modelData)
-            return
+        if (!root.modelData) return
 
-        const maxWidth = Math.max(320, root.width - 24)
-        const maxHeight = Math.max(420, root.height - 24)
+        const maxWidth = Math.max(660, root.width - 24)
+        const maxHeight = Math.max(480, root.height - 24)
 
-        root.widgetWidth = Math.round(root.clamp(root.widgetWidth, 320, Math.min(520, maxWidth)))
-        root.widgetHeight = Math.round(root.clamp(root.widgetHeight, 420, Math.min(700, maxHeight)))
+        root.widgetWidth = Math.round(root.clamp(
+            root.widgetWidth, 660, Math.min(1080, maxWidth)))
+        root.widgetHeight = Math.round(root.clamp(
+            root.widgetHeight, 480, Math.min(760, maxHeight)))
 
-        const fallbackX = Math.max(12, root.width - root.widgetWidth - 22)
         if (root.widgetX < 0)
-            root.widgetX = fallbackX
+            root.widgetX = Math.max(16, root.width - root.widgetWidth - 24)
 
-        root.widgetX = root.clamp(root.widgetX, 8, Math.max(8, root.width - root.widgetWidth - 8))
-        root.widgetY = root.clamp(root.widgetY, 8, Math.max(8, root.height - root.widgetHeight - 8))
+        root.widgetX = root.clamp(
+            root.widgetX, 10, Math.max(10, root.width - root.widgetWidth - 10))
+        root.widgetY = root.clamp(
+            root.widgetY, 10, Math.max(10, root.height - root.widgetHeight - 10))
     }
 
     function updateTask(taskId, changes) {
-        const next = root.tasks.map(task => {
-            if (task.id !== taskId)
-                return task
-            return Object.assign({}, task, changes)
-        })
-        root.tasks = next
+        root.tasks = root.tasks.map(task =>
+            task.id === taskId ? Object.assign({}, task, changes) : task)
         root.saveState()
     }
 
@@ -290,22 +379,20 @@ PanelWindow {
         root.editingTaskId = taskId
         root.editorCategory = task.category || "Personal"
         root.editorPriority = task.priority || "Medium"
-
         taskTitleInput.text = task.title
         taskDateInput.text = task.date
         taskTimeInput.text = task.time
         taskNotesInput.text = task.notes
-
         root.editorOpen = true
         Qt.callLater(() => taskTitleInput.forceActiveFocus())
     }
 
     function saveEditor() {
         const title = taskTitleInput.text.trim()
-        if (!title.length)
-            return
+        if (!title.length) return
 
         const entry = {
+            id: root.editingTaskId >= 0 ? root.editingTaskId : Date.now(),
             title: title,
             date: taskDateInput.text.trim() || root.todayKey,
             time: taskTimeInput.text.trim(),
@@ -316,13 +403,11 @@ PanelWindow {
         }
 
         if (root.editingTaskId >= 0) {
-            const existing = root.tasks.find(task => task.id === root.editingTaskId)
-            entry.id = root.editingTaskId
-            entry.completed = existing ? existing.completed : false
+            const current = root.tasks.find(task => task.id === root.editingTaskId)
+            entry.completed = current ? current.completed : false
             root.tasks = root.tasks.map(task =>
                 task.id === root.editingTaskId ? entry : task)
         } else {
-            entry.id = Date.now()
             root.tasks = root.tasks.concat([entry])
         }
 
@@ -333,15 +418,15 @@ PanelWindow {
 
     function clearCompleted() {
         root.tasks = root.tasks.filter(task => !task.completed)
-        root.menuTaskId = -1
         root.completedExpanded = false
+        root.menuTaskId = -1
         root.optionsOpen = false
         root.saveState()
     }
 
     function resetGeometry() {
-        root.widgetWidth = 370
-        root.widgetHeight = 510
+        root.widgetWidth = 860
+        root.widgetHeight = 580
         root.widgetX = -1
         root.widgetY = 84
         root.clampGeometry()
@@ -349,41 +434,41 @@ PanelWindow {
         root.saveState()
     }
 
+    function taskCountForDate(key) {
+        return root.tasks.filter(task => task.date === key).length
+    }
+
     Component.onCompleted: Qt.callLater(root.clampGeometry)
 
     Rectangle {
-        id: widgetShadow
-
-        x: surface.x + 2
-        y: surface.y + 10
+        id: shadow
+        x: surface.x + 3
+        y: surface.y + 12
         width: surface.width
         height: surface.height
-        radius: surface.radius + 2
-        color: "#152231"
-        opacity: 0.10
+        radius: surface.radius + 3
+        color: "#24303D"
+        opacity: 0.08
     }
 
     Rectangle {
         id: surface
-
         x: root.widgetX
         y: root.widgetY
         width: root.widgetWidth
         height: root.widgetHeight
-        radius: 22
-        color: root.surfaceColor
+        radius: 24
+        color: root.glass
         border.width: 1
-        border.color: root.surfaceBorder
+        border.color: root.border
         clip: true
 
         Behavior on width { NumberAnimation { duration: 150; easing.type: Easing.OutCubic } }
         Behavior on height { NumberAnimation { duration: 150; easing.type: Easing.OutCubic } }
 
         DragHandler {
-            id: moveHandler
             target: null
             enabled: !root.editorOpen
-
             property real startX: 0
             property real startY: 0
 
@@ -410,356 +495,695 @@ PanelWindow {
         Rectangle {
             anchors.fill: parent
             color: "#FFFFFF"
-            opacity: 0.12
+            opacity: 0.18
         }
 
-        Column {
+        Row {
             anchors.fill: parent
             spacing: 0
 
-            Item {
-                id: header
-                width: parent.width
-                height: 68
+            Rectangle {
+                id: rail
+                width: 148
+                height: parent.height
+                color: "#FFFFFF72"
+                border.width: 1
+                border.color: "#FFFFFFA8"
 
                 Column {
-                    anchors.left: parent.left
-                    anchors.leftMargin: 20
-                    anchors.verticalCenter: parent.verticalCenter
-                    spacing: 3
+                    anchors.fill: parent
+                    anchors.margins: 14
+                    spacing: 8
 
-                    Text {
-                        text: "Tasks"
-                        color: root.textColor
-                        font.pixelSize: 19
-                        font.weight: Font.DemiBold
-                    }
+                    Item {
+                        width: parent.width
+                        height: 74
 
-                    Text {
-                        text: "Stay on track"
-                        color: root.secondaryColor
-                        font.pixelSize: 9
-                    }
-                }
+                        Row {
+                            anchors.left: parent.left
+                            anchors.verticalCenter: parent.verticalCenter
+                            spacing: 10
 
-                Row {
-                    anchors.right: parent.right
-                    anchors.rightMargin: 14
-                    anchors.verticalCenter: parent.verticalCenter
-                    spacing: 6
+                            Rectangle {
+                                width: 34
+                                height: 34
+                                radius: 11
+                                color: root.accentSoft
+                                border.width: 1
+                                border.color: "#D5E7FA"
 
-                    Rectangle {
-                        width: 30
-                        height: 30
-                        radius: 10
-                        color: root.optionsOpen ? "#EAF3FF" : "#FFFFFFB8"
-                        border.width: 1
-                        border.color: root.optionsOpen ? "#C8DCF5" : "#E2E8EE"
+                                Text {
+                                    anchors.centerIn: parent
+                                    text: "✓"
+                                    color: root.accent
+                                    font.pixelSize: 18
+                                    font.weight: Font.DemiBold
+                                }
+                            }
 
-                        Text {
-                            anchors.centerIn: parent
-                            text: "⋯"
-                            color: root.optionsOpen ? root.accentColor : root.secondaryColor
-                            font.pixelSize: 15
-                            font.weight: Font.DemiBold
-                        }
+                            Column {
+                                anchors.verticalCenter: parent.verticalCenter
+                                spacing: 2
 
-                        MouseArea {
-                            anchors.fill: parent
-                            cursorShape: Qt.PointingHandCursor
-                            onClicked: {
-                                root.optionsOpen = !root.optionsOpen
-                                root.menuTaskId = -1
+                                Text {
+                                    text: "My Tasks"
+                                    color: root.ink
+                                    font.pixelSize: 12
+                                    font.weight: Font.DemiBold
+                                }
+
+                                Text {
+                                    text: "Plan. Focus. Get it done."
+                                    color: root.secondary
+                                    font.pixelSize: 6
+                                }
                             }
                         }
                     }
 
-                    Rectangle {
-                        width: 30
-                        height: 30
-                        radius: 10
-                        color: "#EAF3FF"
-                        border.width: 1
-                        border.color: "#C9DDF6"
+                    NavItem {
+                        active: true
+                        icon: "⌂"
+                        label: "Home"
+                        onClicked: taskFlick.contentY = 0
+                    }
 
-                        Text {
-                            anchors.centerIn: parent
-                            text: "+"
-                            color: root.accentColor
-                            font.pixelSize: 18
-                            font.weight: Font.DemiBold
-                        }
+                    NavItem {
+                        active: false
+                        icon: "✓"
+                        label: "My Tasks"
+                        onClicked: taskFlick.contentY = 0
+                    }
 
-                        MouseArea {
-                            anchors.fill: parent
-                            cursorShape: Qt.PointingHandCursor
-                            onClicked: root.openNewTask()
+                    NavItem {
+                        active: root.calendarOpen
+                        icon: "▦"
+                        label: "Calendar"
+                        onClicked: {
+                            root.calendarOpen = !root.calendarOpen
+                            root.optionsOpen = false
                         }
                     }
+
+                    NavItem {
+                        active: false
+                        icon: "⚙"
+                        label: "Settings"
+                        onClicked: {
+                            root.optionsOpen = !root.optionsOpen
+                            root.calendarOpen = false
+                        }
+                    }
+
+                    Item { width: 1; height: 1 }
                 }
             }
 
             Rectangle {
-                width: parent.width - 36
-                height: 1
-                anchors.horizontalCenter: parent.horizontalCenter
-                color: "#DDE4EA"
-            }
+                id: workspace
+                width: parent.width - rail.width
+                height: parent.height
+                color: "#FFFFFF1F"
 
-            Item {
-                width: parent.width
-                height: parent.height - header.height - footer.height - 1
-
-                Flickable {
-                    id: taskFlick
+                Column {
                     anchors.fill: parent
-                    anchors.topMargin: 6
-                    anchors.bottomMargin: 8
-                    anchors.leftMargin: 12
-                    anchors.rightMargin: 12
-                    clip: true
-                    contentWidth: width
-                    contentHeight: taskColumn.height + 8
-                    boundsBehavior: Flickable.StopAtBounds
+                    anchors.margins: 18
+                    spacing: 10
 
-                    Column {
-                        id: taskColumn
-                        width: taskFlick.width
-                        spacing: 4
+                    Row {
+                        width: parent.width
+                        height: 58
+
+                        Column {
+                            anchors.verticalCenter: parent.verticalCenter
+                            spacing: 2
+
+                            Text {
+                                text: "Good morning,"
+                                color: root.secondary
+                                font.pixelSize: 8
+                            }
+
+                            Text {
+                                text: "My Tasks"
+                                color: root.ink
+                                font.pixelSize: 21
+                                font.weight: Font.DemiBold
+                            }
+
+                            Text {
+                                text: "You have " + root.todayTotal + " tasks today."
+                                color: root.secondary
+                                font.pixelSize: 7
+                            }
+                        }
+
+                        Item { width: Math.max(1, parent.width - 285); height: 1 }
+
+                        Column {
+                            anchors.verticalCenter: parent.verticalCenter
+                            spacing: 3
+
+                            Text {
+                                text: root.formatDateLabel()
+                                color: root.secondary
+                                font.pixelSize: 7
+                                horizontalAlignment: Text.AlignRight
+                            }
+
+                            Text {
+                                text: root.completedCount + " completed"
+                                color: root.accent
+                                font.pixelSize: 7
+                                font.weight: Font.DemiBold
+                                horizontalAlignment: Text.AlignRight
+                            }
+                        }
+                    }
+
+                    Row {
+                        width: parent.width
+                        height: 38
+                        spacing: 7
 
                         Rectangle {
-                            visible: root.todayTotal === 0
-                            width: parent.width
-                            height: 120
-                            radius: 14
-                            color: "#FFFFFF90"
+                            width: parent.width - 124
+                            height: parent.height
+                            radius: 12
+                            color: root.glassSoft
                             border.width: 1
-                            border.color: "#E2E8EE"
+                            border.color: root.borderSoft
 
-                            Column {
-                                anchors.centerIn: parent
-                                spacing: 5
+                            Text {
+                                anchors.left: parent.left
+                                anchors.verticalCenter: parent.verticalCenter
+                                anchors.leftMargin: 11
+                                text: "⌕"
+                                color: root.muted
+                                font.pixelSize: 13
+                            }
+
+                            TextInput {
+                                id: searchInput
+                                anchors.left: parent.left
+                                anchors.right: parent.right
+                                anchors.verticalCenter: parent.verticalCenter
+                                anchors.leftMargin: 30
+                                anchors.rightMargin: 10
+                                color: root.ink
+                                font.pixelSize: 8
+                                clip: true
+                                onTextChanged: root.searchText = text
 
                                 Text {
-                                    anchors.horizontalCenter: parent.horizontalCenter
-                                    text: "Nothing planned for today"
-                                    color: root.textColor
-                                    font.pixelSize: 11
-                                    font.weight: Font.DemiBold
-                                }
-
-                                Text {
-                                    anchors.horizontalCenter: parent.horizontalCenter
-                                    text: "Use + to add your first task."
-                                    color: root.secondaryColor
+                                    visible: searchInput.text.length === 0
+                                    anchors.verticalCenter: parent.verticalCenter
+                                    text: "Search tasks..."
+                                    color: "#A3ADB8"
                                     font.pixelSize: 8
                                 }
                             }
                         }
 
-                        Repeater {
-                            model: root.activeTasks
-                            delegate: TaskRow {
-                                task: modelData
-                                completedStyle: false
-                            }
-                        }
-
-                        Item {
-                            width: parent.width
-                            height: 9
-                        }
-
                         Rectangle {
-                            width: parent.width
-                            height: 34
-                            radius: 10
-                            color: "#FFFFFF70"
+                            width: 117
+                            height: parent.height
+                            radius: 12
+                            color: root.accentSoft
                             border.width: 1
-                            border.color: "#E0E7ED"
+                            border.color: "#CADFF7"
 
                             Row {
-                                anchors.fill: parent
-                                anchors.leftMargin: 11
-                                anchors.rightMargin: 9
+                                anchors.centerIn: parent
                                 spacing: 7
 
                                 Text {
-                                    anchors.verticalCenter: parent.verticalCenter
-                                    text: root.completedExpanded ? "⌄" : "›"
-                                    color: root.secondaryColor
-                                    font.pixelSize: 14
+                                    text: "+"
+                                    color: root.accent
+                                    font.pixelSize: 17
                                     font.weight: Font.DemiBold
                                 }
 
                                 Text {
-                                    anchors.verticalCenter: parent.verticalCenter
-                                    text: "Completed"
-                                    color: root.textColor
+                                    text: "Add Task"
+                                    color: root.accent
                                     font.pixelSize: 8
                                     font.weight: Font.DemiBold
-                                }
-
-                                Text {
-                                    anchors.verticalCenter: parent.verticalCenter
-                                    text: root.completedCount
-                                    color: root.mutedColor
-                                    font.pixelSize: 8
-                                }
-
-                                Item { width: Math.max(1, parent.width - 160); height: 1 }
-
-                                Text {
-                                    anchors.verticalCenter: parent.verticalCenter
-                                    text: root.completedExpanded ? "Hide" : "Show"
-                                    color: root.secondaryColor
-                                    font.pixelSize: 7
                                 }
                             }
 
                             MouseArea {
                                 anchors.fill: parent
                                 cursorShape: Qt.PointingHandCursor
-                                onClicked: {
-                                    root.completedExpanded = !root.completedExpanded
-                                    root.saveState()
-                                }
+                                onClicked: root.openNewTask()
                             }
                         }
-
-                        Repeater {
-                            model: root.completedExpanded ? root.completedTasks : []
-                            delegate: TaskRow {
-                                task: modelData
-                                completedStyle: true
-                            }
-                        }
-
-                        Item {
-                            width: parent.width
-                            height: 6
-                        }
                     }
-
-                    Rectangle {
-                        visible: taskFlick.contentHeight > taskFlick.height
-                        width: 3
-                        height: Math.max(26,
-                            taskFlick.height * taskFlick.height
-                            / Math.max(taskFlick.contentHeight, 1))
-                        x: parent.width - 4
-                        y: Math.min(taskFlick.height - height,
-                            taskFlick.contentY
-                            * (taskFlick.height - height)
-                            / Math.max(taskFlick.contentHeight - taskFlick.height, 1))
-                        radius: 2
-                        color: "#C9D2DC"
-                        opacity: 0.75
-                    }
-                }
-            }
-
-            Rectangle {
-                id: footer
-                width: parent.width
-                height: 74
-                color: "#FFFFFF55"
-                border.width: 1
-                border.color: "#E3E9EF"
-                clip: true
-
-                Column {
-                    anchors.left: parent.left
-                    anchors.right: parent.right
-                    anchors.top: parent.top
-                    anchors.margins: 16
-                    spacing: 7
 
                     Row {
                         width: parent.width
-                        spacing: 8
-
-                        Text {
-                            text: root.completedCount + " of " + root.todayTotal + " completed"
-                            color: root.secondaryColor
-                            font.pixelSize: 8
-                            font.weight: Font.DemiBold
-                        }
-
-                        Item { width: Math.max(1, parent.width - 145); height: 1 }
-
-                        Text {
-                            text: root.todayTotal === 0 ? "TODAY" : "TODAY"
-                            color: root.mutedColor
-                            font.pixelSize: 7
-                            font.weight: Font.DemiBold
-                            font.letterSpacing: 1
-                        }
-                    }
-
-                    Rectangle {
-                        width: parent.width
-                        height: 4
-                        radius: 2
-                        color: "#E2E8EE"
+                        height: parent.height - 106
+                        spacing: 10
 
                         Rectangle {
-                            width: parent.width * root.progress
+                            id: todayPanel
+                            width: parent.width - 214
                             height: parent.height
-                            radius: 2
-                            color: root.accentColor
+                            radius: 16
+                            color: root.glassPanel
+                            border.width: 1
+                            border.color: root.borderSoft
+                            clip: true
 
-                            Behavior on width {
-                                NumberAnimation {
-                                    duration: 180
-                                    easing.type: Easing.OutCubic
+                            Column {
+                                anchors.fill: parent
+                                anchors.margins: 12
+                                spacing: 8
+
+                                Row {
+                                    width: parent.width
+                                    height: 34
+
+                                    Row {
+                                        anchors.verticalCenter: parent.verticalCenter
+                                        spacing: 8
+
+                                        Rectangle {
+                                            width: 28
+                                            height: 28
+                                            radius: 9
+                                            color: "#FFFFFFC7"
+                                            border.width: 1
+                                            border.color: root.borderSoft
+
+                                            Text {
+                                                anchors.centerIn: parent
+                                                text: "▦"
+                                                color: root.accent
+                                                font.pixelSize: 12
+                                            }
+                                        }
+
+                                        Column {
+                                            anchors.verticalCenter: parent.verticalCenter
+                                            spacing: 1
+
+                                            Text {
+                                                text: "Today"
+                                                color: root.ink
+                                                font.pixelSize: 11
+                                                font.weight: Font.DemiBold
+                                            }
+
+                                            Text {
+                                                text: root.todayTotal + " tasks"
+                                                color: root.muted
+                                                font.pixelSize: 6
+                                            }
+                                        }
+                                    }
+
+                                    Item {
+                                        width: Math.max(1, parent.width - 160)
+                                        height: 1
+                                    }
+
+                                    Rectangle {
+                                        width: 94
+                                        height: 27
+                                        anchors.verticalCenter: parent.verticalCenter
+                                        radius: 9
+                                        color: "#FFFFFF9A"
+                                        border.width: 1
+                                        border.color: root.borderSoft
+
+                                        Text {
+                                            anchors.centerIn: parent
+                                            text: "PRIORITY  ˅"
+                                            color: root.secondary
+                                            font.pixelSize: 6
+                                            font.weight: Font.DemiBold
+                                            font.letterSpacing: 0.5
+                                        }
+                                    }
+
+                                    Rectangle {
+                                        width: 27
+                                        height: 27
+                                        anchors.verticalCenter: parent.verticalCenter
+                                        radius: 9
+                                        color: "#FFFFFF9A"
+                                        border.width: 1
+                                        border.color: root.borderSoft
+
+                                        Text {
+                                            anchors.centerIn: parent
+                                            text: "☷"
+                                            color: root.secondary
+                                            font.pixelSize: 11
+                                        }
+
+                                        MouseArea {
+                                            anchors.fill: parent
+                                            cursorShape: Qt.PointingHandCursor
+                                            onClicked: root.optionsOpen = !root.optionsOpen
+                                        }
+                                    }
+                                }
+
+                                Flickable {
+                                    id: taskFlick
+                                    width: parent.width
+                                    height: parent.height - 42
+                                    clip: true
+                                    contentWidth: width
+                                    contentHeight: taskColumn.height
+                                    boundsBehavior: Flickable.StopAtBounds
+
+                                    Column {
+                                        id: taskColumn
+                                        width: taskFlick.width
+                                        spacing: 0
+
+                                        Repeater {
+                                            model: root.visibleActiveTasks
+                                            delegate: TaskRow {
+                                                task: modelData
+                                                completedStyle: false
+                                            }
+                                        }
+
+                                        Rectangle {
+                                            visible: root.completedCount > 0
+                                            width: parent.width
+                                            height: 36
+                                            radius: 10
+                                            color: "#FFFFFF82"
+                                            border.width: 1
+                                            border.color: root.borderSoft
+
+                                            Row {
+                                                anchors.fill: parent
+                                                anchors.leftMargin: 10
+                                                anchors.rightMargin: 8
+                                                spacing: 7
+
+                                                Text {
+                                                    anchors.verticalCenter: parent.verticalCenter
+                                                    text: root.completedExpanded ? "⌄" : "›"
+                                                    color: root.secondary
+                                                    font.pixelSize: 13
+                                                }
+
+                                                Text {
+                                                    anchors.verticalCenter: parent.verticalCenter
+                                                    text: "Completed (" + root.completedCount + ")"
+                                                    color: root.ink
+                                                    font.pixelSize: 7
+                                                    font.weight: Font.DemiBold
+                                                }
+
+                                                Item { width: Math.max(1, parent.width - 190); height: 1 }
+
+                                                Text {
+                                                    anchors.verticalCenter: parent.verticalCenter
+                                                    text: root.completedExpanded ? "Hide" : "Show"
+                                                    color: root.secondary
+                                                    font.pixelSize: 6
+                                                }
+                                            }
+
+                                            MouseArea {
+                                                anchors.fill: parent
+                                                cursorShape: Qt.PointingHandCursor
+                                                onClicked: root.completedExpanded = !root.completedExpanded
+                                            }
+                                        }
+
+                                        Repeater {
+                                            model: root.completedExpanded ? root.completedTasks : []
+                                            delegate: TaskRow {
+                                                task: modelData
+                                                completedStyle: true
+                                            }
+                                        }
+                                    }
+
+                                    Rectangle {
+                                        visible: taskFlick.contentHeight > taskFlick.height
+                                        width: 3
+                                        height: Math.max(
+                                            24,
+                                            taskFlick.height * taskFlick.height /
+                                            Math.max(taskFlick.contentHeight, 1))
+                                        x: parent.width - 3
+                                        y: Math.min(
+                                            taskFlick.height - height,
+                                            taskFlick.contentY *
+                                            (taskFlick.height - height) /
+                                            Math.max(taskFlick.contentHeight - taskFlick.height, 1))
+                                        radius: 2
+                                        color: "#A8B3BE"
+                                        opacity: 0.55
+                                    }
+                                }
+                            }
+                        }
+
+                        Rectangle {
+                            id: sidePanel
+                            width: 204
+                            height: parent.height
+                            radius: 16
+                            color: "#FFFFFF66"
+                            border.width: 1
+                            border.color: root.borderSoft
+                            clip: true
+
+                            Column {
+                                anchors.fill: parent
+                                anchors.margins: 12
+                                spacing: 8
+
+                                Row {
+                                    width: parent.width
+                                    height: 28
+
+                                    Text {
+                                        anchors.verticalCenter: parent.verticalCenter
+                                        text: root.monthTitle
+                                        color: root.ink
+                                        font.pixelSize: 9
+                                        font.weight: Font.DemiBold
+                                    }
+
+                                    Item { width: Math.max(1, parent.width - 105); height: 1 }
+
+                                    Text {
+                                        anchors.verticalCenter: parent.verticalCenter
+                                        text: "‹   ›"
+                                        color: root.secondary
+                                        font.pixelSize: 10
+                                    }
+                                }
+
+                                Row {
+                                    width: parent.width
+                                    height: 16
+                                    spacing: 1
+
+                                    Repeater {
+                                        model: root.weekdayNames
+                                        delegate: Text {
+                                            required property string modelData
+                                            width: (parent.width - 6) / 7
+                                            text: modelData
+                                            color: root.muted
+                                            font.pixelSize: 5
+                                            horizontalAlignment: Text.AlignHCenter
+                                        }
+                                    }
+                                }
+
+                                Grid {
+                                    width: parent.width
+                                    columns: 7
+                                    rows: 5
+                                    rowSpacing: 4
+                                    columnSpacing: 1
+
+                                    Repeater {
+                                        model: root.calendarCells
+                                        delegate: Rectangle {
+                                            required property var modelData
+                                            width: (parent.width - 6) / 7
+                                            height: 29
+                                            radius: 8
+                                            color: modelData.monthOffset === 0
+                                                && modelData.key === root.todayKey
+                                                ? root.accentSoft
+                                                : "transparent"
+                                            border.width: modelData.monthOffset === 0
+                                                && modelData.key === root.todayKey ? 1 : 0
+                                            border.color: "#CFE1F5"
+
+                                            Text {
+                                                anchors.horizontalCenter: parent.horizontalCenter
+                                                anchors.top: parent.top
+                                                anchors.topMargin: 5
+                                                text: modelData.day
+                                                color: modelData.monthOffset !== 0
+                                                    ? "#B6C0CB"
+                                                    : modelData.key === root.todayKey
+                                                        ? root.accent
+                                                        : root.secondary
+                                                font.pixelSize: 7
+                                                font.weight: modelData.key === root.todayKey
+                                                    ? Font.DemiBold
+                                                    : Font.Normal
+                                            }
+
+                                            Rectangle {
+                                                visible: modelData.key.length > 0
+                                                    && root.taskCountForDate(modelData.key) > 0
+                                                width: 4
+                                                height: 4
+                                                radius: 2
+                                                anchors.horizontalCenter: parent.horizontalCenter
+                                                anchors.bottom: parent.bottom
+                                                anchors.bottomMargin: 4
+                                                color: modelData.key === root.todayKey
+                                                    ? root.accent
+                                                    : "#AAB8C7"
+                                            }
+                                        }
+                                    }
+                                }
+
+                                Rectangle {
+                                    width: parent.width
+                                    height: 1
+                                    color: root.borderSoft
+                                }
+
+                                Text {
+                                    text: "TODAY"
+                                    color: root.muted
+                                    font.pixelSize: 6
+                                    font.weight: Font.DemiBold
+                                    font.letterSpacing: 1.2
+                                }
+
+                                Repeater {
+                                    model: root.activeTasks.slice(0, 4)
+                                    delegate: TimelineItem {
+                                        task: modelData
+                                    }
+                                }
+
+                                Item { width: 1; height: Math.max(1, parent.height - 344) }
+
+                                Rectangle {
+                                    width: parent.width
+                                    height: 58
+                                    radius: 12
+                                    color: "#FFFFFF7C"
+                                    border.width: 1
+                                    border.color: root.borderSoft
+
+                                    Column {
+                                        anchors.fill: parent
+                                        anchors.margins: 9
+                                        spacing: 6
+
+                                        Row {
+                                            width: parent.width
+                                            spacing: 5
+
+                                            Text {
+                                                text: "Task progress"
+                                                color: root.secondary
+                                                font.pixelSize: 6
+                                            }
+
+                                            Item { width: Math.max(1, parent.width - 70); height: 1 }
+
+                                            Text {
+                                                text: root.completedCount + " / " + root.todayTotal
+                                                color: root.ink
+                                                font.pixelSize: 8
+                                                font.weight: Font.DemiBold
+                                            }
+                                        }
+
+                                        Rectangle {
+                                            width: parent.width
+                                            height: 4
+                                            radius: 2
+                                            color: "#E2E8EE"
+
+                                            Rectangle {
+                                                width: parent.width * root.progress
+                                                height: parent.height
+                                                radius: 2
+                                                color: root.accent
+
+                                                Behavior on width {
+                                                    NumberAnimation {
+                                                        duration: 180
+                                                        easing.type: Easing.OutCubic
+                                                    }
+                                                }
+                                            }
+                                        }
+                                    }
                                 }
                             }
                         }
                     }
-                }
 
-                Rectangle {
-                    id: resizeHandle
-                    width: 18
-                    height: 18
-                    anchors.right: parent.right
-                    anchors.bottom: parent.bottom
-                    anchors.rightMargin: 3
-                    anchors.bottomMargin: 3
-                    radius: 5
-                    color: "transparent"
+                    Row {
+                        width: parent.width
+                        height: 34
+                        spacing: 10
 
-                    Text {
-                        anchors.centerIn: parent
-                        text: "⌟"
-                        color: "#9BA7B4"
-                        font.pixelSize: 10
-                    }
+                        Text {
+                            anchors.verticalCenter: parent.verticalCenter
+                            text: root.completedCount + " of " + root.todayTotal + " completed"
+                            color: root.secondary
+                            font.pixelSize: 7
+                            font.weight: Font.DemiBold
+                        }
 
-                    DragHandler {
-                        id: resizeHandler
-                        target: null
-                        property real startWidth: 0
-                        property real startHeight: 0
+                        Rectangle {
+                            width: parent.width - 210
+                            height: 5
+                            anchors.verticalCenter: parent.verticalCenter
+                            radius: 3
+                            color: "#E0E6EC"
 
-                        onActiveChanged: {
-                            if (active) {
-                                startWidth = root.widgetWidth
-                                startHeight = root.widgetHeight
-                                root.optionsOpen = false
-                                root.menuTaskId = -1
-                            } else {
-                                root.clampGeometry()
-                                root.saveState()
+                            Rectangle {
+                                width: parent.width * root.progress
+                                height: parent.height
+                                radius: 3
+                                color: root.accent
+
+                                Behavior on width {
+                                    NumberAnimation {
+                                        duration: 180
+                                        easing.type: Easing.OutCubic
+                                    }
+                                }
                             }
                         }
 
-                        onTranslationChanged: {
-                            if (!active) return
-                            root.widgetWidth = startWidth + translation.x
-                            root.widgetHeight = startHeight + translation.y
-                            root.clampGeometry()
+                        Text {
+                            anchors.verticalCenter: parent.verticalCenter
+                            text: "TODAY"
+                            color: root.muted
+                            font.pixelSize: 6
+                            font.weight: Font.DemiBold
+                            font.letterSpacing: 1.1
                         }
                     }
                 }
@@ -769,69 +1193,29 @@ PanelWindow {
         Rectangle {
             id: optionsMenu
             visible: root.optionsOpen && !root.editorOpen
-            z: 20
-            width: 196
-            height: 92
-            anchors.top: parent.top
-            anchors.right: parent.right
-            anchors.topMargin: 49
-            anchors.rightMargin: 12
-            radius: 13
-            color: "#FFFFFFF7"
+            z: 80
+            width: 166
+            height: 82
+            x: surface.width - width - 64
+            y: 58
+            radius: 12
+            color: root.glassStrong
             border.width: 1
-            border.color: "#D8E0E8"
+            border.color: root.border
 
             Column {
                 anchors.fill: parent
-                anchors.margins: 6
-                spacing: 2
+                anchors.margins: 5
+                spacing: 1
 
-                Rectangle {
-                    width: parent.width
-                    height: 38
-                    radius: 9
-                    color: clearCompletedMouse.containsMouse ? "#F0F4F8" : "transparent"
-
-                    Text {
-                        anchors.left: parent.left
-                        anchors.verticalCenter: parent.verticalCenter
-                        anchors.leftMargin: 9
-                        text: "Clear completed"
-                        color: root.textColor
-                        font.pixelSize: 8
-                    }
-
-                    MouseArea {
-                        id: clearCompletedMouse
-                        anchors.fill: parent
-                        hoverEnabled: true
-                        cursorShape: Qt.PointingHandCursor
-                        onClicked: root.clearCompleted()
-                    }
+                MenuEntry {
+                    label: "Clear completed"
+                    onTriggered: root.clearCompleted()
                 }
 
-                Rectangle {
-                    width: parent.width
-                    height: 38
-                    radius: 9
-                    color: resetGeometryMouse.containsMouse ? "#F0F4F8" : "transparent"
-
-                    Text {
-                        anchors.left: parent.left
-                        anchors.verticalCenter: parent.verticalCenter
-                        anchors.leftMargin: 9
-                        text: "Reset position & size"
-                        color: root.textColor
-                        font.pixelSize: 8
-                    }
-
-                    MouseArea {
-                        id: resetGeometryMouse
-                        anchors.fill: parent
-                        hoverEnabled: true
-                        cursorShape: Qt.PointingHandCursor
-                        onClicked: root.resetGeometry()
-                    }
+                MenuEntry {
+                    label: "Reset position & size"
+                    onTriggered: root.resetGeometry()
                 }
             }
         }
@@ -840,46 +1224,39 @@ PanelWindow {
             id: editorOverlay
             anchors.fill: parent
             visible: root.editorOpen
-            z: 40
-            color: "#F7FAFCF7"
-
-            Rectangle {
-                anchors.fill: parent
-                anchors.margins: 1
-                radius: parent.radius
-                color: "#FFFFFF"
-                opacity: 0.75
-            }
+            z: 100
+            color: "#F8FAFCEB"
 
             Column {
                 anchors.fill: parent
-                anchors.margins: 16
+                anchors.margins: 20
                 spacing: 10
 
                 Row {
                     width: parent.width
-                    height: 30
+                    height: 32
 
                     Text {
-                        anchors.verticalCenter: parent.verticalCenter
                         text: root.editingTaskId >= 0 ? "Edit task" : "New task"
-                        color: root.textColor
-                        font.pixelSize: 14
+                        color: root.ink
+                        font.pixelSize: 17
                         font.weight: Font.DemiBold
                     }
 
-                    Item { width: Math.max(1, parent.width - 112); height: 1 }
+                    Item { width: Math.max(1, parent.width - 140); height: 1 }
 
                     Rectangle {
                         width: 30
                         height: 30
                         radius: 10
-                        color: "#F1F4F7"
+                        color: "#FFFFFF"
+                        border.width: 1
+                        border.color: root.borderSoft
 
                         Text {
                             anchors.centerIn: parent
                             text: "×"
-                            color: root.secondaryColor
+                            color: root.secondary
                             font.pixelSize: 16
                         }
 
@@ -892,172 +1269,90 @@ PanelWindow {
                 }
 
                 Flickable {
-                    id: formFlick
                     width: parent.width
-                    height: parent.height - 86
+                    height: parent.height - 88
                     clip: true
                     contentWidth: width
-                    contentHeight: formColumn.height + 8
+                    contentHeight: formColumn.height
 
                     Column {
                         id: formColumn
-                        width: formFlick.width
-                        spacing: 8
+                        width: parent.width
+                        spacing: 9
 
-                        Text {
-                            text: "Task name"
-                            color: root.secondaryColor
-                            font.pixelSize: 7
-                            font.weight: Font.DemiBold
-                        }
+                        FormLabel { text: "TASK NAME" }
 
-                        Rectangle {
-                            width: parent.width
+                        FormField {
                             height: 38
-                            radius: 11
-                            color: root.fieldColor
-                            border.width: 1
-                            border.color: taskTitleInput.activeFocus ? "#BBD4F2" : "#DEE5EB"
-
-                            Text {
-                                visible: taskTitleInput.text.length === 0
-                                anchors.left: parent.left
-                                anchors.verticalCenter: parent.verticalCenter
-                                anchors.leftMargin: 11
-                                text: "What needs to be done?"
-                                color: "#A9B2BC"
-                                font.pixelSize: 8
-                            }
-
-                            TextInput {
-                                id: taskTitleInput
-                                anchors.fill: parent
-                                anchors.leftMargin: 11
-                                anchors.rightMargin: 9
-                                verticalAlignment: TextInput.AlignVCenter
-                                color: root.textColor
-                                font.pixelSize: 9
-                                clip: true
-                            }
+                            placeholder: "What needs to be done?"
+                            inputItem: taskTitleInput
                         }
 
-                        Text {
-                            text: "Date"
-                            color: root.secondaryColor
-                            font.pixelSize: 7
-                            font.weight: Font.DemiBold
+                        TextInput {
+                            id: taskTitleInput
+                            visible: false
                         }
+
+                        FormLabel { text: "DATE" }
 
                         Rectangle {
                             width: parent.width
                             height: 34
                             radius: 10
-                            color: root.fieldColor
+                            color: "#FFFFFFDA"
                             border.width: 1
-                            border.color: taskDateInput.activeFocus ? "#BBD4F2" : "#DEE5EB"
-
-                            Text {
-                                visible: taskDateInput.text.length === 0
-                                anchors.left: parent.left
-                                anchors.verticalCenter: parent.verticalCenter
-                                anchors.leftMargin: 10
-                                text: "YYYY-MM-DD"
-                                color: "#A9B2BC"
-                                font.pixelSize: 8
-                            }
+                            border.color: taskDateInput.activeFocus ? "#BBD4F2" : root.borderSoft
 
                             TextInput {
                                 id: taskDateInput
                                 anchors.fill: parent
                                 anchors.leftMargin: 10
-                                anchors.rightMargin: 9
+                                anchors.rightMargin: 8
                                 verticalAlignment: TextInput.AlignVCenter
-                                color: root.textColor
+                                color: root.ink
                                 font.pixelSize: 8
                             }
                         }
 
-                        Text {
-                            text: "Time"
-                            color: root.secondaryColor
-                            font.pixelSize: 7
-                            font.weight: Font.DemiBold
-                        }
+                        FormLabel { text: "TIME" }
 
                         Rectangle {
                             width: parent.width
                             height: 34
                             radius: 10
-                            color: root.fieldColor
+                            color: "#FFFFFFDA"
                             border.width: 1
-                            border.color: taskTimeInput.activeFocus ? "#BBD4F2" : "#DEE5EB"
-
-                            Text {
-                                visible: taskTimeInput.text.length === 0
-                                anchors.left: parent.left
-                                anchors.verticalCenter: parent.verticalCenter
-                                anchors.leftMargin: 10
-                                text: "09:00 or 09:00 – 11:00"
-                                color: "#A9B2BC"
-                                font.pixelSize: 8
-                            }
+                            border.color: taskTimeInput.activeFocus ? "#BBD4F2" : root.borderSoft
 
                             TextInput {
                                 id: taskTimeInput
                                 anchors.fill: parent
                                 anchors.leftMargin: 10
-                                anchors.rightMargin: 9
+                                anchors.rightMargin: 8
                                 verticalAlignment: TextInput.AlignVCenter
-                                color: root.textColor
+                                color: root.ink
                                 font.pixelSize: 8
                             }
                         }
 
-                        Text {
-                            text: "Category"
-                            color: root.secondaryColor
-                            font.pixelSize: 7
-                            font.weight: Font.DemiBold
-                        }
+                        FormLabel { text: "CATEGORY" }
 
                         Flow {
                             width: parent.width
                             spacing: 5
 
                             Repeater {
-                                model: ["Work", "Health", "Personal", "Other"]
-                                delegate: Rectangle {
+                                model: ["Work", "Health", "Personal", "Home", "Other"]
+                                delegate: ChoicePill {
                                     required property string modelData
-                                    width: 66
-                                    height: 28
-                                    radius: 9
-                                    color: root.editorCategory === modelData ? "#EAF3FF" : "#F7F9FB"
-                                    border.width: 1
-                                    border.color: root.editorCategory === modelData ? "#C9DDF6" : "#E0E6EC"
-
-                                    Text {
-                                        anchors.centerIn: parent
-                                        text: modelData
-                                        color: root.editorCategory === modelData ? root.accentColor : root.secondaryColor
-                                        font.pixelSize: 7
-                                        font.weight: Font.DemiBold
-                                    }
-
-                                    MouseArea {
-                                        anchors.fill: parent
-                                        cursorShape: Qt.PointingHandCursor
-                                        onClicked: root.editorCategory = modelData
-                                    }
+                                    label: modelData
+                                    selected: root.editorCategory === modelData
+                                    onTriggered: root.editorCategory = modelData
                                 }
                             }
                         }
 
-                        Text {
-                            text: "Priority"
-                            color: root.secondaryColor
-                            font.pixelSize: 7
-                            font.weight: Font.DemiBold
-                        }
+                        FormLabel { text: "PRIORITY" }
 
                         Flow {
                             width: parent.width
@@ -1065,63 +1360,30 @@ PanelWindow {
 
                             Repeater {
                                 model: ["Low", "Medium", "High"]
-                                delegate: Rectangle {
+                                delegate: ChoicePill {
                                     required property string modelData
-                                    width: 74
-                                    height: 28
-                                    radius: 9
-                                    color: root.editorPriority === modelData ? "#EAF3FF" : "#F7F9FB"
-                                    border.width: 1
-                                    border.color: root.editorPriority === modelData ? "#C9DDF6" : "#E0E6EC"
-
-                                    Text {
-                                        anchors.centerIn: parent
-                                        text: modelData
-                                        color: root.editorPriority === modelData ? root.accentColor : root.secondaryColor
-                                        font.pixelSize: 7
-                                        font.weight: Font.DemiBold
-                                    }
-
-                                    MouseArea {
-                                        anchors.fill: parent
-                                        cursorShape: Qt.PointingHandCursor
-                                        onClicked: root.editorPriority = modelData
-                                    }
+                                    label: modelData
+                                    selected: root.editorPriority === modelData
+                                    onTriggered: root.editorPriority = modelData
                                 }
                             }
                         }
 
-                        Text {
-                            text: "Notes"
-                            color: root.secondaryColor
-                            font.pixelSize: 7
-                            font.weight: Font.DemiBold
-                        }
+                        FormLabel { text: "NOTES" }
 
                         Rectangle {
                             width: parent.width
-                            height: 72
+                            height: 76
                             radius: 10
-                            color: root.fieldColor
+                            color: "#FFFFFFDA"
                             border.width: 1
-                            border.color: taskNotesInput.activeFocus ? "#BBD4F2" : "#DEE5EB"
-
-                            Text {
-                                visible: taskNotesInput.text.length === 0
-                                anchors.left: parent.left
-                                anchors.top: parent.top
-                                anchors.leftMargin: 10
-                                anchors.topMargin: 9
-                                text: "Optional notes"
-                                color: "#A9B2BC"
-                                font.pixelSize: 8
-                            }
+                            border.color: taskNotesInput.activeFocus ? "#BBD4F2" : root.borderSoft
 
                             TextEdit {
                                 id: taskNotesInput
                                 anchors.fill: parent
                                 anchors.margins: 9
-                                color: root.textColor
+                                color: root.ink
                                 font.pixelSize: 8
                                 wrapMode: TextEdit.Wrap
                             }
@@ -1134,55 +1396,107 @@ PanelWindow {
                     height: 38
                     spacing: 7
 
-                    Rectangle {
+                    ButtonSurface {
                         width: (parent.width - 7) / 2
-                        height: parent.height
-                        radius: 11
-                        color: "#F2F5F7"
-                        border.width: 1
-                        border.color: "#E0E6EC"
-
-                        Text {
-                            anchors.centerIn: parent
-                            text: "Cancel"
-                            color: root.secondaryColor
-                            font.pixelSize: 8
-                            font.weight: Font.DemiBold
-                        }
-
-                        MouseArea {
-                            anchors.fill: parent
-                            cursorShape: Qt.PointingHandCursor
-                            onClicked: root.editorOpen = false
-                        }
+                        label: "Cancel"
+                        active: false
+                        onTriggered: root.editorOpen = false
                     }
 
-                    Rectangle {
+                    ButtonSurface {
                         width: (parent.width - 7) / 2
-                        height: parent.height
-                        radius: 11
-                        color: "#EAF3FF"
-                        border.width: 1
-                        border.color: "#C9DDF6"
-                        opacity: taskTitleInput.text.trim().length > 0 ? 1 : 0.55
-
-                        Text {
-                            anchors.centerIn: parent
-                            text: root.editingTaskId >= 0 ? "Save changes" : "Save task"
-                            color: root.accentColor
-                            font.pixelSize: 8
-                            font.weight: Font.DemiBold
-                        }
-
-                        MouseArea {
-                            anchors.fill: parent
-                            enabled: taskTitleInput.text.trim().length > 0
-                            cursorShape: Qt.PointingHandCursor
-                            onClicked: root.saveEditor()
-                        }
+                        label: root.editingTaskId >= 0 ? "Save changes" : "Save task"
+                        active: true
+                        enabled: taskTitleInput.text.trim().length > 0
+                        onTriggered: root.saveEditor()
                     }
                 }
             }
+        }
+
+        Rectangle {
+            id: resizeHandle
+            z: 120
+            width: 18
+            height: 18
+            anchors.right: parent.right
+            anchors.bottom: parent.bottom
+            anchors.rightMargin: 3
+            anchors.bottomMargin: 3
+            color: "transparent"
+
+            Text {
+                anchors.centerIn: parent
+                text: "⌟"
+                color: "#9DA8B4"
+                font.pixelSize: 10
+            }
+
+            DragHandler {
+                target: null
+                property real startWidth: 0
+                property real startHeight: 0
+
+                onActiveChanged: {
+                    if (active) {
+                        startWidth = root.widgetWidth
+                        startHeight = root.widgetHeight
+                    } else {
+                        root.clampGeometry()
+                        root.saveState()
+                    }
+                }
+
+                onTranslationChanged: {
+                    if (!active) return
+                    root.widgetWidth = startWidth + translation.x
+                    root.widgetHeight = startHeight + translation.y
+                    root.clampGeometry()
+                }
+            }
+        }
+    }
+
+    component NavItem: Rectangle {
+        required property bool active
+        required property string icon
+        required property string label
+        signal clicked()
+
+        width: parent.width
+        height: 38
+        radius: 10
+        color: active ? root.accentSoft : "transparent"
+        border.width: active ? 1 : 0
+        border.color: "#CFE2F7"
+
+        Row {
+            anchors.fill: parent
+            anchors.leftMargin: 10
+            spacing: 10
+
+            Text {
+                anchors.verticalCenter: parent.verticalCenter
+                text: icon
+                color: active ? root.accent : root.secondary
+                font.pixelSize: 12
+                width: 15
+                horizontalAlignment: Text.AlignHCenter
+            }
+
+            Text {
+                anchors.verticalCenter: parent.verticalCenter
+                text: label
+                color: active ? root.accent : root.secondary
+                font.pixelSize: 8
+                font.weight: active ? Font.DemiBold : Font.Normal
+            }
+        }
+
+        MouseArea {
+            anchors.fill: parent
+            cursorShape: Qt.PointingHandCursor
+            onClicked: parent.clicked()
         }
     }
 
@@ -1191,53 +1505,89 @@ PanelWindow {
         required property bool completedStyle
 
         width: taskColumn.width
-        height: 58
-        opacity: completedStyle ? 0.68 : 1
+        height: 64
+        opacity: completedStyle ? 0.58 : 1
 
         Rectangle {
             anchors.fill: parent
-            radius: 12
-            color: rowMouse.containsMouse ? "#FFFFFFD0" : "#FFFFFF94"
-            border.width: 1
-            border.color: "#E0E7ED"
+            color: "transparent"
 
-            Behavior on color {
-                ColorAnimation { duration: 110 }
+            Rectangle {
+                width: 1
+                height: parent.height
+                anchors.left: parent.left
+                color: root.borderSoft
             }
 
             Rectangle {
                 width: 3
-                height: parent.height - 20
-                anchors.left: parent.left
-                anchors.verticalCenter: parent.verticalCenter
+                height: 31
                 radius: 2
+                anchors.left: parent.left
+                anchors.leftMargin: 0
+                anchors.verticalCenter: parent.verticalCenter
                 color: task.priority === "High"
-                    ? "#D76A6A"
-                    : task.priority === "Low"
-                        ? "#AAB5C0"
-                        : root.accentColor
-                opacity: completedStyle ? 0.45 : 0.85
+                    ? "#6C7784"
+                    : task.priority === "Medium"
+                        ? "#9BA7B3"
+                        : "#C0C8D1"
+            }
+
+            Text {
+                anchors.left: parent.left
+                anchors.leftMargin: 14
+                anchors.top: parent.top
+                anchors.topMargin: 10
+                text: String(task.time || "—").split(" – ")[0]
+                color: root.secondary
+                font.pixelSize: 6
+                width: 54
             }
 
             Rectangle {
-                id: checkBox
-                z: 2
+                id: connector
+                width: 7
+                height: 7
+                radius: 3.5
+                anchors.left: parent.left
+                anchors.leftMargin: 61
+                anchors.top: parent.top
+                anchors.topMargin: 13
+                color: task.completed ? root.accent : "#A8B4C1"
+                border.width: task.completed ? 0 : 1
+                border.color: "#C4CDD6"
+            }
+
+            Rectangle {
+                width: 1
+                height: parent.height - 25
+                anchors.left: parent.left
+                anchors.leftMargin: 64
+                anchors.top: parent.top
+                anchors.topMargin: 21
+                color: root.borderSoft
+            }
+
+            Rectangle {
+                id: checkbox
+                z: 3
                 width: 18
                 height: 18
                 anchors.left: parent.left
-                anchors.leftMargin: 11
-                anchors.verticalCenter: parent.verticalCenter
+                anchors.leftMargin: 79
+                anchors.top: parent.top
+                anchors.topMargin: 9
                 radius: 6
-                color: task.completed ? root.accentColor : "#FFFFFF"
+                color: task.completed ? root.accent : "#FFFFFFC8"
                 border.width: 1
-                border.color: task.completed ? root.accentColor : "#C8D2DC"
+                border.color: task.completed ? root.accent : "#B9C4CF"
 
                 Text {
                     anchors.centerIn: parent
                     visible: task.completed
                     text: "✓"
                     color: "#FFFFFF"
-                    font.pixelSize: 11
+                    font.pixelSize: 10
                     font.weight: Font.DemiBold
                 }
 
@@ -1249,70 +1599,87 @@ PanelWindow {
             }
 
             Column {
-                anchors.left: checkBox.right
+                anchors.left: checkbox.right
                 anchors.leftMargin: 10
-                anchors.right: menuButton.left
+                anchors.right: rowMenu.left
                 anchors.rightMargin: 8
-                anchors.verticalCenter: parent.verticalCenter
+                anchors.top: parent.top
+                anchors.topMargin: 8
                 spacing: 4
 
                 Row {
                     width: parent.width
-                    spacing: 5
+                    spacing: 6
 
                     Text {
                         text: task.title
-                        color: root.textColor
+                        color: root.ink
                         font.pixelSize: 8
                         font.weight: Font.DemiBold
                         elide: Text.ElideRight
-                        width: parent.width - 50
+                        width: Math.max(60, parent.width - 70)
                     }
 
-                    Text {
-                        text: task.category
-                        color: root.secondaryColor
-                        font.pixelSize: 6
-                        elide: Text.ElideRight
-                        width: Math.min(50, parent.width)
-                        horizontalAlignment: Text.AlignRight
+                    Rectangle {
+                        height: 19
+                        width: categoryText.implicitWidth + 14
+                        radius: 9
+                        color: "#FFFFFFC7"
+                        border.width: 1
+                        border.color: root.borderSoft
+
+                        Text {
+                            id: categoryText
+                            anchors.centerIn: parent
+                            text: task.category
+                            color: root.secondary
+                            font.pixelSize: 6
+                        }
                     }
                 }
 
                 Row {
-                    width: parent.width
                     spacing: 7
 
                     Text {
-                        visible: String(task.time || "").length > 0
                         text: task.time
-                        color: root.secondaryColor
+                        color: root.secondary
                         font.pixelSize: 6
-                        elide: Text.ElideRight
                     }
 
                     Text {
-                        visible: String(task.time || "").length > 0
                         text: "·"
-                        color: root.mutedColor
+                        color: root.muted
                         font.pixelSize: 6
                     }
 
                     Text {
-                        text: task.priority + " priority"
-                        color: task.priority === "High" ? "#A15C5C" : root.mutedColor
+                        text: task.priority
+                        color: root.muted
                         font.pixelSize: 6
                     }
                 }
             }
 
+            Text {
+                visible: task.completed
+                anchors.right: rowMenu.left
+                anchors.rightMargin: 9
+                anchors.verticalCenter: parent.verticalCenter
+                text: "DONE"
+                color: root.accent
+                font.pixelSize: 5
+                font.weight: Font.DemiBold
+                font.letterSpacing: 0.8
+            }
+
             Rectangle {
-                id: menuButton
-                z: 2
-                width: 26
-                height: 26
+                id: rowMenu
+                z: 3
+                width: 25
+                height: 25
                 anchors.right: parent.right
-                anchors.rightMargin: 6
+                anchors.rightMargin: 4
                 anchors.verticalCenter: parent.verticalCenter
                 radius: 8
                 color: root.menuTaskId === task.id ? "#EEF3F8" : "transparent"
@@ -1320,8 +1687,8 @@ PanelWindow {
                 Text {
                     anchors.centerIn: parent
                     text: "⋮"
-                    color: root.secondaryColor
-                    font.pixelSize: 14
+                    color: root.secondary
+                    font.pixelSize: 13
                     font.weight: Font.DemiBold
                 }
 
@@ -1337,90 +1704,222 @@ PanelWindow {
                 Rectangle {
                     visible: root.menuTaskId === task.id
                     z: 30
-                    width: 112
-                    height: 76
+                    width: 108
+                    height: 72
                     anchors.right: parent.right
                     anchors.top: parent.bottom
                     anchors.topMargin: 4
                     radius: 10
-                    color: "#FFFFFFF7"
+                    color: root.glassStrong
                     border.width: 1
-                    border.color: "#D8E0E8"
+                    border.color: root.border
 
                     Column {
                         anchors.fill: parent
                         anchors.margins: 5
                         spacing: 1
 
-                        Rectangle {
-                            width: parent.width
-                            height: 31
-                            radius: 7
-                            color: editTaskMouse.containsMouse ? "#F0F4F8" : "transparent"
-
-                            Text {
-                                anchors.left: parent.left
-                                anchors.verticalCenter: parent.verticalCenter
-                                anchors.leftMargin: 8
-                                text: "Edit"
-                                color: root.textColor
-                                font.pixelSize: 7
-                            }
-
-                            MouseArea {
-                                id: editTaskMouse
-                                anchors.fill: parent
-                                hoverEnabled: true
-                                cursorShape: Qt.PointingHandCursor
-                                onClicked: root.openEditTask(task.id)
-                            }
+                        MenuEntry {
+                            label: "Edit"
+                            onTriggered: root.openEditTask(task.id)
                         }
 
-                        Rectangle {
-                            width: parent.width
-                            height: 31
-                            radius: 7
-                            color: deleteTaskMouse.containsMouse ? "#F8EEEE" : "transparent"
-
-                            Text {
-                                anchors.left: parent.left
-                                anchors.verticalCenter: parent.verticalCenter
-                                anchors.leftMargin: 8
-                                text: "Delete"
-                                color: "#A45D5D"
-                                font.pixelSize: 7
-                            }
-
-                            MouseArea {
-                                id: deleteTaskMouse
-                                anchors.fill: parent
-                                hoverEnabled: true
-                                cursorShape: Qt.PointingHandCursor
-                                onClicked: root.deleteTask(task.id)
-                            }
+                        MenuEntry {
+                            label: "Delete"
+                            danger: true
+                            onTriggered: root.deleteTask(task.id)
                         }
                     }
                 }
             }
 
             MouseArea {
-                id: rowMouse
                 anchors.fill: parent
-                z: 0
+                z: 1
                 hoverEnabled: true
                 cursorShape: Qt.PointingHandCursor
                 onClicked: root.openEditTask(task.id)
             }
+
+            Rectangle {
+                anchors.left: parent.left
+                anchors.right: parent.right
+                anchors.bottom: parent.bottom
+                height: 1
+                color: root.borderSoft
+            }
+        }
+    }
+
+    component TimelineItem: Item {
+        required property var task
+        width: parent.width
+        height: 39
+
+        Row {
+            anchors.fill: parent
+            spacing: 7
+
+            Text {
+                text: String(task.time || "—").split(" – ")[0]
+                color: root.secondary
+                font.pixelSize: 6
+                width: 32
+                anchors.verticalCenter: parent.verticalCenter
+            }
+
+            Rectangle {
+                width: 5
+                height: 5
+                radius: 2.5
+                color: root.accent
+                anchors.verticalCenter: parent.verticalCenter
+            }
+
+            Column {
+                anchors.verticalCenter: parent.verticalCenter
+                spacing: 2
+                width: parent.width - 52
+
+                Text {
+                    width: parent.width
+                    text: task.title
+                    color: root.ink
+                    font.pixelSize: 6
+                    font.weight: Font.DemiBold
+                    elide: Text.ElideRight
+                }
+
+                Text {
+                    text: task.category
+                    color: root.muted
+                    font.pixelSize: 5
+                }
+            }
+        }
+    }
+
+    component MenuEntry: Rectangle {
+        required property string label
+        property bool danger: false
+        signal triggered()
+
+        width: parent.width
+        height: 31
+        radius: 7
+        color: hover.containsMouse
+            ? (danger ? "#FAF0F0" : "#F1F4F7")
+            : "transparent"
+
+        Text {
+            anchors.left: parent.left
+            anchors.verticalCenter: parent.verticalCenter
+            anchors.leftMargin: 8
+            text: label
+            color: danger ? root.danger : root.ink
+            font.pixelSize: 7
         }
 
-        Rectangle {
-            visible: completedStyle
-            anchors.left: checkBox.left
-            anchors.right: menuButton.left
+        MouseArea {
+            id: hover
+            anchors.fill: parent
+            hoverEnabled: true
+            cursorShape: Qt.PointingHandCursor
+            onClicked: parent.triggered()
+        }
+    }
+
+    component FormLabel: Text {
+        color: root.secondary
+        font.pixelSize: 6
+        font.weight: Font.DemiBold
+        font.letterSpacing: 0.8
+    }
+
+    component ChoicePill: Rectangle {
+        required property string label
+        required property bool selected
+        signal triggered()
+
+        width: label === "Medium" ? 72 : 62
+        height: 28
+        radius: 9
+        color: selected ? root.accentSoft : "#FFFFFFC8"
+        border.width: 1
+        border.color: selected ? "#C9DDF6" : root.borderSoft
+
+        Text {
+            anchors.centerIn: parent
+            text: label
+            color: selected ? root.accent : root.secondary
+            font.pixelSize: 7
+            font.weight: Font.DemiBold
+        }
+
+        MouseArea {
+            anchors.fill: parent
+            cursorShape: Qt.PointingHandCursor
+            onClicked: parent.triggered()
+        }
+    }
+
+    component ButtonSurface: Rectangle {
+        required property string label
+        required property bool active
+        signal triggered()
+
+        height: 38
+        radius: 10
+        color: active ? root.accentSoft : "#FFFFFFB8"
+        border.width: 1
+        border.color: active ? "#C9DDF6" : root.borderSoft
+        opacity: enabled ? 1 : 0.55
+
+        Text {
+            anchors.centerIn: parent
+            text: label
+            color: active ? root.accent : root.secondary
+            font.pixelSize: 8
+            font.weight: Font.DemiBold
+        }
+
+        MouseArea {
+            anchors.fill: parent
+            enabled: parent.enabled
+            cursorShape: Qt.PointingHandCursor
+            onClicked: parent.triggered()
+        }
+    }
+
+    component FormField: Rectangle {
+        property alias inputItem: inputProxy
+        required property string placeholder
+
+        width: parent.width
+        height: 38
+        radius: 10
+        color: "#FFFFFFDA"
+        border.width: 1
+        border.color: inputProxy.activeFocus ? "#BBD4F2" : root.borderSoft
+
+        Text {
+            visible: inputProxy.text.length === 0
+            anchors.left: parent.left
             anchors.verticalCenter: parent.verticalCenter
-            height: 1
-            color: "#B8C2CC"
-            opacity: 0.7
+            anchors.leftMargin: 10
+            text: parent.placeholder
+            color: "#A6B0BA"
+            font.pixelSize: 8
+        }
+
+        TextInput {
+            id: inputProxy
+            anchors.fill: parent
+            anchors.leftMargin: 10
+            anchors.rightMargin: 8
+            verticalAlignment: TextInput.AlignVCenter
+            color: root.ink
+            font.pixelSize: 8
         }
     }
 }
