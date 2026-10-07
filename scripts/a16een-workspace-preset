@@ -68,7 +68,7 @@ find_window_id() {
     local app_id="$1"
     niri msg --json windows 2>/dev/null |
         jq -r --arg app "$app_id" '(.Ok.Windows // .Windows // .)[] |
-            select((.app_id // "") == $app) | .id' |
+            select((.app_id // "" | ascii_downcase) == ($app | ascii_downcase)) | .id' |
         tail -n 1
 }
 
@@ -76,7 +76,7 @@ find_focused_window_id() {
     local app_id="$1"
     niri msg --json windows 2>/dev/null |
         jq -r --arg app "$app_id" '(.Ok.Windows // .Windows // .)[] |
-            select((.app_id // "") == $app and .is_focused == true) | .id' |
+            select((.app_id // "" | ascii_downcase) == ($app | ascii_downcase) and .is_focused == true) | .id' |
         head -n 1
 }
 
