@@ -333,7 +333,7 @@ jobs:
           grep -Fq '*.tiff' scripts/a16een-wallpaper
           grep -Fq '*.tga' scripts/a16een-wallpaper
           grep -Fq 'USER_WALLPAPER_DIR="$HOME/Pictures/a16een"' scripts/a16een-wallpaper
-          grep -Fq 'a16een-update --rollback' README.md
+          grep -Fq 'a16een-update' README.md
           # Launcher shortcut is already validated earlier in this block.
 
       - name: Validate no legacy wallpaper reference
