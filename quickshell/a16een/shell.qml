@@ -31,6 +31,7 @@ ShellRoot {
     property bool calendarWidgetEnabled: false
     property bool pulseWidgetEnabled: false
     property bool workspaceWidgetEnabled: false
+    property bool tasksWidgetEnabled: false
     property bool timeUse24Hour: true
     property bool timeShowSeconds: false
 
@@ -582,6 +583,15 @@ ShellRoot {
             widgetEnabled: root.workspaceWidgetEnabled
             workspaces: root.workspaces
             focusedWorkspaceId: root.focusedWorkspaceId
+        }
+    }
+
+    Variants {
+        model: Quickshell.screens
+
+        TasksWidget {
+            modelData: modelData
+            widgetEnabled: root.tasksWidgetEnabled
         }
     }
 
