@@ -37,6 +37,25 @@ PanelWindow {
     WlrLayershell.layer: WlrLayer.Overlay
     WlrLayershell.namespace: "a16een-dock"
 
+    // The dock PanelWindow spans the full screen height and 66px of width.
+    // Without an input mask, transparent pixels still block clicks on the
+    // application underneath. Only the visible dock and the 8px reveal strip
+    // should ever participate in pointer hit-testing.
+    mask: Region {
+        x: root.width - 8
+        y: (root.height - 240) / 2
+        width: 8
+        height: 240
+
+        Region {
+            x: root.dock.x - (root.width - 8)
+            y: root.dock.y - ((root.height - 240) / 2)
+            width: root.dock.width
+            height: root.dock.height
+            intersection: Intersection.Combine
+        }
+    }
+
     function workspaceIsFocused(name) {
         const current = root.workspaces.find(workspace => workspace.name === name)
         return !!current && current.id === root.focusedWorkspaceId
