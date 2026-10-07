@@ -1,0 +1,239 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+STATE_DIR="\${XDG_STATE_HOME:-$HOME/.local/state}/a16een"
+PRESETS_FILE="$STATE_DIR/workspace-presets.json"
+
+mkdir -p "$STATE_DIR"
+
+die() {
+    printf 'A16EEN workspace presets: %s\n' "$*" >&2
+    exit 1
+}
+
+ensure_store() {
+    if [[ ! -f "$PRESETS_FILE" ]]; then
+        printf '%s\n' '{"version":1,"presets":[]}' >"$PRESETS_FILE"
+    fi
+
+    jq -e '.version == 1 and (.presets | type == "array")' \
+        "$PRESETS_FILE" >/dev/null 2>&1 ||
+        die "workspace preset store is invalid."
+}
+
+is_workspace_valid() {
+    case "$1" in
+        home|code|web|comms|studio|music) return 0 ;;
+        *) return 1 ;;
+    esac
+}
+
+slugify() {
+    local value="$1"
+    value="$(printf '%s' "$value" |
+        tr '[:upper:]' '[:lower:]' |
+        sed -E 's/[^a-z0-9]+/-/g; s/^-+//; s/-+$//')"
+    printf '%s\n' "\${value:-preset}"
+}
+
+validate_payload() {
+    jq -e '
+        (.version == 1) and
+        (.id | type == "string") and
+        (.name | type == "string") and
+        ((.name | gsub("^\\s+|\\s+$"; "")) | length > 0) and
+        (.apps | type == "array" and length > 0) and
+        all(.apps[];
+            (.desktopId | type == "string" and length > 0) and
+            (.name | type == "string" and length > 0) and
+            (.workspace | type == "string" and
+                (. == "home" or . == "code" or . == "web" or
+                 . == "comms" or . == "studio" or . == "music")) and
+            (.command | type == "array" and length > 0) and
+            all(.command[]; type == "string" and length > 0) and
+            (.appIds | type == "array") and
+            all(.appIds[]; type == "string")
+        )
+    ' <<<"$1" >/dev/null
+}
+
+current_workspace() {
+    niri msg --json workspaces 2>/dev/null |
+        jq -r '(.Ok.Workspaces // .Workspaces // .)[] |
+            select(.is_focused == true) | (.name // "")' |
+        head -n 1
+}
+
+find_window_id() {
+    local app_id="$1"
+    niri msg --json windows 2>/dev/null |
+        jq -r --arg app "$app_id" '(.Ok.Windows // .Windows // .)[] |
+            select((.app_id // "") == $app) | .id' |
+        tail -n 1
+}
+
+find_focused_window_id() {
+    local app_id="$1"
+    niri msg --json windows 2>/dev/null |
+        jq -r --arg app "$app_id" '(.Ok.Windows // .Windows // .)[] |
+            select((.app_id // "") == $app and .is_focused == true) | .id' |
+        head -n 1
+}
+
+move_window_to_workspace() {
+    local window_id="$1"
+    local workspace="$2"
+    local request
+    request="$(jq -cn --argjson id "$window_id" --arg workspace "$workspace" '{
+        Action: {
+            MoveWindowToWorkspace: {
+                window_id: $id,
+                reference: {Name: $workspace},
+                focus: false
+            }
+        }
+    }')"
+    printf '%s\n' "$request" | niri msg raw-request >/dev/null
+}
+
+launch_command() {
+    local workspace="$1"
+    local working_directory="$2"
+    shift 2
+    local -a command=("$@")
+
+    niri msg action focus-workspace "$workspace" >/dev/null
+
+    if [[ -n "$working_directory" && -d "$working_directory" ]]; then
+        (cd "$working_directory" && nohup "\${command[@]}" >/dev/null 2>&1 &)
+    else
+        (nohup "\${command[@]}" >/dev/null 2>&1 &)
+    fi
+}
+
+open_preset() {
+    ensure_store
+    local id="$1"
+    local original_workspace
+    original_workspace="$(current_workspace || true)"
+
+    local preset
+    preset="$(jq -c --arg id "$id" '.presets[] | select(.id == $id)' "$PRESETS_FILE" | head -n 1)"
+    [[ -n "$preset" ]] || die "workspace preset '$id' was not found."
+
+    local app_count index=0
+    app_count="$(jq -r '.apps | length' <<<"$preset")"
+
+    while (( index < app_count )); do
+        local workspace working_directory
+        workspace="$(jq -r ".apps[$index].workspace" <<<"$preset")"
+        working_directory="$(jq -r ".apps[$index].workingDirectory // \"\"" <<<"$preset")"
+        is_workspace_valid "$workspace" || die "invalid workspace '$workspace'."
+
+        local -a command app_ids
+        mapfile -t command < <(jq -r ".apps[$index].command[]" <<<"$preset")
+        mapfile -t app_ids < <(jq -r ".apps[$index].appIds[]" <<<"$preset" | awk 'NF && !seen[$0]++')
+
+        if [[ "\${#command[@]}" -eq 0 || "\${#app_ids[@]}" -eq 0 ]]; then
+            index=$((index + 1))
+            continue
+        fi
+
+        launch_command "$workspace" "$working_directory" "\${command[@]}"
+
+        local found_id="" candidate tick=0
+        while (( tick < 32 )) && [[ -z "$found_id" ]]; do
+            sleep 0.25
+
+            for candidate in "\${app_ids[@]}"; do
+                found_id="$(find_focused_window_id "$candidate" || true)"
+                [[ -n "$found_id" ]] && break
+            done
+
+            if [[ -z "$found_id" ]]; then
+                for candidate in "\${app_ids[@]}"; do
+                    found_id="$(find_window_id "$candidate" || true)"
+                    [[ -n "$found_id" ]] && break
+                done
+            fi
+
+            tick=$((tick + 1))
+        done
+
+        if [[ -n "$found_id" ]]; then
+            move_window_to_workspace "$found_id" "$workspace" || true
+        fi
+
+        index=$((index + 1))
+    done
+
+    if [[ -n "$original_workspace" ]]; then
+        niri msg action focus-workspace "$original_workspace" >/dev/null 2>&1 || true
+    fi
+
+    printf 'Workspace preset opened: %s\n' "$id"
+}
+
+save_preset() {
+    ensure_store
+    local payload="$1"
+    validate_payload "$payload" || die "invalid workspace preset data."
+
+    local id name item
+    id="$(jq -r '.id' <<<"$payload")"
+    name="$(jq -r '.name' <<<"$payload")"
+
+    if [[ -z "$id" ]]; then
+        id="$(slugify "$name")"
+        local candidate="$id" suffix=2
+        while jq -e --arg id "$candidate" 'any(.presets[]; .id == $id)' "$PRESETS_FILE" >/dev/null; do
+            candidate="$id-$suffix"
+            suffix=$((suffix + 1))
+        done
+        id="$candidate"
+    fi
+
+    item="$(jq -c --arg id "$id" '.id = $id' <<<"$payload")"
+    jq --argjson item "$item" '
+        .presets = (
+            if any(.presets[]; .id == $item.id)
+            then [.presets[] | if .id == $item.id then $item else . end]
+            else .presets + [$item]
+            end
+        )
+    ' "$PRESETS_FILE" >"$PRESETS_FILE.tmp"
+    mv "$PRESETS_FILE.tmp" "$PRESETS_FILE"
+
+    printf '%s\n' "$id"
+}
+
+delete_preset() {
+    ensure_store
+    local id="$1"
+    jq --arg id "$id" '.presets = [.presets[] | select(.id != $id)]' \
+        "$PRESETS_FILE" >"$PRESETS_FILE.tmp"
+    mv "$PRESETS_FILE.tmp" "$PRESETS_FILE"
+}
+
+ensure_store
+
+case "\${1:-list}" in
+    list)
+        jq -c '.' "$PRESETS_FILE"
+        ;;
+    save)
+        [[ $# -eq 2 ]] || die "usage: a16een-workspace-preset save <json>"
+        save_preset "$2"
+        ;;
+    delete)
+        [[ $# -eq 2 ]] || die "usage: a16een-workspace-preset delete <id>"
+        delete_preset "$2"
+        ;;
+    open)
+        [[ $# -eq 2 ]] || die "usage: a16een-workspace-preset open <id>"
+        open_preset "$2"
+        ;;
+    *)
+        die "usage: a16een-workspace-preset {list|save|delete|open}"
+        ;;
+esac
