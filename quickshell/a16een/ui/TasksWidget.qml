@@ -29,18 +29,18 @@ PanelWindow {
     property real widgetX: -1
     property real widgetY: 84
 
-    readonly property color glass: "#F8FAFCBF"
-    readonly property color glassStrong: "#FFFFFFE3"
-    readonly property color glassSoft: "#FFFFFF8E"
-    readonly property color glassPanel: "#FFFFFF72"
+    readonly property color glass: "#FFFFFFFF"
+    readonly property color glassStrong: "#FFFFFFFF"
+    readonly property color glassSoft: "#FFFFFFFF"
+    readonly property color glassPanel: "#FFFFFFFF"
     readonly property color border: "#D7DEE6"
     readonly property color borderSoft: "#E3E8ED"
     readonly property color ink: "#18212B"
     readonly property color secondary: "#637181"
     readonly property color muted: "#8D99A7"
     readonly property color accent: "#3E8BEA"
-    readonly property color accentSoft: "#E9F3FF"
-    readonly property color canvas: "#F4F7FA"
+    readonly property color accentSoft: "#F3F5F7"
+    readonly property color canvas: "#FFFFFF"
     readonly property color danger: "#B86161"
 
     readonly property string todayKey: root.dateKey(root.now)
@@ -506,9 +506,9 @@ PanelWindow {
                 id: rail
                 width: 148
                 height: parent.height
-                color: "#FFFFFF72"
+                color: "#FFFFFFFF"
                 border.width: 1
-                border.color: "#FFFFFFA8"
+                border.color: "#FFFFFFFF"
 
                 Column {
                     anchors.fill: parent
@@ -603,7 +603,7 @@ PanelWindow {
                 id: workspace
                 width: parent.width - rail.width
                 height: parent.height
-                color: "#FFFFFF1F"
+                color: "#FFFFFFFF"
 
                 Column {
                     anchors.fill: parent
@@ -772,7 +772,7 @@ PanelWindow {
                                             width: 28
                                             height: 28
                                             radius: 9
-                                            color: "#FFFFFFC7"
+                                            color: "#FFFFFFFF"
                                             border.width: 1
                                             border.color: root.borderSoft
 
@@ -813,7 +813,7 @@ PanelWindow {
                                         height: 27
                                         anchors.verticalCenter: parent.verticalCenter
                                         radius: 9
-                                        color: "#FFFFFF9A"
+                                        color: "#FFFFFFFF"
                                         border.width: 1
                                         border.color: root.borderSoft
 
@@ -832,7 +832,7 @@ PanelWindow {
                                         height: 27
                                         anchors.verticalCenter: parent.verticalCenter
                                         radius: 9
-                                        color: "#FFFFFF9A"
+                                        color: "#FFFFFFFF"
                                         border.width: 1
                                         border.color: root.borderSoft
 
@@ -878,7 +878,7 @@ PanelWindow {
                                             width: parent.width
                                             height: 36
                                             radius: 10
-                                            color: "#FFFFFF82"
+                                            color: "#FFFFFFFF"
                                             border.width: 1
                                             border.color: root.borderSoft
 
@@ -955,7 +955,7 @@ PanelWindow {
                             width: 204
                             height: parent.height
                             radius: 16
-                            color: "#FFFFFF66"
+                            color: "#FFFFFFFF"
                             border.width: 1
                             border.color: root.borderSoft
                             clip: true
@@ -1087,7 +1087,7 @@ PanelWindow {
                                     width: parent.width
                                     height: 58
                                     radius: 12
-                                    color: "#FFFFFF7C"
+                                    color: "#FFFFFFFF"
                                     border.width: 1
                                     border.color: root.borderSoft
 
@@ -1294,7 +1294,7 @@ PanelWindow {
                             width: parent.width
                             height: 34
                             radius: 10
-                            color: "#FFFFFFDA"
+                            color: "#FFFFFFFF"
                             border.width: 1
                             border.color: taskDateInput.activeFocus ? "#BBD4F2" : root.borderSoft
 
@@ -1315,7 +1315,7 @@ PanelWindow {
                             width: parent.width
                             height: 34
                             radius: 10
-                            color: "#FFFFFFDA"
+                            color: "#FFFFFFFF"
                             border.width: 1
                             border.color: taskTimeInput.activeFocus ? "#BBD4F2" : root.borderSoft
 
@@ -1370,7 +1370,7 @@ PanelWindow {
                             width: parent.width
                             height: 76
                             radius: 10
-                            color: "#FFFFFFDA"
+                            color: "#FFFFFFFF"
                             border.width: 1
                             border.color: taskNotesInput.activeFocus ? "#BBD4F2" : root.borderSoft
 
@@ -1573,7 +1573,7 @@ PanelWindow {
                 anchors.top: parent.top
                 anchors.topMargin: 9
                 radius: 6
-                color: task.completed ? root.accent : "#FFFFFFC8"
+                color: task.completed ? root.accent : "#FFFFFFFF"
                 border.width: 1
                 border.color: task.completed ? root.accent : "#B9C4CF"
 
@@ -1619,7 +1619,7 @@ PanelWindow {
                         height: 19
                         width: categoryText.implicitWidth + 14
                         radius: 9
-                        color: "#FFFFFFC7"
+                        color: "#FFFFFFFF"
                         border.width: 1
                         border.color: root.borderSoft
 
@@ -1839,7 +1839,7 @@ PanelWindow {
         width: label === "Medium" ? 72 : 62
         height: 28
         radius: 9
-        color: selected ? root.accentSoft : "#FFFFFFC8"
+        color: selected ? root.accentSoft : "#FFFFFFFF"
         border.width: 1
         border.color: selected ? "#C9DDF6" : root.borderSoft
 
@@ -1865,7 +1865,7 @@ PanelWindow {
 
         height: 38
         radius: 10
-        color: active ? root.accentSoft : "#FFFFFFB8"
+        color: active ? root.accentSoft : "#FFFFFFFF"
         border.width: 1
         border.color: active ? "#C9DDF6" : root.borderSoft
         opacity: enabled ? 1 : 0.55
@@ -1893,7 +1893,7 @@ PanelWindow {
         width: parent.width
         height: 38
         radius: 10
-        color: "#FFFFFFDA"
+        color: "#FFFFFFFF"
         border.width: 1
         border.color: inputProxy.activeFocus ? "#BBD4F2" : root.borderSoft
 
