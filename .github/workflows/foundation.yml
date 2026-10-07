@@ -89,6 +89,11 @@ jobs:
           test -f quickshell/a16een/ui/ControlDetailSection.qml
           test -f quickshell/a16een/ui/IconThemeSection.qml
           test -f quickshell/a16een/ui/WorkspacePresetsSection.qml
+          grep -Fq 'readonly property bool canSave' quickshell/a16een/ui/WorkspacePresetsSection.qml
+          grep -Fq 'id: addMouse' quickshell/a16een/ui/WorkspacePresetsSection.qml
+          grep -Fq 'acceptedButtons: Qt.LeftButton' quickshell/a16een/ui/WorkspacePresetsSection.qml
+          grep -Fq 'root.editorOpen = true' quickshell/a16een/ui/WorkspacePresetsSection.qml
+          grep -Fq 'onClicked: {' quickshell/a16een/ui/WorkspacePresetsSection.qml
           test -f scripts/a16een-screenshot
           test -f scripts/a16een-control
           test -f scripts/a16een-icon-theme
