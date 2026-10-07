@@ -214,7 +214,7 @@ case "$command" in
         require_no_args "$@"
         ensure_desktop_session
         require_cmd qs
-        exec qs ipc call command-center toggle
+        exec qs ipc call workspace-presets open
         ;;
 
     dashboard|control-center|controls)
