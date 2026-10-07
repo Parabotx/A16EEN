@@ -362,7 +362,7 @@ PanelWindow {
         root.editingTaskId = -1
         root.editorCategory = "Personal"
         root.editorPriority = "Medium"
-        taskTitleInput.text = ""
+        taskTitleField.text = ""
         taskDateInput.text = root.todayKey
         taskTimeInput.text = ""
         taskNotesInput.text = ""
@@ -379,7 +379,7 @@ PanelWindow {
         root.editingTaskId = taskId
         root.editorCategory = task.category || "Personal"
         root.editorPriority = task.priority || "Medium"
-        taskTitleInput.text = task.title
+        taskTitleField.text = task.title
         taskDateInput.text = task.date
         taskTimeInput.text = task.time
         taskNotesInput.text = task.notes
@@ -388,7 +388,7 @@ PanelWindow {
     }
 
     function saveEditor() {
-        const title = taskTitleInput.text.trim()
+        const title = taskTitleField.text.trim()
         if (!title.length) return
 
         const entry = {
@@ -1283,14 +1283,9 @@ PanelWindow {
                         FormLabel { text: "TASK NAME" }
 
                         FormField {
+                            id: taskTitleField
                             height: 38
                             placeholder: "What needs to be done?"
-                            inputItem: taskTitleInput
-                        }
-
-                        TextInput {
-                            id: taskTitleInput
-                            visible: false
                         }
 
                         FormLabel { text: "DATE" }
@@ -1407,7 +1402,7 @@ PanelWindow {
                         width: (parent.width - 7) / 2
                         label: root.editingTaskId >= 0 ? "Save changes" : "Save task"
                         active: true
-                        enabled: taskTitleInput.text.trim().length > 0
+                        enabled: taskTitleField.text.trim().length > 0
                         onTriggered: root.saveEditor()
                     }
                 }
@@ -1892,7 +1887,7 @@ PanelWindow {
     }
 
     component FormField: Rectangle {
-        property alias inputItem: inputProxy
+        property alias text: inputProxy.text
         required property string placeholder
 
         width: parent.width
