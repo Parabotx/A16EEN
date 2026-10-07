@@ -367,7 +367,7 @@ PanelWindow {
         taskTimeInput.text = ""
         taskNotesInput.text = ""
         root.editorOpen = true
-        Qt.callLater(() => taskTitleInput.forceActiveFocus())
+        Qt.callLater(() => taskTitleField.inputItem.forceActiveFocus())
     }
 
     function openEditTask(taskId) {
@@ -384,7 +384,7 @@ PanelWindow {
         taskTimeInput.text = task.time
         taskNotesInput.text = task.notes
         root.editorOpen = true
-        Qt.callLater(() => taskTitleInput.forceActiveFocus())
+        Qt.callLater(() => taskTitleField.inputItem.forceActiveFocus())
     }
 
     function saveEditor() {
@@ -563,21 +563,21 @@ PanelWindow {
 
                     NavItem {
                         active: true
-                        icon: "⌂"
+                        iconSource: "../assets/icons/house.svg"
                         label: "Home"
                         onClicked: taskFlick.contentY = 0
                     }
 
                     NavItem {
                         active: false
-                        icon: "✓"
+                        iconSource: "../assets/icons/lucide-clipboard.svg"
                         label: "My Tasks"
                         onClicked: taskFlick.contentY = 0
                     }
 
                     NavItem {
                         active: root.calendarOpen
-                        icon: "▦"
+                        iconSource: "../assets/icons/lucide-app-window.svg"
                         label: "Calendar"
                         onClicked: {
                             root.calendarOpen = !root.calendarOpen
@@ -587,7 +587,7 @@ PanelWindow {
 
                     NavItem {
                         active: false
-                        icon: "⚙"
+                        iconSource: "../assets/icons/lucide-settings.svg"
                         label: "Settings"
                         onClicked: {
                             root.optionsOpen = !root.optionsOpen
@@ -678,9 +678,7 @@ PanelWindow {
                                 anchors.left: parent.left
                                 anchors.verticalCenter: parent.verticalCenter
                                 anchors.leftMargin: 11
-                                text: "⌕"
-                                color: root.muted
-                                font.pixelSize: 13
+                                source: Qt.resolvedUrl("../assets/icons/search.svg")
                             }
 
                             TextInput {
@@ -717,11 +715,11 @@ PanelWindow {
                                 anchors.centerIn: parent
                                 spacing: 7
 
-                                Text {
-                                    text: "+"
-                                    color: root.accent
-                                    font.pixelSize: 17
-                                    font.weight: Font.DemiBold
+                                Image {
+                                    width: 14
+                                    height: 14
+                                    source: Qt.resolvedUrl("../assets/icons/sparkles.svg")
+                                    fillMode: Image.PreserveAspectFit
                                 }
 
                                 Text {
@@ -836,11 +834,12 @@ PanelWindow {
                                         border.width: 1
                                         border.color: root.borderSoft
 
-                                        Text {
+                                        Image {
                                             anchors.centerIn: parent
-                                            text: "☷"
-                                            color: root.secondary
-                                            font.pixelSize: 11
+                                            width: 14
+                                            height: 14
+                                            source: Qt.resolvedUrl("../assets/icons/lucide-sliders-horizontal.svg")
+                                            fillMode: Image.PreserveAspectFit
                                         }
 
                                         MouseArea {
@@ -870,6 +869,47 @@ PanelWindow {
                                             delegate: TaskRow {
                                                 task: modelData
                                                 completedStyle: false
+                                            }
+                                        }
+
+                                        Item {
+                                            visible: root.visibleActiveTasks.length === 0
+                                            width: parent.width
+                                            height: Math.max(180, taskFlick.height - 10)
+
+                                            Column {
+                                                anchors.centerIn: parent
+                                                spacing: 10
+
+                                                Image {
+                                                    anchors.horizontalCenter: parent.horizontalCenter
+                                                    width: 34
+                                                    height: 34
+                                                    source: Qt.resolvedUrl("../assets/icons/lucide-clipboard.svg")
+                                                    fillMode: Image.PreserveAspectFit
+                                                    opacity: 0.45
+                                                }
+
+                                                Text {
+                                                    width: parent.width
+                                                    text: root.searchText.trim().length > 0
+                                                        ? "No matching tasks"
+                                                        : "No tasks for today"
+                                                    color: root.ink
+                                                    font.pixelSize: 12
+                                                    font.weight: Font.DemiBold
+                                                    horizontalAlignment: Text.AlignHCenter
+                                                }
+
+                                                Text {
+                                                    width: parent.width
+                                                    text: root.searchText.trim().length > 0
+                                                        ? "Try a different search."
+                                                        : "Create a task to get started."
+                                                    color: root.muted
+                                                    font.pixelSize: 8
+                                                    horizontalAlignment: Text.AlignHCenter
+                                                }
                                             }
                                         }
 
@@ -1225,7 +1265,7 @@ PanelWindow {
             anchors.fill: parent
             visible: root.editorOpen
             z: 100
-            color: "#F8FAFCEB"
+            color: "#FFFFFFFF"
 
             Column {
                 anchors.fill: parent
@@ -1420,11 +1460,13 @@ PanelWindow {
             anchors.bottomMargin: 3
             color: "transparent"
 
-            Text {
+            Image {
                 anchors.centerIn: parent
-                text: "⌟"
-                color: "#9DA8B4"
-                font.pixelSize: 10
+                width: 12
+                height: 12
+                source: Qt.resolvedUrl("../assets/icons/lucide-crop.svg")
+                fillMode: Image.PreserveAspectFit
+                opacity: 0.55
             }
 
             DragHandler {
@@ -1454,42 +1496,35 @@ PanelWindow {
 
     component NavItem: Rectangle {
         required property bool active
-        required property string icon
+        required property string iconSource
         required property string label
         signal clicked()
 
-        width: parent.width
-        height: 38
-        radius: 10
-        color: active ? root.accentSoft : "transparent"
+        width: 42
+        height: 42
+        radius: 12
+        color: active ? "#F3F5F7" : "transparent"
         border.width: active ? 1 : 0
-        border.color: "#CFE2F7"
+        border.color: root.borderSoft
 
-        Row {
-            anchors.fill: parent
-            anchors.leftMargin: 10
-            spacing: 10
+        Image {
+            anchors.centerIn: parent
+            width: 18
+            height: 18
+            source: Qt.resolvedUrl(iconSource)
+            fillMode: Image.PreserveAspectFit
+            opacity: active ? 1 : 0.72
+        }
 
-            Text {
-                anchors.verticalCenter: parent.verticalCenter
-                text: icon
-                color: active ? root.accent : root.secondary
-                font.pixelSize: 12
-                width: 15
-                horizontalAlignment: Text.AlignHCenter
-            }
-
-            Text {
-                anchors.verticalCenter: parent.verticalCenter
-                text: label
-                color: active ? root.accent : root.secondary
-                font.pixelSize: 8
-                font.weight: active ? Font.DemiBold : Font.Normal
-            }
+        ToolTip {
+            visible: navMouse.containsMouse
+            text: label
         }
 
         MouseArea {
+            id: navMouse
             anchors.fill: parent
+            hoverEnabled: true
             cursorShape: Qt.PointingHandCursor
             onClicked: parent.clicked()
         }
@@ -1888,6 +1923,7 @@ PanelWindow {
 
     component FormField: Rectangle {
         property alias text: inputProxy.text
+        property alias inputItem: inputProxy
         required property string placeholder
 
         width: parent.width
