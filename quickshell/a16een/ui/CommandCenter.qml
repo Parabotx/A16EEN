@@ -578,6 +578,7 @@ PanelWindow {
             calendarEnabled: root.calendarWidgetEnabled
             pulseEnabled: root.pulseWidgetEnabled
             workspaceEnabled: root.workspaceWidgetEnabled
+            tasksEnabled: root.tasksWidgetEnabled
             timeUse24Hour: root.timeUse24Hour
             timeShowSeconds: root.timeShowSeconds
 
@@ -586,6 +587,7 @@ PanelWindow {
             onCalendarWidgetEnabledRequested: root.calendarWidgetEnabledRequested(enabled)
             onPulseWidgetEnabledRequested: root.pulseWidgetEnabledRequested(enabled)
             onWorkspaceWidgetEnabledRequested: root.workspaceWidgetEnabledRequested(enabled)
+            onTasksWidgetEnabledRequested: root.tasksWidgetEnabledRequested(enabled)
             onTimeUse24HourRequested: root.timeUse24HourRequested(enabled)
             onTimeShowSecondsRequested: root.timeShowSecondsRequested(enabled)
         }
