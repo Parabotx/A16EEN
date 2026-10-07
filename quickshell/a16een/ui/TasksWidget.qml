@@ -504,7 +504,7 @@ PanelWindow {
 
             Rectangle {
                 id: rail
-                width: 148
+                width: 72
                 height: parent.height
                 color: "#FFFFFFFF"
                 border.width: 1
@@ -512,8 +512,11 @@ PanelWindow {
 
                 Column {
                     anchors.fill: parent
-                    anchors.margins: 14
-                    spacing: 8
+                    anchors.leftMargin: 15
+                    anchors.rightMargin: 15
+                    anchors.topMargin: 14
+                    anchors.bottomMargin: 14
+                    spacing: 10
 
                     Item {
                         width: parent.width
@@ -528,36 +531,20 @@ PanelWindow {
                                 width: 34
                                 height: 34
                                 radius: 11
-                                color: root.accentSoft
+                                color: "#F3F5F7"
                                 border.width: 1
-                                border.color: "#D5E7FA"
+                                border.color: root.borderSoft
 
-                                Text {
+                                Image {
                                     anchors.centerIn: parent
-                                    text: "✓"
-                                    color: root.accent
-                                    font.pixelSize: 18
-                                    font.weight: Font.DemiBold
+                                    width: 17
+                                    height: 17
+                                    source: Qt.resolvedUrl("../assets/icons/lucide-clipboard.svg")
+                                    fillMode: Image.PreserveAspectFit
                                 }
                             }
 
-                            Column {
-                                anchors.verticalCenter: parent.verticalCenter
-                                spacing: 2
 
-                                Text {
-                                    text: "My Tasks"
-                                    color: root.ink
-                                    font.pixelSize: 12
-                                    font.weight: Font.DemiBold
-                                }
-
-                                Text {
-                                    text: "Plan. Focus. Get it done."
-                                    color: root.secondary
-                                    font.pixelSize: 6
-                                }
-                            }
                         }
                     }
 
@@ -674,11 +661,15 @@ PanelWindow {
                             border.width: 1
                             border.color: root.borderSoft
 
-                            Text {
+                            Image {
                                 anchors.left: parent.left
                                 anchors.verticalCenter: parent.verticalCenter
                                 anchors.leftMargin: 11
+                                width: 15
+                                height: 15
                                 source: Qt.resolvedUrl("../assets/icons/search.svg")
+                                fillMode: Image.PreserveAspectFit
+                                opacity: 0.65
                             }
 
                             TextInput {
@@ -691,6 +682,8 @@ PanelWindow {
                                 color: root.ink
                                 font.pixelSize: 8
                                 clip: true
+                                activeFocusOnPress: true
+                                cursorVisible: true
                                 onTextChanged: root.searchText = text
 
                                 Text {
@@ -1516,9 +1509,26 @@ PanelWindow {
             opacity: active ? 1 : 0.72
         }
 
-        ToolTip {
+        Rectangle {
             visible: navMouse.containsMouse
-            text: label
+            z: 10
+            x: parent.width + 8
+            y: (parent.height - 24) / 2
+            width: labelText.implicitWidth + 18
+            height: 24
+            radius: 8
+            color: "#FFFFFFFF"
+            border.width: 1
+            border.color: root.borderSoft
+
+            Text {
+                id: labelText
+                anchors.centerIn: parent
+                text: label
+                color: root.ink
+                font.pixelSize: 7
+                font.weight: Font.DemiBold
+            }
         }
 
         MouseArea {
@@ -1529,7 +1539,6 @@ PanelWindow {
             onClicked: parent.clicked()
         }
     }
-
     component TaskRow: Item {
         required property var task
         required property bool completedStyle
@@ -1949,6 +1958,8 @@ PanelWindow {
             anchors.leftMargin: 10
             anchors.rightMargin: 8
             verticalAlignment: TextInput.AlignVCenter
+            activeFocusOnPress: true
+            cursorVisible: true
             color: root.ink
             font.pixelSize: 8
         }
