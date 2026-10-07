@@ -52,6 +52,35 @@ CLI equivalents:
 
 Existing applications may need to be restarted before they redraw with the new icon theme.
 
+## Workspace Presets
+
+A16EEN includes **Workspace Presets** for manually opening a complete working setup without adding anything to system startup.
+
+Open the graphical builder from the Command Center with:
+
+    /presets
+
+Create a preset such as **AGAZ**, then choose its applications one at a time. After each app is selected, A16EEN asks which named workspace should receive it:
+
+    01  HOME
+    02  CODE
+    03  WEB
+    04  COMMS
+    05  STUDIO
+    06  MUSIC
+
+Save the preset, and it appears as a reusable card with **OPEN**, **EDIT**, and **REMOVE** actions. Opening a preset launches each selected application, waits for its window to appear, explicitly places that window on the requested named workspace through Niri IPC, and finally returns focus to the workspace you were using before the preset was opened. Niri supports named workspaces and window-to-workspace IPC actions, which A16EEN uses for this flow.
+
+Preset data is stored locally in:
+
+    ~/.local/state/a16een/workspace-presets.json
+
+The feature only uses applications exposed through the XDG desktop-entry index. A16EEN stores the parsed desktop-entry command rather than asking users to type arbitrary shell commands, keeping the graphical workflow controlled and predictable. Quickshell exposes both the application index and its parsed DesktopEntry.command for this purpose.
+
+The CLI entry point is:
+
+    a16een presets
+
 ## Wallpaper
 
 A16EEN keeps two wallpaper collections.
