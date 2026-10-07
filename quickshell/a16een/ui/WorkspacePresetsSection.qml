@@ -131,6 +131,15 @@ Item {
         if (root.openProcess.running || root.saveProcess.running)
             return
 
+        root.editorOpen = false
+        root.appPickerOpen = false
+        root.workspacePickerIndex = -1
+        root.deleteIndex = -1
+        root.draftId = ""
+        root.draftName = ""
+        root.draftApps = []
+        root.appSearch = ""
+
         root.editorOpen = true
         root.appPickerOpen = false
         root.workspacePickerIndex = -1
@@ -473,9 +482,13 @@ Item {
                 MouseArea {
                     id: addMouse
                     anchors.fill: parent
+                    z: 10
                     hoverEnabled: true
+                    acceptedButtons: Qt.LeftButton
                     cursorShape: Qt.PointingHandCursor
-                    onClicked: root.beginAdd()
+                    onClicked: {
+                        root.beginAdd()
+                    }
                 }
             }
 
