@@ -24,24 +24,25 @@ PanelWindow {
     property bool calendarOpen: false
     property bool storageReady: false
 
-    property int widgetWidth: 860
-    property int widgetHeight: 580
+    property int widgetWidth: 1120
+    property int widgetHeight: 700
     property real widgetX: -1
     property real widgetY: 84
 
     readonly property color glass: "#FFFFFFFF"
-    readonly property color glassStrong: "#FFFFFFFF"
-    readonly property color glassSoft: "#FFFFFFFF"
-    readonly property color glassPanel: "#FFFFFFFF"
-    readonly property color border: "#D7DEE6"
-    readonly property color borderSoft: "#E3E8ED"
-    readonly property color ink: "#18212B"
-    readonly property color secondary: "#637181"
-    readonly property color muted: "#8D99A7"
-    readonly property color accent: "#3E8BEA"
-    readonly property color accentSoft: "#F3F5F7"
-    readonly property color canvas: "#FFFFFF"
-    readonly property color danger: "#B86161"
+    readonly property color glassStrong: "#F8FFFFFF"
+    readonly property color glassSoft: "#EFF4F9"
+    readonly property color glassPanel: "#EBF3F9"
+    readonly property color border: "#D6E0EA"
+    readonly property color borderSoft: "#E4EAF0"
+    readonly property color ink: "#17212B"
+    readonly property color secondary: "#647386"
+    readonly property color muted: "#98A4B1"
+    readonly property color accent: "#4B86E8"
+    readonly property color accentSoft: "#EAF2FF"
+    readonly property color canvas: "#F7F9FC"
+    readonly property color danger: "#BF6268"
+    readonly property string personName: "Abraham"
 
     readonly property string todayKey: root.dateKey(root.now)
     readonly property var todayTasks: root.sortedTasks(
@@ -61,6 +62,8 @@ PanelWindow {
     readonly property int completedCount: root.completedTasks.length
     readonly property real progress:
         root.todayTotal > 0 ? root.completedCount / root.todayTotal : 0
+    readonly property int focusMinutes: root.calculateFocusMinutes()
+    readonly property int currentStreak: root.calculateStreak()
 
     readonly property var calendarCells: {
         const first = new Date(root.now.getFullYear(), root.now.getMonth(), 1)
@@ -69,7 +72,7 @@ PanelWindow {
         const daysInPrevious = new Date(root.now.getFullYear(), root.now.getMonth(), 0).getDate()
         const cells = []
 
-        for (let i = 0; i < 35; i++) {
+        for (let i = 0; i < 42; i++) {
             const offset = i - startIndex
             if (offset < 0) {
                 cells.push({
@@ -162,6 +165,65 @@ PanelWindow {
             + root.monthNames[root.now.getMonth()].slice(0, 3)
             + " "
             + root.now.getDate()
+    }
+
+    function categoryFill(category) {
+        switch (String(category || "")) {
+        case "Work": return "#E7F0FF"
+        case "Health": return "#E7F7EF"
+        case "Personal": return "#F0E9FB"
+        case "Home": return "#FFF0E8"
+        default: return "#EEF2F6"
+        }
+    }
+
+    function categoryInk(category) {
+        switch (String(category || "")) {
+        case "Work": return "#4D72C0"
+        case "Health": return "#438263"
+        case "Personal": return "#7659AF"
+        case "Home": return "#A46D4D"
+        default: return root.secondary
+        }
+    }
+
+    function calculateFocusMinutes() {
+        let total = 0
+        root.todayTasks.forEach(task => {
+            const parts = String(task.time || "").split(" – ")
+            if (parts.length !== 2) return
+            const toMinutes = value => {
+                const bits = String(value).trim().split(":")
+                if (bits.length !== 2) return -1
+                const h = Number(bits[0])
+                const m = Number(bits[1])
+                return Number.isFinite(h) && Number.isFinite(m) ? h * 60 + m : -1
+            }
+            const start = toMinutes(parts[0])
+            const end = toMinutes(parts[1])
+            if (start >= 0 && end > start) total += end - start
+        })
+        return total
+    }
+
+    function focusTimeLabel() {
+        const h = Math.floor(root.focusMinutes / 60)
+        const m = root.focusMinutes % 60
+        if (h <= 0) return m + "m"
+        if (m === 0) return h + "h"
+        return h + "h " + m + "m"
+    }
+
+    function calculateStreak() {
+        let count = 0
+        const cursor = new Date(root.now.getTime())
+        while (count < 365) {
+            const key = root.dateKey(cursor)
+            if (!root.tasks.some(task => task.date === key && task.completed)) break
+            count += 1
+            cursor.setDate(cursor.getDate() - 1)
+        }
+        return count
     }
 
     function sortedTasks(source) {
@@ -269,8 +331,8 @@ PanelWindow {
         root.storageReady = true
         root.tasks = root.defaultTasks()
         root.completedExpanded = false
-        root.widgetWidth = 860
-        root.widgetHeight = 580
+        root.widgetWidth = 1120
+        root.widgetHeight = 700
         root.widgetX = -1
         root.widgetY = 84
         root.saveState()
@@ -320,13 +382,13 @@ PanelWindow {
     function clampGeometry() {
         if (!root.modelData) return
 
-        const maxWidth = Math.max(660, root.width - 24)
+        const maxWidth = Math.max(860, root.width - 24)
         const maxHeight = Math.max(480, root.height - 24)
 
         root.widgetWidth = Math.round(root.clamp(
-            root.widgetWidth, 660, Math.min(1080, maxWidth)))
+            root.widgetWidth, 860, Math.min(1220, maxWidth)))
         root.widgetHeight = Math.round(root.clamp(
-            root.widgetHeight, 480, Math.min(760, maxHeight)))
+            root.widgetHeight, 520, Math.min(780, maxHeight)))
 
         if (root.widgetX < 0)
             root.widgetX = Math.max(16, root.width - root.widgetWidth - 24)
@@ -494,8 +556,27 @@ PanelWindow {
 
         Rectangle {
             anchors.fill: parent
-            color: "#FFFFFF"
-            opacity: 0.18
+            color: "#F7F9FC"
+        }
+
+        Rectangle {
+            width: 420
+            height: 420
+            radius: 210
+            x: surface.width - 180
+            y: -220
+            color: "#DCE9FF"
+            opacity: 0.48
+        }
+
+        Rectangle {
+            width: 320
+            height: 320
+            radius: 160
+            x: -180
+            y: surface.height - 130
+            color: "#EAE4FF"
+            opacity: 0.28
         }
 
         Row {
@@ -504,11 +585,11 @@ PanelWindow {
 
             Rectangle {
                 id: rail
-                width: 72
+                width: 148
                 height: parent.height
-                color: "#FFFFFFFF"
+                color: "#ECF4FA"
                 border.width: 1
-                border.color: "#FFFFFFFF"
+                border.color: "#E0E7EF"
 
                 Column {
                     anchors.fill: parent
@@ -599,62 +680,95 @@ PanelWindow {
 
                     Row {
                         width: parent.width
-                        height: 58
+                        height: 74
+                        spacing: 14
 
                         Column {
+                            width: parent.width - 200
                             anchors.verticalCenter: parent.verticalCenter
-                            spacing: 2
+                            spacing: 4
 
                             Text {
-                                text: "Good morning,"
+                                text: "Good morning, " + root.personName
+                                color: root.ink
+                                font.pixelSize: 22
+                                font.weight: Font.DemiBold
+                            }
+
+                            Text {
+                                text: "A focused start — let’s make today count."
                                 color: root.secondary
                                 font.pixelSize: 8
                             }
-
-                            Text {
-                                text: "My Tasks"
-                                color: root.ink
-                                font.pixelSize: 21
-                                font.weight: Font.DemiBold
-                            }
-
-                            Text {
-                                text: "You have " + root.todayTotal + " tasks today."
-                                color: root.secondary
-                                font.pixelSize: 7
-                            }
                         }
 
-                        Item { width: Math.max(1, parent.width - 285); height: 1 }
-
-                        Column {
+                        Rectangle {
+                            width: 186
+                            height: 60
                             anchors.verticalCenter: parent.verticalCenter
-                            spacing: 3
+                            radius: 16
+                            color: "#EAF2FA"
+                            border.width: 1
+                            border.color: "#DDE6EF"
 
-                            Text {
-                                text: root.formatDateLabel()
-                                color: root.secondary
-                                font.pixelSize: 7
-                                horizontalAlignment: Text.AlignRight
-                            }
+                            Column {
+                                anchors.fill: parent
+                                anchors.margins: 10
+                                spacing: 4
 
-                            Text {
-                                text: root.completedCount + " completed"
-                                color: root.accent
-                                font.pixelSize: 7
-                                font.weight: Font.DemiBold
-                                horizontalAlignment: Text.AlignRight
+                                Row {
+                                    spacing: 7
+
+                                    Image {
+                                        width: 16
+                                        height: 16
+                                        source: Qt.resolvedUrl("../assets/icons/lucide-sun.svg")
+                                        fillMode: Image.PreserveAspectFit
+                                        anchors.verticalCenter: parent.verticalCenter
+                                    }
+
+                                    Text {
+                                        text: "MORNING"
+                                        color: root.muted
+                                        font.pixelSize: 5
+                                        font.weight: Font.DemiBold
+                                        font.letterSpacing: 1
+                                        anchors.verticalCenter: parent.verticalCenter
+                                    }
+                                }
+
+                                Row {
+                                    spacing: 6
+
+                                    Text {
+                                        text: "Weather"
+                                        color: root.secondary
+                                        font.pixelSize: 6
+                                    }
+
+                                    Text {
+                                        text: "•"
+                                        color: root.muted
+                                        font.pixelSize: 6
+                                    }
+
+                                    Text {
+                                        text: "Local time"
+                                        color: root.secondary
+                                        font.pixelSize: 6
+                                    }
+                                }
                             }
                         }
                     }
 
                     Row {
                         width: parent.width
-                        height: 38
-                        spacing: 7
+                        height: 42
+                        spacing: 8
 
                         Rectangle {
-                            width: parent.width - 124
+                            width: parent.width - 130
                             height: parent.height
                             radius: 12
                             color: root.glassSoft
@@ -697,7 +811,7 @@ PanelWindow {
                         }
 
                         Rectangle {
-                            width: 117
+                            width: 122
                             height: parent.height
                             radius: 12
                             color: root.accentSoft
@@ -733,12 +847,12 @@ PanelWindow {
 
                     Row {
                         width: parent.width
-                        height: parent.height - 106
+                        height: parent.height - 190
                         spacing: 10
 
                         Rectangle {
                             id: todayPanel
-                            width: parent.width - 214
+                            width: parent.width - 292
                             height: parent.height
                             radius: 16
                             color: root.glassPanel
@@ -985,7 +1099,7 @@ PanelWindow {
 
                         Rectangle {
                             id: sidePanel
-                            width: 204
+                            width: 280
                             height: parent.height
                             radius: 16
                             color: "#FFFFFFFF"
@@ -1041,7 +1155,7 @@ PanelWindow {
                                 Grid {
                                     width: parent.width
                                     columns: 7
-                                    rows: 5
+                                    rows: 6
                                     rowSpacing: 4
                                     columnSpacing: 1
 
@@ -1177,46 +1291,79 @@ PanelWindow {
 
                     Row {
                         width: parent.width
-                        height: 34
-                        spacing: 10
-
-                        Text {
-                            anchors.verticalCenter: parent.verticalCenter
-                            text: root.completedCount + " of " + root.todayTotal + " completed"
-                            color: root.secondary
-                            font.pixelSize: 7
-                            font.weight: Font.DemiBold
-                        }
+                        height: 76
+                        spacing: 8
 
                         Rectangle {
-                            width: parent.width - 210
-                            height: 5
-                            anchors.verticalCenter: parent.verticalCenter
-                            radius: 3
-                            color: "#E0E6EC"
+                            width: (parent.width - 24) / 4
+                            height: parent.height
+                            radius: 14
+                            color: "#EFFFFFFF"
+                            border.width: 1
+                            border.color: root.borderSoft
 
-                            Rectangle {
-                                width: parent.width * root.progress
-                                height: parent.height
-                                radius: 3
-                                color: root.accent
-
-                                Behavior on width {
-                                    NumberAnimation {
-                                        duration: 180
-                                        easing.type: Easing.OutCubic
-                                    }
-                                }
+                            Column {
+                                anchors.fill: parent
+                                anchors.margins: 10
+                                spacing: 3
+                                Text { text: "THIS WEEK"; color: root.muted; font.pixelSize: 5; font.weight: Font.DemiBold; font.letterSpacing: 0.8 }
+                                Text { text: Math.round(root.progress * 100) + "%"; color: root.ink; font.pixelSize: 16; font.weight: Font.DemiBold }
+                                Text { text: root.todayTotal + " planned today"; color: root.secondary; font.pixelSize: 6 }
                             }
                         }
 
-                        Text {
-                            anchors.verticalCenter: parent.verticalCenter
-                            text: "TODAY"
-                            color: root.muted
-                            font.pixelSize: 6
-                            font.weight: Font.DemiBold
-                            font.letterSpacing: 1.1
+                        Rectangle {
+                            width: (parent.width - 24) / 4
+                            height: parent.height
+                            radius: 14
+                            color: "#EFFFFFFF"
+                            border.width: 1
+                            border.color: root.borderSoft
+
+                            Column {
+                                anchors.fill: parent
+                                anchors.margins: 10
+                                spacing: 3
+                                Text { text: "FOCUS TIME"; color: root.muted; font.pixelSize: 5; font.weight: Font.DemiBold; font.letterSpacing: 0.8 }
+                                Text { text: root.focusTimeLabel(); color: root.ink; font.pixelSize: 16; font.weight: Font.DemiBold }
+                                Text { text: "scheduled today"; color: root.secondary; font.pixelSize: 6 }
+                            }
+                        }
+
+                        Rectangle {
+                            width: (parent.width - 24) / 4
+                            height: parent.height
+                            radius: 14
+                            color: "#EFFFFFFF"
+                            border.width: 1
+                            border.color: root.borderSoft
+
+                            Column {
+                                anchors.fill: parent
+                                anchors.margins: 10
+                                spacing: 3
+                                Text { text: "TASKS DONE"; color: root.muted; font.pixelSize: 5; font.weight: Font.DemiBold; font.letterSpacing: 0.8 }
+                                Text { text: root.completedCount + " / " + root.todayTotal; color: root.ink; font.pixelSize: 16; font.weight: Font.DemiBold }
+                                Text { text: "today"; color: root.secondary; font.pixelSize: 6 }
+                            }
+                        }
+
+                        Rectangle {
+                            width: (parent.width - 24) / 4
+                            height: parent.height
+                            radius: 14
+                            color: "#EFFFFFFF"
+                            border.width: 1
+                            border.color: root.borderSoft
+
+                            Column {
+                                anchors.fill: parent
+                                anchors.margins: 10
+                                spacing: 3
+                                Text { text: "STREAK"; color: root.muted; font.pixelSize: 5; font.weight: Font.DemiBold; font.letterSpacing: 0.8 }
+                                Text { text: root.currentStreak + " " + (root.currentStreak === 1 ? "day" : "days"); color: root.ink; font.pixelSize: 16; font.weight: Font.DemiBold }
+                                Text { text: "keep it going"; color: root.secondary; font.pixelSize: 6 }
+                            }
                         }
                     }
                 }
@@ -1493,46 +1640,48 @@ PanelWindow {
         required property string label
         signal clicked()
 
-        width: 42
+        width: parent.width
         height: 42
         radius: 12
-        color: active ? "#F3F5F7" : "transparent"
+        color: active ? "#E8F0FC" : "transparent"
         border.width: active ? 1 : 0
-        border.color: root.borderSoft
+        border.color: "#D7E3F0"
 
-        Image {
-            anchors.centerIn: parent
-            width: 18
-            height: 18
-            source: Qt.resolvedUrl(iconSource)
-            fillMode: Image.PreserveAspectFit
-            opacity: active ? 1 : 0.72
-        }
+        Row {
+            anchors.fill: parent
+            anchors.leftMargin: 10
+            anchors.rightMargin: 10
+            spacing: 10
 
-        Rectangle {
-            visible: navMouse.containsMouse
-            z: 10
-            x: parent.width + 8
-            y: (parent.height - 24) / 2
-            width: labelText.implicitWidth + 18
-            height: 24
-            radius: 8
-            color: "#FFFFFFFF"
-            border.width: 1
-            border.color: root.borderSoft
+            Image {
+                width: 17
+                height: 17
+                anchors.verticalCenter: parent.verticalCenter
+                source: Qt.resolvedUrl(iconSource)
+                fillMode: Image.PreserveAspectFit
+                opacity: active ? 1 : 0.66
+            }
 
             Text {
-                id: labelText
-                anchors.centerIn: parent
                 text: label
-                color: root.ink
+                color: active ? root.ink : root.secondary
                 font.pixelSize: 7
-                font.weight: Font.DemiBold
+                font.weight: active ? Font.DemiBold : Font.Normal
+                anchors.verticalCenter: parent.verticalCenter
             }
         }
 
+        Rectangle {
+            visible: active
+            width: 3
+            height: 18
+            radius: 2
+            anchors.left: parent.left
+            anchors.verticalCenter: parent.verticalCenter
+            color: root.accent
+        }
+
         MouseArea {
-            id: navMouse
             anchors.fill: parent
             hoverEnabled: true
             cursorShape: Qt.PointingHandCursor
@@ -1544,7 +1693,7 @@ PanelWindow {
         required property bool completedStyle
 
         width: taskColumn.width
-        height: 64
+        height: 70
         opacity: completedStyle ? 0.58 : 1
 
         Rectangle {
@@ -1663,9 +1812,9 @@ PanelWindow {
                         height: 19
                         width: categoryText.implicitWidth + 14
                         radius: 9
-                        color: "#FFFFFFFF"
-                        border.width: 1
-                        border.color: root.borderSoft
+                        color: root.categoryFill(task.category)
+                        border.width: 0
+                        border.color: "transparent"
 
                         Text {
                             id: categoryText
@@ -1792,48 +1941,63 @@ PanelWindow {
 
     component TimelineItem: Item {
         required property var task
-        width: parent.width
-        height: 39
 
-        Row {
-            anchors.fill: parent
-            spacing: 7
+        width: parent.width
+        height: 42
+
+        Rectangle {
+            anchors.left: parent.left
+            anchors.leftMargin: 34
+            anchors.top: parent.top
+            anchors.bottom: parent.bottom
+            width: 2
+            color: root.categoryInk(task.category)
+            opacity: 0.18
+        }
+
+        Rectangle {
+            width: 7
+            height: 7
+            radius: 3.5
+            anchors.left: parent.left
+            anchors.leftMargin: 31.5
+            anchors.top: parent.top
+            anchors.topMargin: 7
+            color: root.categoryInk(task.category)
+        }
+
+        Text {
+            anchors.left: parent.left
+            anchors.top: parent.top
+            anchors.topMargin: 3
+            text: String(task.time || "—").split(" – ")[0]
+            color: root.secondary
+            font.pixelSize: 6
+            width: 26
+        }
+
+        Column {
+            anchors.left: parent.left
+            anchors.leftMargin: 48
+            anchors.right: parent.right
+            anchors.top: parent.top
+            anchors.topMargin: 1
+            spacing: 2
 
             Text {
-                text: String(task.time || "—").split(" – ")[0]
-                color: root.secondary
+                width: parent.width
+                text: task.title
+                color: root.ink
                 font.pixelSize: 6
-                width: 32
-                anchors.verticalCenter: parent.verticalCenter
+                font.weight: Font.DemiBold
+                elide: Text.ElideRight
             }
 
-            Rectangle {
-                width: 5
-                height: 5
-                radius: 2.5
-                color: root.accent
-                anchors.verticalCenter: parent.verticalCenter
-            }
-
-            Column {
-                anchors.verticalCenter: parent.verticalCenter
-                spacing: 2
-                width: parent.width - 52
-
-                Text {
-                    width: parent.width
-                    text: task.title
-                    color: root.ink
-                    font.pixelSize: 6
-                    font.weight: Font.DemiBold
-                    elide: Text.ElideRight
-                }
-
-                Text {
-                    text: task.category
-                    color: root.muted
-                    font.pixelSize: 5
-                }
+            Text {
+                text: task.category
+                color: root.categoryInk(task.category)
+                font.pixelSize: 5
+                font.weight: Font.DemiBold
             }
         }
     }
