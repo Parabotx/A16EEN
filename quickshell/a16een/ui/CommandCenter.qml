@@ -13,6 +13,7 @@ PanelWindow {
     property bool controlViewOpen: false
     property string controlDetail: ""
     property bool iconThemeViewOpen: false
+    property bool workspacePresetViewOpen: false
     property bool doNotDisturb: false
     property string commandText: "/"
     property int selectedCommandIndex: 0
@@ -52,7 +53,7 @@ PanelWindow {
     signal timeShowSecondsRequested(bool enabled)
     signal iconThemeChanged(string themeId)
 
-    readonly property color surface: root.widgetViewOpen || root.controlViewOpen || root.iconThemeViewOpen ? "#FFFFFF" : "#000000"
+    readonly property color surface: root.widgetViewOpen || root.controlViewOpen || root.iconThemeViewOpen || root.workspacePresetViewOpen ? "#FFFFFF" : "#000000"
     readonly property color borderColor: "#1A1A1A"
     readonly property color fieldBackground: "#0A0A0A"
     readonly property color fieldBorder: "#1C1C1C"
@@ -79,6 +80,7 @@ PanelWindow {
         { id: "battery", name: "battery", keywords: ["battery", "power", "charge", "charging"] },
         { id: "dnd", name: "do not disturb", keywords: ["do not disturb", "dnd", "focus", "notifications"] },
         { id: "icons", name: "icons", keywords: ["icons", "icon theme", "icon themes", "app icons", "folder icons", "appearance"] },
+        { id: "presets", name: "workspace presets", keywords: ["workspace presets", "preset", "workspace setup", "app sets", "app group", "session setup", "launch setup"] },
         { id: "widgets", name: "widgets", keywords: ["widgets", "widget", "clock", "time", "day", "date", "desktop", "modules"] },
         { id: "restart-shell", name: "restart-shell", keywords: ["restart", "shell", "reload", "quickshell"] },
         { id: "doctor", name: "doctor", keywords: ["doctor", "diagnostics", "health"] }
@@ -335,6 +337,29 @@ PanelWindow {
 
     function closeIconThemeView() {
         root.iconThemeViewOpen = false
+        root.workspacePresetViewOpen = false
+        root.commandText = "/"
+        root.selectedCommandIndex = 0
+        Qt.callLater(() => search.forceActiveFocus())
+    }
+
+    function openWorkspacePresetView() {
+        root.powerViewOpen = false
+        root.widgetViewOpen = false
+        root.controlViewOpen = false
+        root.controlDetail = ""
+        root.iconThemeViewOpen = false
+        root.workspacePresetViewOpen = true
+        root.commandText = "/presets"
+        root.selectedCommandIndex = 0
+        Qt.callLater(() => {
+            if (root.workspacePresetViewOpen)
+                workspacePresetSection.forceActiveFocus()
+        })
+    }
+
+    function closeWorkspacePresetView() {
+        root.workspacePresetViewOpen = false
         root.commandText = "/"
         root.selectedCommandIndex = 0
         Qt.callLater(() => search.forceActiveFocus())
@@ -466,11 +491,11 @@ PanelWindow {
         width: root.powerViewOpen || root.widgetViewOpen || root.controlViewOpen || root.iconThemeViewOpen
             ? Math.min(940, parent.width - 72)
             : Math.min(500, parent.width - 48)
-        height: root.powerViewOpen || root.widgetViewOpen || root.controlViewOpen || root.iconThemeViewOpen
+        height: root.powerViewOpen || root.widgetViewOpen || root.controlViewOpen || root.iconThemeViewOpen || root.workspacePresetViewOpen
             ? Math.min(640, parent.height - 80)
             : 326
         anchors.centerIn: parent
-        anchors.verticalCenterOffset: root.powerViewOpen || root.controlViewOpen || root.iconThemeViewOpen ? 0 : 185
+        anchors.verticalCenterOffset: root.powerViewOpen || root.controlViewOpen || root.iconThemeViewOpen || root.workspacePresetViewOpen ? 0 : 185
         radius: root.powerViewOpen || root.controlViewOpen ? 26 : 18
         color: root.surface
         border.width: 1
@@ -497,6 +522,13 @@ PanelWindow {
             z: -1
         }
 
+        WorkspacePresetsSection {
+            id: workspacePresetSection
+            anchors.fill: parent
+            visible: root.workspacePresetViewOpen
+            active: root.workspacePresetViewOpen
+            onBackRequested: root.closeWorkspacePresetView()
+        }
         IconThemeSection {
             id: iconThemeSection
             anchors.fill: parent
@@ -555,7 +587,7 @@ PanelWindow {
         // Normal command search.
         Item {
             anchors.fill: parent
-            visible: !root.powerViewOpen && !root.widgetViewOpen && !root.controlViewOpen && !root.iconThemeViewOpen
+            visible: !root.powerViewOpen && !root.widgetViewOpen && !root.controlViewOpen && !root.iconThemeViewOpen && !root.workspacePresetViewOpen
 
             Rectangle {
                 id: searchBox
@@ -580,7 +612,7 @@ PanelWindow {
                     selectedTextColor: root.primaryText
                     font.pixelSize: 12
                     clip: true
-                    focus: root.opened && !root.powerViewOpen && !root.widgetViewOpen && !root.controlViewOpen && !root.iconThemeViewOpen
+                    focus: root.opened && !root.powerViewOpen && !root.widgetViewOpen && !root.controlViewOpen && !root.iconThemeViewOpen && !root.workspacePresetViewOpen
                     activeFocusOnPress: true
                     verticalAlignment: Text.AlignVCenter
                     selectByMouse: true
@@ -669,6 +701,37 @@ PanelWindow {
                     }
                 }
 
+                Rectangle {
+                    id: workspacePresetButton
+                    anchors.right: parent.right
+                    anchors.rightMargin: 90
+                    anchors.verticalCenter: parent.verticalCenter
+                    width: 36
+                    height: 36
+                    radius: 10
+                    color: workspacePresetMouse.containsMouse ? "#161616" : "#0E0E0E"
+                    border.width: 1
+                    border.color: workspacePresetMouse.containsMouse ? "#303030" : "#1C1C1C"
+
+                    Image {
+                        anchors.centerIn: parent
+                        width: 16
+                        height: 16
+                        source: Qt.resolvedUrl("../assets/icons/folder.svg")
+                        fillMode: Image.PreserveAspectFit
+                        smooth: true
+                        opacity: 0.88
+                    }
+
+                    MouseArea {
+                        id: workspacePresetMouse
+                        anchors.fill: parent
+                        hoverEnabled: true
+                        acceptedButtons: Qt.LeftButton
+                        cursorShape: Qt.PointingHandCursor
+                        onClicked: root.openWorkspacePresetView()
+                    }
+                }
                 Rectangle {
                     id: controlsButton
                     anchors.right: parent.right
@@ -1413,6 +1476,9 @@ PanelWindow {
         case "icons":
             root.openIconThemeView()
             break
+        case "presets":
+            root.openWorkspacePresetView()
+            break
         case "wifi":
         case "bluetooth":
         case "audio":
@@ -1441,7 +1507,7 @@ PanelWindow {
             root.controlViewOpen = false
             root.controlDetail = ""
             Qt.callLater(() => widgetSection.forceActiveFocus())
-        } else if (root.opened && !root.powerViewOpen && !root.controlViewOpen && !root.iconThemeViewOpen) {
+        } else if (root.opened && !root.powerViewOpen && !root.controlViewOpen && !root.iconThemeViewOpen && !root.workspacePresetViewOpen) {
             Qt.callLater(() => search.forceActiveFocus())
         }
     }
@@ -1452,6 +1518,7 @@ PanelWindow {
             root.controlViewOpen = false
             root.controlDetail = ""
             root.iconThemeViewOpen = false
+            root.workspacePresetViewOpen = false
             root.commandText = "/"
             root.selectedCommandIndex = 0
             return
