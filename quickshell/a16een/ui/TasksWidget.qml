@@ -1221,6 +1221,7 @@ PanelWindow {
 
             Rectangle {
                 id: checkBox
+                z: 2
                 width: 18
                 height: 18
                 anchors.left: parent.left
@@ -1307,6 +1308,7 @@ PanelWindow {
 
             Rectangle {
                 id: menuButton
+                z: 2
                 width: 26
                 height: 26
                 anchors.right: parent.right
@@ -1404,7 +1406,7 @@ PanelWindow {
             MouseArea {
                 id: rowMouse
                 anchors.fill: parent
-                z: -1
+                z: 0
                 hoverEnabled: true
                 cursorShape: Qt.PointingHandCursor
                 onClicked: root.openEditTask(task.id)
