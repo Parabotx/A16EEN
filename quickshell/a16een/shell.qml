@@ -622,6 +622,7 @@ ShellRoot {
         calendarWidgetEnabled: root.calendarWidgetEnabled
         pulseWidgetEnabled: root.pulseWidgetEnabled
         workspaceWidgetEnabled: root.workspaceWidgetEnabled
+        tasksWidgetEnabled: root.tasksWidgetEnabled
         timeUse24Hour: root.timeUse24Hour
         timeShowSeconds: root.timeShowSeconds
         doNotDisturb: root.doNotDisturb
@@ -691,6 +692,7 @@ ShellRoot {
         }
         onPulseWidgetEnabledRequested: root.pulseWidgetEnabled = enabled
         onWorkspaceWidgetEnabledRequested: root.workspaceWidgetEnabled = enabled
+        onTasksWidgetEnabledRequested: root.tasksWidgetEnabled = enabled
         onTimeUse24HourRequested: root.timeUse24Hour = enabled
         onTimeShowSecondsRequested: root.timeShowSeconds = enabled
 
