@@ -31,6 +31,20 @@ jobs:
           bash -n scripts/a16een-screenshot
           bash -n scripts/a16een-control
           bash -n scripts/a16een-icon-theme
+          bash -n scripts/a16een-workspace-preset
+          grep -Fq 'a16een-workspace-preset' scripts/install.sh
+          grep -Fq 'WorkspacePresetsSection.qml' scripts/install.sh
+          grep -Fq 'workspace presets' quickshell/a16een/ui/CommandCenter.qml
+          grep -Fq 'id: "presets"' quickshell/a16een/ui/CommandCenter.qml
+          grep -Fq 'WorkspacePresetsSection {' quickshell/a16een/ui/CommandCenter.qml
+          grep -Fq 'target: "workspace-presets"' quickshell/a16een/shell.qml
+          grep -Fq 'qs ipc call workspace-presets open' scripts/a16een
+          grep -Fq 'DesktopEntries.applications.values' quickshell/a16een/ui/WorkspacePresetsSection.qml
+          grep -Fq 'CHOOSE APPLICATION' quickshell/a16een/ui/WorkspacePresetsSection.qml
+          grep -Fq 'CHOOSE WORKSPACE' quickshell/a16een/ui/WorkspacePresetsSection.qml
+          grep -Fq 'a16een-workspace-preset", "open"' quickshell/a16een/ui/WorkspacePresetsSection.qml
+          grep -Fq 'MoveWindowToWorkspace' scripts/a16een-workspace-preset
+          grep -Fq 'focus-workspace' scripts/a16een-workspace-preset
           ! grep -Fq 'papirus-icon-theme' scripts/install.sh
           ! grep -Fq 'breeze-icons' scripts/install.sh
           ! grep -Fq 'elementary-icon-theme' scripts/install.sh
