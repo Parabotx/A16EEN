@@ -33,7 +33,7 @@ jobs:
           bash -n scripts/a16een-icon-theme
           bash -n scripts/a16een-workspace-preset
           grep -Fq 'a16een-workspace-preset' scripts/install.sh
-          grep -Fq 'WorkspacePresetsSection.qml' scripts/install.sh
+          grep -Fq 'cp "$ROOT_DIR/quickshell/a16een/ui/"*.qml "$TMP_DEPLOY/ui/"' scripts/install.sh
           grep -Fq 'workspace presets' quickshell/a16een/ui/CommandCenter.qml
           grep -Fq 'id: "presets"' quickshell/a16een/ui/CommandCenter.qml
           grep -Fq 'WorkspacePresetsSection {' quickshell/a16een/ui/CommandCenter.qml
