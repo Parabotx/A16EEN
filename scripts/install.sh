@@ -296,6 +296,7 @@ sudo install -Dm755 "$ROOT_DIR/scripts/a16een-wallpaper" /usr/local/bin/a16een-w
 sudo install -Dm755 "$ROOT_DIR/scripts/a16een-screenshot" /usr/local/bin/a16een-screenshot
 sudo install -Dm755 "$ROOT_DIR/scripts/a16een-control" /usr/local/bin/a16een-control
 sudo install -Dm755 "$ROOT_DIR/scripts/a16een-icon-theme" /usr/local/bin/a16een-icon-theme
+sudo install -Dm755 "$ROOT_DIR/scripts/a16een-workspace-preset" /usr/local/bin/a16een-workspace-preset
 
 # The first revision with icon themes could leave a theme selected that is
 # expensive or incomplete. Reset once to the system default for a clean,
