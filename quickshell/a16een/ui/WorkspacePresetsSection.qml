@@ -83,7 +83,7 @@ Item {
         const values = [
             entry.startupClass || "",
             entry.startupWmClass || "",
-            String(entry.id || "").replace(/\\.desktop$/i, ""),
+            String(entry.id || "").replace(/\.desktop$/i, ""),
             entry.command && entry.command.length
                 ? String(entry.command[0] || "").split("/").pop()
                 : ""
@@ -391,11 +391,12 @@ Item {
         anchors.fill: parent
         anchors.margins: 26
 
-        Row {
+        RowLayout {
             id: header
             width: parent.width
             height: 54
             spacing: 14
+            anchors.horizontalCenter: parent.horizontalCenter
 
             Rectangle {
                 width: 38
@@ -446,9 +447,8 @@ Item {
             }
 
             Item {
-                width: 1
-                height: 1
                 Layout.fillWidth: true
+                Layout.preferredHeight: 1
             }
 
             Rectangle {
