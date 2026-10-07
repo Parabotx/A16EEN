@@ -256,6 +256,7 @@ PanelWindow {
 
     function openPowerView() {
         root.widgetsCloseRequested()
+        root.workspacePresetViewOpen = false
         root.controlViewOpen = false
         root.powerViewOpen = true
         root.iconThemeViewOpen = false
@@ -287,6 +288,7 @@ PanelWindow {
 
     function openControlView() {
         root.powerViewOpen = false
+        root.workspacePresetViewOpen = false
         root.widgetViewOpen = false
         root.iconThemeViewOpen = false
         root.controlViewOpen = true
@@ -323,6 +325,7 @@ PanelWindow {
 
     function openIconThemeView() {
         root.powerViewOpen = false
+        root.workspacePresetViewOpen = false
         root.widgetViewOpen = false
         root.controlViewOpen = false
         root.controlDetail = ""
@@ -367,6 +370,7 @@ PanelWindow {
 
     function openWidgetView() {
         root.powerViewOpen = false
+        root.workspacePresetViewOpen = false
         root.controlViewOpen = false
         root.iconThemeViewOpen = false
         root.commandText = "/widgets"
@@ -488,7 +492,7 @@ PanelWindow {
 
     Rectangle {
         id: card
-        width: root.powerViewOpen || root.widgetViewOpen || root.controlViewOpen || root.iconThemeViewOpen
+        width: root.powerViewOpen || root.widgetViewOpen || root.controlViewOpen || root.iconThemeViewOpen || root.workspacePresetViewOpen
             ? Math.min(940, parent.width - 72)
             : Math.min(500, parent.width - 48)
         height: root.powerViewOpen || root.widgetViewOpen || root.controlViewOpen || root.iconThemeViewOpen || root.workspacePresetViewOpen
@@ -496,10 +500,10 @@ PanelWindow {
             : 326
         anchors.centerIn: parent
         anchors.verticalCenterOffset: root.powerViewOpen || root.controlViewOpen || root.iconThemeViewOpen || root.workspacePresetViewOpen ? 0 : 185
-        radius: root.powerViewOpen || root.controlViewOpen ? 26 : 18
+        radius: root.powerViewOpen || root.controlViewOpen || root.iconThemeViewOpen || root.workspacePresetViewOpen ? 26 : 18
         color: root.surface
         border.width: 1
-        border.color: root.widgetViewOpen || root.controlViewOpen ? "#E1E6EC" : "#202020"
+        border.color: root.widgetViewOpen || root.controlViewOpen || root.iconThemeViewOpen || root.workspacePresetViewOpen ? "#E1E6EC" : "#202020"
         clip: true
 
         Behavior on width {
@@ -517,7 +521,7 @@ PanelWindow {
         Rectangle {
             anchors.fill: parent
             anchors.margins: -5
-            radius: root.powerViewOpen || root.controlViewOpen || root.iconThemeViewOpen ? 31 : 23
+            radius: root.powerViewOpen || root.controlViewOpen || root.iconThemeViewOpen || root.workspacePresetViewOpen ? 31 : 23
             color: "#16000000"
             z: -1
         }
@@ -1532,7 +1536,7 @@ PanelWindow {
         search.text = "/"
 
         Qt.callLater(() => {
-            if (root.opened && !root.widgetViewOpen && !root.powerViewOpen && !root.controlViewOpen && !root.iconThemeViewOpen)
+            if (root.opened && !root.widgetViewOpen && !root.powerViewOpen && !root.controlViewOpen && !root.iconThemeViewOpen && !root.workspacePresetViewOpen)
                 search.forceActiveFocus()
         })
     }
