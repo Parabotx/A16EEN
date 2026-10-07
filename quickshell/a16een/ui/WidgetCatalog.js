@@ -28,5 +28,12 @@ var definitions = [
         subtitle: "Workspace awareness",
         detail: "Current workspace map",
         defaultEnabled: false
+    },
+    {
+        id: "tasks",
+        title: "TASKS",
+        subtitle: "Desktop task manager",
+        detail: "Today's tasks with progress and persistence",
+        defaultEnabled: false
     }
 ]
