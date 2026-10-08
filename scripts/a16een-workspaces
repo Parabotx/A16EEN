@@ -2,13 +2,12 @@
 set -euo pipefail
 
 readonly STATE_DIR="${XDG_STATE_HOME:-$HOME/.local/state}/a16een"
-readonly COUNT_FILE="$STATE_DIR/workspace-count"
-readonly CONFIG_FILE="${XDG_CONFIG_HOME:-$HOME/.config}/a16een/niri/config.kdl"
+readonly REGISTRY_FILE="$STATE_DIR/workspaces.json"
+readonly LEGACY_COUNT_FILE="$STATE_DIR/workspace-count"
 readonly MIN_COUNT=2
 readonly MAX_COUNT=9
-readonly DEFAULT_COUNT=6
 
-readonly WORKSPACES=(
+readonly DEFAULT_IDS=(
     "home"
     "code"
     "web"
@@ -20,219 +19,230 @@ readonly WORKSPACES=(
     "lab"
 )
 
+readonly DEFAULT_NAMES=(
+    "HOME"
+    "CODE"
+    "WEB"
+    "COMMS"
+    "STUDIO"
+    "MUSIC"
+    "GAMES"
+    "FILES"
+    "LAB"
+)
+
+readonly DEFAULT_DESCRIPTIONS=(
+    "Main workspace"
+    "Development workspace"
+    "Browser workspace"
+    "Communication workspace"
+    "Creative workspace"
+    "Music workspace"
+    "Gaming workspace"
+    "Files & storage"
+    "Experiments & tools"
+)
+
+readonly DEFAULT_ICONS=(
+    "house.svg"
+    "code.svg"
+    "globe.svg"
+    "messages-square.svg"
+    "sparkles.svg"
+    "music.svg"
+    "gamepad-2.svg"
+    "folder.svg"
+    "terminal.svg"
+)
+
 die() {
     printf 'A16EEN workspaces: %s\n' "$*" >&2
     exit 1
 }
 
-current_count() {
-    local count=""
-    if [[ -s "$COUNT_FILE" ]]; then
-        count="$(head -n 1 "$COUNT_FILE" | tr -d '[:space:]')"
-    fi
-
-    if [[ "$count" =~ ^[0-9]+$ ]] && (( count >= MIN_COUNT && count <= MAX_COUNT )); then
-        printf '%s\n' "$count"
-    else
-        printf '%s\n' "$DEFAULT_COUNT"
-    fi
+require_tools() {
+    command -v jq >/dev/null 2>&1 || die "jq is required."
+    command -v niri >/dev/null 2>&1 || die "niri is required."
 }
 
-configured_count() {
-    [[ -f "$CONFIG_FILE" ]] || {
-        printf '0\n'
-        return
-    }
-
-    awk '
-        $0 == "// A16EEN WORKSPACES BEGIN" { inside=1; next }
-        $0 == "// A16EEN WORKSPACES END" { inside=0; next }
-        inside && $1 == "workspace" { count++ }
-        END { print count + 0 }
-    ' "$CONFIG_FILE"
+ensure_state() {
+    mkdir -p "$STATE_DIR"
 }
 
-validate_count() {
-    local count="$1"
-    [[ "$count" =~ ^[0-9]+$ ]] || die "workspace count must be a number."
+write_default_registry() {
+    local tmp="$STATE_DIR/workspaces.json.XXXXXX"
+    cat > "$tmp" <<'JSON'
+[
+  {"id":"home","name":"HOME","description":"Main workspace","icon":"house.svg","builtin":true},
+  {"id":"code","name":"CODE","description":"Development workspace","icon":"code.svg","builtin":true},
+  {"id":"web","name":"WEB","description":"Browser workspace","icon":"globe.svg","builtin":true},
+  {"id":"comms","name":"COMMS","description":"Communication workspace","icon":"messages-square.svg","builtin":true},
+  {"id":"studio","name":"STUDIO","description":"Creative workspace","icon":"sparkles.svg","builtin":true},
+  {"id":"music","name":"MUSIC","description":"Music workspace","icon":"music.svg","builtin":true}
+]
+JSON
+    mv -f "$tmp" "$REGISTRY_FILE"
+}
+
+ensure_registry() {
+    ensure_state
+
+    if [[ ! -s "$REGISTRY_FILE" ]]; then
+        write_default_registry
+    fi
+
+    jq empty "$REGISTRY_FILE" >/dev/null 2>&1 ||
+        die "workspace registry is invalid: $REGISTRY_FILE"
+
+    local count
+    count="$(jq 'length' "$REGISTRY_FILE")"
     (( count >= MIN_COUNT && count <= MAX_COUNT )) ||
-        die "workspace count must be between $MIN_COUNT and $MAX_COUNT."
+        die "workspace registry must contain between $MIN_COUNT and $MAX_COUNT workspaces."
+
+    printf '%s\n' "$count" > "$LEGACY_COUNT_FILE"
 }
 
-write_workspace_block() {
-    local count="$1"
-    local file="$2"
-    local i=0
-
-    while (( i < count )); do
-        printf 'workspace "%s"\n' "${WORKSPACES[$i]}" >> "$file"
-        i=$((i + 1))
-    done
+list_json() {
+    ensure_registry
+    cat "$REGISTRY_FILE"
 }
 
-write_keybind_block() {
-    local count="$1"
-    local file="$2"
-    local i=0
-    local key
-
-    while (( i < count )); do
-        key=$((i + 1))
-        printf '    Mod+%d { focus-workspace "%s"; }\n' "$key" "${WORKSPACES[$i]}" >> "$file"
-        i=$((i + 1))
-    done
-
-    printf '\n' >> "$file"
-
-    i=0
-    while (( i < count )); do
-        key=$((i + 1))
-        printf '    Mod+Shift+%d { move-column-to-workspace "%s"; }\n' "$key" "${WORKSPACES[$i]}" >> "$file"
-        i=$((i + 1))
-    done
+current_count() {
+    ensure_registry
+    jq 'length' "$REGISTRY_FILE"
 }
 
-replace_block() {
-    local source="$1"
-    local destination="$2"
-    local begin="$3"
-    local end="$4"
-    local block="$5"
-
-    awk -v begin="$begin" -v end="$end" -v block="$block" '
-        $0 == begin {
-            print
-            while ((getline line < block) > 0)
-                print line
-            close(block)
-            inside=1
-            next
-        }
-        $0 == end {
-            inside=0
-            print
-            next
-        }
-        !inside { print }
-    ' "$source" > "$destination"
+slugify() {
+    local value="$1"
+    value="$(printf '%s' "$value" | tr '[:upper:]' '[:lower:]')"
+    value="$(printf '%s' "$value" | sed -E 's/[^a-z0-9]+/-/g; s/^-+//; s/-+$//')"
+    printf '%s' "$value"
 }
 
-prepare_removed_workspaces() {
-    local old_count="$1"
-    local new_count="$2"
-    local target_name="${WORKSPACES[$((new_count - 1))]}"
-    local workspaces_json windows_json workspace_id window_id
-    local i name ids
+validate_name() {
+    local name="$1"
+    [[ -n "$name" ]] || die "workspace name cannot be empty."
+    (( ${#name} <= 28 )) || die "workspace name is too long (maximum 28 characters)."
+}
 
-    (( new_count < old_count )) || return 0
+validate_icon() {
+    local icon="$1"
+    [[ "$icon" =~ ^[a-z0-9-]+\.svg$ ]] ||
+        die "invalid workspace icon."
+}
 
-    command -v niri >/dev/null 2>&1 || return 0
-    command -v jq >/dev/null 2>&1 || return 0
+add_workspace() {
+    require_tools
+    ensure_registry
 
-    workspaces_json="$(niri msg --json workspaces 2>/dev/null || true)"
-    windows_json="$(niri msg --json windows 2>/dev/null || true)"
-    [[ -n "$workspaces_json" && -n "$windows_json" ]] || return 0
+    [[ $# -eq 2 ]] || die "usage: a16een-workspaces add <name> <icon.svg>"
 
-    # Removed workspaces are migrated into the new last active workspace first.
-    # This keeps workspace removal functional even when old slots contain windows.
-    for ((i=new_count; i<old_count; i++)); do
-        name="${WORKSPACES[$i]}"
-        workspace_id="$(jq -r --arg name "$name" '.[] | select(.name == $name) | .id' <<<"$workspaces_json" | head -n 1)"
-        [[ -n "$workspace_id" && "$workspace_id" != "null" ]] || continue
+    local display_name="$1"
+    local icon="$2"
+    validate_name "$display_name"
+    validate_icon "$icon"
 
-        ids="$(jq -r --argjson workspace_id "$workspace_id" '.[] | select(.workspace_id == $workspace_id) | .id' <<<"$windows_json")"
+    local count
+    count="$(jq 'length' "$REGISTRY_FILE")"
+    (( count < MAX_COUNT )) ||
+        die "workspace limit reached ($MAX_COUNT)."
+
+    local id
+    id="$(slugify "$display_name")"
+    [[ -n "$id" ]] || die "workspace name must contain letters or numbers."
+
+    if jq -e --arg id "$id" '.[] | select(.id == $id)' "$REGISTRY_FILE" >/dev/null; then
+        die "a workspace named '$display_name' already exists."
+    fi
+
+    # Niri always keeps an empty workspace at the bottom. Focus it, then give it
+    # a persistent name through IPC. This avoids rewriting/reloading the config.
+    niri msg action focus-workspace 999 >/dev/null 2>&1 ||
+        die "could not reach Niri's empty workspace."
+
+    niri msg action set-workspace-name "$id" >/dev/null 2>&1 ||
+        die "Niri could not create workspace '$display_name'."
+
+    local tmp="$STATE_DIR/workspaces.json.XXXXXX"
+    jq --arg id "$id"        --arg name "$display_name"        --arg icon "$icon"        '. + [{"id":$id,"name":$name,"description":"Custom workspace","icon":$icon,"builtin":false}]'        "$REGISTRY_FILE" > "$tmp"
+    mv -f "$tmp" "$REGISTRY_FILE"
+
+    printf '%s\n' "$(jq 'length' "$REGISTRY_FILE")" > "$LEGACY_COUNT_FILE"
+    printf '%s\n' "$id"
+}
+
+remove_workspace() {
+    require_tools
+    ensure_registry
+
+    [[ $# -eq 1 ]] || die "usage: a16een-workspaces remove <id>"
+
+    local id="$1"
+    local count
+    count="$(jq 'length' "$REGISTRY_FILE")"
+    (( count > MIN_COUNT )) ||
+        die "at least $MIN_COUNT workspaces must remain."
+
+    jq -e --arg id "$id" '.[] | select(.id == $id)' "$REGISTRY_FILE" >/dev/null ||
+        die "workspace '$id' was not found."
+
+    local target
+    target="$(jq -r --arg id "$id" '[.[] | select(.id != $id)][0].id' "$REGISTRY_FILE")"
+    [[ -n "$target" && "$target" != "null" ]] || die "no workspace is available for migration."
+
+    # Move any windows out before un-naming the workspace so removal is safe.
+    local ws_json windows_json workspace_id window_ids window_id
+    ws_json="$(niri msg -j workspaces 2>/dev/null || true)"
+    windows_json="$(niri msg -j windows 2>/dev/null || true)"
+
+    workspace_id="$(jq -r --arg name "$id" '.[] | select(.name == $name) | .id' <<<"$ws_json" | head -n 1)"
+    if [[ -n "$workspace_id" && "$workspace_id" != "null" && -n "$windows_json" ]]; then
+        window_ids="$(jq -r --argjson workspace_id "$workspace_id" '.[] | select(.workspace_id == $workspace_id) | .id' <<<"$windows_json")"
         while IFS= read -r window_id; do
             [[ -n "$window_id" ]] || continue
-            niri msg action move-window-to-workspace \
-                --window-id "$window_id" --focus false "$target_name" >/dev/null 2>&1 || \
-                die "could not move a window out of removed workspace '$name'."
-        done <<<"$ids"
-    done
+            niri msg action move-window-to-workspace                 --window-id "$window_id" "$target" >/dev/null 2>&1 ||
+                die "could not move a window out of '$id'."
+        done <<<"$window_ids"
+    fi
+
+    niri msg action focus-workspace "$id" >/dev/null 2>&1 ||
+        die "could not focus workspace '$id'."
+
+    niri msg action unset-workspace-name >/dev/null 2>&1 ||
+        die "Niri could not remove workspace '$id'."
+
+    local tmp="$STATE_DIR/workspaces.json.XXXXXX"
+    jq --arg id "$id" '[.[] | select(.id != $id)]' "$REGISTRY_FILE" > "$tmp"
+    mv -f "$tmp" "$REGISTRY_FILE"
+
+    printf '%s\n' "$(jq 'length' "$REGISTRY_FILE")" > "$LEGACY_COUNT_FILE"
+    printf '%s\n' "$id"
 }
 
-set_count() {
-    local new_count="$1"
-    validate_count "$new_count"
-
-    [[ -f "$CONFIG_FILE" ]] || die "Niri config was not found at $CONFIG_FILE."
-    grep -Fqx '// A16EEN WORKSPACES BEGIN' "$CONFIG_FILE" || die "Niri config is missing A16EEN workspace markers."
-    grep -Fqx '// A16EEN WORKSPACES END' "$CONFIG_FILE" || die "Niri config is missing A16EEN workspace markers."
-    grep -Fqx '// A16EEN WORKSPACE BINDS BEGIN' "$CONFIG_FILE" || die "Niri config is missing A16EEN workspace bind markers."
-    grep -Fqx '// A16EEN WORKSPACE BINDS END' "$CONFIG_FILE" || die "Niri config is missing A16EEN workspace bind markers."
-
-    local old_count
-    if [[ -s "$COUNT_FILE" ]]; then
-        old_count="$(configured_count)"
-        if ! [[ "$old_count" =~ ^[0-9]+$ ]] || (( old_count < MIN_COUNT || old_count > MAX_COUNT )); then
-            old_count="$(current_count)"
-        fi
-    else
-        old_count="$(current_count)"
-    fi
-
-    if (( new_count == old_count )); then
-        printf '%s\n' "$old_count" > "$COUNT_FILE"
-        return 0
-    fi
-
-    prepare_removed_workspaces "$old_count" "$new_count"
-
-    local workspace_block keybind_block tmp_config tmp_workspace tmp_keybind backup
-
-    tmp_workspace="$(mktemp)"
-    tmp_keybind="$(mktemp)"
-    tmp_config="$(mktemp)"
-    backup="$(mktemp)"
-
-    cleanup() {
-        rm -f "$tmp_workspace" "$tmp_keybind" "$tmp_config" "$backup"
-    }
-    trap cleanup EXIT INT TERM
-
-    write_workspace_block "$new_count" "$tmp_workspace"
-    write_keybind_block "$new_count" "$tmp_keybind"
-
-    replace_block         "$CONFIG_FILE"         "$backup"         '// A16EEN WORKSPACES BEGIN'         '// A16EEN WORKSPACES END'         "$tmp_workspace"
-
-    replace_block         "$backup"         "$tmp_config"         '// A16EEN WORKSPACE BINDS BEGIN'         '// A16EEN WORKSPACE BINDS END'         "$tmp_keybind"
-
-    if command -v niri >/dev/null 2>&1; then
-        niri validate --config "$tmp_config" >/dev/null ||
-            die "Niri rejected the new workspace configuration."
-    fi
-
-    cp "$CONFIG_FILE" "$backup"
-    cp "$tmp_config" "$CONFIG_FILE"
-
-    if command -v niri >/dev/null 2>&1; then
-        if ! niri msg action load-config-file >/dev/null 2>&1; then
-            cp "$backup" "$CONFIG_FILE"
-            niri msg action load-config-file >/dev/null 2>&1 || true
-            die "Niri could not reload the new workspace configuration."
-        fi
-    fi
-
-    mkdir -p "$STATE_DIR"
-    printf '%s\n' "$new_count" > "$COUNT_FILE"
-    printf 'A16EEN workspaces: %s active named workspaces.\n' "$new_count"
-}
-
-apply_current() {
-    set_count "$(current_count)"
+apply_registry() {
+    # Compatibility entry point. The registry is already live through Niri IPC.
+    ensure_registry
 }
 
 case "${1:-current}" in
     current)
         current_count
         ;;
-    set)
-        [[ $# -eq 2 ]] || die "usage: a16een-workspaces set <2-9>"
-        set_count "$2"
+    list)
+        list_json
+        ;;
+    add)
+        shift
+        add_workspace "$@"
+        ;;
+    remove)
+        shift
+        remove_workspace "$@"
         ;;
     apply)
-        apply_current
+        apply_registry
         ;;
     *)
-        die "usage: a16een-workspaces {current|set|apply}"
+        die "usage: a16een-workspaces {current|list|add|remove|apply}"
         ;;
 esac
