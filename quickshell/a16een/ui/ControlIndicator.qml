@@ -8,6 +8,9 @@ PanelWindow {
 
     required property var modelData
 
+    readonly property string eventPath: (Quickshell.stateDir || (Quickshell.env("XDG_STATE_HOME") || (Quickshell.env("HOME") + "/.local/state")))
+        + "/a16een/control-indicator"
+
     property string mode: ""
     property real level: 0
     property bool mounted: false
@@ -33,7 +36,6 @@ PanelWindow {
     WlrLayershell.layer: WlrLayer.Overlay
     WlrLayershell.namespace: "a16een-control-indicator"
 
-    // Keep the transparent fullscreen surface from stealing clicks.
     mask: Region {
         x: Math.round((root.width - 182) / 2)
         y: 11
@@ -83,6 +85,29 @@ PanelWindow {
                     easing.type: Easing.OutCubic
                 }
             }
+        }
+    }
+
+    FileView {
+        id: controlEvent
+
+        path: root.eventPath
+        watchChanges: true
+
+        onFileChanged: reload()
+
+        onTextChanged: {
+            const payload = String(text).trim()
+            if (!payload.length)
+                return
+
+            const parts = payload.split("|")
+            const kind = parts[0]
+
+            if (kind === "volume")
+                root.showVolume()
+            else if (kind === "brightness")
+                root.showBrightness()
         }
     }
 
@@ -142,7 +167,6 @@ PanelWindow {
     }
 
     function reveal(kind, value) {
-        // Ignore a slower command result if a newer control type was requested.
         if (root.mode !== kind)
             return
 
