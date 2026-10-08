@@ -2,6 +2,8 @@
 set -euo pipefail
 
 readonly ICON_VERSION="1.50.0"
+# Bump when the runtime icon assets need a one-time re-sync/migration.
+readonly ICON_SYNC_REVISION="2"
 readonly ICON_BASE_URL="https://raw.githubusercontent.com/lucide-icons/lucide/${ICON_VERSION}/icons"
 readonly ICON_ROOT="${XDG_CONFIG_HOME:-$HOME/.config}/a16een/quickshell/a16een/assets/icons"
 
@@ -165,4 +167,4 @@ for icon in "${ICONS[@]}"; do
     install -Dm644 "$tmp_dir/$icon" "$ICON_ROOT/$icon"
 done
 
-printf "A16EEN icons synced from Lucide %s (%d/%d requested icons).\n"     "$ICON_VERSION" "$successful" "${#ICONS[@]}"
+printf "A16EEN icons synced from Lucide %s (revision %s; %d/%d requested icons).\n"     "$ICON_VERSION" "$ICON_SYNC_REVISION" "$successful" "${#ICONS[@]}"
