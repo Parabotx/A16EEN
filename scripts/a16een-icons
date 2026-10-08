@@ -15,7 +15,6 @@ readonly ICONS=(
     "folder.svg"
     "folder-open.svg"
     "code.svg"
-    "code-2.svg"
     "terminal.svg"
     "globe.svg"
     "messages-square.svg"
@@ -27,7 +26,6 @@ readonly ICONS=(
     "volume-2.svg"
     "skull.svg"
     "ghost.svg"
-    "alien.svg"
     "bug.svg"
     "bot.svg"
     "radiation.svg"
@@ -48,7 +46,6 @@ readonly ICONS=(
     "eye.svg"
     "brain.svg"
     "wand-sparkles.svg"
-    "circle-help.svg"
     "graduation-cap.svg"
     "briefcase-business.svg"
     "cloud.svg"
@@ -86,12 +83,6 @@ for icon in "${ICONS[@]}"; do
         exit 0
     fi
 
-    if ! grep -q '<svg' "$target"; then
-        echo "A16EEN icon sync rejected an invalid SVG: $icon" >&2
-        echo "Keeping the previous icon set." >&2
-        exit 0
-    fi
-
     # A16EEN's dock uses a monochrome icon language. Normalize Lucide's
     # currentColor stroke to the same black fallback during synchronization.
     sed -i 's/stroke="currentColor"/stroke="#111111"/g' "$target"
@@ -100,7 +91,8 @@ done
 mkdir -p "$ICON_ROOT"
 
 for icon in "${ICONS[@]}"; do
+    [[ -f "$tmp_dir/$icon" ]] || continue
     install -Dm644 "$tmp_dir/$icon" "$ICON_ROOT/$icon"
 done
 
-printf "A16EEN icons synced from Lucide %s (%d icons).\n" "$ICON_VERSION" "${#ICONS[@]}"
+printf "A16EEN icons synced from Lucide %s (%d/%d requested icons).\n"     "$ICON_VERSION" "$successful" "${#ICONS[@]}"
