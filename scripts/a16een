@@ -106,14 +106,14 @@ indicator_show() {
     local level="$2"
     local state_dir="${XDG_STATE_HOME:-$HOME/.local/state}/a16een"
     local event_file="$state_dir/control-indicator"
-    local tmp_file="$state_dir/.control-indicator.$"
+    local tmp_file="$state_dir/.control-indicator.$$"
 
     [[ -n "$level" ]] || return 0
     mkdir -p "$state_dir"
 
     # Atomic replace makes every hardware event visible to Quickshell's FileView
     # without depending on a separate IPC connection or display environment.
-    printf '%s|%s|%s\\n' "$kind" "$level" "$(date +%s%N)" > "$tmp_file" &&
+    printf '%s|%s|%s\n' "$kind" "$level" "$(date +%s%N)" > "$tmp_file" &&
         mv -f "$tmp_file" "$event_file"
 }
 
