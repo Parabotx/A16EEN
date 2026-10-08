@@ -214,7 +214,19 @@ generate_icon() {
 
         tmp="$(mktemp "$STATE_DIR/navbar-icon.XXXXXX")"
         sed -E 's/stroke="[^"]*"/stroke="url(#a16eenGradient)"/g; s/stroke:\s*[^;"]+/stroke:url(#a16eenGradient)/g' "$icon_file" > "$tmp"
-        awk -v gradient="$gradient" 'NR == 1 { sub(/>/, "><defs>" gradient "</defs>", $0) } { print }' "$tmp" > "$output"
+        awk -v gradient="$gradient" '
+            BEGIN { inserted=0 }
+            !inserted {
+                match($0, /<svg[^>]*>/)
+                if (RSTART > 0) {
+                    end=RSTART+RLENGTH
+                    print substr($0, 1, end-1) "<defs>" gradient "</defs>" substr($0, end)
+                    inserted=1
+                    next
+                }
+            }
+            { print }
+        ' "$tmp" > "$output"
         rm -f "$tmp"
     fi
 
