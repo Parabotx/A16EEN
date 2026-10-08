@@ -88,7 +88,7 @@ PanelWindow {
     Process {
         id: volumeRead
 
-        command: ["a16een-control", "audio", "status"]
+        command: ["/usr/local/bin/a16een-control", "audio", "status"]
         running: false
 
         stdout: StdioCollector {
@@ -109,7 +109,7 @@ PanelWindow {
     Process {
         id: brightnessRead
 
-        command: ["a16een-control", "brightness", "status"]
+        command: ["/usr/local/bin/a16een-control", "brightness", "status"]
         running: false
 
         stdout: StdioCollector {
