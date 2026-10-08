@@ -17,7 +17,6 @@ PanelWindow {
     readonly property color dockBorder: "#E5E7EB"
     readonly property color iconColor: "#111111"
     readonly property color hoverBackground: "#F3F4F6"
-    readonly property string searchIcon: Qt.resolvedUrl("../assets/icons/search.svg")
 
     property bool edgeRevealed: false
     readonly property bool dockVisible: !root.fullscreenActive || root.edgeRevealed
@@ -139,15 +138,12 @@ PanelWindow {
                 radius: 11
                 color: "transparent"
 
-                Image {
+                ArtGlyph {
                     anchors.centerIn: parent
-                    width: 17
-                    height: 17
-                    source: root.searchIcon
-                    fillMode: Image.PreserveAspectFit
-                    asynchronous: true
-                    mipmap: true
-                    smooth: true
+                    width: 19
+                    height: 19
+                    glyph: "search"
+                    hovered: launcherMouse.containsMouse
                 }
 
                 MouseArea {
@@ -168,15 +164,13 @@ PanelWindow {
                 radius: 11
                 color: homeMouse.containsMouse ? root.hoverBackground : "transparent"
 
-                Image {
+                ArtGlyph {
                     anchors.centerIn: parent
-                    width: 17
-                    height: 17
-                    source: Qt.resolvedUrl("../assets/icons/house.svg")
-                    fillMode: Image.PreserveAspectFit
-                    asynchronous: true
-                    mipmap: true
-                    smooth: true
+                    width: 19
+                    height: 19
+                    glyph: "home"
+                    active: root.workspaceIsFocused("home")
+                    hovered: homeMouse.containsMouse
                 }
 
                 Rectangle {
@@ -207,15 +201,13 @@ PanelWindow {
                 radius: 11
                 color: codeMouse.containsMouse ? root.hoverBackground : "transparent"
 
-                Image {
+                ArtGlyph {
                     anchors.centerIn: parent
-                    width: 17
-                    height: 17
-                    source: Qt.resolvedUrl("../assets/icons/code.svg")
-                    fillMode: Image.PreserveAspectFit
-                    asynchronous: true
-                    mipmap: true
-                    smooth: true
+                    width: 19
+                    height: 19
+                    glyph: "code"
+                    active: root.workspaceIsFocused("code")
+                    hovered: codeMouse.containsMouse
                 }
 
                 Rectangle {
@@ -246,15 +238,13 @@ PanelWindow {
                 radius: 11
                 color: webMouse.containsMouse ? root.hoverBackground : "transparent"
 
-                Image {
+                ArtGlyph {
                     anchors.centerIn: parent
-                    width: 17
-                    height: 17
-                    source: Qt.resolvedUrl("../assets/icons/globe.svg")
-                    fillMode: Image.PreserveAspectFit
-                    asynchronous: true
-                    mipmap: true
-                    smooth: true
+                    width: 19
+                    height: 19
+                    glyph: "web"
+                    active: root.workspaceIsFocused("web")
+                    hovered: webMouse.containsMouse
                 }
 
                 Rectangle {
@@ -285,15 +275,13 @@ PanelWindow {
                 radius: 11
                 color: commsMouse.containsMouse ? root.hoverBackground : "transparent"
 
-                Image {
+                ArtGlyph {
                     anchors.centerIn: parent
-                    width: 17
-                    height: 17
-                    source: Qt.resolvedUrl("../assets/icons/messages-square.svg")
-                    fillMode: Image.PreserveAspectFit
-                    asynchronous: true
-                    mipmap: true
-                    smooth: true
+                    width: 19
+                    height: 19
+                    glyph: "comms"
+                    active: root.workspaceIsFocused("comms")
+                    hovered: commsMouse.containsMouse
                 }
 
                 Rectangle {
@@ -324,15 +312,13 @@ PanelWindow {
                 radius: 11
                 color: studioMouse.containsMouse ? root.hoverBackground : "transparent"
 
-                Image {
+                ArtGlyph {
                     anchors.centerIn: parent
-                    width: 17
-                    height: 17
-                    source: Qt.resolvedUrl("../assets/icons/sparkles.svg")
-                    fillMode: Image.PreserveAspectFit
-                    asynchronous: true
-                    mipmap: true
-                    smooth: true
+                    width: 19
+                    height: 19
+                    glyph: "studio"
+                    active: root.workspaceIsFocused("studio")
+                    hovered: studioMouse.containsMouse
                 }
 
                 Rectangle {
@@ -363,15 +349,13 @@ PanelWindow {
                 radius: 11
                 color: musicMouse.containsMouse ? root.hoverBackground : "transparent"
 
-                Image {
+                ArtGlyph {
                     anchors.centerIn: parent
-                    width: 17
-                    height: 17
-                    source: Qt.resolvedUrl("../assets/icons/music.svg")
-                    fillMode: Image.PreserveAspectFit
-                    asynchronous: true
-                    mipmap: true
-                    smooth: true
+                    width: 19
+                    height: 19
+                    glyph: "music"
+                    active: root.workspaceIsFocused("music")
+                    hovered: musicMouse.containsMouse
                 }
 
                 Rectangle {
