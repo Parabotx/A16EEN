@@ -140,6 +140,11 @@ Item {
         }
     }
 
+    function previewIconColor(slot) {
+        const color = root.settingFor(slot).color
+        return color.toUpperCase() === "#111318" ? "#F5F7FA" : color
+    }
+
     function settingFor(slot) {
         const value = root.navbarSettings && root.navbarSettings[slot]
             ? root.navbarSettings[slot]
@@ -337,7 +342,7 @@ Item {
                                     Layout.preferredWidth: 36
                                     Layout.preferredHeight: 36
                                     radius: 11
-                                    color: root.selectedSlot === modelData.id ? "#1D2430" : "#FFFFFF"
+                                    color: root.selectedSlot === modelData.id ? "#303742" : "#15171B"
                                     border.width: 1
                                     border.color: root.selectedSlot === modelData.id ? "#46505E" : root.border
 
@@ -347,6 +352,7 @@ Item {
                                         height: 18
                                         iconPath: root.generatedIconPath(modelData.id)
                                         fallbackIconPath: root.baseIconPath(modelData.id)
+                                        iconColor: root.previewIconColor(modelData.id)
                                         refreshRevision: root.navbarIconRevision
                                         active: root.selectedSlot === modelData.id
                                     }
@@ -426,6 +432,7 @@ Item {
                                 height: 22
                                 iconPath: root.generatedIconPath(root.selectedSlot)
                                 fallbackIconPath: root.baseIconPath(root.selectedSlot)
+                                iconColor: root.previewIconColor(root.selectedSlot)
                                 refreshRevision: root.navbarIconRevision
                             }
                         }
@@ -515,8 +522,8 @@ Item {
                                     Layout.preferredHeight: 57
                                     radius: 12
                                     color: root.settingFor(root.selectedSlot).icon === modelData.id
-                                        ? "#111318"
-                                        : (iconMouse.containsMouse ? root.cardHover : "#FFFFFF")
+                                        ? "#252A32"
+                                        : (iconMouse.containsMouse ? root.cardHover : "#15171B")
                                     border.width: root.settingFor(root.selectedSlot).icon === modelData.id ? 1.3 : 1
                                     border.color: root.settingFor(root.selectedSlot).icon === modelData.id
                                         ? "#111318" : root.border
@@ -531,6 +538,7 @@ Item {
                                             height: 20
                                             iconPath: Qt.resolvedUrl("../assets/icons/" + modelData.id)
                                             fallbackIconPath: root.baseIconPath(root.selectedSlot)
+                                            iconColor: root.previewIconColor(root.selectedSlot)
                                         }
 
                                         Text {
