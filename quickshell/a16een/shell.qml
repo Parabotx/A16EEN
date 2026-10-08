@@ -24,6 +24,26 @@ ShellRoot {
     property string powerProfile: "balanced"
     property bool doNotDisturb: false
     property int iconThemeRevision: 0
+
+    readonly property var navbarDefaults: ({
+        home: { icon: "house.svg", color: "#111318" },
+        code: { icon: "code.svg", color: "#111318" },
+        web: { icon: "globe.svg", color: "#111318" },
+        comms: { icon: "messages-square.svg", color: "#111318" },
+        studio: { icon: "sparkles.svg", color: "#111318" },
+        music: { icon: "music.svg", color: "#111318" }
+    })
+
+    property var navbarSettings: root.navbarDefaults
+
+    readonly property string navbarSettingsPath: {
+        const stateHome = Quickshell.env("XDG_STATE_HOME")
+        const home = Quickshell.env("HOME") || ""
+        const base = stateHome && stateHome.length
+            ? stateHome
+            : home + "/.local/state"
+        return base + "/a16een/navbar.json"
+    }
     property real controlIndicatorLevel: 0
     property int controlIndicatorRevision: 0
 
@@ -100,6 +120,15 @@ ShellRoot {
     property var latestNotification: null
 
     readonly property var primaryScreen: Quickshell.screens.length > 0 ? Quickshell.screens[0] : null
+
+    FileView {
+        id: navbarSettingsFile
+
+        path: root.navbarSettingsPath
+        watchChanges: false
+
+        onLoaded: root.loadNavbarSettings(this.text())
+    }
 
     FileView {
         id: controlIndicatorEvent
