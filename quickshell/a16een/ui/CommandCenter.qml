@@ -585,6 +585,8 @@ PanelWindow {
             visible: root.navbarViewOpen
             active: root.navbarViewOpen
             navbarSettings: root.navbarSettings
+            navbarIconRoot: root.navbarIconRoot
+            navbarIconRevision: root.navbarIconRevision
             onBackRequested: root.closeNavbarView()
             onNavbarSettingsChanged: root.navbarSettingsChanged(settings)
         }
