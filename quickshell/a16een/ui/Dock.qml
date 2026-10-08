@@ -471,7 +471,8 @@ PanelWindow {
             : 0
         hoverEnabled: true
         acceptedButtons: Qt.NoButton
-        z: 10
+        // This invisible edge trigger must never sit above workspace buttons.
+        z: -1
         onEntered: root.revealDock()
         onExited: root.scheduleHide()
     }
