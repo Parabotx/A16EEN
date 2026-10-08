@@ -182,6 +182,7 @@ Item {
                                 radius: 5
                                 color: modelData.b
                             }
+                        }
 
                         Text {
                             anchors.left: preview.right
