@@ -157,7 +157,7 @@ PanelWindow {
     }
 
     margins {
-        left: root.horizontalNavbar
+        left: root.horizontalNavbar && root.dockVisible
             ? Math.max(0, Math.round((root.modelData.width - root.dockWidth) / 2))
             : 0
         right: 0
