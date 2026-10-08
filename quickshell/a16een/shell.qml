@@ -732,14 +732,7 @@ ShellRoot {
             workspaces: root.workspaces
             focusedWorkspaceId: root.focusedWorkspaceId
             fullscreenActive: root.focusedWindowFullscreen
-
-            onLauncherRequested: {
-                root.launcherOpen = true
-                root.dashboardOpen = false
-                root.commandCenterOpen = false
-                root.wallpaperPickerOpen = false
-                root.widgetsCenterOpen = false
-            }
+            navbarSettings: root.navbarSettings
         }
     }
 
@@ -755,6 +748,7 @@ ShellRoot {
         timeUse24Hour: root.timeUse24Hour
         timeShowSeconds: root.timeShowSeconds
         doNotDisturb: root.doNotDisturb
+        navbarSettings: root.navbarSettings
 
         onCloseRequested: root.commandCenterOpen = false
 
@@ -827,6 +821,7 @@ ShellRoot {
 
         onDoNotDisturbRequested: root.setDoNotDisturb(enabled)
         onIconThemeChanged: root.iconThemeRevision++
+        onNavbarSettingsChanged: root.saveNavbarSettings(settings)
     }
 
     ScreenshotCenter {
