@@ -6,21 +6,12 @@ Item {
     id: root
 
     property bool active: false
-    property int activeSection: 0
     property int workspaceCount: 6
+    property int pendingWorkspaceCount: 6
     property string selectedSlot: "home"
     property string iconSearch: ""
-    property bool addWorkspaceOpen: false
-    property bool removeWorkspaceOpen: false
-    property string newWorkspaceName: ""
-    property string newWorkspaceIcon: "folder.svg"
-    property string newWorkspaceSearch: ""
-    property string createdWorkspaceId: ""
-    property string workspaceStatus: ""
     property var navbarSettings: ({})
     property string statusText: "READY"
-    property bool savingSettings: false
-    property int renderRevision: 0
 
     signal backRequested()
 
@@ -31,7 +22,6 @@ Item {
     }
 
     readonly property string settingsPath: root.stateDir + "/navbar.json"
-    readonly property string workspaceRegistryPath: root.stateDir + "/workspaces.json"
     readonly property string generatedRoot: root.stateDir + "/navbar-icons"
 
     readonly property color page: "#FFFFFF"
@@ -44,23 +34,19 @@ Item {
     readonly property color hover: "#E7EBEF"
     readonly property color selected: "#E2E8F0"
 
-    readonly property var sectionTabs: [
-        { id: 0, title: "WORKSPACE STUDIO", subtitle: "Workspaces & icons", icon: "layers.svg" },
-        { id: 1, title: "LAYOUT & POSITION", subtitle: "Where the navbar lives", icon: "sliders-horizontal.svg" },
-        { id: 2, title: "NAVBAR CONTENT", subtitle: "Time, battery & status", icon: "settings.svg" },
-        { id: 3, title: "APPEARANCE", subtitle: "Color & design", icon: "palette.svg" }
+    readonly property var slots: [
+        { id: "home", name: "HOME", description: "Main workspace", defaultIcon: "house.svg" },
+        { id: "code", name: "CODE", description: "Development workspace", defaultIcon: "code.svg" },
+        { id: "web", name: "WEB", description: "Browser workspace", defaultIcon: "globe.svg" },
+        { id: "comms", name: "COMMS", description: "Communication workspace", defaultIcon: "messages-square.svg" },
+        { id: "studio", name: "STUDIO", description: "Creative workspace", defaultIcon: "sparkles.svg" },
+        { id: "music", name: "MUSIC", description: "Music workspace", defaultIcon: "music.svg" },
+        { id: "games", name: "GAMES", description: "Gaming workspace", defaultIcon: "gamepad-2.svg" },
+        { id: "files", name: "FILES", description: "Files & storage", defaultIcon: "folder.svg" },
+        { id: "lab", name: "LAB", description: "Experiments & tools", defaultIcon: "terminal.svg" }
     ]
 
-    property var slots: [
-        { id: "home", name: "HOME", description: "Main workspace", defaultIcon: "house.svg", icon: "house.svg" },
-        { id: "code", name: "CODE", description: "Development workspace", defaultIcon: "code.svg", icon: "code.svg" },
-        { id: "web", name: "WEB", description: "Browser workspace", defaultIcon: "globe.svg", icon: "globe.svg" },
-        { id: "comms", name: "COMMS", description: "Communication workspace", defaultIcon: "messages-square.svg", icon: "messages-square.svg" },
-        { id: "studio", name: "STUDIO", description: "Creative workspace", defaultIcon: "sparkles.svg", icon: "sparkles.svg" },
-        { id: "music", name: "MUSIC", description: "Music workspace", defaultIcon: "music.svg", icon: "music.svg" }
-    ]
-
-    readonly property var visibleSlots: root.slots
+    readonly property var visibleSlots: root.slots.slice(0, root.workspaceCount)
 
     readonly property var iconChoices: [
         { id: "house.svg", name: "House" },
@@ -181,147 +167,22 @@ Item {
     readonly property var filteredIcons: {
         const q = root.iconSearch.trim().toLowerCase()
         if (!q)
-            return root.iconChoices
+            return root.iconChoices.slice(0, 42)
         return root.iconChoices.filter(icon =>
             icon.name.toLowerCase().includes(q) || icon.id.toLowerCase().includes(q)
         )
     }
 
     readonly property var colors: [
-        "#111318", "#FFFFFF", "#1F2937", "#475569", "#0F172A",
-        "#2563EB", "#3B82F6", "#06B6D4", "#0EA5E9", "#14B8A6",
-        "#16A34A", "#84CC16", "#F59E0B", "#F97316", "#EF4444",
-        "#E11D48", "#DB2777", "#A855F7", "#7C3AED", "#C084FC",
-        "#B8860B", "#D4AF37", "#9CA3AF", "#E5E7EB"
-    ]
-
-    readonly property var styleChoices: [
-        { id: "solid-black", name: "BLACK", spec: "solid:#111318", kind: "solid", a: "#111318", b: "#111318" },
-        { id: "solid-white", name: "WHITE", spec: "solid:#FFFFFF", kind: "solid", a: "#FFFFFF", b: "#FFFFFF" },
-        { id: "solid-gold", name: "GOLD", spec: "solid:#D4AF37", kind: "solid", a: "#D4AF37", b: "#D4AF37" },
-        { id: "solid-cyan", name: "CYAN", spec: "solid:#06B6D4", kind: "solid", a: "#06B6D4", b: "#06B6D4" },
-        { id: "black-white", name: "B/W HALF", spec: "split-x:#111318:#FFFFFF", kind: "split", a: "#111318", b: "#FFFFFF" },
-        { id: "white-black", name: "W/B HALF", spec: "split-x:#FFFFFF:#111318", kind: "split", a: "#FFFFFF", b: "#111318" },
-        { id: "gold-black", name: "GOLD/BLACK", spec: "split-x:#D4AF37:#111318", kind: "split", a: "#D4AF37", b: "#111318" },
-        { id: "black-gold", name: "BLACK/GOLD", spec: "split-y:#111318:#D4AF37", kind: "split", a: "#111318", b: "#D4AF37" },
-        { id: "white-gold", name: "WHITE/GOLD", spec: "split-y:#FFFFFF:#D4AF37", kind: "split", a: "#FFFFFF", b: "#D4AF37" },
-        { id: "mono-gradient", name: "MONO FLOW", spec: "gradient-x:#111318:#FFFFFF", kind: "gradient", a: "#111318", b: "#FFFFFF" },
-        { id: "gold-gradient", name: "GOLD FLOW", spec: "gradient-x:#111318:#D4AF37", kind: "gradient", a: "#111318", b: "#D4AF37" },
-        { id: "blue-gradient", name: "BLUE FLOW", spec: "gradient-x:#2563EB:#06B6D4", kind: "gradient", a: "#2563EB", b: "#06B6D4" },
-        { id: "purple-gradient", name: "VIOLET FLOW", spec: "gradient-x:#7C3AED:#DB2777", kind: "gradient", a: "#7C3AED", b: "#DB2777" },
-        { id: "teal-gradient", name: "TEAL FLOW", spec: "gradient-y:#06B6D4:#14B8A6", kind: "gradient", a: "#06B6D4", b: "#14B8A6" },
-        { id: "sunset-gradient", name: "SUNSET", spec: "gradient-diag:#F97316:#DB2777", kind: "gradient", a: "#F97316", b: "#DB2777" },
-        { id: "ice-gradient", name: "ICE", spec: "gradient-diag:#FFFFFF:#06B6D4", kind: "gradient", a: "#FFFFFF", b: "#06B6D4" },
-        { id: "shadow-gradient", name: "SHADOW", spec: "gradient-diag:#111318:#475569", kind: "gradient", a: "#111318", b: "#475569" },
-        { id: "emerald-gold", name: "EMERALD/GOLD", spec: "split-x:#16A34A:#D4AF37", kind: "split", a: "#16A34A", b: "#D4AF37" }
+        "#111318", "#FFFFFF", "#334155", "#3B82F6", "#06B6D4",
+        "#16A34A", "#F59E0B", "#D97706", "#EF4444", "#DB2777", "#7C3AED"
     ]
 
     function defaultIcon(slot) {
         for (const entry of root.slots)
             if (entry.id === slot)
-                return entry.icon || entry.defaultIcon
+                return entry.defaultIcon
         return "house.svg"
-    }
-
-    function workspaceIdForName(name) {
-        return String(name || "")
-            .toLowerCase()
-            .replace(/[^a-z0-9]+/g, "-")
-            .replace(/^-+|-+$/g, "")
-    }
-
-    function addIconMatches() {
-        const q = root.newWorkspaceSearch.trim().toLowerCase()
-        if (!q)
-            return root.iconChoices
-        return root.iconChoices.filter(icon =>
-            icon.name.toLowerCase().includes(q) || icon.id.toLowerCase().includes(q)
-        )
-    }
-
-    function openAddWorkspace() {
-        if (root.slots.length >= 9)
-            return
-        root.newWorkspaceName = ""
-        root.newWorkspaceSearch = ""
-        root.newWorkspaceIcon = "folder.svg"
-        root.workspaceStatus = ""
-        root.addWorkspaceOpen = true
-        root.removeWorkspaceOpen = false
-        Qt.callLater(() => addNameInput.forceActiveFocus())
-    }
-
-    function cancelAddWorkspace() {
-        root.addWorkspaceOpen = false
-        root.workspaceStatus = ""
-    }
-
-    function submitAddWorkspace() {
-        const name = root.newWorkspaceName.trim()
-        const id = root.workspaceIdForName(name)
-        if (!name.length || !id.length) {
-            root.workspaceStatus = "ENTER A NAME"
-            return
-        }
-        if (name.length > 28) {
-            root.workspaceStatus = "NAME TOO LONG"
-            return
-        }
-        if (root.slots.some(slot => slot.id === id)) {
-            root.workspaceStatus = "NAME ALREADY EXISTS"
-            return
-        }
-
-        root.createdWorkspaceId = id
-        root.workspaceStatus = "ADDING..."
-        workspaceOperation = "add"
-        workspaceProcess.running = true
-    }
-
-    function openRemoveWorkspace() {
-        const entry = root.selectedWorkspaceEntry()
-        if (!entry || entry.builtin || root.workspaceProcess.running)
-            return
-        root.removeWorkspaceOpen = true
-        root.addWorkspaceOpen = false
-        root.workspaceStatus = ""
-    }
-
-    function cancelRemoveWorkspace() {
-        root.removeWorkspaceOpen = false
-        root.workspaceStatus = ""
-    }
-
-    function submitRemoveWorkspace() {
-        const entry = root.selectedWorkspaceEntry()
-        if (!entry || entry.builtin || root.workspaceProcess.running)
-            return
-        root.workspaceStatus = "REMOVING..."
-        workspaceOperation = "remove"
-        workspaceProcess.running = true
-    }
-
-    function loadWorkspaceRegistry(raw) {
-        try {
-            const parsed = JSON.parse(String(raw || ""))
-            if (!Array.isArray(parsed) || parsed.length < 1)
-                return
-
-            root.slots = parsed
-            root.workspaceCount = parsed.length
-
-            if (!parsed.some(slot => slot.id === root.selectedSlot))
-                root.selectedSlot = parsed[0].id
-        } catch (error) {
-            // Keep the last valid registry in memory during an atomic file update.
-        }
-    }
-
-    function selectedWorkspaceEntry() {
-        for (const entry of root.slots)
-            if (entry.id === root.selectedSlot)
-                return entry
-        return null
     }
 
     function settingFor(slot) {
@@ -340,58 +201,49 @@ Item {
         } catch (error) {
             root.navbarSettings = ({})
         }
-        root.renderRevision++
     }
 
-    function styleLabel(spec) {
-        if (!spec)
-            return "BLACK"
-        if (spec.indexOf("solid:") === 0)
-            return spec.substring(6).toUpperCase()
-        if (spec.indexOf("split-x:") === 0)
-            return "HALF HORIZONTAL"
-        if (spec.indexOf("split-y:") === 0)
-            return "HALF VERTICAL"
-        if (spec.indexOf("gradient-diag:") === 0)
-            return "DIAGONAL GRADIENT"
-        if (spec.indexOf("gradient-y:") === 0)
-            return "VERTICAL GRADIENT"
-        if (spec.indexOf("gradient-x:") === 0)
-            return "HORIZONTAL GRADIENT"
-        return "CUSTOM"
-    }
-
-    function beginApply(icon, style) {
+    function applyIcon(icon) {
+        const current = root.settingFor(root.selectedSlot)
         const next = {}
         for (const slot of root.slots)
             next[slot.id] = root.settingFor(slot.id)
-        next[root.selectedSlot] = { icon: icon, color: style }
+        next[root.selectedSlot] = { icon: icon, color: current.color }
         root.navbarSettings = next
         root.pendingIcon = icon
-        root.pendingColor = style
-        root.savingSettings = true
+        root.pendingColor = current.color
         root.statusText = "APPLYING"
         iconProcess.running = false
         Qt.callLater(() => iconProcess.running = true)
     }
 
-    function applyIcon(icon) {
-        beginApply(icon, root.settingFor(root.selectedSlot).color)
-    }
-
-    function applyStyle(style) {
-        beginApply(root.settingFor(root.selectedSlot).icon, style)
-    }
-
     function applyColor(color) {
-        applyStyle("solid:" + color)
+        const current = root.settingFor(root.selectedSlot)
+        const next = {}
+        for (const slot of root.slots)
+            next[slot.id] = root.settingFor(slot.id)
+        next[root.selectedSlot] = { icon: current.icon, color: color }
+        root.navbarSettings = next
+        root.pendingIcon = current.icon
+        root.pendingColor = color
+        root.statusText = "APPLYING"
+        iconProcess.running = false
+        Qt.callLater(() => iconProcess.running = true)
     }
 
     function resetSelected() {
-        beginApply(root.defaultIcon(root.selectedSlot), "solid:#111318")
+        applyIcon(root.defaultIcon(root.selectedSlot))
+        Qt.callLater(() => applyColor("#111318"))
     }
 
-
+    function changeWorkspaceCount(nextCount) {
+        const value = Math.max(2, Math.min(9, Number(nextCount)))
+        if (value === root.workspaceCount || workspaceProcess.running)
+            return
+        root.pendingWorkspaceCount = value
+        root.statusText = "APPLYING " + value
+        workspaceProcess.running = true
+    }
 
     FileView {
         id: settingsFile
@@ -399,69 +251,34 @@ Item {
         watchChanges: true
         printErrors: false
         onLoaded: root.loadSettings(this.text())
-        onFileChanged: {
-            if (!root.savingSettings)
-                root.loadSettings(this.text())
+        onFileChanged: root.loadSettings(this.text())
+    }
+
+    Process {
+        id: workspaceReader
+        command: ["a16een-workspaces", "current"]
+        running: false
+        stdout: StdioCollector {
+            onStreamFinished: {
+                const value = Number(String(text).trim())
+                if (value >= 2 && value <= 9)
+                    root.workspaceCount = Math.floor(value)
+            }
         }
     }
-
-    FileView {
-        id: workspaceRegistryFile
-        path: root.workspaceRegistryPath
-        watchChanges: true
-        printErrors: false
-        onLoaded: root.loadWorkspaceRegistry(this.text())
-        onFileChanged: root.loadWorkspaceRegistry(this.text())
-    }
-
-    property string workspaceOperation: ""
 
     Process {
         id: workspaceProcess
-        command: root.workspaceOperation === "add"
-            ? ["a16een-workspaces", "add", root.newWorkspaceName, root.newWorkspaceIcon]
-            : ["a16een-workspaces", "remove", root.selectedSlot]
+        command: ["a16een-workspaces", "set", String(root.pendingWorkspaceCount)]
         running: false
         onExited: function(exitCode) {
-            if (exitCode !== 0) {
-                root.workspaceStatus = root.workspaceOperation === "add"
-                    ? "ADDING FAILED"
-                    : "REMOVING FAILED"
-                return
-            }
-
-            navbarApplyProcess.running = true
-        }
-    }
-
-    Process {
-        id: navbarApplyProcess
-        command: ["/usr/local/bin/a16een-navbar", "apply"]
-        running: false
-        onExited: function(exitCode) {
-            if (exitCode !== 0) {
-                root.statusText = "NAVBAR APPLY FAILED"
-                return
-            }
-
-            workspaceRegistryFile.reload()
-            settingsFile.reload()
-            root.renderRevision++
-
-            if (root.workspaceOperation === "add") {
-                root.selectedSlot = root.createdWorkspaceId
-                root.addWorkspaceOpen = false
-                root.workspaceStatus = ""
+            if (exitCode === 0) {
+                root.workspaceCount = root.pendingWorkspaceCount
                 root.statusText = "READY"
             } else {
-                root.removeWorkspaceOpen = false
-                if (root.slots.length > 0)
-                    root.selectedSlot = root.slots[Math.max(0, root.slots.length - 1)].id
-                root.workspaceStatus = ""
-                root.statusText = "READY"
+                root.statusText = "BLOCKED"
             }
-
-            root.workspaceOperation = ""
+            Qt.callLater(() => workspaceReader.running = true)
         }
     }
 
@@ -479,15 +296,9 @@ Item {
         ]
         running: false
         onExited: function(exitCode) {
-            root.savingSettings = false
-            if (exitCode === 0) {
-                root.statusText = "READY"
+            root.statusText = exitCode === 0 ? "READY" : "ICON APPLY FAILED"
+            if (exitCode !== 0)
                 settingsFile.reload()
-                root.renderRevision++
-            } else {
-                root.statusText = "ICON APPLY FAILED"
-                settingsFile.reload()
-            }
         }
     }
 
@@ -513,14 +324,12 @@ Item {
                 color: root.panel
                 border.width: 1
                 border.color: root.border
-
                 Text {
                     anchors.centerIn: parent
                     text: "←"
                     color: root.textSecondary
                     font.pixelSize: 16
                 }
-
                 MouseArea {
                     anchors.fill: parent
                     cursorShape: Qt.PointingHandCursor
@@ -529,9 +338,8 @@ Item {
             }
 
             Column {
-                width: parent.width - 210
+                width: parent.width - 170
                 spacing: 2
-
                 Text {
                     text: "NAVBAR"
                     color: root.text
@@ -539,127 +347,45 @@ Item {
                     font.weight: Font.DemiBold
                     font.letterSpacing: 1.2
                 }
-
                 Text {
-                    text: root.slots.length + " WORKSPACES • " + root.statusText
+                    text: "LUCIDE ICONS • WORKSPACES 2–9 • " + root.statusText
                     color: root.muted
                     font.pixelSize: 9
                 }
             }
 
-            Rectangle {
-                visible: root.activeSection === 0
-                width: 150
-                height: 34
-                radius: 10
-                color: root.slots.length >= 9 || root.workspaceProcess.running
-                    ? root.panel : root.text
-                opacity: root.slots.length >= 9 ? 0.45 : 1
-                border.width: 1
-                border.color: root.borderStrong
-
-                Row {
-                    anchors.centerIn: parent
-                    spacing: 7
-
-                    Image {
-                        width: 15
-                        height: 15
-                        sourceSize.width: width
-                        sourceSize.height: height
-                        fillMode: Image.PreserveAspectFit
-                        source: Qt.resolvedUrl("../assets/icons/circle-plus.svg")
-                        asynchronous: true
-                    }
-
-                    Text {
-                        text: "ADD WORKSPACE"
-                        color: "#FFFFFF"
-                        font.pixelSize: 8
-                        font.weight: Font.DemiBold
-                    }
-                }
-
-                MouseArea {
-                    anchors.fill: parent
-                    cursorShape: Qt.PointingHandCursor
-                    enabled: root.slots.length < 9 && !root.workspaceProcess.running
-                    onClicked: root.openAddWorkspace()
-                }
-            }
-        }
-
-        Row {
-            width: parent.width
-            height: 46
-            spacing: 7
-
-            Repeater {
-                model: root.sectionTabs
-
-                delegate: Rectangle {
-                    required property var modelData
-                    width: (parent.width - 21) / 4
-                    height: 46
-                    radius: 12
-                    color: root.activeSection === modelData.id ? root.text : root.panel
-                    border.width: 1
-                    border.color: root.activeSection === modelData.id ? root.text : root.border
-
-                    Row {
-                        anchors.fill: parent
-                        anchors.margins: 8
-                        spacing: 8
-
-                        Rectangle {
-                            width: 30
-                            height: 30
-                            radius: 9
-                            anchors.verticalCenter: parent.verticalCenter
-                            color: root.activeSection === modelData.id ? "#25282E" : "#FFFFFF"
-                            border.width: 1
-                            border.color: root.activeSection === modelData.id ? "#383D46" : root.border
-
-                            Image {
-                                anchors.centerIn: parent
-                                width: 16
-                                height: 16
-                                sourceSize.width: width
-                                sourceSize.height: height
-                                fillMode: Image.PreserveAspectFit
-                                asynchronous: true
-                                source: Qt.resolvedUrl("../assets/icons/" + modelData.icon)
-                            }
-                        }
-
-                        Column {
-                            width: parent.width - 38
-                            anchors.verticalCenter: parent.verticalCenter
-                            spacing: 2
-
-                            Text {
-                                width: parent.width
-                                text: modelData.title
-                                color: root.activeSection === modelData.id ? "#FFFFFF" : root.text
-                                font.pixelSize: 7
-                                font.weight: Font.DemiBold
-                                elide: Text.ElideRight
-                            }
-
-                            Text {
-                                width: parent.width
-                                text: modelData.subtitle
-                                color: root.activeSection === modelData.id ? "#AAB2BC" : root.muted
-                                font.pixelSize: 5.5
-                                elide: Text.ElideRight
-                            }
-                        }
-                    }
-
+            Row {
+                spacing: 4
+                Rectangle {
+                    width: 28; height: 30; radius: 9
+                    color: minusMouse.containsMouse ? root.hover : "#FFFFFF"
+                    border.width: 1; border.color: root.borderStrong
+                    Text { anchors.centerIn: parent; text: "−"; color: root.text; font.pixelSize: 15 }
                     MouseArea {
-                        anchors.fill: parent
-                        cursorShape: Qt.PointingHandCursor
-                        onClicked: root.activeSection = modelData.id
+                        id: minusMouse
+                        anchors.fill: parent; hoverEnabled: true; cursorShape: Qt.PointingHandCursor
+                        enabled: root.workspaceCount > 2 && !workspaceProcess.running
+                        opacity: enabled ? 1 : 0.35
+                        onClicked: root.changeWorkspaceCount(root.workspaceCount - 1)
+                    }
+                }
+                Text {
+                    width: 30; height: 30; verticalAlignment: Text.AlignVCenter
+                    horizontalAlignment: Text.AlignHCenter
+                    text: root.workspaceCount
+                    color: root.text; font.pixelSize: 12; font.weight: Font.DemiBold
+                }
+                Rectangle {
+                    width: 28; height: 30; radius: 9
+                    color: plusMouse.containsMouse ? root.hover : "#FFFFFF"
+                    border.width: 1; border.color: root.borderStrong
+                    Text { anchors.centerIn: parent; text: "+"; color: root.text; font.pixelSize: 14 }
+                    MouseArea {
+                        id: plusMouse
+                        anchors.fill: parent; hoverEnabled: true; cursorShape: Qt.PointingHandCursor
+                        enabled: root.workspaceCount < 9 && !workspaceProcess.running
+                        opacity: enabled ? 1 : 0.35
+                        onClicked: root.changeWorkspaceCount(root.workspaceCount + 1)
                     }
                 }
             }
@@ -667,8 +393,7 @@ Item {
 
         Row {
             width: parent.width
-            height: root.activeSection === 0 ? parent.height - 112 : 0
-            visible: root.activeSection === 0
+            height: parent.height - 54
             spacing: 12
 
             Rectangle {
@@ -710,12 +435,13 @@ Item {
                                     color: "#FFFFFF"
                                     border.width: 1
                                     border.color: root.border
-                                    NavbarIcon {
+                                    Image {
                                         anchors.centerIn: parent
-                                        width: 16
-                                        height: 16
-                                        iconName: root.settingFor(modelData.id).icon
-                                        iconColor: "#111318"
+                                        width: 16; height: 16
+                                        sourceSize.width: width; sourceSize.height: height
+                                        fillMode: Image.PreserveAspectFit
+                                        asynchronous: true
+                                        source: "file://" + root.generatedRoot + "/" + modelData.id + ".svg"
                                     }
                                 }
 
@@ -767,12 +493,13 @@ Item {
                             width: 46; height: 46; radius: 12
                             color: "#FFFFFF"
                             border.width: 1; border.color: root.border
-                            NavbarIcon {
+                            Image {
                                 anchors.centerIn: parent
-                                width: 22
-                                height: 22
-                                iconName: root.settingFor(root.selectedSlot).icon
-                                iconColor: "#111318"
+                                width: 22; height: 22
+                                sourceSize.width: width; sourceSize.height: height
+                                fillMode: Image.PreserveAspectFit
+                                asynchronous: true
+                                source: "file://" + root.generatedRoot + "/" + root.selectedSlot + ".svg"
                             }
                         }
 
@@ -780,10 +507,7 @@ Item {
                             width: parent.width - 130
                             spacing: 2
                             Text {
-                                text: {
-                                    const entry = root.selectedWorkspaceEntry()
-                                    return entry ? String(entry.name).toUpperCase() : root.selectedSlot.toUpperCase()
-                                }
+                                text: root.selectedSlot.toUpperCase()
                                 color: root.text
                                 font.pixelSize: 13
                                 font.weight: Font.DemiBold
@@ -796,53 +520,11 @@ Item {
                             }
                         }
 
-                        Row {
-                            spacing: 6
-
-                            Rectangle {
-                                width: 62; height: 30; radius: 9
-                                color: "#FFFFFF"; border.width: 1; border.color: root.borderStrong
-                                Text {
-                                    anchors.centerIn: parent
-                                    text: "RESET"
-                                    color: root.text
-                                    font.pixelSize: 7
-                                    font.weight: Font.DemiBold
-                                }
-                                MouseArea {
-                                    anchors.fill: parent
-                                    cursorShape: Qt.PointingHandCursor
-                                    onClicked: root.resetSelected()
-                                }
-                            }
-
-                            Rectangle {
-                                width: 68; height: 30; radius: 9
-                                readonly property bool removable: {
-                                    const entry = root.selectedWorkspaceEntry()
-                                    return !!entry && !entry.builtin
-                                }
-                                color: removable ? "#FFFFFF" : root.panel
-                                border.width: 1
-                                border.color: removable ? "#F2B8B5" : root.border
-                                opacity: removable ? 1 : 0.45
-                                Text {
-                                    anchors.centerIn: parent
-                                    text: "REMOVE"
-                                    color: root.slots.length <= 2 ? root.muted : "#B42318"
-                                    font.pixelSize: 7
-                                    font.weight: Font.DemiBold
-                                }
-                                MouseArea {
-                                    anchors.fill: parent
-                                    cursorShape: Qt.PointingHandCursor
-                                    enabled: {
-                                        const entry = root.selectedWorkspaceEntry()
-                                        return !!entry && !entry.builtin && !root.workspaceProcess.running
-                                    }
-                                    onClicked: root.openRemoveWorkspace()
-                                }
-                            }
+                        Rectangle {
+                            width: 66; height: 30; radius: 9
+                            color: "#FFFFFF"; border.width: 1; border.color: root.borderStrong
+                            Text { anchors.centerIn: parent; text: "RESET"; color: root.text; font.pixelSize: 7; font.weight: Font.DemiBold }
+                            MouseArea { anchors.fill: parent; cursorShape: Qt.PointingHandCursor; onClicked: root.resetSelected() }
                         }
                     }
 
@@ -875,7 +557,7 @@ Item {
                             width: 50; height: 32
                             verticalAlignment: Text.AlignVCenter
                             horizontalAlignment: Text.AlignRight
-                            text: root.filteredIcons.length + " / " + root.iconChoices.length
+                            text: (root.iconSearch.length ? root.filteredIcons.length : 42) + " / 113"
                             color: root.muted
                             font.pixelSize: 7
                         }
@@ -883,12 +565,11 @@ Item {
 
                     Flickable {
                         width: parent.width
-                        height: Math.max(150, parent.height - 250)
+                        height: parent.height - 190
                         clip: true
                         contentWidth: width
-                        contentHeight: Math.max(iconGrid.height, height)
+                        contentHeight: iconGrid.height
                         boundsBehavior: Flickable.StopAtBounds
-                        interactive: iconGrid.height > height
 
                         Grid {
                             id: iconGrid
@@ -939,531 +620,36 @@ Item {
                         }
                     }
 
-                    Column {
+                    Row {
                         width: parent.width
+                        height: 30
                         spacing: 6
-
-                        Row {
-                            width: parent.width
-                            height: 26
-                            spacing: 8
-
-                            Text {
-                                width: 58
-                                height: 26
-                                verticalAlignment: Text.AlignVCenter
-                                text: "COLOR"
-                                color: root.muted
-                                font.pixelSize: 7
-                                font.weight: Font.DemiBold
-                            }
-
-                            Flickable {
-                                width: parent.width - 66
-                                height: 26
-                                clip: true
-                                contentWidth: colorRow.width
-                                contentHeight: colorRow.height
-                                boundsBehavior: Flickable.StopAtBounds
-
-                                Row {
-                                    id: colorRow
-                                    height: 22
-                                    spacing: 5
-
-                                    Repeater {
-                                        model: root.colors
-
-                                        delegate: Rectangle {
-                                            width: 22
-                                            height: 22
-                                            radius: 7
-                                            color: "#FFFFFF"
-                                            border.width: 1
-                                            border.color: root.settingFor(root.selectedSlot).color === "solid:" + modelData
-                                                ? root.text : root.border
-
-                                            Rectangle {
-                                                anchors.centerIn: parent
-                                                width: 12
-                                                height: 12
-                                                radius: 6
-                                                color: modelData
-                                                border.width: modelData.toUpperCase() === "#FFFFFF" ? 1 : 0
-                                                border.color: root.borderStrong
-                                            }
-
-                                            MouseArea {
-                                                anchors.fill: parent
-                                                cursorShape: Qt.PointingHandCursor
-                                                onClicked: root.applyColor(modelData)
-                                            }
-                                        }
-                                    }
-                                }
-                            }
-                        }
-
-                        Row {
-                            width: parent.width
-                            height: 34
-                            spacing: 8
-
-                            Text {
-                                width: 58
-                                height: 34
-                                verticalAlignment: Text.AlignVCenter
-                                text: "DESIGN"
-                                color: root.muted
-                                font.pixelSize: 7
-                                font.weight: Font.DemiBold
-                            }
-
-                            Flickable {
-                                width: parent.width - 66
-                                height: 34
-                                clip: true
-                                contentWidth: designRow.width
-                                contentHeight: designRow.height
-                                boundsBehavior: Flickable.StopAtBounds
-
-                                Row {
-                                    id: designRow
-                                    height: 30
-                                    spacing: 6
-
-                                    Repeater {
-                                        model: root.styleChoices
-
-                                        delegate: Rectangle {
-                                            width: 92
-                                            height: 30
-                                            radius: 8
-                                            color: "#FFFFFF"
-                                            border.width: 1
-                                            border.color: root.settingFor(root.selectedSlot).color === modelData.spec
-                                                ? root.text : root.border
-
-                                            Rectangle {
-                                                id: stylePreview
-                                                anchors.left: parent.left
-                                                anchors.leftMargin: 6
-                                                anchors.verticalCenter: parent.verticalCenter
-                                                width: 26
-                                                height: 18
-                                                radius: 5
-                                                color: modelData.a
-
-                                                Rectangle {
-                                                    visible: modelData.kind === "split"
-                                                    anchors.right: parent.right
-                                                    anchors.top: parent.top
-                                                    anchors.bottom: parent.bottom
-                                                    width: parent.width / 2
-                                                    radius: 5
-                                                    color: modelData.b
-                                                }
-
-                                                Rectangle {
-                                                    visible: modelData.kind === "gradient"
-                                                    anchors.right: parent.right
-                                                    anchors.top: parent.top
-                                                    anchors.bottom: parent.bottom
-                                                    width: parent.width / 3
-                                                    color: modelData.b
-                                                }
-                                            }
-
-                                            Text {
-                                                anchors.left: stylePreview.right
-                                                anchors.leftMargin: 5
-                                                anchors.right: parent.right
-                                                anchors.rightMargin: 4
-                                                anchors.verticalCenter: parent.verticalCenter
-                                                text: modelData.name
-                                                color: root.textSecondary
-                                                font.pixelSize: 6
-                                                elide: Text.ElideRight
-                                            }
-
-                                            MouseArea {
-                                                anchors.fill: parent
-                                                cursorShape: Qt.PointingHandCursor
-                                                onClicked: root.applyStyle(modelData.spec)
-                                            }
-                                        }
-                                    }
-                                }
-                            }
-                        }
-                    }
-
-                }
-            }
-        }
-    }
-
-
-        NavbarLayoutSection {
-            width: parent.width
-            height: root.activeSection === 1 ? parent.height - 112 : 0
-            visible: root.activeSection === 1
-            active: root.active && root.activeSection === 1
-            stateDir: root.stateDir
-        }
-
-        NavbarContentSection {
-            width: parent.width
-            height: root.activeSection === 2 ? parent.height - 112 : 0
-            visible: root.activeSection === 2
-            active: root.active && root.activeSection === 2
-            stateDir: root.stateDir
-        }
-
-        NavbarAppearanceSection {
-            width: parent.width
-            height: root.activeSection === 3 ? parent.height - 112 : 0
-            visible: root.activeSection === 3
-            active: root.active && root.activeSection === 3
-            selectedSlot: root.selectedSlot
-            selectedIcon: root.settingFor(root.selectedSlot).icon
-            selectedStyle: root.settingFor(root.selectedSlot).color
-            colors: root.colors
-            styleChoices: root.styleChoices
-            onIconStyleSelected: root.applyStyle(style)
-            onColorSelected: root.applyColor(color)
-        }
-
-    Rectangle {
-        visible: root.addWorkspaceOpen || root.removeWorkspaceOpen
-        anchors.fill: parent
-        color: "#66000000"
-        z: 100
-
-        MouseArea {
-            anchors.fill: parent
-            onClicked: {
-                if (root.addWorkspaceOpen)
-                    root.cancelAddWorkspace()
-                else
-                    root.cancelRemoveWorkspace()
-            }
-        }
-
-        Rectangle {
-            width: Math.min(parent.width - 48, 650)
-            height: root.addWorkspaceOpen ? Math.min(parent.height - 48, 560) : 220
-            anchors.centerIn: parent
-            radius: 20
-            color: "#FFFFFF"
-            border.width: 1
-            border.color: root.borderStrong
-
-            MouseArea {
-                anchors.fill: parent
-                onClicked: {}
-            }
-
-            Column {
-                anchors.fill: parent
-                anchors.margins: 20
-                spacing: 12
-
-                Row {
-                    width: parent.width
-                    height: 36
-
-                    Column {
-                        width: parent.width - 44
-                        spacing: 2
-
                         Text {
-                            text: root.addWorkspaceOpen ? "ADD WORKSPACE" : "REMOVE WORKSPACE"
-                            color: root.text
-                            font.pixelSize: 16
-                            font.weight: Font.DemiBold
-                        }
-
-                        Text {
-                            text: root.addWorkspaceOpen
-                                ? "Choose a name and icon before creating it."
-                                : "The selected workspace and its navbar icon will be removed."
+                            width: 52; height: 30
+                            verticalAlignment: Text.AlignVCenter
+                            text: "COLOR"
                             color: root.muted
-                            font.pixelSize: 8
-                        }
-                    }
-
-                    Rectangle {
-                        width: 32; height: 32; radius: 9
-                        color: root.panel
-                        border.width: 1; border.color: root.border
-                        Text {
-                            anchors.centerIn: parent
-                            text: "×"
-                            color: root.textSecondary
-                            font.pixelSize: 16
-                        }
-                        MouseArea {
-                            anchors.fill: parent
-                            cursorShape: Qt.PointingHandCursor
-                            onClicked: {
-                                if (root.addWorkspaceOpen)
-                                    root.cancelAddWorkspace()
-                                else
-                                    root.cancelRemoveWorkspace()
-                            }
-                        }
-                    }
-                }
-
-                Column {
-                    visible: root.addWorkspaceOpen
-                    width: parent.width
-                    spacing: 8
-
-                    Text {
-                        text: "NAME"
-                        color: root.muted
-                        font.pixelSize: 7
-                        font.weight: Font.DemiBold
-                    }
-
-                    Rectangle {
-                        width: parent.width
-                        height: 38
-                        radius: 10
-                        color: "#FFFFFF"
-                        border.width: 1
-                        border.color: addNameInput.activeFocus ? root.text : root.borderStrong
-
-                        TextInput {
-                            id: addNameInput
-                            anchors.fill: parent
-                            anchors.leftMargin: 11
-                            anchors.rightMargin: 11
-                            color: root.text
-                            font.pixelSize: 10
-                            verticalAlignment: Text.AlignVCenter
-                            text: root.newWorkspaceName
-                            onTextChanged: root.newWorkspaceName = text
-                            maximumLength: 28
-                            selectByMouse: true
-                        }
-                    }
-
-                    Text {
-                        text: "ICON"
-                        color: root.muted
-                        font.pixelSize: 7
-                        font.weight: Font.DemiBold
-                    }
-
-                    Rectangle {
-                        width: parent.width
-                        height: 34
-                        radius: 9
-                        color: "#FFFFFF"
-                        border.width: 1
-                        border.color: root.borderStrong
-
-                        TextInput {
-                            anchors.fill: parent
-                            anchors.leftMargin: 10
-                            anchors.rightMargin: 10
-                            color: root.text
-                            font.pixelSize: 8
-                            verticalAlignment: Text.AlignVCenter
-                            text: root.newWorkspaceSearch
-                            onTextChanged: root.newWorkspaceSearch = text
-                            clip: true
-                        }
-                    }
-
-                    Flickable {
-                        width: parent.width
-                        height: 190
-                        clip: true
-                        contentWidth: width
-                        contentHeight: addIconGrid.height
-                        boundsBehavior: Flickable.StopAtBounds
-
-                        Grid {
-                            id: addIconGrid
-                            width: parent.width
-                            columns: 8
-                            rowSpacing: 5
-                            columnSpacing: 5
-                            height: Math.ceil(root.addIconMatches().length / 8) * 42
-
-                            Repeater {
-                                model: root.addIconMatches()
-
-                                delegate: Rectangle {
-                                    width: (addIconGrid.width - 35) / 8
-                                    height: 42
-                                    radius: 8
-                                    color: root.newWorkspaceIcon === modelData.id ? root.selected : "#FFFFFF"
-                                    border.width: 1
-                                    border.color: root.newWorkspaceIcon === modelData.id ? root.text : root.border
-
-                                    Image {
-                                        anchors.centerIn: parent
-                                        width: 19
-                                        height: 19
-                                        sourceSize.width: width
-                                        sourceSize.height: height
-                                        fillMode: Image.PreserveAspectFit
-                                        asynchronous: true
-                                        source: Qt.resolvedUrl("../assets/icons/" + modelData.id)
-                                    }
-
-                                    Text {
-                                        anchors.left: parent.left
-                                        anchors.right: parent.right
-                                        anchors.bottom: parent.bottom
-                                        anchors.bottomMargin: 4
-                                        horizontalAlignment: Text.AlignHCenter
-                                        text: modelData.name
-                                        color: root.textSecondary
-                                        font.pixelSize: 5
-                                        elide: Text.ElideRight
-                                    }
-
-                                    MouseArea {
-                                        anchors.fill: parent
-                                        cursorShape: Qt.PointingHandCursor
-                                        onClicked: root.newWorkspaceIcon = modelData.id
-                                    }
-                                }
-                            }
-                        }
-                    }
-                }
-
-                Column {
-                    visible: root.removeWorkspaceOpen
-                    width: parent.width
-                    spacing: 10
-
-                    Rectangle {
-                        width: parent.width
-                        height: 64
-                        radius: 12
-                        color: root.panel
-                        border.width: 1
-                        border.color: root.border
-
-                        Row {
-                            anchors.fill: parent
-                            anchors.margins: 12
-                            spacing: 10
-
-                            NavbarIcon {
-                                width: 36
-                                height: 36
-                                anchors.verticalCenter: parent.verticalCenter
-                                iconName: root.settingFor(root.selectedSlot).icon
-                                iconColor: "#111318"
-                            }
-
-                            Column {
-                                anchors.verticalCenter: parent.verticalCenter
-                                Text {
-                                    text: root.settingFor(root.selectedSlot).icon
-                                    color: root.text
-                                    font.pixelSize: 10
-                                    font.weight: Font.DemiBold
-                                }
-                                Text {
-                                    text: {
-                                        const entry = root.selectedWorkspaceEntry()
-                                        return "Workspace: " + (entry ? entry.name : root.selectedSlot)
-                                    }
-                                    color: root.muted
-                                    font.pixelSize: 7
-                                }
-                            }
-                        }
-                    }
-
-                    Text {
-                        width: parent.width
-                        text: "This removes the workspace from A16EEN and the navbar. Any open windows will be moved to another workspace first."
-                        color: root.textSecondary
-                        wrapMode: Text.WordWrap
-                        font.pixelSize: 8
-                    }
-                }
-
-                Text {
-                    visible: root.workspaceStatus.length > 0
-                    width: parent.width
-                    text: root.workspaceStatus
-                    color: root.workspaceStatus.indexOf("FAILED") >= 0 ||
-                        root.workspaceStatus.indexOf("EXISTS") >= 0 ||
-                        root.workspaceStatus.indexOf("LONG") >= 0 ||
-                        root.workspaceStatus.indexOf("NAME") >= 0
-                        ? "#B42318" : root.textSecondary
-                    font.pixelSize: 8
-                }
-
-                Item { width: 1; height: 1 }
-
-                Row {
-                    width: parent.width
-                    height: 38
-                    spacing: 8
-
-                    Rectangle {
-                        width: parent.width / 2 - 4
-                        height: 38
-                        radius: 10
-                        color: root.panel
-                        border.width: 1
-                        border.color: root.border
-
-                        Text {
-                            anchors.centerIn: parent
-                            text: "CANCEL"
-                            color: root.textSecondary
-                            font.pixelSize: 8
+                            font.pixelSize: 7
                             font.weight: Font.DemiBold
                         }
-
-                        MouseArea {
-                            anchors.fill: parent
-                            cursorShape: Qt.PointingHandCursor
-                            onClicked: {
-                                if (root.addWorkspaceOpen)
-                                    root.cancelAddWorkspace()
-                                else
-                                    root.cancelRemoveWorkspace()
-                            }
-                        }
-                    }
-
-                    Rectangle {
-                        width: parent.width / 2 - 4
-                        height: 38
-                        radius: 10
-                        color: root.text
-                        Text {
-                            anchors.centerIn: parent
-                            text: root.addWorkspaceOpen ? "ADD WORKSPACE" : "REMOVE WORKSPACE"
-                            color: "#FFFFFF"
-                            font.pixelSize: 8
-                            font.weight: Font.DemiBold
-                        }
-
-                        MouseArea {
-                            anchors.fill: parent
-                            cursorShape: Qt.PointingHandCursor
-                            enabled: !root.workspaceProcess.running
-                            onClicked: {
-                                if (root.addWorkspaceOpen)
-                                    root.submitAddWorkspace()
-                                else
-                                    root.submitRemoveWorkspace()
+                        Repeater {
+                            model: root.colors
+                            delegate: Rectangle {
+                                width: 22; height: 22; radius: 7
+                                color: "#FFFFFF"
+                                border.width: 1
+                                border.color: root.settingFor(root.selectedSlot).color.toUpperCase() === modelData.toUpperCase()
+                                    ? root.text : root.border
+                                Rectangle {
+                                    anchors.centerIn: parent
+                                    width: 12; height: 12; radius: 6
+                                    color: modelData
+                                }
+                                MouseArea {
+                                    anchors.fill: parent
+                                    cursorShape: Qt.PointingHandCursor
+                                    onClicked: root.applyColor(modelData)
+                                }
                             }
                         }
                     }
@@ -1474,8 +660,7 @@ Item {
 
     onActiveChanged: {
         if (root.active) {
-            root.activeSection = 0
-            workspaceRegistryFile.reload()
+            workspaceReader.running = true
             settingsFile.reload()
         }
     }
