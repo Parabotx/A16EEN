@@ -7,29 +7,67 @@ readonly COUNT_FILE="$STATE_DIR/workspace-count"
 readonly ICON_ROOT="${XDG_CONFIG_HOME:-$HOME/.config}/a16een/quickshell/a16een/assets/icons"
 readonly OUTPUT_DIR="$STATE_DIR/navbar-icons"
 
-readonly WORKSPACES=(
-    "home"
-    "code"
-    "web"
-    "comms"
-    "studio"
-    "music"
-    "games"
-    "files"
-    "lab"
+readonly REGISTRY_FILE="$STATE_DIR/workspaces.json"
+
+declare -Ar DEFAULT_COLOR=(
+    [home]="#111318"
+    [code]="#111318"
+    [web]="#111318"
+    [comms]="#111318"
+    [studio]="#111318"
+    [music]="#111318"
+    [games]="#111318"
+    [files]="#111318"
+    [lab]="#111318"
 )
 
-declare -Ar DEFAULT_ICON=(
-    [home]="house.svg"
-    [code]="code.svg"
-    [web]="globe.svg"
-    [comms]="messages-square.svg"
-    [studio]="sparkles.svg"
-    [music]="music.svg"
-    [games]="gamepad-2.svg"
-    [files]="folder.svg"
-    [lab]="terminal.svg"
-)
+ensure_registry() {
+    [[ -s "$REGISTRY_FILE" ]] || /usr/local/bin/a16een-workspaces apply >/dev/null 2>&1 || true
+    [[ -s "$REGISTRY_FILE" ]] || {
+        echo "A16EEN navbar: workspace registry is missing: $REGISTRY_FILE" >&2
+        return 1
+    }
+    jq empty "$REGISTRY_FILE" >/dev/null 2>&1 || {
+        echo "A16EEN navbar: workspace registry is invalid." >&2
+        return 1
+    }
+}
+
+workspace_ids() {
+    jq -r '.[].id' "$REGISTRY_FILE"
+}
+
+is_known_slot() {
+    local candidate="$1"
+    jq -e --arg id "$candidate" ".[] | select(.id == \$id)" "$REGISTRY_FILE" >/dev/null 2>&1
+}
+
+is_active_slot() {
+    is_known_slot "$1"
+}
+
+active_count() {
+    ensure_registry
+    jq 'length' "$REGISTRY_FILE"
+}
+
+prune_inactive_slots() {
+    ensure_registry
+    mkdir -p "$STATE_DIR" "$OUTPUT_DIR"
+
+    local slot tmp
+    for slot in "$OUTPUT_DIR"/*.svg; do
+        [[ -e "$slot" ]] || continue
+        slot="$(basename "$slot" .svg)"
+        if ! is_known_slot "$slot"; then
+            rm -f "$OUTPUT_DIR/$slot.svg"
+            [[ -s "$SETTINGS_FILE" ]] || continue
+            tmp="$(mktemp "$STATE_DIR/navbar.json.XXXXXX")"
+            jq --arg slot "$slot" 'del(.[$slot])' "$SETTINGS_FILE" > "$tmp"
+            mv -f "$tmp" "$SETTINGS_FILE"
+        fi
+    done
+}
 
 declare -Ar DEFAULT_COLOR=(
     [home]="#111318"
@@ -116,17 +154,15 @@ ensure_settings() {
     mkdir -p "$STATE_DIR"
 
     if [[ ! -s "$SETTINGS_FILE" ]]; then
-        cat > "$SETTINGS_FILE" <<'JSON'
-{
-  "home": {"icon":"house.svg","color":"#111318"},
-  "code": {"icon":"code.svg","color":"#111318"},
-  "web": {"icon":"globe.svg","color":"#111318"},
-  "comms": {"icon":"messages-square.svg","color":"#111318"},
-  "studio": {"icon":"sparkles.svg","color":"#111318"},
-  "music": {"icon":"music.svg","color":"#111318"},
-  "games": {"icon":"gamepad-2.svg","color":"#111318"},
-  "files": {"icon":"folder.svg","color":"#111318"},
-  "lab": {"icon":"terminal.svg","color":"#111318"}
+        local tmp="$STATE_DIR/navbar.json.XXXXXX"
+        jq 'map({key:.id,value:{icon:.icon,color:"#111318"}}) | from_entries' "$REGISTRY_FILE" > "$tmp"
+        mv -f "$tmp" "$SETTINGS_FILE"
+    else
+        local merge_tmp
+        merge_tmp="$(mktemp "$STATE_DIR/navbar.json.XXXXXX")"
+        jq --slurpfile registry "$REGISTRY_FILE" 'reduce $registry[0][] as $ws (. ; if has($ws.id) then . else . + {($ws.id): {icon:$ws.icon,color:"#111318"}} end)' "$SETTINGS_FILE" > "$merge_tmp"
+        mv -f "$merge_tmp" "$SETTINGS_FILE"
+    fi
 }
 JSON
     fi
@@ -141,8 +177,12 @@ generate_icon() {
     configured_icon="$(normalize_icon "$configured_icon")"
     configured_style="$(normalize_style "$configured_style")"
 
-    [[ -n "$configured_icon" ]] || configured_icon="${DEFAULT_ICON[$slot]}"
-    [[ -n "$configured_style" ]] || configured_style="solid:${DEFAULT_COLOR[$slot]}"
+    if [[ -z "$configured_icon" ]]; then
+        configured_icon="$(jq -r --arg id "$slot" '.[] | select(.id == $id) | .icon' "$REGISTRY_FILE")"
+    fi
+    [[ -n "$configured_icon" && "$configured_icon" != "null" ]] || configured_icon="house.svg"
+
+    [[ -n "$configured_style" ]] || configured_style="solid:#111318"
 
     icon_file="$ICON_ROOT/$configured_icon"
     if [[ ! -f "$icon_file" ]]; then
@@ -274,6 +314,7 @@ set_setting() {
         return 1
     }
 
+    ensure_registry
     ensure_settings
 
     local tmp
@@ -291,20 +332,20 @@ set_setting() {
 }
 
 main() {
+    ensure_registry
     ensure_settings
     mkdir -p "$OUTPUT_DIR"
 
     prune_inactive_slots
 
-    local count="$(active_count)"
-    local i slot
-    for ((i=0; i<count; i++)); do
-        slot="${WORKSPACES[$i]}"
+    local slot
+    while IFS= read -r slot; do
+        [[ -n "$slot" ]] || continue
         generate_icon "$slot"
-    done
+    done < <(workspace_ids)
 
     touch "$OUTPUT_DIR/ready"
-    echo "A16EEN navbar icons generated for $count active workspaces."
+    echo "A16EEN navbar icons generated for $(active_count) active workspaces."
 }
 
 case "${1:-apply}" in
