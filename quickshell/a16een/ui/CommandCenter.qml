@@ -55,8 +55,11 @@ PanelWindow {
     signal timeUse24HourRequested(bool enabled)
     signal timeShowSecondsRequested(bool enabled)
     signal iconThemeChanged(string themeId)
+    signal navbarPositionChanged(string position)
 
-    readonly property color surface: root.widgetViewOpen || root.controlViewOpen || root.iconThemeViewOpen || root.workspacePresetViewOpen || root.navbarViewOpen ? "#FFFFFF" : "#000000"
+    // NavbarManager owns its own light page. Do not turn the entire
+    // command-center window into a white cover when /navbar is open.
+    readonly property color surface: root.widgetViewOpen || root.controlViewOpen || root.iconThemeViewOpen || root.workspacePresetViewOpen ? "#FFFFFF" : "#000000"
     readonly property color borderColor: "#1A1A1A"
     readonly property color fieldBackground: "#0A0A0A"
     readonly property color fieldBorder: "#1C1C1C"
@@ -585,6 +588,7 @@ PanelWindow {
                     return
                 item.active = true
                 item.backRequested.connect(root.closeNavbarView)
+                item.navbarPositionChanged.connect(root.navbarPositionChanged)
             }
         }
 

@@ -10,6 +10,8 @@ Item {
     property string pendingPosition: ""
     property string statusText: "READY"
 
+    signal positionChanged(string position)
+
     readonly property string stateDir: {
         const stateHome = Quickshell.env("XDG_STATE_HOME")
         const home = Quickshell.env("HOME") || ""
@@ -66,6 +68,7 @@ Item {
                 root.position = root.pendingPosition
                 root.statusText = "READY"
                 layoutFile.reload()
+                root.positionChanged(root.position)
             } else {
                 root.statusText = "MOVE FAILED"
                 layoutFile.reload()

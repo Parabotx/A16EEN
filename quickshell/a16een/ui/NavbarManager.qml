@@ -13,6 +13,7 @@ Item {
     property string pendingColor: "#111318"
 
     signal backRequested()
+    signal navbarPositionChanged(string position)
 
     readonly property string stateDir: {
         const stateHome = Quickshell.env("XDG_STATE_HOME")
@@ -281,6 +282,7 @@ Item {
                     return
                 item.anchors.fill = placementLoader
                 item.active = true
+                item.positionChanged.connect(root.navbarPositionChanged)
             }
         }
 

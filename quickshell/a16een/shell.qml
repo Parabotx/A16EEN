@@ -24,6 +24,30 @@ ShellRoot {
     property string powerProfile: "balanced"
     property bool doNotDisturb: false
     property int iconThemeRevision: 0
+    property string navbarPosition: "right"
+
+    readonly property string navbarLayoutPath: {
+        const stateHome = Quickshell.env("XDG_STATE_HOME")
+        const home = Quickshell.env("HOME") || ""
+        const base = stateHome && stateHome.length ? stateHome : home + "/.local/state"
+        return base + "/a16een/navbar-layout.json"
+    }
+
+    FileView {
+        id: navbarLayoutFile
+        path: root.navbarLayoutPath
+        watchChanges: false
+        printErrors: false
+        onLoaded: {
+            try {
+                const parsed = JSON.parse(String(this.text || ""))
+                if (parsed && ["left", "right", "top", "bottom"].includes(parsed.position))
+                    root.navbarPosition = parsed.position
+            } catch (error) {
+                root.navbarPosition = "right"
+            }
+        }
+    }
     property real controlIndicatorLevel: 0
     property int controlIndicatorRevision: 0
 
@@ -652,6 +676,7 @@ ShellRoot {
             workspaces: root.workspaces
             focusedWorkspaceId: root.focusedWorkspaceId
             fullscreenActive: root.focusedWindowFullscreen
+            navbarPosition: root.navbarPosition
 
             onLauncherRequested: {
                 root.launcherOpen = true
@@ -677,6 +702,11 @@ ShellRoot {
         doNotDisturb: root.doNotDisturb
 
         onCloseRequested: root.commandCenterOpen = false
+
+        onNavbarPositionChanged: {
+            if (["left", "right", "top", "bottom"].includes(position))
+                root.navbarPosition = position
+        }
 
         onLauncherRequested: {
             root.commandCenterOpen = false

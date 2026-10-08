@@ -27,12 +27,11 @@ PanelWindow {
     readonly property string navbarIconRoot: root.stateDir + "/navbar-icons"
     readonly property string navbarReadyPath: root.navbarIconRoot + "/ready"
     readonly property string workspaceCountPath: root.stateDir + "/workspace-count"
-    readonly property string navbarLayoutPath: root.stateDir + "/navbar-layout.json"
 
     property int navbarRevision: 0
     property int workspaceCount: 6
     property bool edgeRevealed: false
-    property string navbarPosition: "right"
+    required property string navbarPosition
 
     readonly property var workspaceCatalog: [
         { id: "home", icon: "house.svg" },
@@ -93,16 +92,6 @@ PanelWindow {
             root.workspaceCount = Math.floor(value)
     }
 
-    function loadNavbarPosition(raw) {
-        try {
-            const parsed = JSON.parse(String(raw || ""))
-            if (parsed && ["left", "right", "top", "bottom"].includes(parsed.position))
-                root.navbarPosition = parsed.position
-        } catch (error) {
-            root.navbarPosition = "right"
-        }
-    }
-
     function generatedIconPath(slot) {
         return "file://" + root.navbarIconRoot + "/" + slot + ".svg"
     }
@@ -127,26 +116,6 @@ PanelWindow {
         printErrors: false
         onLoaded: root.loadWorkspaceCount(this.text())
         onFileChanged: root.loadWorkspaceCount(this.text())
-    }
-
-    FileView {
-        id: navbarLayoutFile
-        path: root.navbarLayoutPath
-        watchChanges: true
-        printErrors: false
-        onLoaded: root.loadNavbarPosition(this.text())
-        onFileChanged: root.loadNavbarPosition(this.text())
-    }
-
-    // FileView change notifications can be coalesced by the compositor/runtime.
-    // A lightweight refresh keeps repeated placement changes responsive without
-    // touching the navbar rendering path.
-    Timer {
-        id: navbarLayoutRefresh
-        interval: 250
-        repeat: true
-        running: true
-        onTriggered: navbarLayoutFile.reload()
     }
 
     screen: modelData
