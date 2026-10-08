@@ -258,20 +258,7 @@ PanelWindow {
     }
 
     function focusWorkspace(name) {
-        const target = String(name || "").trim()
-        if (!target.length)
-            return
-
-        // Niri supports focusing a configured workspace by its persistent name.
-        // Keep this IPC path deliberately small so a navbar click cannot affect
-        // Quickshell startup or rendering.
-        Quickshell.execDetached([
-            "niri",
-            "msg",
-            "action",
-            "focus-workspace",
-            target
-        ])
+        Quickshell.execDetached(["niri", "msg", "action", "focus-workspace", name])
     }
 
     function contentValue(id) {
