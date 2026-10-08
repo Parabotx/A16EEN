@@ -274,11 +274,13 @@ fi
 
 printf '%s\n' "$SOURCE_COMMIT" > "$STATE_DIR/installed-commit"
 
-# Apply the saved A16EEN workspace count after every deployment. The source
-# script validates the resulting config and reloads Niri when the count changes.
+# Restore the persistent A16EEN workspace registry after every deployment.
+# Workspace creation/removal is handled live through Niri IPC; the source
+# script recreates any user-defined named workspaces that are not currently
+# present in the session.
 if command -v niri >/dev/null 2>&1; then
     if ! bash "$ROOT_DIR/scripts/a16een-workspaces" apply; then
-        echo "WARNING: could not apply the saved workspace count; keeping the validated config." >&2
+        echo "WARNING: could not restore the A16EEN workspace registry; keeping the deployed configuration." >&2
     fi
 fi
 
