@@ -1,11 +1,12 @@
 import QtQuick
-import QtQuick.Effects
+import Quickshell
 
 Item {
     id: root
 
-    property string iconName: "house.svg"
-    property color iconColor: "#111111"
+    property string iconPath: ""
+    property string fallbackIconPath: ""
+    property int refreshRevision: 0
     property bool hovered: false
     property bool active: false
 
@@ -21,19 +22,37 @@ Item {
         }
     }
 
+    function refresh() {
+        const primary = String(root.iconPath || "")
+        const fallback = String(root.fallbackIconPath || "")
+        image.source = ""
+        Qt.callLater(() => {
+            if (primary.length)
+                image.source = primary
+            else
+                image.source = fallback
+        })
+    }
+
     Image {
-        id: iconImage
+        id: image
         anchors.fill: parent
-        source: root.iconName.length
-            ? Qt.resolvedUrl("../assets/icons/" + root.iconName)
-            : ""
         fillMode: Image.PreserveAspectFit
+        sourceSize.width: width
+        sourceSize.height: height
         smooth: true
         mipmap: true
-        layer.enabled: true
-        layer.effect: MultiEffect {
-            colorization: 1
-            colorizationColor: root.iconColor
+        asynchronous: true
+
+        onStatusChanged: {
+            if (status === Image.Error && root.fallbackIconPath.length
+                && source !== root.fallbackIconPath) {
+                source = root.fallbackIconPath
+            }
         }
     }
+
+    onIconPathChanged: root.refresh()
+    onRefreshRevisionChanged: root.refresh()
+    Component.onCompleted: root.refresh()
 }
