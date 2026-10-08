@@ -18,6 +18,28 @@ PanelWindow {
     readonly property color iconColor: "#111111"
     readonly property color hoverBackground: "#F3F4F6"
 
+    readonly property string layoutPath: {
+        const stateHome = Quickshell.env("XDG_STATE_HOME")
+        const home = Quickshell.env("HOME") || ""
+        const base = stateHome && stateHome.length
+            ? stateHome
+            : home + "/.local/state"
+        return base + "/a16een/navbar-layout.json"
+    }
+
+    property string navbarPosition: "right"
+
+    readonly property bool horizontalNavbar:
+        root.navbarPosition === "top" || root.navbarPosition === "bottom"
+
+    readonly property int dockWidth:
+        Math.max(
+            44,
+            root.visibleWorkspaces.length * 32
+                + Math.max(0, root.visibleWorkspaces.length - 1) * 4
+                + 18
+        )
+
     readonly property string stateDir: {
         const stateHome = Quickshell.env("XDG_STATE_HOME")
         const home = Quickshell.env("HOME") || ""
@@ -75,6 +97,25 @@ PanelWindow {
         return Qt.resolvedUrl("../assets/icons/" + iconName)
     }
 
+    function loadNavbarLayout(raw) {
+        try {
+            const parsed = JSON.parse(String(raw || ""))
+            if (parsed && ["left", "right", "top", "bottom"].includes(parsed.position))
+                root.navbarPosition = parsed.position
+        } catch (error) {
+            root.navbarPosition = "right"
+        }
+    }
+
+    FileView {
+        id: navbarLayoutFile
+        path: root.layoutPath
+        watchChanges: true
+        printErrors: false
+        onLoaded: root.loadNavbarLayout(this.text())
+        onFileChanged: root.loadNavbarLayout(this.text())
+    }
+
     FileView {
         id: navbarReadyFile
         path: root.navbarReadyPath
@@ -98,19 +139,30 @@ PanelWindow {
     aboveWindows: true
     exclusionMode: ExclusionMode.Ignore
     exclusiveZone: 0
-    width: root.surfaceWidth
-    height: root.surfaceHeight
+    width: root.horizontalNavbar
+        ? (root.dockVisible ? root.dockWidth : root.modelData.width)
+        : (root.dockVisible ? root.surfaceWidth : 8)
+    height: root.horizontalNavbar
+        ? (root.dockVisible ? 66 : 8)
+        : root.surfaceHeight
 
-    // The actual Wayland surface is only the navbar-sized area. It never
-    // covers the rest of the screen, even while the navbar is hidden.
+    // The actual Wayland surface follows the selected navbar edge.
     anchors {
-        right: true
-        top: true
+        left: root.horizontalNavbar || root.navbarPosition === "left"
+        right: !root.horizontalNavbar && root.navbarPosition === "right"
+        top: root.horizontalNavbar
+            ? root.navbarPosition === "top"
+            : true
+        bottom: root.horizontalNavbar && root.navbarPosition === "bottom"
     }
 
     margins {
+        left: root.horizontalNavbar
+            ? Math.max(0, Math.round((root.modelData.width - root.dockWidth) / 2))
+            : 0
         right: 0
-        top: root.surfaceTopMargin
+        top: root.horizontalNavbar ? 0 : root.surfaceTopMargin
+        bottom: 0
     }
 
     WlrLayershell.layer: WlrLayer.Overlay
@@ -149,10 +201,15 @@ PanelWindow {
 
     MouseArea {
         id: edgeReveal
-        anchors.right: parent.right
-        anchors.verticalCenter: parent.verticalCenter
-        width: 8
-        height: 240
+        anchors.left: root.horizontalNavbar || root.navbarPosition === "left"
+        anchors.right: !root.horizontalNavbar && root.navbarPosition === "right"
+        anchors.top: root.horizontalNavbar && root.navbarPosition === "top"
+            ? parent.top : (!root.horizontalNavbar ? undefined : undefined)
+        anchors.bottom: root.horizontalNavbar && root.navbarPosition === "bottom"
+            ? parent.bottom : (!root.horizontalNavbar ? undefined : undefined)
+        anchors.verticalCenter: !root.horizontalNavbar ? parent.verticalCenter : undefined
+        width: root.horizontalNavbar ? parent.width : 8
+        height: root.horizontalNavbar ? 8 : 240
         hoverEnabled: true
         acceptedButtons: Qt.NoButton
         z: 10
@@ -167,8 +224,8 @@ PanelWindow {
             : parent.width + 2
         anchors.verticalCenter: parent.verticalCenter
 
-        width: 44
-        height: root.dockHeight
+        width: root.horizontalNavbar ? root.dockWidth : 44
+        height: root.horizontalNavbar ? 44 : root.dockHeight
         radius: 18
         color: root.dockBackground
         border.width: 1
@@ -189,9 +246,12 @@ PanelWindow {
             z: -1
         }
 
-        Column {
+        Grid {
             anchors.centerIn: parent
-            spacing: 4
+            columns: root.horizontalNavbar ? root.visibleWorkspaces.length : 1
+            rows: root.horizontalNavbar ? 1 : root.visibleWorkspaces.length
+            rowSpacing: 4
+            columnSpacing: 4
 
             Repeater {
                 model: root.visibleWorkspaces
@@ -218,9 +278,10 @@ PanelWindow {
                         width: 3
                         height: 16
                         radius: 2
-                        anchors.right: parent.right
-                        anchors.rightMargin: 2
-                        anchors.verticalCenter: parent.verticalCenter
+                        anchors.right: root.horizontalNavbar ? parent.right : undefined
+                        anchors.bottom: root.horizontalNavbar ? undefined : parent.bottom
+                        anchors.verticalCenter: root.horizontalNavbar ? parent.verticalCenter : undefined
+                        anchors.horizontalCenter: root.horizontalNavbar ? undefined : parent.horizontalCenter
                         color: root.iconColor
                     }
 
@@ -247,6 +308,7 @@ PanelWindow {
                     }
                 }
             }
+        }
         }
     }
 
