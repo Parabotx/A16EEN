@@ -27,10 +27,12 @@ PanelWindow {
     readonly property string navbarIconRoot: root.stateDir + "/navbar-icons"
     readonly property string navbarReadyPath: root.navbarIconRoot + "/ready"
     readonly property string workspaceCountPath: root.stateDir + "/workspace-count"
+    readonly property string navbarLayoutPath: root.stateDir + "/navbar-layout.json"
 
     property int navbarRevision: 0
     property int workspaceCount: 6
     property bool edgeRevealed: false
+    property string navbarPosition: "right"
 
     readonly property var workspaceCatalog: [
         { id: "home", icon: "house.svg" },
@@ -46,25 +48,59 @@ PanelWindow {
 
     readonly property var visibleWorkspaces: root.workspaceCatalog.slice(0, root.workspaceCount)
 
-    readonly property int dockHeight: Math.max(
-        260,
-        root.visibleWorkspaces.length * 32
-            + Math.max(0, root.visibleWorkspaces.length - 1) * 4
-            + 18
-    )
+    readonly property bool horizontalNavbar:
+        root.navbarPosition === "top" || root.navbarPosition === "bottom"
+
+    readonly property int dockHeight: root.horizontalNavbar
+        ? 44
+        : Math.max(
+            260,
+            root.visibleWorkspaces.length * 32
+                + Math.max(0, root.visibleWorkspaces.length - 1) * 4
+                + 18
+        )
+
+    readonly property int dockWidth: root.horizontalNavbar
+        ? Math.max(
+            44,
+            root.visibleWorkspaces.length * 32
+                + Math.max(0, root.visibleWorkspaces.length - 1) * 4
+                + 20
+        )
+        : 44
 
     readonly property bool dockVisible: !root.fullscreenActive || root.edgeRevealed
-    readonly property int surfaceWidth: root.dockVisible ? 66 : 8
-    readonly property int surfaceHeight: root.dockVisible ? root.dockHeight : 240
-    readonly property int surfaceTopMargin: Math.max(
-        0,
-        Math.round((root.modelData.height - root.surfaceHeight) / 2)
-    )
+
+    readonly property int surfaceWidth:
+        root.horizontalNavbar
+            ? (root.dockVisible ? root.dockWidth : root.modelData.width)
+            : (root.dockVisible ? 66 : 8)
+
+    readonly property int surfaceHeight:
+        root.horizontalNavbar
+            ? (root.dockVisible ? root.dockHeight : 8)
+            : (root.dockVisible ? root.dockHeight : 240)
+
+    readonly property int horizontalCenterMargin:
+        Math.max(0, Math.round((root.modelData.width - root.surfaceWidth) / 2))
+
+    readonly property int verticalCenterMargin:
+        Math.max(0, Math.round((root.modelData.height - root.surfaceHeight) / 2))
 
     function loadWorkspaceCount(raw) {
         const value = Number(String(raw || "").trim())
         if (value >= 2 && value <= 9)
             root.workspaceCount = Math.floor(value)
+    }
+
+    function loadNavbarPosition(raw) {
+        try {
+            const parsed = JSON.parse(String(raw || ""))
+            if (parsed && ["left", "right", "top", "bottom"].includes(parsed.position))
+                root.navbarPosition = parsed.position
+        } catch (error) {
+            root.navbarPosition = "right"
+        }
     }
 
     function generatedIconPath(slot) {
@@ -93,6 +129,15 @@ PanelWindow {
         onFileChanged: root.loadWorkspaceCount(this.text())
     }
 
+    FileView {
+        id: navbarLayoutFile
+        path: root.navbarLayoutPath
+        watchChanges: true
+        printErrors: false
+        onLoaded: root.loadNavbarPosition(this.text())
+        onFileChanged: root.loadNavbarPosition(this.text())
+    }
+
     screen: modelData
     color: "transparent"
     aboveWindows: true
@@ -104,13 +149,17 @@ PanelWindow {
     // The actual Wayland surface is only the navbar-sized area. It never
     // covers the rest of the screen, even while the navbar is hidden.
     anchors {
-        right: true
-        top: true
+        left: root.horizontalNavbar || root.navbarPosition === "left"
+        right: !root.horizontalNavbar && root.navbarPosition === "right"
+        top: root.horizontalNavbar ? root.navbarPosition === "top" : true
+        bottom: root.horizontalNavbar && root.navbarPosition === "bottom"
     }
 
     margins {
+        left: root.horizontalNavbar ? root.horizontalCenterMargin : 0
         right: 0
-        top: root.surfaceTopMargin
+        top: root.horizontalNavbar ? 0 : root.verticalCenterMargin
+        bottom: 0
     }
 
     WlrLayershell.layer: WlrLayer.Overlay
@@ -149,10 +198,14 @@ PanelWindow {
 
     MouseArea {
         id: edgeReveal
-        anchors.right: parent.right
-        anchors.verticalCenter: parent.verticalCenter
-        width: 8
-        height: 240
+        x: root.horizontalNavbar
+            ? 0
+            : (root.navbarPosition === "right" ? parent.width - width : 0)
+        y: root.horizontalNavbar
+            ? (root.navbarPosition === "bottom" ? parent.height - height : 0)
+            : 0
+        width: root.horizontalNavbar ? parent.width : 8
+        height: root.horizontalNavbar ? 8 : parent.height
         hoverEnabled: true
         acceptedButtons: Qt.NoButton
         z: 10
@@ -162,12 +215,18 @@ PanelWindow {
 
     Rectangle {
         id: dock
-        x: root.dockVisible
-            ? parent.width - width - 10
-            : parent.width + 2
-        anchors.verticalCenter: parent.verticalCenter
+        x: root.horizontalNavbar
+            ? Math.round((parent.width - width) / 2)
+            : (root.dockVisible
+                ? 10
+                : (root.navbarPosition === "right" ? parent.width + 2 : -width - 2))
+        y: root.horizontalNavbar
+            ? (root.dockVisible
+                ? 0
+                : (root.navbarPosition === "bottom" ? parent.height + 2 : -height - 2))
+            : Math.round((parent.height - height) / 2)
 
-        width: 44
+        width: root.horizontalNavbar ? root.dockWidth : 44
         height: root.dockHeight
         radius: 18
         color: root.dockBackground
@@ -176,7 +235,14 @@ PanelWindow {
 
         Behavior on x {
             NumberAnimation {
-                duration: 85
+                duration: 120
+                easing.type: Easing.OutCubic
+            }
+        }
+
+        Behavior on y {
+            NumberAnimation {
+                duration: 120
                 easing.type: Easing.OutCubic
             }
         }
@@ -189,9 +255,12 @@ PanelWindow {
             z: -1
         }
 
-        Column {
+        Grid {
             anchors.centerIn: parent
-            spacing: 4
+            columns: root.horizontalNavbar ? root.visibleWorkspaces.length : 1
+            rows: root.horizontalNavbar ? 1 : root.visibleWorkspaces.length
+            rowSpacing: 4
+            columnSpacing: 4
 
             Repeater {
                 model: root.visibleWorkspaces
@@ -215,12 +284,15 @@ PanelWindow {
 
                     Rectangle {
                         visible: workspaceButton.active
-                        width: 3
-                        height: 16
+                        width: root.horizontalNavbar ? 16 : 3
+                        height: root.horizontalNavbar ? 3 : 16
                         radius: 2
-                        anchors.right: parent.right
-                        anchors.rightMargin: 2
-                        anchors.verticalCenter: parent.verticalCenter
+                        anchors.right: root.horizontalNavbar ? undefined : parent.right
+                        anchors.bottom: root.horizontalNavbar ? parent.bottom : undefined
+                        anchors.rightMargin: root.horizontalNavbar ? 0 : 2
+                        anchors.bottomMargin: root.horizontalNavbar ? 2 : 0
+                        anchors.verticalCenter: root.horizontalNavbar ? undefined : parent.verticalCenter
+                        anchors.horizontalCenter: root.horizontalNavbar ? parent.horizontalCenter : undefined
                         color: root.iconColor
                     }
 
