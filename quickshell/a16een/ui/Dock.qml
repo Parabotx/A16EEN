@@ -185,17 +185,29 @@ PanelWindow {
         const setting = root.navbarSettings && root.navbarSettings[slot]
             ? root.navbarSettings[slot] : null
         const spec = String(setting && setting.color ? setting.color : "#111318")
+        let selected = "#111318"
 
-        if (spec.indexOf("solid:") === 0)
-            return spec.substring(6)
-        if (spec.charAt(0) === "#")
-            return spec
+        if (spec.indexOf("solid:") === 0) {
+            selected = spec.substring(6)
+        } else if (spec.charAt(0) === "#") {
+            selected = spec
+        } else {
+            const parts = spec.split(":")
+            if (parts.length >= 3) {
+                const first = parts[1]
+                const second = parts[2]
+                selected = root.isWhiteColor(first) && !root.isWhiteColor(second)
+                    ? second : first
+            }
+        }
 
-        const parts = spec.split(":")
-        if (parts.length >= 2 && parts[1].charAt(0) === "#")
-            return parts[1]
+        // A single white workspace icon would disappear on the normal white
+        // surface. Reserve true white for the all-white design, where Dock
+        // itself switches to the dark surface.
+        if (!root.allWhiteNavbarStyles && root.isWhiteColor(selected))
+            return "#111318"
 
-        return "#111318"
+        return selected
     }
 
     function loadNavbarSettings(raw) {
