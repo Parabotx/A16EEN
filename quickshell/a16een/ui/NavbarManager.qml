@@ -29,13 +29,13 @@ Item {
 
 
     readonly property color page: "#20252C"
-    readonly property color card: "#2B313A"
-    readonly property color cardHover: "#3B434E"
-    readonly property color border: "#46515E"
-    readonly property color borderStrong: "#667384"
+    readonly property color card: "#2E353E"
+    readonly property color cardHover: "#414B57"
+    readonly property color border: "#586575"
+    readonly property color borderStrong: "#7A8797"
     readonly property color textPrimary: "#F4F6F9"
-    readonly property color textSecondary: "#C4CDD8"
-    readonly property color textMuted: "#98A4B2"
+    readonly property color textSecondary: "#CDD5DE"
+    readonly property color textMuted: "#A7B1BD"
     readonly property color accent: "#3B82F6"
 
     readonly property var slots: [
@@ -178,7 +178,7 @@ Item {
     function resetSelected() {
         root.patch({
             icon: root.defaultIcon(root.selectedSlot),
-            color: "#2B313A"
+            color: "#2E353E"
         })
     }
 
@@ -422,7 +422,7 @@ Item {
                             Layout.preferredWidth: 46
                             Layout.preferredHeight: 46
                             radius: 13
-                            color: "#323943"
+                            color: "#353E49"
                             border.width: 1
                             border.color: root.border
 

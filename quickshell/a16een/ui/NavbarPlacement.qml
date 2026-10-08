@@ -20,13 +20,13 @@ Item {
 
     readonly property string layoutPath: root.stateDir + "/navbar-layout.json"
 
-    readonly property color panel: "#F4F6F8"
-    readonly property color border: "#46515E"
-    readonly property color borderStrong: "#667384"
+    readonly property color panel: "#2E353E"
+    readonly property color border: "#586575"
+    readonly property color borderStrong: "#7A8797"
     readonly property color text: "#F4F6F9"
-    readonly property color muted: "#98A4B2"
-    readonly property color hover: "#3B434E"
-    readonly property color selected: "#515D6A"
+    readonly property color muted: "#A7B1BD"
+    readonly property color hover: "#414B57"
+    readonly property color selected: "#5E6B7A"
 
     function loadPosition(raw) {
         try {
@@ -79,7 +79,7 @@ Item {
     Rectangle {
         anchors.fill: parent
         radius: 12
-        color: "#262C34"
+        color: "#252C34"
         border.width: 1
         border.color: root.border
 
@@ -92,7 +92,7 @@ Item {
                 width: 88
                 height: parent.height
                 verticalAlignment: Text.AlignVCenter
-                text: "NAVBAR PLACEMENT"
+                text: "PLACEMENT"
                 color: root.muted
                 font.pixelSize: 7
                 font.weight: Font.DemiBold
@@ -108,7 +108,7 @@ Item {
                 ]
 
                 delegate: Rectangle {
-                    width: (parent.width - 109) / 4
+                    width: Math.max(82, (parent.width - 181) / 4)
                     height: 32
                     radius: 9
                     color: root.position === modelData.id ? "#F4F6F9"
