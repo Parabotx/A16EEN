@@ -450,30 +450,21 @@ Item {
                                             anchors.horizontalCenter: parent.horizontalCenter
                                             width: 20
                                             height: 20
-                                            iconPath: root.generatedIconPath(root.selectedSlot)
+                                            iconPath: Qt.resolvedUrl("../assets/icons/" + modelData.id)
                                             fallbackIconPath: root.baseIconPath(root.selectedSlot)
-                                            refreshRevision: root.navbarIconRevision
-                                            active: root.settingFor(root.selectedSlot).icon === modelData.id
                                         }
 
                                         Text {
-                                            width: parent.width
+                                            width: 58
                                             horizontalAlignment: Text.AlignHCenter
                                             text: modelData.name
                                             color: root.settingFor(root.selectedSlot).icon === modelData.id
                                                 ? "#FFFFFF" : root.textSecondary
                                             font.pixelSize: 6
+                                            font.weight: root.settingFor(root.selectedSlot).icon === modelData.id
+                                                ? Font.DemiBold : Font.Normal
                                             elide: Text.ElideRight
                                         }
-                                    }
-
-                                    // Overlay the actual choice icon for clarity.
-                                    NavbarIcon {
-                                        anchors.centerIn: parent
-                                        width: 20
-                                        height: 20
-                                        iconPath: Qt.resolvedUrl("../assets/icons/" + modelData.id)
-                                        fallbackIconPath: root.baseIconPath(root.selectedSlot)
                                     }
 
                                     MouseArea {
