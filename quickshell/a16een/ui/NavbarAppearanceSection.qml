@@ -31,17 +31,22 @@ Item {
                 border.width: 1
                 border.color: "#CBD3DB"
 
-                Image {
+                NavbarIcon {
                     anchors.centerIn: parent
                     width: 26
                     height: 26
-                    sourceSize.width: width
-                    sourceSize.height: height
-                    fillMode: Image.PreserveAspectFit
-                    asynchronous: true
-                    source: selectedIcon.length
-                        ? Qt.resolvedUrl("../assets/icons/" + selectedIcon)
-                        : Qt.resolvedUrl("../assets/icons/palette.svg")
+                    iconName: selectedIcon.length ? selectedIcon : "palette.svg"
+                    iconColor: {
+                        const spec = String(root.selectedStyle || "#111318")
+                        if (spec.indexOf("solid:") === 0)
+                            return spec.substring(6)
+                        if (spec.charAt(0) === "#")
+                            return spec
+                        const parts = spec.split(":")
+                        return parts.length >= 2 && parts[1].charAt(0) === "#"
+                            ? parts[1]
+                            : "#111318"
+                    }
                 }
             }
 
