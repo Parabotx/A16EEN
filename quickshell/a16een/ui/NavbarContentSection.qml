@@ -35,7 +35,7 @@ Item {
         } catch (error) {}
     }
 
-    function enabled(id) {
+    function isEnabled(id) {
         return root.contentState[id] === true
     }
 
@@ -102,9 +102,9 @@ Item {
                     width: (parent.width - 9) / 2
                     height: 88
                     radius: 14
-                    color: enabled(modelData.id) ? "#111318" : "#F4F6F8"
+                    color: isEnabled(modelData.id) ? "#111318" : "#F4F6F8"
                     border.width: 1
-                    border.color: enabled(modelData.id) ? "#111318" : "#CBD3DB"
+                    border.color: isEnabled(modelData.id) ? "#111318" : "#CBD3DB"
 
                     Row {
                         anchors.fill: parent
@@ -116,9 +116,9 @@ Item {
                             height: 40
                             radius: 11
                             anchors.verticalCenter: parent.verticalCenter
-                            color: enabled(modelData.id) ? "#25282E" : "#FFFFFF"
+                            color: isEnabled(modelData.id) ? "#25282E" : "#FFFFFF"
                             border.width: 1
-                            border.color: enabled(modelData.id) ? "#383D46" : "#CBD3DB"
+                            border.color: isEnabled(modelData.id) ? "#383D46" : "#CBD3DB"
 
                             Image {
                                 anchors.centerIn: parent
@@ -139,7 +139,7 @@ Item {
 
                             Text {
                                 text: modelData.title
-                                color: enabled(modelData.id) ? "#FFFFFF" : "#111318"
+                                color: isEnabled(modelData.id) ? "#FFFFFF" : "#111318"
                                 font.pixelSize: 10
                                 font.weight: Font.DemiBold
                             }
@@ -147,7 +147,7 @@ Item {
                             Text {
                                 width: parent.width
                                 text: modelData.subtitle
-                                color: enabled(modelData.id) ? "#AAB2BC" : "#64748B"
+                                color: isEnabled(modelData.id) ? "#AAB2BC" : "#64748B"
                                 font.pixelSize: 7
                                 wrapMode: Text.WordWrap
                             }
@@ -158,15 +158,15 @@ Item {
                             height: 24
                             radius: 8
                             anchors.verticalCenter: parent.verticalCenter
-                            color: enabled(modelData.id) ? "#D7B56D" : "#E5E7EB"
+                            color: isEnabled(modelData.id) ? "#D7B56D" : "#E5E7EB"
 
                             Rectangle {
                                 width: 18
                                 height: 18
                                 radius: 9
                                 anchors.verticalCenter: parent.verticalCenter
-                                x: enabled(modelData.id) ? parent.width - width - 3 : 3
-                                color: enabled(modelData.id) ? "#111318" : "#FFFFFF"
+                                x: isEnabled(modelData.id) ? parent.width - width - 3 : 3
+                                color: isEnabled(modelData.id) ? "#111318" : "#FFFFFF"
                             }
 
                             MouseArea {
