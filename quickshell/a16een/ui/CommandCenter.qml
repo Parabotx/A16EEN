@@ -83,7 +83,7 @@ PanelWindow {
         { id: "battery", name: "battery", keywords: ["battery", "power", "charge", "charging"] },
         { id: "dnd", name: "do not disturb", keywords: ["do not disturb", "dnd", "focus", "notifications"] },
         { id: "icons", name: "icons", keywords: ["icons", "icon theme", "icon themes", "app icons", "folder icons", "appearance"] },
-        { id: "navbar", name: "navbar", keywords: ["navbar", "navigation", "dock", "workspace icons", "navbar icons", "icon color", "icon colour"] },
+        { id: "navbar", name: "navbar", keywords: ["navbar", "navigation", "dock", "workspace", "workspaces", "workspace count", "increase workspaces", "decrease workspaces", "workspace icons", "navbar icons", "icon color", "icon colour"] },
         { id: "presets", name: "workspace presets", keywords: ["workspace presets", "preset", "workspace setup", "app sets", "app group", "session setup", "launch setup"] },
         { id: "widgets", name: "widgets", keywords: ["widgets", "widget", "clock", "time", "day", "date", "desktop", "modules"] },
         { id: "restart-shell", name: "restart-shell", keywords: ["restart", "shell", "reload", "quickshell"] },
