@@ -131,6 +131,23 @@ validate_icon() {
         die "invalid workspace icon."
 }
 
+restore_registry() {
+    require_tools
+    ensure_registry
+
+    local id existing
+    while IFS= read -r id; do
+        [[ -n "$id" ]] || continue
+
+        existing="$(niri msg -j workspaces 2>/dev/null | jq -r --arg name "$id" '.[] | select(.name == $name) | .name' | head -n 1 || true)"
+        [[ "$existing" == "$id" ]] && continue
+
+        niri msg action focus-workspace 999 >/dev/null 2>&1 || continue
+        niri msg action set-workspace-name "$id" >/dev/null 2>&1 || true
+    done < <(jq -r '.[].id' "$REGISTRY_FILE")
+}
+
+
 add_workspace() {
     require_tools
     ensure_registry
@@ -240,7 +257,7 @@ case "${1:-current}" in
         remove_workspace "$@"
         ;;
     apply)
-        apply_registry
+        restore_registry
         ;;
     *)
         die "usage: a16een-workspaces {current|list|add|remove|apply}"
