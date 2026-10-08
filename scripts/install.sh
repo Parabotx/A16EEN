@@ -351,7 +351,20 @@ if [ -f "$ICON_SYNC_MARKER" ]; then
     PREVIOUS_ICON_SYNC_SHA="$(cat "$ICON_SYNC_MARKER")"
 fi
 
-if [ "$ICON_SYNC_SHA" != "$PREVIOUS_ICON_SYNC_SHA" ]; then
+# The icon marker alone is not enough: an interrupted download or an older
+# A16EEN revision can leave the runtime SVG library present but unusable.
+# Check the workspace icons used by the live navbar and manager before trusting
+# the marker. These files must be real SVGs and must not contain white strokes.
+ICON_ASSETS_HEALTHY=1
+for icon in house code globe messages-square sparkles music layers; do
+    icon_file="$QS_DIR/assets/icons/$icon.svg"
+    if [ ! -s "$icon_file" ] || ! grep -q '<svg' "$icon_file"        || grep -Eiq 'stroke="(white|#fff([0-9a-f]{2})?|#ffffff([0-9a-f]{2})?)"' "$icon_file"; then
+        ICON_ASSETS_HEALTHY=0
+        break
+    fi
+done
+
+if [ "$ICON_SYNC_SHA" != "$PREVIOUS_ICON_SYNC_SHA" ] || [ "$ICON_ASSETS_HEALTHY" -ne 1 ]; then
     echo "==> Syncing A16EEN UI icons"
     if bash "$ROOT_DIR/scripts/a16een-icons"; then
         printf '%s\n' "$ICON_SYNC_SHA" > "$ICON_SYNC_MARKER"
