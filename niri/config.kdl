@@ -9,9 +9,6 @@ workspace "web"
 workspace "comms"
 workspace "studio"
 workspace "music"
-workspace "games"
-workspace "files"
-workspace "lab"
 // A16EEN WORKSPACES END
 
 input {
@@ -132,9 +129,6 @@ binds {
     Mod+4 { focus-workspace "comms"; }
     Mod+5 { focus-workspace "studio"; }
     Mod+6 { focus-workspace "music"; }
-    Mod+7 { focus-workspace "games"; }
-    Mod+8 { focus-workspace "files"; }
-    Mod+9 { focus-workspace "lab"; }
 
     Mod+Shift+1 { move-column-to-workspace "home"; }
     Mod+Shift+2 { move-column-to-workspace "code"; }
@@ -142,9 +136,6 @@ binds {
     Mod+Shift+4 { move-column-to-workspace "comms"; }
     Mod+Shift+5 { move-column-to-workspace "studio"; }
     Mod+Shift+6 { move-column-to-workspace "music"; }
-    Mod+Shift+7 { move-column-to-workspace "games"; }
-    Mod+Shift+8 { move-column-to-workspace "files"; }
-    Mod+Shift+9 { move-column-to-workspace "lab"; }
     // A16EEN WORKSPACE BINDS END
 
     // Media / volume
