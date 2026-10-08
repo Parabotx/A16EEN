@@ -5,6 +5,7 @@ readonly STATE_DIR="${XDG_STATE_HOME:-$HOME/.local/state}/a16een"
 readonly SETTINGS_FILE="$STATE_DIR/navbar.json"
 readonly ICON_ROOT="${XDG_CONFIG_HOME:-$HOME/.config}/a16een/quickshell/a16een/assets/icons"
 readonly OUTPUT_DIR="$STATE_DIR/navbar-icons"
+readonly ICON_REPAIR_MARKER="$STATE_DIR/navbar-icon-repair-v1"
 
 readonly REGISTRY_FILE="$STATE_DIR/workspaces.json"
 
@@ -133,6 +134,26 @@ ensure_settings() {
         merge_tmp="$(mktemp "$STATE_DIR/navbar.json.XXXXXX")"
         jq --slurpfile registry "$REGISTRY_FILE" 'reduce $registry[0][] as $ws (. ; if has($ws.id) then . else . + {($ws.id): {icon:$ws.icon,color:"#111318"}} end)' "$SETTINGS_FILE" > "$merge_tmp"
         mv -f "$merge_tmp" "$SETTINGS_FILE"
+    fi
+}
+
+repair_uniform_home_icons() {
+    [[ -e "$ICON_REPAIR_MARKER" ]] && return 0
+
+    if ! jq -e 'length >= 2 and all(.[]; (.icon // "") == "house.svg")' "$SETTINGS_FILE" >/dev/null 2>&1 ||
+       ! jq -e 'any(.[]; (.icon // "") != "house.svg")' "$REGISTRY_FILE" >/dev/null 2>&1; then
+        return 0
+    fi
+
+    local tmp
+    tmp="$(mktemp "$STATE_DIR/navbar.json.XXXXXX")"
+
+    if jq --slurpfile registry "$REGISTRY_FILE"         'reduce $registry[0][] as $ws (. ; .[$ws.id].icon = $ws.icon)'         "$SETTINGS_FILE" > "$tmp"; then
+        mv -f "$tmp" "$SETTINGS_FILE"
+        : > "$ICON_REPAIR_MARKER"
+        echo "A16EEN navbar: restored default workspace icons after the previous migration." >&2
+    else
+        rm -f "$tmp"
     fi
 }
 
@@ -299,6 +320,7 @@ set_setting() {
 main() {
     ensure_registry
     ensure_settings
+    repair_uniform_home_icons
     repair_all_white_styles
     mkdir -p "$OUTPUT_DIR"
 
