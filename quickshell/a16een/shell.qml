@@ -108,7 +108,7 @@ ShellRoot {
         watchChanges: true
 
         onFileChanged: {
-            this.reload()
+            controlIndicatorEvent.reload()
         }
 
         onLoaded: {
