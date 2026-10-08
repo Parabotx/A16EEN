@@ -548,6 +548,7 @@ Item {
             }
 
             Rectangle {
+                visible: root.activeSection === 0
                 width: 150
                 height: 34
                 radius: 10
@@ -666,7 +667,7 @@ Item {
 
         Row {
             width: parent.width
-            height: root.activeSection === 0 ? parent.height - 100 : 0
+            height: root.activeSection === 0 ? parent.height - 112 : 0
             visible: root.activeSection === 0
             spacing: 12
 
@@ -1115,7 +1116,7 @@ Item {
 
         NavbarLayoutSection {
             width: parent.width
-            height: root.activeSection === 1 ? parent.height - 100 : 0
+            height: root.activeSection === 1 ? parent.height - 112 : 0
             visible: root.activeSection === 1
             active: root.active && root.activeSection === 1
             stateDir: root.stateDir
@@ -1123,7 +1124,7 @@ Item {
 
         NavbarContentSection {
             width: parent.width
-            height: root.activeSection === 2 ? parent.height - 100 : 0
+            height: root.activeSection === 2 ? parent.height - 112 : 0
             visible: root.activeSection === 2
             active: root.active && root.activeSection === 2
             stateDir: root.stateDir
@@ -1131,7 +1132,7 @@ Item {
 
         NavbarAppearanceSection {
             width: parent.width
-            height: root.activeSection === 3 ? parent.height - 100 : 0
+            height: root.activeSection === 3 ? parent.height - 112 : 0
             visible: root.activeSection === 3
             active: root.active && root.activeSection === 3
             selectedSlot: root.selectedSlot
