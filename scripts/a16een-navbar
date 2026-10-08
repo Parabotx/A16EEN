@@ -26,12 +26,16 @@ declare -Ar DEFAULT_COLOR=(
 
 normalize_color() {
     local value="${1:-}"
-    [[ "$value" =~ ^#[0-9A-Fa-f]{6}([0-9A-Fa-f]{2})?$ ]] || printf '%s' ""
+    if [[ "$value" =~ ^#[0-9A-Fa-f]{6}([0-9A-Fa-f]{2})?$ ]]; then
+        printf '%s' "$value"
+    fi
 }
 
 normalize_icon() {
     local value="${1:-}"
-    [[ "$value" =~ ^[a-z0-9-]+\.svg$ ]] || printf '%s' ""
+    if [[ "$value" =~ ^[a-z0-9-]+\.svg$ ]]; then
+        printf '%s' "$value"
+    fi
 }
 
 ensure_settings() {
