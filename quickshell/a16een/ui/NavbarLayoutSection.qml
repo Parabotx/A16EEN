@@ -11,10 +11,10 @@ Item {
     signal backRequested()
 
     readonly property var positions: [
-        { id: "left", title: "LEFT", subtitle: "Vertical • left edge", icon: "panel-left.svg" },
-        { id: "right", title: "RIGHT", subtitle: "Vertical • right edge", icon: "panel-right.svg" },
-        { id: "top", title: "TOP", subtitle: "Horizontal • top edge", icon: "panel-top.svg" },
-        { id: "bottom", title: "BOTTOM", subtitle: "Horizontal • bottom edge", icon: "panel-bottom.svg" }
+        { id: "left", title: "LEFT", subtitle: "Vertical • left edge", icon: "menu.svg" },
+        { id: "right", title: "RIGHT", subtitle: "Vertical • right edge", icon: "menu.svg" },
+        { id: "top", title: "TOP", subtitle: "Horizontal • top edge", icon: "monitor.svg" },
+        { id: "bottom", title: "BOTTOM", subtitle: "Horizontal • bottom edge", icon: "monitor.svg" }
     ]
 
     readonly property string statePath: root.stateDir + "/navbar-layout.json"
