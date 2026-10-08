@@ -7,8 +7,6 @@ Item {
 
     property bool active: false
     property var navbarSettings: ({})
-    property string navbarIconRoot: ""
-    property int navbarIconRevision: 0
 
     readonly property string stateDir: {
         const stateHome = Quickshell.env("XDG_STATE_HOME")
@@ -19,7 +17,6 @@ Item {
     readonly property string settingsPath: root.stateDir + "/navbar.json"
     readonly property string generatedPathRoot: root.stateDir + "/navbar-icons"
     signal backRequested()
-    signal navbarSettingsChanged(var settings)
 
     property string selectedSlot: "home"
     property string pendingIcon: "house.svg"
@@ -123,10 +120,7 @@ Item {
     }
 
     function generatedIconPath(slot) {
-        const pathRoot = root.navbarIconRoot.length
-            ? root.navbarIconRoot
-            : root.generatedPathRoot
-        return "file://" + pathRoot + "/" + slot + ".svg"
+        return "file://" + root.generatedPathRoot + "/" + slot + ".svg"
     }
 
     function settingFor(slot) {
@@ -205,7 +199,6 @@ Item {
         onExited: function(exitCode, exitStatus) {
             if (exitCode === 0) {
                 root.statusText = "APPLIED"
-                root.navbarIconRevision++
             } else {
                 root.statusText = "ICON REBUILD FAILED"
                 settingsFile.reload()
@@ -326,14 +319,18 @@ Item {
                                     border.width: 1
                                     border.color: root.selectedSlot === modelData.id ? "#263140" : root.border
 
-                                    NavbarIcon {
+                                    Image {
                                         anchors.centerIn: parent
                                         width: 18
                                         height: 18
-                                        iconPath: root.generatedIconPath(modelData.id)
-                                        fallbackIconPath: root.baseIconPath(modelData.id)
-                                        refreshRevision: root.navbarIconRevision
-                                        active: root.selectedSlot === modelData.id
+                                        sourceSize.width: width
+                                        sourceSize.height: height
+                                        fillMode: Image.PreserveAspectFit
+                                        smooth: true
+                                        mipmap: true
+                                        asynchronous: true
+                                        cache: false
+                                        source: root.generatedIconPath(modelData.id)
                                     }
                                 }
 
@@ -405,13 +402,18 @@ Item {
                             border.width: 1
                             border.color: root.border
 
-                            NavbarIcon {
+                            Image {
                                 anchors.centerIn: parent
                                 width: 22
                                 height: 22
-                                iconPath: root.generatedIconPath(root.selectedSlot)
-                                fallbackIconPath: root.baseIconPath(root.selectedSlot)
-                                refreshRevision: root.navbarIconRevision
+                                sourceSize.width: width
+                                sourceSize.height: height
+                                fillMode: Image.PreserveAspectFit
+                                smooth: true
+                                mipmap: true
+                                asynchronous: true
+                                cache: false
+                                source: root.generatedIconPath(root.selectedSlot)
                             }
                         }
 
@@ -510,12 +512,18 @@ Item {
                                         anchors.centerIn: parent
                                         spacing: 3
 
-                                        NavbarIcon {
+                                        Image {
                                             anchors.horizontalCenter: parent.horizontalCenter
                                             width: 20
                                             height: 20
-                                            iconPath: Qt.resolvedUrl("../assets/icons/" + modelData.id)
-                                            fallbackIconPath: root.baseIconPath(root.selectedSlot)
+                                            sourceSize.width: width
+                                            sourceSize.height: height
+                                            fillMode: Image.PreserveAspectFit
+                                            smooth: true
+                                            mipmap: true
+                                            asynchronous: true
+                                            cache: false
+                                            source: Qt.resolvedUrl("../assets/icons/" + modelData.id)
                                         }
 
                                         Text {
