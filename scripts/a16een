@@ -293,12 +293,14 @@ case "$command" in
             up)
                 wpctl set-volume @DEFAULT_AUDIO_SINK@ 5%+ -l 1.0
                 local value
-                value=$(wpctl get-volume @DEFAULT_AUDIO_SINK@ 2>/dev/null | awk '/Volume:/ {print                 ;;
-            down)
-                wpctl set-volume @DEFAULT_AUDIO_SINK@ 5%-; exit}')
-                indicator_show volume "$value"                ;;
+                value=$(wpctl get-volume @DEFAULT_AUDIO_SINK@ 2>/dev/null | awk '/Volume:/ {print $2; exit}')
+                indicator_show volume "$value"
+                ;;
             down)
                 wpctl set-volume @DEFAULT_AUDIO_SINK@ 5%-
+                local value
+                value=$(wpctl get-volume @DEFAULT_AUDIO_SINK@ 2>/dev/null | awk '/Volume:/ {print $2; exit}')
+                indicator_show volume "$value"
                 ;;
             mute)
                 wpctl set-mute @DEFAULT_AUDIO_SINK@ toggle
@@ -317,9 +319,15 @@ case "$command" in
                 current=$(brightnessctl get 2>/dev/null || true)
                 maximum=$(brightnessctl max 2>/dev/null || true)
                 value=$(awk -v c="$current" -v m="$maximum" 'BEGIN {if (m > 0) printf "%.4f", c/m}')
-                indicator_show brightness "$value"                ;;
+                indicator_show brightness "$value"
+                ;;
             down)
                 brightnessctl set 10%-
+                local current maximum value
+                current=$(brightnessctl get 2>/dev/null || true)
+                maximum=$(brightnessctl max 2>/dev/null || true)
+                value=$(awk -v c="$current" -v m="$maximum" 'BEGIN {if (m > 0) printf "%.4f", c/m}')
+                indicator_show brightness "$value"
                 ;;
             *) die "usage: a16een brightness up|down" ;;
         esac
