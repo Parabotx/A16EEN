@@ -672,7 +672,7 @@ Item {
 
                     Flickable {
                         width: parent.width
-                        height: parent.height - 190
+                        height: Math.max(150, parent.height - 250)
                         clip: true
                         contentWidth: width
                         contentHeight: Math.max(iconGrid.height, height)
@@ -888,6 +888,10 @@ Item {
                     }
 
                 }
+            }
+        }
+    }
+
     onActiveChanged: {
         if (root.active) {
             workspaceReader.running = true
