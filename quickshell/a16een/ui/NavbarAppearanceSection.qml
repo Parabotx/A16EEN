@@ -178,15 +178,10 @@ Item {
                                 anchors.right: parent.right
                                 anchors.top: parent.top
                                 anchors.bottom: parent.bottom
-                                width: parent.width
+                                width: parent.width / 2
                                 radius: 5
-                                opacity: 0.65
-                                gradient: Gradient {
-                                    GradientStop { position: 0.0; color: modelData.a }
-                                    GradientStop { position: 1.0; color: modelData.b }
-                                }
+                                color: modelData.b
                             }
-                        }
 
                         Text {
                             anchors.left: preview.right
