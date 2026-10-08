@@ -82,6 +82,36 @@ normalize_style() {
     fi
 }
 
+repair_all_white_styles() {
+    # A16EEN's navbar surface is light by default. An all-white icon style
+    # therefore renders as an apparently empty navbar and an empty manager
+    # preview. Convert only the exact all-white styles to the safe default.
+    local slot style tmp changed=0
+    while IFS= read -r slot; do
+        [[ -n "$slot" ]] || continue
+        style="$(jq -r --arg slot "$slot" '.[$slot].color // empty' "$SETTINGS_FILE" 2>/dev/null || true)"
+        case "$style" in
+            "#FFFFFF"|"#ffffffff"|
+            "solid:#FFFFFF"|"solid:#ffffffff"|
+            "split-x:#FFFFFF:#FFFFFF"|"split-x:#ffffff:#ffffff"|
+            "split-y:#FFFFFF:#FFFFFF"|"split-y:#ffffff:#ffffff"|
+            "gradient-x:#FFFFFF:#FFFFFF"|"gradient-x:#ffffff:#ffffff"|
+            "gradient-y:#FFFFFF:#FFFFFF"|"gradient-y:#ffffff:#ffffff"|
+            "gradient-diag:#FFFFFF:#FFFFFF"|"gradient-diag:#ffffff:#ffffff")
+                tmp="$(mktemp "$STATE_DIR/navbar.json.XXXXXX")"
+                jq --arg slot "$slot"                     '.[$slot].color = "solid:#111318"'                     "$SETTINGS_FILE" > "$tmp"
+                mv -f "$tmp" "$SETTINGS_FILE"
+                changed=1
+                ;;
+        esac
+    done < <(workspace_ids)
+
+    if (( changed == 1 )); then
+        echo "A16EEN navbar: repaired white-on-white icon styles." >&2
+    fi
+}
+
+
 normalize_icon() {
     local value="${1:-}"
     if [[ "$value" =~ ^[a-z0-9-]+\.svg$ ]]; then
@@ -267,6 +297,7 @@ set_setting() {
 main() {
     ensure_registry
     ensure_settings
+    repair_all_white_styles
     mkdir -p "$OUTPUT_DIR"
 
     prune_inactive_slots
