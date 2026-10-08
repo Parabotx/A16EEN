@@ -584,8 +584,6 @@ PanelWindow {
             onLoaded: {
                 if (!item)
                     return
-                item.width = width
-                item.height = height
                 item.visible = true
                 item.active = true
                 item.backRequested.connect(root.closeNavbarView)
