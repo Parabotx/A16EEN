@@ -1,0 +1,42 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+readonly STATE_DIR="${XDG_STATE_HOME:-$HOME/.local/state}/a16een"
+readonly STATE_FILE="$STATE_DIR/navbar-layout.json"
+
+ensure_state() {
+    mkdir -p "$STATE_DIR"
+    if [[ ! -s "$STATE_FILE" ]]; then
+        printf '%s\n' '{"position":"right"}' > "$STATE_FILE"
+    fi
+}
+
+get_position() {
+    ensure_state
+    jq -r '.position // "right"' "$STATE_FILE"
+}
+
+set_position() {
+    [[ $# -eq 1 ]] || {
+        echo "Usage: a16een-navbar-layout set {left|right|top|bottom}" >&2
+        return 2
+    }
+
+    local position="$1"
+    case "$position" in
+        left|right|top|bottom) ;;
+        *) echo "Invalid navbar position: $position" >&2; return 2 ;;
+    esac
+
+    ensure_state
+    local tmp="$STATE_DIR/navbar-layout.json.XXXXXX"
+    jq --arg position "$position" '.position = $position' "$STATE_FILE" > "$tmp"
+    mv -f "$tmp" "$STATE_FILE"
+    printf '%s\n' "$position"
+}
+
+case "${1:-get}" in
+    get) get_position ;;
+    set) shift; set_position "$@" ;;
+    *) echo "Usage: a16een-navbar-layout {get|set <position>}" >&2; exit 2 ;;
+esac
