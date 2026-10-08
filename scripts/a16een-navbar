@@ -1,0 +1,101 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+readonly STATE_DIR="${XDG_STATE_HOME:-$HOME/.local/state}/a16een"
+readonly SETTINGS_FILE="$STATE_DIR/navbar.json"
+readonly ICON_ROOT="${XDG_CONFIG_HOME:-$HOME/.config}/a16een/quickshell/a16een/assets/icons"
+readonly OUTPUT_DIR="$STATE_DIR/navbar-icons"
+
+declare -Ar DEFAULT_ICON=(
+    [home]="house.svg"
+    [code]="code.svg"
+    [web]="globe.svg"
+    [comms]="messages-square.svg"
+    [studio]="sparkles.svg"
+    [music]="music.svg"
+)
+
+declare -Ar DEFAULT_COLOR=(
+    [home]="#111318"
+    [code]="#111318"
+    [web]="#111318"
+    [comms]="#111318"
+    [studio]="#111318"
+    [music]="#111318"
+)
+
+normalize_color() {
+    local value="${1:-}"
+    [[ "$value" =~ ^#[0-9A-Fa-f]{6}([0-9A-Fa-f]{2})?$ ]] || printf '%s' ""
+}
+
+normalize_icon() {
+    local value="${1:-}"
+    [[ "$value" =~ ^[a-z0-9-]+\.svg$ ]] || printf '%s' ""
+}
+
+ensure_settings() {
+    mkdir -p "$STATE_DIR"
+
+    if [[ ! -s "$SETTINGS_FILE" ]]; then
+        cat > "$SETTINGS_FILE" <<'JSON'
+{
+  "home": {"icon":"house.svg","color":"#111318"},
+  "code": {"icon":"code.svg","color":"#111318"},
+  "web": {"icon":"globe.svg","color":"#111318"},
+  "comms": {"icon":"messages-square.svg","color":"#111318"},
+  "studio": {"icon":"sparkles.svg","color":"#111318"},
+  "music": {"icon":"music.svg","color":"#111318"}
+}
+JSON
+    fi
+}
+
+generate_icon() {
+    local slot="$1"
+    local configured_icon configured_color icon_file output
+    configured_icon="$(jq -r --arg slot "$slot" '.[$slot].icon // empty' "$SETTINGS_FILE" 2>/dev/null || true)"
+    configured_color="$(jq -r --arg slot "$slot" '.[$slot].color // empty' "$SETTINGS_FILE" 2>/dev/null || true)"
+
+    configured_icon="$(normalize_icon "$configured_icon")"
+    configured_color="$(normalize_color "$configured_color")"
+
+    [[ -n "$configured_icon" ]] || configured_icon="${DEFAULT_ICON[$slot]}"
+    [[ -n "$configured_color" ]] || configured_color="${DEFAULT_COLOR[$slot]}"
+
+    icon_file="$ICON_ROOT/$configured_icon"
+    if [[ ! -f "$icon_file" ]]; then
+        icon_file="$ICON_ROOT/${DEFAULT_ICON[$slot]}"
+    fi
+
+    if [[ ! -f "$icon_file" ]]; then
+        echo "A16EEN navbar: missing Lucide icon for $slot: $configured_icon" >&2
+        return 1
+    fi
+
+    output="$OUTPUT_DIR/$slot.svg"
+
+    # Lucide icons are outline SVGs. Replace the stroke with the selected
+    # navbar color while preserving the rest of the original icon geometry.
+    sed -E         -e 's/stroke="[^"]*"/stroke="'$configured_color'"/g'         -e 's/stroke:\s*[^;"]+/stroke:'$configured_color'/g'         "$icon_file" > "$output"
+
+    grep -q '<svg' "$output"
+    chmod 644 "$output"
+}
+
+main() {
+    ensure_settings
+    mkdir -p "$OUTPUT_DIR"
+
+    local slot
+    for slot in "${!DEFAULT_ICON[@]}"; do
+        generate_icon "$slot"
+    done
+
+    echo "A16EEN navbar icons generated."
+}
+
+case "${1:-apply}" in
+    apply) main ;;
+    *) echo "Usage: a16een-navbar [apply]" >&2; exit 2 ;;
+esac
