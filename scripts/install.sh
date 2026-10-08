@@ -12,10 +12,9 @@ for slot in home code web comms studio music; do
         if grep -q 'stop-color=' "$generated"; then
             GRADIENT_ALL_WHITE=1
             stop_file="$(mktemp)"
-            grep -Eo 'stop-color="[^"]+"' "$generated" > "$stop_file" || true
-            while IFS= read -r stop; do
-                value=${stop#stop-color="}
-                value=${value%"}
+            grep -Eo 'stop-color="[^"]+"' "$generated" \
+                | sed 's/^stop-color="//; s/"$//' > "$stop_file" || true
+            while IFS= read -r value; do
                 case "$(printf '%s' "$value" | tr '[:lower:]' '[:upper:]')" in
                     WHITE|#FFFFFF|#FFFFFFFF) ;;
                     *) GRADIENT_ALL_WHITE=0; break ;;
