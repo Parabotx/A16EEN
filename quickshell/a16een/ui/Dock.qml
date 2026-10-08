@@ -78,26 +78,36 @@ PanelWindow {
 
     property bool edgeRevealed: false
     readonly property bool dockVisible: !root.fullscreenActive || root.edgeRevealed
+    readonly property int surfaceWidth: root.dockVisible ? 66 : 8
+    readonly property int surfaceHeight: root.dockVisible ? 260 : 240
+    readonly property int surfaceTopMargin: Math.max(
+        0,
+        Math.round((root.modelData.height - root.surfaceHeight) / 2)
+    )
 
     screen: modelData
     color: "transparent"
     aboveWindows: true
+    exclusionMode: ExclusionMode.Ignore
     exclusiveZone: 0
-    implicitWidth: 66
+    implicitWidth: root.surfaceWidth
+    implicitHeight: root.surfaceHeight
 
+    // Never create a full-height transparent panel. The Wayland surface is
+    // exactly the size of the visible navbar, or the small fullscreen reveal
+    // strip while the navbar is hidden.
     anchors {
         right: true
         top: true
-        bottom: true
+    }
+
+    margins {
+        right: 0
+        top: root.surfaceTopMargin
     }
 
     WlrLayershell.layer: WlrLayer.Overlay
     WlrLayershell.namespace: "a16een-dock"
-
-    // The dock is its own narrow 66px-wide edge surface, so it does
-    // not need a clickthrough mask. The surface itself is limited to the
-    // navbar edge and the individual MouseAreas receive pointer input.
-    width: 66
 
     function workspaceIsFocused(name) {
         const current = root.workspaces.find(workspace => workspace.name === name)
