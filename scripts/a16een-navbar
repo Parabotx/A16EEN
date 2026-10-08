@@ -69,66 +69,6 @@ prune_inactive_slots() {
     done
 }
 
-declare -Ar DEFAULT_COLOR=(
-    [home]="#111318"
-    [code]="#111318"
-    [web]="#111318"
-    [comms]="#111318"
-    [studio]="#111318"
-    [music]="#111318"
-    [games]="#111318"
-    [files]="#111318"
-    [lab]="#111318"
-)
-
-active_count() {
-    local count=""
-    if [[ -s "$COUNT_FILE" ]]; then
-        count="$(head -n 1 "$COUNT_FILE" | tr -d "[:space:]")"
-    fi
-
-    if [[ "$count" =~ ^[0-9]+$ ]] && (( count >= 2 && count <= ${#WORKSPACES[@]} )); then
-        printf "%s\n" "$count"
-    else
-        printf "6\n"
-    fi
-}
-
-is_known_slot() {
-    local candidate="$1"
-    local slot
-    for slot in "${WORKSPACES[@]}"; do
-        [[ "$slot" == "$candidate" ]] && return 0
-    done
-    return 1
-}
-
-is_active_slot() {
-    local candidate="$1"
-    local count="$(active_count)"
-    local i
-    for ((i=0; i<count; i++)); do
-        [[ "${WORKSPACES[$i]}" == "$candidate" ]] && return 0
-    done
-    return 1
-}
-
-prune_inactive_slots() {
-    mkdir -p "$STATE_DIR" "$OUTPUT_DIR"
-    local count="$(active_count)"
-    local i slot tmp
-
-    for ((i=count; i<${#WORKSPACES[@]}; i++)); do
-        slot="${WORKSPACES[$i]}"
-        rm -f "$OUTPUT_DIR/$slot.svg"
-
-        [[ -s "$SETTINGS_FILE" ]] || continue
-        tmp="$(mktemp "$STATE_DIR/navbar.json.XXXXXX")"
-        jq --arg slot "$slot" 'del(.[$slot])' "$SETTINGS_FILE" > "$tmp"
-        mv -f "$tmp" "$SETTINGS_FILE"
-    done
-}
-
 normalize_style() {
     local value="${1:-}"
 
