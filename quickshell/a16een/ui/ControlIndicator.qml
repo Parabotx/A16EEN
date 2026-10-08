@@ -11,15 +11,15 @@ PanelWindow {
     required property int requestRevision
 
     property real level: 0
-    property bool mounted: false
     property bool displaying: false
 
     screen: modelData
-    visible: root.mounted
+    visible: root.active
     color: "transparent"
     aboveWindows: true
     exclusiveZone: 0
     implicitHeight: 34
+    focusable: false
 
     anchors {
         left: true
@@ -92,25 +92,12 @@ PanelWindow {
         interval: 850
         repeat: false
 
-        onTriggered: {
-            root.displaying = false
-            removeTimer.restart()
-        }
-    }
-
-    Timer {
-        id: removeTimer
-        interval: 140
-        repeat: false
-
-        onTriggered: root.mounted = false
+        onTriggered: root.displaying = false
     }
 
     function showLevel(value: real) {
         root.level = Math.max(0, Math.min(1, value))
-        root.mounted = true
         root.displaying = true
-        removeTimer.stop()
         hideTimer.restart()
     }
 
@@ -122,9 +109,7 @@ PanelWindow {
     onActiveChanged: {
         if (!root.active) {
             hideTimer.stop()
-            removeTimer.stop()
             root.displaying = false
-            root.mounted = false
         }
     }
 }
