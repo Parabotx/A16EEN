@@ -76,7 +76,7 @@ PanelWindow {
             width: Math.max(2, (parent.width - 4) * Math.max(0, Math.min(1, root.level)))
             height: parent.height - 4
             radius: 3
-            color: "#000000"
+            color: "#3B82F6"
 
             Behavior on width {
                 NumberAnimation {
