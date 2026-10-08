@@ -1,26 +1,17 @@
 import QtQuick
 import QtQuick.Layouts
-import Quickshell.Io
 
 Item {
     id: root
 
     property bool active: false
     property var navbarSettings: ({})
-
-    readonly property string stateDir: {
-        const stateHome = Quickshell.env("XDG_STATE_HOME")
-        const home = Quickshell.env("HOME") || ""
-        return (stateHome && stateHome.length ? stateHome : home + "/.local/state") + "/a16een"
-    }
-
-    readonly property string settingsPath: root.stateDir + "/navbar.json"
-    readonly property string generatedPathRoot: root.stateDir + "/navbar-icons"
+    property string navbarIconRoot: ""
+    property int navbarIconRevision: 0
     signal backRequested()
+    signal navbarSettingsChanged(var settings)
 
     property string selectedSlot: "home"
-    property string pendingIcon: "house.svg"
-    property string pendingColor: "#111318"
 
     readonly property color page: "#FFFFFF"
     readonly property color card: "#F7F8FA"
@@ -51,6 +42,7 @@ Item {
         { id: "folder.svg", name: "Folder" },
         { id: "folder-open.svg", name: "Folder Open" },
         { id: "code.svg", name: "Code" },
+        { id: "code-2.svg", name: "Code 2" },
         { id: "terminal.svg", name: "Terminal" },
         { id: "globe.svg", name: "Globe" },
         { id: "messages-square.svg", name: "Messages" },
@@ -62,6 +54,7 @@ Item {
         { id: "volume-2.svg", name: "Volume" },
         { id: "skull.svg", name: "Skull" },
         { id: "ghost.svg", name: "Ghost" },
+        { id: "alien.svg", name: "Alien" },
         { id: "bug.svg", name: "Bug" },
         { id: "bot.svg", name: "Bot" },
         { id: "radiation.svg", name: "Radiation" },
@@ -82,6 +75,7 @@ Item {
         { id: "eye.svg", name: "Eye" },
         { id: "brain.svg", name: "Brain" },
         { id: "wand-sparkles.svg", name: "Wand" },
+        { id: "circle-help.svg", name: "Help" },
         { id: "graduation-cap.svg", name: "Graduation" },
         { id: "briefcase-business.svg", name: "Briefcase" },
         { id: "cloud.svg", name: "Cloud" },
@@ -92,7 +86,6 @@ Item {
 
     readonly property var colorChoices: [
         { id: "#111318", name: "Black" },
-        { id: "#FFFFFF", name: "White" },
         { id: "#334155", name: "Slate" },
         { id: "#3B82F6", name: "Blue" },
         { id: "#06B6D4", name: "Cyan" },
@@ -120,7 +113,9 @@ Item {
     }
 
     function generatedIconPath(slot) {
-        return "file://" + root.generatedPathRoot + "/" + slot + ".svg"
+        if (!root.navbarIconRoot.length)
+            return root.baseIconPath(slot)
+        return "file://" + root.navbarIconRoot + "/" + slot + ".svg"
     }
 
     function settingFor(slot) {
@@ -134,36 +129,17 @@ Item {
         }
     }
 
-    function loadSettings(raw) {
-        try {
-            const parsed = JSON.parse(String(raw || ""))
-            root.navbarSettings = parsed && typeof parsed === "object" ? parsed : ({})
-        } catch (error) {
-            root.navbarSettings = ({})
-        }
-    }
-
     function patch(p) {
-        const current = root.settingFor(root.selectedSlot)
-        const icon = p.icon || current.icon
-        const color = p.color || current.color
-
         const next = {}
         for (const slot of root.slots)
             next[slot.id] = root.settingFor(slot.id)
 
         next[root.selectedSlot] = {
-            icon: icon,
-            color: color
+            icon: p.icon || root.settingFor(root.selectedSlot).icon,
+            color: p.color || root.settingFor(root.selectedSlot).color
         }
 
-        root.pendingIcon = icon
-        root.pendingColor = color
-        root.navbarSettings = next
-        root.statusText = "APPLYING " + root.selectedSlot.toUpperCase()
-
-        rebuildProcess.running = false
-        Qt.callLater(() => rebuildProcess.running = true)
+        root.navbarSettingsChanged(next)
     }
 
     function resetSelected() {
@@ -171,39 +147,6 @@ Item {
             icon: root.defaultIcon(root.selectedSlot),
             color: "#111318"
         })
-    }
-
-    property string statusText: "READY"
-
-    FileView {
-        id: settingsFile
-        path: root.settingsPath
-        watchChanges: true
-        printErrors: false
-
-        onLoaded: root.loadSettings(this.text())
-        onFileChanged: root.loadSettings(this.text())
-    }
-
-    Process {
-        id: rebuildProcess
-        command: [
-            "/usr/local/bin/a16een-navbar",
-            "set",
-            root.selectedSlot,
-            root.pendingIcon,
-            root.pendingColor
-        ]
-        running: false
-
-        onExited: function(exitCode, exitStatus) {
-            if (exitCode === 0) {
-                root.statusText = "APPLIED"
-            } else {
-                root.statusText = "ICON REBUILD FAILED"
-                settingsFile.reload()
-            }
-        }
     }
 
     Rectangle {
@@ -257,7 +200,7 @@ Item {
                 }
 
                 Text {
-                    text: "LUCIDE ICONS • COLOR • " + root.statusText
+                    text: "LUCIDE ICONS • COLOR • WORKSPACE APPEARANCE"
                     color: root.textMuted
                     font.pixelSize: 8
                     font.weight: Font.Medium
@@ -319,18 +262,14 @@ Item {
                                     border.width: 1
                                     border.color: root.selectedSlot === modelData.id ? "#263140" : root.border
 
-                                    Image {
+                                    NavbarIcon {
                                         anchors.centerIn: parent
                                         width: 18
                                         height: 18
-                                        sourceSize.width: width
-                                        sourceSize.height: height
-                                        fillMode: Image.PreserveAspectFit
-                                        smooth: true
-                                        mipmap: true
-                                        asynchronous: true
-                                        cache: false
-                                        source: root.generatedIconPath(modelData.id)
+                                        iconPath: root.generatedIconPath(modelData.id)
+                                        fallbackIconPath: root.baseIconPath(modelData.id)
+                                        refreshRevision: root.navbarIconRevision
+                                        active: root.selectedSlot === modelData.id
                                     }
                                 }
 
@@ -402,18 +341,13 @@ Item {
                             border.width: 1
                             border.color: root.border
 
-                            Image {
+                            NavbarIcon {
                                 anchors.centerIn: parent
                                 width: 22
                                 height: 22
-                                sourceSize.width: width
-                                sourceSize.height: height
-                                fillMode: Image.PreserveAspectFit
-                                smooth: true
-                                mipmap: true
-                                asynchronous: true
-                                cache: false
-                                source: root.generatedIconPath(root.selectedSlot)
+                                iconPath: root.generatedIconPath(root.selectedSlot)
+                                fallbackIconPath: root.baseIconPath(root.selectedSlot)
+                                refreshRevision: root.navbarIconRevision
                             }
                         }
 
@@ -512,18 +446,12 @@ Item {
                                         anchors.centerIn: parent
                                         spacing: 3
 
-                                        Image {
+                                        NavbarIcon {
                                             anchors.horizontalCenter: parent.horizontalCenter
                                             width: 20
                                             height: 20
-                                            sourceSize.width: width
-                                            sourceSize.height: height
-                                            fillMode: Image.PreserveAspectFit
-                                            smooth: true
-                                            mipmap: true
-                                            asynchronous: true
-                                            cache: false
-                                            source: Qt.resolvedUrl("../assets/icons/" + modelData.id)
+                                            iconPath: Qt.resolvedUrl("../assets/icons/" + modelData.id)
+                                            fallbackIconPath: root.baseIconPath(root.selectedSlot)
                                         }
 
                                         Text {
