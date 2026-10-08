@@ -391,7 +391,23 @@ if [ -f "$NAVBAR_SYNC_MARKER" ]; then
     PREVIOUS_NAVBAR_SYNC_SHA="$(cat "$NAVBAR_SYNC_MARKER")"
 fi
 
-if [ "$NAVBAR_SYNC_SHA" != "$PREVIOUS_NAVBAR_SYNC_SHA" ]    || [ ! -f "$STATE_DIR/navbar-icons/ready" ]    || [ "$ICON_SYNCED" -eq 1 ]; then
+# Never trust the ready marker when one of the live workspace SVGs is
+# missing, invalid, or still rendered white. This catches stale files left by
+# older navbar-renderer revisions.
+NAVBAR_ASSETS_HEALTHY=1
+for slot in home code web comms studio music; do
+    generated="$STATE_DIR/navbar-icons/$slot.svg"
+    if [ ! -s "$generated" ] || ! grep -q '<svg' "$generated" \
+       || grep -Eiq 'stroke="(white|#fff([0-9a-f]{2})?|#ffffff([0-9a-f]{2})?)"' "$generated"; then
+        NAVBAR_ASSETS_HEALTHY=0
+        break
+    fi
+done
+
+if [ "$NAVBAR_SYNC_SHA" != "$PREVIOUS_NAVBAR_SYNC_SHA" ] \
+   || [ ! -f "$STATE_DIR/navbar-icons/ready" ] \
+   || [ "$ICON_SYNCED" -eq 1 ] \
+   || [ "$NAVBAR_ASSETS_HEALTHY" -ne 1 ]; then
     echo "==> Generating A16EEN navbar icons"
     if bash "$ROOT_DIR/scripts/a16een-navbar" apply; then
         printf '%s\n' "$NAVBAR_SYNC_SHA" > "$NAVBAR_SYNC_MARKER"
