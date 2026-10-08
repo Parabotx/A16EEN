@@ -8,10 +8,6 @@ PanelWindow {
 
     required property var modelData
 
-    readonly property string eventPath: (Quickshell.env("XDG_STATE_HOME") || (Quickshell.env("HOME") + "/.local/state"))
-        + "/a16een/control-indicator"
-    property bool eventWatcherReady: false
-
     property string mode: ""
     property real level: 0
     property bool mounted: false
@@ -87,40 +83,6 @@ PanelWindow {
                 }
             }
         }
-    }
-
-    FileView {
-        id: controlEvent
-
-        path: root.eventPath
-        watchChanges: true
-
-        onFileChanged: reload()
-
-        onTextChanged: {
-            if (!root.eventWatcherReady)
-                return
-
-            const payload = String(controlEvent.text()).trim()
-            if (!payload.length)
-                return
-
-            const parts = payload.split("|")
-            const kind = parts[0]
-
-            if (kind === "volume")
-                root.showVolume()
-            else if (kind === "brightness")
-                root.showBrightness()
-        }
-    }
-
-    Timer {
-        interval: 250
-        running: true
-        repeat: false
-
-        onTriggered: root.eventWatcherReady = true
     }
 
     Process {
