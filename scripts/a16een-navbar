@@ -83,27 +83,33 @@ normalize_style() {
 }
 
 repair_all_white_styles() {
-    # A16EEN's navbar surface is light by default. An all-white icon style
-    # therefore renders as an apparently empty navbar and an empty manager
-    # preview. Convert only the exact all-white styles to the safe default.
+    # White icons are invisible on A16EEN's default white navbar surface.
+    # Repair only exact white styles; intentional mixed/custom styles are kept.
     local slot style tmp changed=0
     while IFS= read -r slot; do
         [[ -n "$slot" ]] || continue
+
         style="$(jq -r --arg slot "$slot" '.[$slot].color // empty' "$SETTINGS_FILE" 2>/dev/null || true)"
-        case "$style" in
-            "#FFFFFF"|"#ffffffff"|
-            "solid:#FFFFFF"|"solid:#ffffffff"|
-            "split-x:#FFFFFF:#FFFFFF"|"split-x:#ffffff:#ffffff"|
-            "split-y:#FFFFFF:#FFFFFF"|"split-y:#ffffff:#ffffff"|
-            "gradient-x:#FFFFFF:#FFFFFF"|"gradient-x:#ffffff:#ffffff"|
-            "gradient-y:#FFFFFF:#FFFFFF"|"gradient-y:#ffffff:#ffffff"|
-            "gradient-diag:#FFFFFF:#FFFFFF"|"gradient-diag:#ffffff:#ffffff")
-                tmp="$(mktemp "$STATE_DIR/navbar.json.XXXXXX")"
-                jq --arg slot "$slot"                     '.[$slot].color = "solid:#111318"'                     "$SETTINGS_FILE" > "$tmp"
-                mv -f "$tmp" "$SETTINGS_FILE"
-                changed=1
-                ;;
-        esac
+
+        if [[ "$style" == "#FFFFFF" ||
+              "$style" == "#ffffffff" ||
+              "$style" == "solid:#FFFFFF" ||
+              "$style" == "solid:#ffffffff" ||
+              "$style" == "split-x:#FFFFFF:#FFFFFF" ||
+              "$style" == "split-x:#ffffff:#ffffff" ||
+              "$style" == "split-y:#FFFFFF:#FFFFFF" ||
+              "$style" == "split-y:#ffffff:#ffffff" ||
+              "$style" == "gradient-x:#FFFFFF:#FFFFFF" ||
+              "$style" == "gradient-x:#ffffff:#ffffff" ||
+              "$style" == "gradient-y:#FFFFFF:#FFFFFF" ||
+              "$style" == "gradient-y:#ffffff:#ffffff" ||
+              "$style" == "gradient-diag:#FFFFFF:#FFFFFF" ||
+              "$style" == "gradient-diag:#ffffff:#ffffff" ]]; then
+            tmp="$(mktemp "$STATE_DIR/navbar.json.XXXXXX")"
+            jq --arg slot "$slot"                 '.[$slot].color = "solid:#111318"'                 "$SETTINGS_FILE" > "$tmp"
+            mv -f "$tmp" "$SETTINGS_FILE"
+            changed=1
+        fi
     done < <(workspace_ids)
 
     if (( changed == 1 )); then
