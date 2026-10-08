@@ -94,13 +94,7 @@ repair_all_white_styles() {
         normalized="$(printf '%s' "$style" | tr '[:lower:]' '[:upper:]')"
 
         case "$normalized" in
-            "#FFFFFF"|"#FFFFFFFF"|
-            "SOLID:#FFFFFF"|"SOLID:#FFFFFFFF"|
-            "SPLIT-X:#FFFFFF:#FFFFFF"|"SPLIT-X:#FFFFFFFF:#FFFFFFFF"|
-            "SPLIT-Y:#FFFFFF:#FFFFFF"|"SPLIT-Y:#FFFFFFFF:#FFFFFFFF"|
-            "GRADIENT-X:#FFFFFF:#FFFFFF"|"GRADIENT-X:#FFFFFFFF:#FFFFFFFF"|
-            "GRADIENT-Y:#FFFFFF:#FFFFFF"|"GRADIENT-Y:#FFFFFFFF:#FFFFFFFF"|
-            "GRADIENT-DIAG:#FFFFFF:#FFFFFF"|"GRADIENT-DIAG:#FFFFFFFF:#FFFFFFFF")
+            "#FFFFFF"|"#FFFFFFFF"|"SOLID:#FFFFFF"|"SOLID:#FFFFFFFF"|"SPLIT-X:#FFFFFF:#FFFFFF"|"SPLIT-X:#FFFFFFFF:#FFFFFFFF"|"SPLIT-Y:#FFFFFF:#FFFFFF"|"SPLIT-Y:#FFFFFFFF:#FFFFFFFF"|"GRADIENT-X:#FFFFFF:#FFFFFF"|"GRADIENT-X:#FFFFFFFF:#FFFFFFFF"|"GRADIENT-Y:#FFFFFF:#FFFFFF"|"GRADIENT-Y:#FFFFFFFF:#FFFFFFFF"|"GRADIENT-DIAG:#FFFFFF:#FFFFFF"|"GRADIENT-DIAG:#FFFFFFFF:#FFFFFFFF")
                 tmp="$(mktemp "$STATE_DIR/navbar.json.XXXXXX")"
                 jq --arg slot "$slot" \
                     '.[$slot].color = "solid:#111318"' \
@@ -108,7 +102,6 @@ repair_all_white_styles() {
                 mv -f "$tmp" "$SETTINGS_FILE"
                 changed=1
                 ;;
-        esac
     done < <(workspace_ids)
 
     if (( changed == 1 )); then
