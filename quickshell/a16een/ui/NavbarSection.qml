@@ -1,5 +1,6 @@
 import QtQuick
 import QtQuick.Layouts
+import Quickshell.Io
 
 Item {
     id: root
@@ -8,6 +9,15 @@ Item {
     property var navbarSettings: ({})
     property string navbarIconRoot: ""
     property int navbarIconRevision: 0
+
+    readonly property string stateDir: {
+        const stateHome = Quickshell.env("XDG_STATE_HOME")
+        const home = Quickshell.env("HOME") || ""
+        return (stateHome && stateHome.length ? stateHome : home + "/.local/state") + "/a16een"
+    }
+
+    readonly property string settingsPath: root.stateDir + "/navbar.json"
+    readonly property string generatedPathRoot: root.stateDir + "/navbar-icons"
     signal backRequested()
     signal navbarSettingsChanged(var settings)
 
@@ -42,7 +52,6 @@ Item {
         { id: "folder.svg", name: "Folder" },
         { id: "folder-open.svg", name: "Folder Open" },
         { id: "code.svg", name: "Code" },
-        { id: "code-2.svg", name: "Code 2" },
         { id: "terminal.svg", name: "Terminal" },
         { id: "globe.svg", name: "Globe" },
         { id: "messages-square.svg", name: "Messages" },
@@ -54,7 +63,6 @@ Item {
         { id: "volume-2.svg", name: "Volume" },
         { id: "skull.svg", name: "Skull" },
         { id: "ghost.svg", name: "Ghost" },
-        { id: "alien.svg", name: "Alien" },
         { id: "bug.svg", name: "Bug" },
         { id: "bot.svg", name: "Bot" },
         { id: "radiation.svg", name: "Radiation" },
@@ -75,7 +83,6 @@ Item {
         { id: "eye.svg", name: "Eye" },
         { id: "brain.svg", name: "Brain" },
         { id: "wand-sparkles.svg", name: "Wand" },
-        { id: "circle-help.svg", name: "Help" },
         { id: "graduation-cap.svg", name: "Graduation" },
         { id: "briefcase-business.svg", name: "Briefcase" },
         { id: "cloud.svg", name: "Cloud" },
@@ -86,6 +93,7 @@ Item {
 
     readonly property var colorChoices: [
         { id: "#111318", name: "Black" },
+        { id: "#FFFFFF", name: "White" },
         { id: "#334155", name: "Slate" },
         { id: "#3B82F6", name: "Blue" },
         { id: "#06B6D4", name: "Cyan" },
@@ -113,9 +121,10 @@ Item {
     }
 
     function generatedIconPath(slot) {
-        if (!root.navbarIconRoot.length)
-            return root.baseIconPath(slot)
-        return "file://" + root.navbarIconRoot + "/" + slot + ".svg"
+        const pathRoot = root.navbarIconRoot.length
+            ? root.navbarIconRoot
+            : root.generatedPathRoot
+        return "file://" + pathRoot + "/" + slot + ".svg"
     }
 
     function settingFor(slot) {
@@ -129,6 +138,15 @@ Item {
         }
     }
 
+    function loadSettings(raw) {
+        try {
+            const parsed = JSON.parse(String(raw || ""))
+            root.navbarSettings = parsed && typeof parsed === "object" ? parsed : ({})
+        } catch (error) {
+            root.navbarSettings = ({})
+        }
+    }
+
     function patch(p) {
         const next = {}
         for (const slot of root.slots)
@@ -139,7 +157,13 @@ Item {
             color: p.color || root.settingFor(root.selectedSlot).color
         }
 
+        root.navbarSettings = next
+        root.statusText = "SAVING " + root.selectedSlot.toUpperCase()
+        settingsFile.setText(JSON.stringify(next, null, 2))
         root.navbarSettingsChanged(next)
+
+        rebuildProcess.running = false
+        Qt.callLater(() => rebuildProcess.running = true)
     }
 
     function resetSelected() {
@@ -147,6 +171,33 @@ Item {
             icon: root.defaultIcon(root.selectedSlot),
             color: "#111318"
         })
+    }
+
+    property string statusText: "READY"
+
+    FileView {
+        id: settingsFile
+        path: root.settingsPath
+        watchChanges: true
+        printErrors: false
+
+        onLoaded: root.loadSettings(this.text())
+        onFileChanged: root.loadSettings(this.text())
+    }
+
+    Process {
+        id: rebuildProcess
+        command: ["/usr/local/bin/a16een-navbar", "apply"]
+        running: false
+
+        onExited: function(exitCode, exitStatus) {
+            if (exitCode === 0) {
+                root.statusText = "APPLIED"
+                root.navbarIconRevision++
+            } else {
+                root.statusText = "ICON REBUILD FAILED"
+            }
+        }
     }
 
     Rectangle {
@@ -200,7 +251,7 @@ Item {
                 }
 
                 Text {
-                    text: "LUCIDE ICONS • COLOR • WORKSPACE APPEARANCE"
+                    text: "LUCIDE ICONS • COLOR • " + root.statusText
                     color: root.textMuted
                     font.pixelSize: 8
                     font.weight: Font.Medium
