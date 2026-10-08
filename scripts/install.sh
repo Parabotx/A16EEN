@@ -406,7 +406,7 @@ for slot in home code web comms studio music; do
             value="${stop#stop-color=\"}"
             value="${value%\"}"
             case "$(printf '%s' "$value" | tr '[:lower:]' '[:upper:]')" in
-                WHITE|#FFFFFF|#FFFFFFFF) ;;
+                WHITE|'#FFFFFF'|'#FFFFFFFF') ;;
                 *) GRADIENT_ALL_WHITE=0; break ;;
             esac
         done < <(grep -Eo 'stop-color="[^"]+"' "$generated" || true)
