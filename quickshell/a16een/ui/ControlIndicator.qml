@@ -6,7 +6,7 @@ PanelWindow {
     id: root
 
     required property var modelData
-    required property var activeScreen
+    required property bool active
     required property real requestedLevel
     required property int requestRevision
 
@@ -115,12 +115,12 @@ PanelWindow {
     }
 
     onRequestRevisionChanged: {
-        if (root.activeScreen === root.modelData)
+        if (root.active)
             root.showLevel(root.requestedLevel)
     }
 
-    onActiveScreenChanged: {
-        if (root.activeScreen !== root.modelData) {
+    onActiveChanged: {
+        if (!root.active) {
             hideTimer.stop()
             removeTimer.stop()
             root.displaying = false
