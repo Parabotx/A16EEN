@@ -578,7 +578,6 @@ PanelWindow {
             anchors.fill: parent
             active: root.navbarViewOpen
             visible: root.navbarViewOpen
-            z: 30
             source: Qt.resolvedUrl("NavbarManager.qml")
 
             onLoaded: {
