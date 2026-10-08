@@ -332,6 +332,12 @@ if ! bash "$ROOT_DIR/scripts/a16een-icons"; then
     echo "WARNING: icon synchronization failed; using the bundled fallback SVGs." >&2
 fi
 
+# Generate the navbar's lightweight colored Lucide SVGs before Quickshell
+# restarts, so the shell never depends on a race with the first frame.
+if ! "$ROOT_DIR/scripts/a16een-navbar" apply; then
+    echo "WARNING: navbar icon generation failed; the navbar will use bundled fallbacks." >&2
+fi
+
 # If A16EEN is already running, restart only its Quickshell process after
 # deployment. This is especially important when a revision adds or removes QML
 # component files, which a live hot-reload may not register reliably.
