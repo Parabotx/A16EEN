@@ -274,6 +274,14 @@ fi
 
 printf '%s\n' "$SOURCE_COMMIT" > "$STATE_DIR/installed-commit"
 
+# Apply the saved A16EEN workspace count after every deployment. The source
+# script validates the resulting config and reloads Niri when the count changes.
+if command -v niri >/dev/null 2>&1; then
+    if ! bash "$ROOT_DIR/scripts/a16een-workspaces" apply; then
+        echo "WARNING: could not apply the saved workspace count; keeping the validated config." >&2
+    fi
+fi
+
 # Apply the deployed compositor configuration immediately when updating an
 # already-running A16EEN session. Without this, new keybindings would not take
 # effect until the next login.
@@ -302,6 +310,7 @@ sudo install -Dm755 "$ROOT_DIR/scripts/a16een-screenshot" /usr/local/bin/a16een-
 sudo install -Dm755 "$ROOT_DIR/scripts/a16een-control" /usr/local/bin/a16een-control
 sudo install -Dm755 "$ROOT_DIR/scripts/a16een-icon-theme" /usr/local/bin/a16een-icon-theme
 sudo install -Dm755 "$ROOT_DIR/scripts/a16een-navbar" /usr/local/bin/a16een-navbar
+sudo install -Dm755 "$ROOT_DIR/scripts/a16een-workspaces" /usr/local/bin/a16een-workspaces
 sudo install -Dm755 "$ROOT_DIR/scripts/a16een-workspace-preset" /usr/local/bin/a16een-workspace-preset
 
 # The first revision with icon themes could leave a theme selected that is
