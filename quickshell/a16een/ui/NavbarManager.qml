@@ -13,6 +13,8 @@ Item {
     property string iconSearch: ""
     property var navbarSettings: ({})
     property string statusText: "READY"
+    property bool savingSettings: false
+    property int renderRevision: 0
 
     signal backRequested()
 
@@ -175,8 +177,32 @@ Item {
     }
 
     readonly property var colors: [
-        "#111318", "#FFFFFF", "#334155", "#3B82F6", "#06B6D4",
-        "#16A34A", "#F59E0B", "#D97706", "#EF4444", "#DB2777", "#7C3AED"
+        "#111318", "#FFFFFF", "#1F2937", "#475569", "#0F172A",
+        "#2563EB", "#3B82F6", "#06B6D4", "#0EA5E9", "#14B8A6",
+        "#16A34A", "#84CC16", "#F59E0B", "#F97316", "#EF4444",
+        "#E11D48", "#DB2777", "#A855F7", "#7C3AED", "#C084FC",
+        "#B8860B", "#D4AF37", "#9CA3AF", "#E5E7EB"
+    ]
+
+    readonly property var styleChoices: [
+        { id: "solid-black", name: "BLACK", spec: "solid:#111318", kind: "solid", a: "#111318", b: "#111318" },
+        { id: "solid-white", name: "WHITE", spec: "solid:#FFFFFF", kind: "solid", a: "#FFFFFF", b: "#FFFFFF" },
+        { id: "solid-gold", name: "GOLD", spec: "solid:#D4AF37", kind: "solid", a: "#D4AF37", b: "#D4AF37" },
+        { id: "solid-cyan", name: "CYAN", spec: "solid:#06B6D4", kind: "solid", a: "#06B6D4", b: "#06B6D4" },
+        { id: "black-white", name: "B/W HALF", spec: "split-x:#111318:#FFFFFF", kind: "split", a: "#111318", b: "#FFFFFF" },
+        { id: "white-black", name: "W/B HALF", spec: "split-x:#FFFFFF:#111318", kind: "split", a: "#FFFFFF", b: "#111318" },
+        { id: "gold-black", name: "GOLD/BLACK", spec: "split-x:#D4AF37:#111318", kind: "split", a: "#D4AF37", b: "#111318" },
+        { id: "black-gold", name: "BLACK/GOLD", spec: "split-y:#111318:#D4AF37", kind: "split", a: "#111318", b: "#D4AF37" },
+        { id: "white-gold", name: "WHITE/GOLD", spec: "split-y:#FFFFFF:#D4AF37", kind: "split", a: "#FFFFFF", b: "#D4AF37" },
+        { id: "mono-gradient", name: "MONO FLOW", spec: "gradient-x:#111318:#FFFFFF", kind: "gradient", a: "#111318", b: "#FFFFFF" },
+        { id: "gold-gradient", name: "GOLD FLOW", spec: "gradient-x:#111318:#D4AF37", kind: "gradient", a: "#111318", b: "#D4AF37" },
+        { id: "blue-gradient", name: "BLUE FLOW", spec: "gradient-x:#2563EB:#06B6D4", kind: "gradient", a: "#2563EB", b: "#06B6D4" },
+        { id: "purple-gradient", name: "VIOLET FLOW", spec: "gradient-x:#7C3AED:#DB2777", kind: "gradient", a: "#7C3AED", b: "#DB2777" },
+        { id: "teal-gradient", name: "TEAL FLOW", spec: "gradient-y:#06B6D4:#14B8A6", kind: "gradient", a: "#06B6D4", b: "#14B8A6" },
+        { id: "sunset-gradient", name: "SUNSET", spec: "gradient-diag:#F97316:#DB2777", kind: "gradient", a: "#F97316", b: "#DB2777" },
+        { id: "ice-gradient", name: "ICE", spec: "gradient-diag:#FFFFFF:#06B6D4", kind: "gradient", a: "#FFFFFF", b: "#06B6D4" },
+        { id: "shadow-gradient", name: "SHADOW", spec: "gradient-diag:#111318:#475569", kind: "gradient", a: "#111318", b: "#475569" },
+        { id: "emerald-gold", name: "EMERALD/GOLD", spec: "split-x:#16A34A:#D4AF37", kind: "split", a: "#16A34A", b: "#D4AF37" }
     ]
 
     function defaultIcon(slot) {
@@ -202,39 +228,55 @@ Item {
         } catch (error) {
             root.navbarSettings = ({})
         }
+        root.renderRevision++
+    }
+
+    function styleLabel(spec) {
+        if (!spec)
+            return "BLACK"
+        if (spec.indexOf("solid:") === 0)
+            return spec.substring(6).toUpperCase()
+        if (spec.indexOf("split-x:") === 0)
+            return "HALF HORIZONTAL"
+        if (spec.indexOf("split-y:") === 0)
+            return "HALF VERTICAL"
+        if (spec.indexOf("gradient-diag:") === 0)
+            return "DIAGONAL GRADIENT"
+        if (spec.indexOf("gradient-y:") === 0)
+            return "VERTICAL GRADIENT"
+        if (spec.indexOf("gradient-x:") === 0)
+            return "HORIZONTAL GRADIENT"
+        return "CUSTOM"
+    }
+
+    function beginApply(icon, style) {
+        const next = {}
+        for (const slot of root.slots)
+            next[slot.id] = root.settingFor(slot.id)
+        next[root.selectedSlot] = { icon: icon, color: style }
+        root.navbarSettings = next
+        root.pendingIcon = icon
+        root.pendingColor = style
+        root.savingSettings = true
+        root.statusText = "APPLYING"
+        iconProcess.running = false
+        Qt.callLater(() => iconProcess.running = true)
     }
 
     function applyIcon(icon) {
-        const current = root.settingFor(root.selectedSlot)
-        const next = {}
-        for (const slot of root.slots)
-            next[slot.id] = root.settingFor(slot.id)
-        next[root.selectedSlot] = { icon: icon, color: current.color }
-        root.navbarSettings = next
-        root.pendingIcon = icon
-        root.pendingColor = current.color
-        root.statusText = "APPLYING"
-        iconProcess.running = false
-        Qt.callLater(() => iconProcess.running = true)
+        beginApply(icon, root.settingFor(root.selectedSlot).color)
+    }
+
+    function applyStyle(style) {
+        beginApply(root.settingFor(root.selectedSlot).icon, style)
     }
 
     function applyColor(color) {
-        const current = root.settingFor(root.selectedSlot)
-        const next = {}
-        for (const slot of root.slots)
-            next[slot.id] = root.settingFor(slot.id)
-        next[root.selectedSlot] = { icon: current.icon, color: color }
-        root.navbarSettings = next
-        root.pendingIcon = current.icon
-        root.pendingColor = color
-        root.statusText = "APPLYING"
-        iconProcess.running = false
-        Qt.callLater(() => iconProcess.running = true)
+        applyStyle("solid:" + color)
     }
 
     function resetSelected() {
-        applyIcon(root.defaultIcon(root.selectedSlot))
-        Qt.callLater(() => applyColor("#111318"))
+        beginApply(root.defaultIcon(root.selectedSlot), "solid:#111318")
     }
 
     function changeWorkspaceCount(nextCount) {
@@ -259,7 +301,10 @@ Item {
         watchChanges: true
         printErrors: false
         onLoaded: root.loadSettings(this.text())
-        onFileChanged: root.loadSettings(this.text())
+        onFileChanged: {
+            if (!root.savingSettings)
+                root.loadSettings(this.text())
+        }
     }
 
     Process {
@@ -326,9 +371,15 @@ Item {
         ]
         running: false
         onExited: function(exitCode) {
-            root.statusText = exitCode === 0 ? "READY" : "ICON APPLY FAILED"
-            if (exitCode !== 0)
+            root.savingSettings = false
+            if (exitCode === 0) {
+                root.statusText = "READY"
                 settingsFile.reload()
+                root.renderRevision++
+            } else {
+                root.statusText = "ICON APPLY FAILED"
+                settingsFile.reload()
+            }
         }
     }
 
@@ -489,7 +540,11 @@ Item {
                                         sourceSize.width: width; sourceSize.height: height
                                         fillMode: Image.PreserveAspectFit
                                         asynchronous: true
-                                        source: "file://" + root.generatedRoot + "/" + modelData.id + ".svg"
+                                        cache: false
+                                        source: {
+                                            root.renderRevision
+                                            return "file://" + root.generatedRoot + "/" + modelData.id + ".svg"
+                                        }
                                     }
                                 }
 
@@ -547,7 +602,11 @@ Item {
                                 sourceSize.width: width; sourceSize.height: height
                                 fillMode: Image.PreserveAspectFit
                                 asynchronous: true
-                                source: "file://" + root.generatedRoot + "/" + root.selectedSlot + ".svg"
+                                cache: false
+                                source: {
+                                    root.renderRevision
+                                    return "file://" + root.generatedRoot + "/" + root.selectedSlot + ".svg"
+                                }
                             }
                         }
 
@@ -605,7 +664,7 @@ Item {
                             width: 50; height: 32
                             verticalAlignment: Text.AlignVCenter
                             horizontalAlignment: Text.AlignRight
-                            text: (root.iconSearch.length ? root.filteredIcons.length : 42) + " / 113"
+                            text: root.filteredIcons.length + " / " + root.iconChoices.length
                             color: root.muted
                             font.pixelSize: 7
                         }
@@ -669,38 +728,177 @@ Item {
                         }
                     }
 
-                    Row {
+                    Column {
                         width: parent.width
-                        height: 30
-                        spacing: 6
+                        spacing: 7
+
+                        Row {
+                            width: parent.width
+                            height: 22
+                            spacing: 8
+                            Text {
+                                width: 60
+                                height: 22
+                                verticalAlignment: Text.AlignVCenter
+                                text: "COLORS"
+                                color: root.muted
+                                font.pixelSize: 7
+                                font.weight: Font.DemiBold
+                            }
+                            Text {
+                                width: parent.width - 68
+                                height: 22
+                                verticalAlignment: Text.AlignVCenter
+                                text: root.styleLabel(root.settingFor(root.selectedSlot).color)
+                                color: root.textSecondary
+                                font.pixelSize: 7
+                                elide: Text.ElideRight
+                            }
+                        }
+
+                        Flickable {
+                            width: parent.width
+                            height: 34
+                            clip: true
+                            contentWidth: colorGrid.width
+                            contentHeight: 28
+                            boundsBehavior: Flickable.StopAtBounds
+
+                            Grid {
+                                id: colorGrid
+                                height: 28
+                                columns: 12
+                                rowSpacing: 5
+                                columnSpacing: 5
+
+                                Repeater {
+                                    model: root.colors
+                                    delegate: Rectangle {
+                                        width: 22
+                                        height: 22
+                                        radius: 7
+                                        color: "#FFFFFF"
+                                        border.width: 1
+                                        border.color: root.settingFor(root.selectedSlot).color === "solid:" + modelData
+                                            ? root.text : root.border
+                                        Rectangle {
+                                            anchors.centerIn: parent
+                                            width: 12
+                                            height: 12
+                                            radius: 6
+                                            color: modelData
+                                            border.width: modelData.toUpperCase() === "#FFFFFF" ? 1 : 0
+                                            border.color: root.borderStrong
+                                        }
+                                        MouseArea {
+                                            anchors.fill: parent
+                                            cursorShape: Qt.PointingHandCursor
+                                            onClicked: root.applyColor(modelData)
+                                        }
+                                    }
+                                }
+                            }
+                        }
+
                         Text {
-                            width: 52; height: 30
+                            width: parent.width
+                            height: 18
                             verticalAlignment: Text.AlignVCenter
-                            text: "COLOR"
+                            text: "DESIGNS"
                             color: root.muted
                             font.pixelSize: 7
                             font.weight: Font.DemiBold
                         }
-                        Repeater {
-                            model: root.colors
-                            delegate: Rectangle {
-                                width: 22; height: 22; radius: 7
-                                color: "#FFFFFF"
-                                border.width: 1
-                                border.color: root.settingFor(root.selectedSlot).color.toUpperCase() === modelData.toUpperCase()
-                                    ? root.text : root.border
-                                Rectangle {
-                                    anchors.centerIn: parent
-                                    width: 12; height: 12; radius: 6
-                                    color: modelData
-                                }
-                                MouseArea {
-                                    anchors.fill: parent
-                                    cursorShape: Qt.PointingHandCursor
-                                    onClicked: root.applyColor(modelData)
+
+                        Flickable {
+                            width: parent.width
+                            height: 76
+                            clip: true
+                            contentWidth: width
+                            contentHeight: styleGrid.height
+                            boundsBehavior: Flickable.StopAtBounds
+
+                            Grid {
+                                id: styleGrid
+                                width: parent.width
+                                columns: 6
+                                rowSpacing: 5
+                                columnSpacing: 5
+                                height: Math.ceil(root.styleChoices.length / 6) * 34
+
+                                Repeater {
+                                    model: root.styleChoices
+                                    delegate: Rectangle {
+                                        width: (styleGrid.width - 25) / 6
+                                        height: 32
+                                        radius: 8
+                                        color: "#FFFFFF"
+                                        border.width: 1
+                                        border.color: root.settingFor(root.selectedSlot).color === modelData.spec
+                                            ? root.text : root.border
+
+                                        Rectangle {
+                                            anchors.left: parent.left
+                                            anchors.leftMargin: 6
+                                            anchors.verticalCenter: parent.verticalCenter
+                                            width: 20
+                                            height: 20
+                                            radius: 5
+                                            color: modelData.kind === "solid" ? modelData.a : "transparent"
+
+                                            Rectangle {
+                                                visible: modelData.kind === "split"
+                                                anchors.left: parent.left
+                                                anchors.top: parent.top
+                                                anchors.bottom: parent.bottom
+                                                width: parent.width / 2
+                                                radius: 5
+                                                color: modelData.a
+                                            }
+
+                                            Rectangle {
+                                                visible: modelData.kind === "split"
+                                                anchors.right: parent.right
+                                                anchors.top: parent.top
+                                                anchors.bottom: parent.bottom
+                                                width: parent.width / 2
+                                                radius: 5
+                                                color: modelData.b
+                                            }
+
+                                            Rectangle {
+                                                visible: modelData.kind === "gradient"
+                                                anchors.fill: parent
+                                                radius: 5
+                                                gradient: Gradient {
+                                                    GradientStop { position: 0.0; color: modelData.a }
+                                                    GradientStop { position: 1.0; color: modelData.b }
+                                                }
+                                            }
+                                        }
+
+                                        Text {
+                                            anchors.left: parent.left
+                                            anchors.leftMargin: 32
+                                            anchors.right: parent.right
+                                            anchors.rightMargin: 4
+                                            anchors.verticalCenter: parent.verticalCenter
+                                            text: modelData.name
+                                            color: root.textSecondary
+                                            font.pixelSize: 5.5
+                                            elide: Text.ElideRight
+                                        }
+
+                                        MouseArea {
+                                            anchors.fill: parent
+                                            cursorShape: Qt.PointingHandCursor
+                                            onClicked: root.applyStyle(modelData.spec)
+                                        }
+                                    }
                                 }
                             }
                         }
+                    }
                     }
                 }
             }
