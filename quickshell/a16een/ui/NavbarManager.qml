@@ -1,6 +1,4 @@
 import QtQuick
-import Quickshell
-import Quickshell.Io
 import QtQuick.Layouts
 
 Item {
@@ -28,7 +26,7 @@ Item {
     readonly property string settingsPath: root.stateDir + "/navbar.json"
 
 
-    readonly property color page: "transparent"
+    readonly property color page: "#FFFFFF"
     readonly property color card: "#F7F8FA"
     readonly property color cardHover: "#EEF1F4"
     readonly property color border: "#E1E5EA"
@@ -345,8 +343,8 @@ Item {
                                         anchors.centerIn: parent
                                         width: 18
                                         height: 18
-                                        iconName: root.settingFor(modelData.id).icon
-                                        iconColor: root.settingFor(modelData.id).color
+                                        iconPath: root.generatedIconPath(modelData.id)
+                                        fallbackIconPath: root.baseIconPath(modelData.id)
                                         refreshRevision: root.navbarIconRevision
                                         active: root.selectedSlot === modelData.id
                                     }
@@ -424,8 +422,8 @@ Item {
                                 anchors.centerIn: parent
                                 width: 22
                                 height: 22
-                                iconName: root.settingFor(root.selectedSlot).icon
-                                iconColor: root.settingFor(root.selectedSlot).color
+                                iconPath: root.generatedIconPath(root.selectedSlot)
+                                fallbackIconPath: root.baseIconPath(root.selectedSlot)
                                 refreshRevision: root.navbarIconRevision
                             }
                         }
@@ -529,8 +527,8 @@ Item {
                                             anchors.horizontalCenter: parent.horizontalCenter
                                             width: 20
                                             height: 20
-                                            iconName: modelData.id
-                                            iconColor: root.settingFor(root.selectedSlot).color
+                                            iconPath: Qt.resolvedUrl("../assets/icons/" + modelData.id)
+                                            fallbackIconPath: root.baseIconPath(root.selectedSlot)
                                         }
 
                                         Text {
