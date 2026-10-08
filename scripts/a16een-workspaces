@@ -38,6 +38,20 @@ current_count() {
     fi
 }
 
+configured_count() {
+    [[ -f "$CONFIG_FILE" ]] || {
+        printf '0\n'
+        return
+    }
+
+    awk '
+        $0 == "// A16EEN WORKSPACES BEGIN" { inside=1; next }
+        $0 == "// A16EEN WORKSPACES END" { inside=0; next }
+        inside && $1 == "workspace" { count++ }
+        END { print count + 0 }
+    ' "$CONFIG_FILE"
+}
+
 validate_count() {
     local count="$1"
     [[ "$count" =~ ^[0-9]+$ ]] || die "workspace count must be a number."
@@ -149,7 +163,10 @@ set_count() {
     [[ -f "$CONFIG_FILE" ]] || die "Niri config was not found at $CONFIG_FILE."
 
     local old_count
-    old_count="$(current_count)"
+    old_count="$(configured_count)"
+    if ! [[ "$old_count" =~ ^[0-9]+$ ]] || (( old_count < MIN_COUNT || old_count > MAX_COUNT )); then
+        old_count="$(current_count)"
+    fi
 
     if (( new_count == old_count )); then
         printf '%s\n' "$old_count" > "$COUNT_FILE"
