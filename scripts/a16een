@@ -101,15 +101,17 @@ ensure_desktop_session() {
     fi
 }
 
-indicator_event() {
+indicator_show() {
     local kind="$1"
-    local state_dir="${XDG_STATE_HOME:-$HOME/.local/state}/a16een"
-    local event_file="$state_dir/control-indicator"
+    local level="$2"
+    local config_dir="${XDG_CONFIG_HOME:-$HOME/.config}/a16een/quickshell/a16een"
+    local qs_bin="/usr/bin/qs"
 
     [[ "${XDG_CURRENT_DESKTOP:-}" == "A16EEN" ]] || return 0
+    [[ -x "$qs_bin" ]] || return 0
+    [[ -n "$level" ]] || return 0
 
-    mkdir -p "$state_dir"
-    printf '%s|%s\n' "$kind" "$(date +%s%N)" > "$event_file"
+    "$qs_bin" -c "$config_dir" ipc call control-indicator "$kind" "$level" >/dev/null 2>&1 || true
 }
 
 confirm_destructive() {
@@ -290,11 +292,13 @@ case "$command" in
         case "$1" in
             up)
                 wpctl set-volume @DEFAULT_AUDIO_SINK@ 5%+ -l 1.0
-                indicator_event volume
-                ;;
+                local value
+                value=$(wpctl get-volume @DEFAULT_AUDIO_SINK@ 2>/dev/null | awk '/Volume:/ {print                 ;;
+            down)
+                wpctl set-volume @DEFAULT_AUDIO_SINK@ 5%-; exit}')
+                indicator_show volume "$value"                ;;
             down)
                 wpctl set-volume @DEFAULT_AUDIO_SINK@ 5%-
-                indicator_event volume
                 ;;
             mute)
                 wpctl set-mute @DEFAULT_AUDIO_SINK@ toggle
@@ -309,11 +313,13 @@ case "$command" in
         case "$1" in
             up)
                 brightnessctl set +10%
-                indicator_event brightness
-                ;;
+                local current maximum value
+                current=$(brightnessctl get 2>/dev/null || true)
+                maximum=$(brightnessctl max 2>/dev/null || true)
+                value=$(awk -v c="$current" -v m="$maximum" 'BEGIN {if (m > 0) printf "%.4f", c/m}')
+                indicator_show brightness "$value"                ;;
             down)
                 brightnessctl set 10%-
-                indicator_event brightness
                 ;;
             *) die "usage: a16een brightness up|down" ;;
         esac
