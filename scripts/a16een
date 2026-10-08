@@ -104,13 +104,17 @@ ensure_desktop_session() {
 indicator_show() {
     local kind="$1"
     local level="$2"
-    local config_dir="${XDG_CONFIG_HOME:-$HOME/.config}/a16een/quickshell/a16een"
-    local qs_bin="/usr/bin/qs"
+    local state_dir="${XDG_STATE_HOME:-$HOME/.local/state}/a16een"
+    local event_file="$state_dir/control-indicator"
+    local tmp_file="$state_dir/.control-indicator.$"
 
-    [[ -x "$qs_bin" ]] || return 0
     [[ -n "$level" ]] || return 0
+    mkdir -p "$state_dir"
 
-    "$qs_bin" -c "$config_dir" ipc call control-indicator "$kind" "$level" >/dev/null 2>&1 || true
+    # Atomic replace makes every hardware event visible to Quickshell's FileView
+    # without depending on a separate IPC connection or display environment.
+    printf '%s|%s|%s\\n' "$kind" "$level" "$(date +%s%N)" > "$tmp_file" &&
+        mv -f "$tmp_file" "$event_file"
 }
 
 confirm_destructive() {
