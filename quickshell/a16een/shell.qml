@@ -24,6 +24,8 @@ ShellRoot {
     property string powerProfile: "balanced"
     property bool doNotDisturb: false
     property int iconThemeRevision: 0
+    property real controlIndicatorLevel: 0
+    property int controlIndicatorRevision: 0
 
     // Widget state lives in the shell; rendering and management stay modular.
     property bool widgetsCenterOpen: false
@@ -406,17 +408,20 @@ ShellRoot {
         }
     }
 
+    function showControlIndicator(level: real): void {
+        root.controlIndicatorLevel = Math.max(0, Math.min(1, level))
+        root.controlIndicatorRevision++
+    }
+
     IpcHandler {
         target: "control-indicator"
 
         function volume(level: real): void {
-            if (root.primaryScreen)
-                controlIndicator.showLevel(level)
+            root.showControlIndicator(level)
         }
 
         function brightness(level: real): void {
-            if (root.primaryScreen)
-                controlIndicator.showLevel(level)
+            root.showControlIndicator(level)
         }
     }
 
@@ -761,9 +766,15 @@ ShellRoot {
         volumeMuted: root.volumeMuted
     }
 
-    ControlIndicator {
-        id: controlIndicator
-        modelData: root.primaryScreen
+    Variants {
+        model: Quickshell.screens
+
+        ControlIndicator {
+            modelData: modelData
+            requestedLevel: root.controlIndicatorLevel
+            requestRevision: root.controlIndicatorRevision
+            activeScreen: root.primaryScreen
+        }
     }
 
     NotificationToast {
