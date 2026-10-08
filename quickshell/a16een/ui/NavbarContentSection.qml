@@ -43,7 +43,7 @@ Item {
         if (saveProcess.running)
             return
         pendingItem = id
-        pendingValue = enabled(id) ? "off" : "on"
+        pendingValue = isEnabled(id) ? "off" : "on"
         saveProcess.running = true
     }
 
