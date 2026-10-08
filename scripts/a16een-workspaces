@@ -167,8 +167,12 @@ set_count() {
     grep -Fqx '// A16EEN WORKSPACE BINDS END' "$CONFIG_FILE" || die "Niri config is missing A16EEN workspace bind markers."
 
     local old_count
-    old_count="$(configured_count)"
-    if ! [[ "$old_count" =~ ^[0-9]+$ ]] || (( old_count < MIN_COUNT || old_count > MAX_COUNT )); then
+    if [[ -s "$COUNT_FILE" ]]; then
+        old_count="$(configured_count)"
+        if ! [[ "$old_count" =~ ^[0-9]+$ ]] || (( old_count < MIN_COUNT || old_count > MAX_COUNT )); then
+            old_count="$(current_count)"
+        fi
+    else
         old_count="$(current_count)"
     fi
 
