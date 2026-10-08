@@ -461,18 +461,11 @@ PanelWindow {
         anchors.bottom: root.horizontalNavbar && root.navbarPosition === "bottom"
         width: root.horizontalNavbar ? parent.width : 8
         height: root.horizontalNavbar ? 8 : parent.height
-        // Only the physical screen edge is a reveal trigger. Never let this
-        // invisible hover surface cover the vertical navbar buttons.
-        x: root.navbarPosition === "right" && !root.horizontalNavbar
-            ? parent.width - 8
-            : 0
-        y: root.navbarPosition === "bottom" && root.horizontalNavbar
-            ? parent.height - 8
-            : 0
+        // Keep the reveal trigger confined to the 8px screen edge for
+        // vertical layouts. Workspace buttons are explicitly above it.
         hoverEnabled: true
         acceptedButtons: Qt.NoButton
-        // This invisible edge trigger must never sit above workspace buttons.
-        z: -1
+        z: 0
         onEntered: root.revealDock()
         onExited: root.scheduleHide()
     }
@@ -598,6 +591,7 @@ PanelWindow {
     component WorkspaceButton: Rectangle {
         required property var workspace
 
+        z: 1
         width: 32
         height: 32
         radius: 11
