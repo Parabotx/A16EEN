@@ -295,13 +295,11 @@ case "$command" in
         case "$1" in
             up)
                 wpctl set-volume @DEFAULT_AUDIO_SINK@ 5%+ -l 1.0
-                local value
                 value=$(wpctl get-volume @DEFAULT_AUDIO_SINK@ 2>/dev/null | awk '/Volume:/ {print $2; exit}')
                 indicator_show volume "$value"
                 ;;
             down)
                 wpctl set-volume @DEFAULT_AUDIO_SINK@ 5%-
-                local value
                 value=$(wpctl get-volume @DEFAULT_AUDIO_SINK@ 2>/dev/null | awk '/Volume:/ {print $2; exit}')
                 indicator_show volume "$value"
                 ;;
@@ -318,7 +316,6 @@ case "$command" in
         case "$1" in
             up)
                 brightnessctl set +10%
-                local current maximum value
                 current=$(brightnessctl get 2>/dev/null || true)
                 maximum=$(brightnessctl max 2>/dev/null || true)
                 value=$(awk -v c="$current" -v m="$maximum" 'BEGIN {if (m > 0) printf "%.4f", c/m}')
@@ -326,7 +323,6 @@ case "$command" in
                 ;;
             down)
                 brightnessctl set 10%-
-                local current maximum value
                 current=$(brightnessctl get 2>/dev/null || true)
                 maximum=$(brightnessctl max 2>/dev/null || true)
                 value=$(awk -v c="$current" -v m="$maximum" 'BEGIN {if (m > 0) printf "%.4f", c/m}')
