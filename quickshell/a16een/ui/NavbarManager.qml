@@ -903,7 +903,6 @@ Item {
                 }
             }
         }
-    }
 
     onActiveChanged: {
         if (root.active) {
