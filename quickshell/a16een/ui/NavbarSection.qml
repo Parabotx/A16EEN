@@ -22,6 +22,8 @@ Item {
     signal navbarSettingsChanged(var settings)
 
     property string selectedSlot: "home"
+    property string pendingIcon: "house.svg"
+    property string pendingColor: "#111318"
 
     readonly property color page: "#FFFFFF"
     readonly property color card: "#F7F8FA"
@@ -148,19 +150,23 @@ Item {
     }
 
     function patch(p) {
+        const current = root.settingFor(root.selectedSlot)
+        const icon = p.icon || current.icon
+        const color = p.color || current.color
+
         const next = {}
         for (const slot of root.slots)
             next[slot.id] = root.settingFor(slot.id)
 
         next[root.selectedSlot] = {
-            icon: p.icon || root.settingFor(root.selectedSlot).icon,
-            color: p.color || root.settingFor(root.selectedSlot).color
+            icon: icon,
+            color: color
         }
 
+        root.pendingIcon = icon
+        root.pendingColor = color
         root.navbarSettings = next
-        root.statusText = "SAVING " + root.selectedSlot.toUpperCase()
-        settingsFile.setText(JSON.stringify(next, null, 2))
-        root.navbarSettingsChanged(next)
+        root.statusText = "APPLYING " + root.selectedSlot.toUpperCase()
 
         rebuildProcess.running = false
         Qt.callLater(() => rebuildProcess.running = true)
@@ -187,7 +193,13 @@ Item {
 
     Process {
         id: rebuildProcess
-        command: ["/usr/local/bin/a16een-navbar", "apply"]
+        command: [
+            "/usr/local/bin/a16een-navbar",
+            "set",
+            root.selectedSlot,
+            root.pendingIcon,
+            root.pendingColor
+        ]
         running: false
 
         onExited: function(exitCode, exitStatus) {
@@ -196,6 +208,7 @@ Item {
                 root.navbarIconRevision++
             } else {
                 root.statusText = "ICON REBUILD FAILED"
+                settingsFile.reload()
             }
         }
     }
