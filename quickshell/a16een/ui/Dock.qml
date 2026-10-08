@@ -26,25 +26,20 @@ PanelWindow {
 
     readonly property string navbarIconRoot: root.stateDir + "/navbar-icons"
     readonly property string navbarReadyPath: root.navbarIconRoot + "/ready"
-    readonly property string workspaceCountPath: root.stateDir + "/workspace-count"
+    readonly property string workspaceRegistryPath: root.stateDir + "/workspaces.json"
 
     property int navbarRevision: 0
-    property int workspaceCount: 6
     property bool edgeRevealed: false
-
-    readonly property var workspaceCatalog: [
-        { id: "home", icon: "house.svg" },
-        { id: "code", icon: "code.svg" },
-        { id: "web", icon: "globe.svg" },
-        { id: "comms", icon: "messages-square.svg" },
-        { id: "studio", icon: "sparkles.svg" },
-        { id: "music", icon: "music.svg" },
-        { id: "games", icon: "gamepad-2.svg" },
-        { id: "files", icon: "folder.svg" },
-        { id: "lab", icon: "terminal.svg" }
+    property var workspaceCatalog: [
+        { id: "home", name: "HOME", icon: "house.svg" },
+        { id: "code", name: "CODE", icon: "code.svg" },
+        { id: "web", name: "WEB", icon: "globe.svg" },
+        { id: "comms", name: "COMMS", icon: "messages-square.svg" },
+        { id: "studio", name: "STUDIO", icon: "sparkles.svg" },
+        { id: "music", name: "MUSIC", icon: "music.svg" }
     ]
 
-    readonly property var visibleWorkspaces: root.workspaceCatalog.slice(0, root.workspaceCount)
+    readonly property var visibleWorkspaces: root.workspaceCatalog
 
     readonly property int dockHeight: Math.max(
         260,
@@ -61,10 +56,14 @@ PanelWindow {
         Math.round((root.modelData.height - root.surfaceHeight) / 2)
     )
 
-    function loadWorkspaceCount(raw) {
-        const value = Number(String(raw || "").trim())
-        if (value >= 2 && value <= 9)
-            root.workspaceCount = Math.floor(value)
+    function loadWorkspaceRegistry(raw) {
+        try {
+            const parsed = JSON.parse(String(raw || ""))
+            if (Array.isArray(parsed) && parsed.length)
+                root.workspaceCatalog = parsed
+        } catch (error) {
+            // Keep the last valid registry in memory during atomic writes.
+        }
     }
 
     function generatedIconPath(slot) {
@@ -85,12 +84,12 @@ PanelWindow {
     }
 
     FileView {
-        id: workspaceCountFile
-        path: root.workspaceCountPath
+        id: workspaceRegistryFile
+        path: root.workspaceRegistryPath
         watchChanges: true
         printErrors: false
-        onLoaded: root.loadWorkspaceCount(this.text())
-        onFileChanged: root.loadWorkspaceCount(this.text())
+        onLoaded: root.loadWorkspaceRegistry(this.text())
+        onFileChanged: root.loadWorkspaceRegistry(this.text())
     }
 
     screen: modelData
