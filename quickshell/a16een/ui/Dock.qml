@@ -14,19 +14,45 @@ PanelWindow {
     signal launcherRequested()
 
     property var navbarSettings: ({})
+    function isWhiteColor(value) {
+        const color = String(value || "").toUpperCase()
+        return color === "#FFFFFF" || color === "#FFFFFFFF"
+    }
+
+    function isAllWhiteNavbarStyle(value) {
+        const style = String(value || "").toUpperCase()
+
+        if (isWhiteColor(style))
+            return true
+
+        if (style.indexOf("SOLID:") === 0)
+            return isWhiteColor(style.substring(6))
+
+        const parts = style.split(":")
+        if (parts.length === 3 && (
+                parts[0] === "SPLIT-X" ||
+                parts[0] === "SPLIT-Y" ||
+                parts[0] === "GRADIENT-X" ||
+                parts[0] === "GRADIENT-Y" ||
+                parts[0] === "GRADIENT-DIAG"))
+            return isWhiteColor(parts[1]) && isWhiteColor(parts[2])
+
+        return false
+    }
+
     readonly property bool allWhiteNavbarStyles: {
         if (!root.visibleWorkspaces.length)
             return false
+
         for (const workspace of root.visibleWorkspaces) {
             const setting = root.navbarSettings[workspace.id]
-            const style = setting && setting.color ? String(setting.color).toUpperCase() : ""
-            if (style !== "#FFFFFF" && style !== "#FFFFFFFF"
-                && style !== "SOLID:#FFFFFF" && style !== "SOLID:#FFFFFFFF")
+            const style = setting && setting.color ? String(setting.color) : ""
+            if (!root.isAllWhiteNavbarStyle(style))
                 return false
         }
+
         return true
     }
-
     readonly property color dockBackground:
         root.allWhiteNavbarStyles ? "#111318" : "#FFFFFF"
     readonly property color dockBorder:
