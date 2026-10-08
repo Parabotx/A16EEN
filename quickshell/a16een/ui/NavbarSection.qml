@@ -410,59 +410,79 @@ Item {
                         font.letterSpacing: 1.0
                     }
 
-                    GridLayout {
+                    Flickable {
+                        id: iconScroll
                         Layout.fillWidth: true
-                        Layout.preferredHeight: 252
-                        columns: 5
-                        rows: 3
-                        rowSpacing: 7
-                        columnSpacing: 7
+                        Layout.preferredHeight: 248
+                        clip: true
+                        contentWidth: width
+                        contentHeight: iconGrid.height
 
-                        Repeater {
-                            model: root.iconChoices
+                        GridLayout {
+                            id: iconGrid
 
-                            delegate: Rectangle {
-                                Layout.fillWidth: true
-                                Layout.fillHeight: true
-                                radius: 13
-                                color: root.settingFor(root.selectedSlot).icon === modelData.id
-                                    ? "#111318"
-                                    : (iconMouse.containsMouse ? root.cardHover : "#FFFFFF")
-                                border.width: root.settingFor(root.selectedSlot).icon === modelData.id ? 1.3 : 1
-                                border.color: root.settingFor(root.selectedSlot).icon === modelData.id
-                                    ? "#111318" : root.border
+                            width: iconScroll.width
+                            height: Math.ceil(root.iconChoices.length / 6) * 57
+                                + Math.max(0, Math.ceil(root.iconChoices.length / 6) - 1) * 7
+                            columns: 6
+                            rowSpacing: 7
+                            columnSpacing: 7
 
-                                Column {
-                                    anchors.centerIn: parent
-                                    spacing: 4
+                            Repeater {
+                                model: root.iconChoices
 
+                                delegate: Rectangle {
+                                    Layout.preferredWidth: (iconGrid.width - 35) / 6
+                                    Layout.preferredHeight: 57
+                                    radius: 12
+                                    color: root.settingFor(root.selectedSlot).icon === modelData.id
+                                        ? "#111318"
+                                        : (iconMouse.containsMouse ? root.cardHover : "#FFFFFF")
+                                    border.width: root.settingFor(root.selectedSlot).icon === modelData.id ? 1.3 : 1
+                                    border.color: root.settingFor(root.selectedSlot).icon === modelData.id
+                                        ? "#111318" : root.border
+
+                                    Column {
+                                        anchors.centerIn: parent
+                                        spacing: 3
+
+                                        NavbarIcon {
+                                            anchors.horizontalCenter: parent.horizontalCenter
+                                            width: 20
+                                            height: 20
+                                            iconPath: root.generatedIconPath(root.selectedSlot)
+                                            fallbackIconPath: root.baseIconPath(root.selectedSlot)
+                                            refreshRevision: root.navbarIconRevision
+                                            active: root.settingFor(root.selectedSlot).icon === modelData.id
+                                        }
+
+                                        Text {
+                                            width: parent.width
+                                            horizontalAlignment: Text.AlignHCenter
+                                            text: modelData.name
+                                            color: root.settingFor(root.selectedSlot).icon === modelData.id
+                                                ? "#FFFFFF" : root.textSecondary
+                                            font.pixelSize: 6
+                                            elide: Text.ElideRight
+                                        }
+                                    }
+
+                                    // Overlay the actual choice icon for clarity.
                                     NavbarIcon {
-                                        anchors.horizontalCenter: parent.horizontalCenter
-                                        width: 22
-                                        height: 22
-                                        iconPath: root.generatedIconPath(root.selectedSlot)
+                                        anchors.centerIn: parent
+                                        width: 20
+                                        height: 20
+                                        iconPath: Qt.resolvedUrl("../assets/icons/" + modelData.id)
                                         fallbackIconPath: root.baseIconPath(root.selectedSlot)
-                                        refreshRevision: root.navbarIconRevision
-                                        active: root.settingFor(root.selectedSlot).icon === modelData.id
                                     }
 
-                                    Text {
-                                        width: 70
-                                        horizontalAlignment: Text.AlignHCenter
-                                        text: modelData.name
-                                        color: root.settingFor(root.selectedSlot).icon === modelData.id
-                                            ? "#FFFFFF" : root.textSecondary
-                                        font.pixelSize: 6
-                                        elide: Text.ElideRight
+                                    MouseArea {
+                                        id: iconMouse
+                                        anchors.fill: parent
+                                        hoverEnabled: true
+                                        cursorShape: Qt.PointingHandCursor
+                                        onClicked: root.patch({ icon: modelData.id })
                                     }
-                                }
-
-                                MouseArea {
-                                    id: iconMouse
-                                    anchors.fill: parent
-                                    hoverEnabled: true
-                                    cursorShape: Qt.PointingHandCursor
-                                    onClicked: root.patch({ icon: modelData.id })
                                 }
                             }
                         }
