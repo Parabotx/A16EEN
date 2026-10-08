@@ -189,6 +189,57 @@ ShellRoot {
         }
     }
 
+    function loadNavbarSettings(raw) {
+        const next = {}
+        let parsed = null
+
+        try {
+            parsed = JSON.parse(String(raw || ""))
+        } catch (error) {
+            parsed = null
+        }
+
+        for (const slot of Object.keys(root.navbarDefaults)) {
+            const fallback = root.navbarDefaults[slot]
+            const saved = parsed && parsed[slot] ? parsed[slot] : {}
+
+            const validIcon = typeof saved.icon === "string"
+                && /^[a-z0-9-]+\.svg$/i.test(saved.icon)
+            const validColor = typeof saved.color === "string"
+                && /^#[0-9a-f]{6,8}$/i.test(saved.color)
+
+            next[slot] = {
+                icon: validIcon ? saved.icon : fallback.icon,
+                color: validColor ? saved.color : fallback.color
+            }
+        }
+
+        root.navbarSettings = next
+    }
+
+    function saveNavbarSettings(settings) {
+        const source = settings && typeof settings === "object" ? settings : ({})
+        const next = {}
+
+        for (const slot of Object.keys(root.navbarDefaults)) {
+            const fallback = root.navbarDefaults[slot]
+            const saved = source[slot] || {}
+
+            const validIcon = typeof saved.icon === "string"
+                && /^[a-z0-9-]+\.svg$/i.test(saved.icon)
+            const validColor = typeof saved.color === "string"
+                && /^#[0-9a-f]{6,8}$/i.test(saved.color)
+
+            next[slot] = {
+                icon: validIcon ? saved.icon : fallback.icon,
+                color: validColor ? saved.color : fallback.color
+            }
+        }
+
+        root.navbarSettings = next
+        navbarSettingsFile.setText(JSON.stringify(next, null, 2))
+    }
+
     function consumeNiriEvent(raw) {
         const line = String(raw).trim()
         if (!line.length) return
