@@ -175,6 +175,29 @@ PanelWindow {
         return items
     }
 
+    function navbarIcon(slot, fallbackIcon) {
+        const setting = root.navbarSettings && root.navbarSettings[slot]
+            ? root.navbarSettings[slot] : null
+        return setting && setting.icon ? setting.icon : fallbackIcon
+    }
+
+    function navbarColor(slot, fallbackIcon) {
+        const setting = root.navbarSettings && root.navbarSettings[slot]
+            ? root.navbarSettings[slot] : null
+        const spec = String(setting && setting.color ? setting.color : "#111318")
+
+        if (spec.indexOf("solid:") === 0)
+            return spec.substring(6)
+        if (spec.charAt(0) === "#")
+            return spec
+
+        const parts = spec.split(":")
+        if (parts.length >= 2 && parts[1].charAt(0) === "#")
+            return parts[1]
+
+        return "#111318"
+    }
+
     function loadNavbarSettings(raw) {
         try {
             const parsed = JSON.parse(String(raw || ""))
@@ -572,14 +595,12 @@ PanelWindow {
             color: root.iconColor
         }
 
-        NavbarImage {
+        NavbarIcon {
             anchors.centerIn: parent
             width: 19
             height: 19
-            slot: workspace.id
-            generatedPath: root.generatedIconPath(workspace.id)
-            fallbackPath: root.fallbackIconPath(workspace.icon)
-            refreshRevision: root.navbarRevision
+            iconName: root.navbarIcon(workspace.id, workspace.icon)
+            iconColor: root.navbarColor(workspace.id, workspace.icon)
             active: root.workspaceIsFocused(workspace.id)
             hovered: workspaceMouse.containsMouse
         }
@@ -592,55 +613,6 @@ PanelWindow {
             onEntered: root.revealDock()
             onExited: root.scheduleHide()
             onClicked: root.focusWorkspace(workspace.id)
-        }
-    }
-
-    component NavbarImage: Item {
-        required property string slot
-        property string generatedPath: ""
-        property string fallbackPath: ""
-        property int refreshRevision: 0
-        property bool hovered: false
-        property bool active: false
-
-        implicitWidth: 19
-        implicitHeight: 19
-        scale: hovered ? 1.08 : (active ? 1.03 : 1)
-
-        Behavior on scale {
-            NumberAnimation {
-                duration: 120
-                easing.type: Easing.OutCubic
-            }
-        }
-
-        Image {
-            id: navbarImage
-            anchors.fill: parent
-            fillMode: Image.PreserveAspectFit
-            sourceSize.width: width
-            sourceSize.height: height
-            smooth: true
-            mipmap: true
-            cache: false
-            asynchronous: true
-            source: parent.generatedPath.length
-                ? parent.generatedPath
-                : parent.fallbackPath
-
-            onStatusChanged: {
-                if (status === Image.Error && parent.fallbackPath.length
-                    && source !== parent.fallbackPath) {
-                    source = parent.fallbackPath
-                }
-            }
-        }
-
-        onRefreshRevisionChanged: {
-            navbarImage.source = ""
-            Qt.callLater(() => {
-                navbarImage.source = root.generatedIconPath(slot)
-            })
         }
     }
 
