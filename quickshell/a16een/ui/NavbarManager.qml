@@ -1,4 +1,6 @@
 import QtQuick
+import Quickshell
+import Quickshell.Io
 import QtQuick.Layouts
 
 Item {
@@ -26,14 +28,14 @@ Item {
     readonly property string settingsPath: root.stateDir + "/navbar.json"
 
 
-    readonly property color page: "#FFFFFF"
-    readonly property color card: "#F7F8FA"
-    readonly property color cardHover: "#EEF1F4"
-    readonly property color border: "#E1E5EA"
-    readonly property color borderStrong: "#CDD3DA"
-    readonly property color textPrimary: "#111318"
-    readonly property color textSecondary: "#66707C"
-    readonly property color textMuted: "#8A939E"
+    readonly property color page: "#0B0C0F"
+    readonly property color card: "#15171B"
+    readonly property color cardHover: "#20242A"
+    readonly property color border: "#2B3038"
+    readonly property color borderStrong: "#3A414B"
+    readonly property color textPrimary: "#F5F7FA"
+    readonly property color textSecondary: "#AEB6C2"
+    readonly property color textMuted: "#7D8794"
     readonly property color accent: "#3B82F6"
 
     readonly property var slots: [
@@ -295,7 +297,7 @@ Item {
                 Layout.preferredWidth: 196
                 Layout.fillHeight: true
                 radius: 17
-                color: "#FBFCFD"
+                color: "#111318"
                 border.width: 1
                 border.color: root.border
 
@@ -322,7 +324,7 @@ Item {
                             Layout.preferredHeight: 62
                             radius: 13
                             color: root.selectedSlot === modelData.id
-                                ? "#111318"
+                                ? "#252A32"
                                 : (slotMouse.containsMouse ? root.cardHover : "transparent")
 
                             RowLayout {
@@ -337,7 +339,7 @@ Item {
                                     radius: 11
                                     color: root.selectedSlot === modelData.id ? "#1D2430" : "#FFFFFF"
                                     border.width: 1
-                                    border.color: root.selectedSlot === modelData.id ? "#263140" : root.border
+                                    border.color: root.selectedSlot === modelData.id ? "#46505E" : root.border
 
                                     NavbarIcon {
                                         anchors.centerIn: parent
@@ -397,7 +399,7 @@ Item {
                 Layout.fillWidth: true
                 Layout.fillHeight: true
                 radius: 17
-                color: "#FBFCFD"
+                color: "#111318"
                 border.width: 1
                 border.color: root.border
 
@@ -414,7 +416,7 @@ Item {
                             Layout.preferredWidth: 46
                             Layout.preferredHeight: 46
                             radius: 13
-                            color: "#FFFFFF"
+                            color: "#15171B"
                             border.width: 1
                             border.color: root.border
 
@@ -456,7 +458,7 @@ Item {
                             Layout.preferredWidth: 78
                             Layout.preferredHeight: 30
                             radius: 10
-                            color: resetMouse.containsMouse ? "#EEF1F4" : "#FFFFFF"
+                            color: resetMouse.containsMouse ? "#20242A" : "#15171B"
                             border.width: 1
                             border.color: root.borderStrong
 
@@ -575,7 +577,7 @@ Item {
                                 Layout.preferredWidth: 29
                                 Layout.preferredHeight: 29
                                 radius: 9
-                                color: "#FFFFFF"
+                                color: "#15171B"
                                 border.width: root.settingFor(root.selectedSlot).color.toUpperCase() === modelData.id.toUpperCase()
                                     ? 1.5 : 1
                                 border.color: root.settingFor(root.selectedSlot).color.toUpperCase() === modelData.id.toUpperCase()
