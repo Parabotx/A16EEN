@@ -270,7 +270,7 @@ PanelWindow {
             "-c",
             'target="$1"; ' +
             'if niri msg -j workspaces 2>/dev/null | jq -e --arg name "$target" ' +
-            ''any(.[]; .name == $name)' >/dev/null 2>&1; then ' +
+            "'any(.[]; .name == $name)' >/dev/null 2>&1; then " +
             'niri msg action focus-workspace "$target"; ' +
             'else ' +
             'a16een-workspaces apply >/dev/null 2>&1 && ' +
