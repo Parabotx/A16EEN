@@ -27,6 +27,15 @@ ShellRoot {
     property real controlIndicatorLevel: 0
     property int controlIndicatorRevision: 0
 
+    readonly property string controlIndicatorEventPath: {
+        const stateHome = Quickshell.env("XDG_STATE_HOME")
+        const home = Quickshell.env("HOME") || ""
+        const base = stateHome && stateHome.length
+            ? stateHome
+            : home + "/.local/state"
+        return base + "/a16een/control-indicator"
+    }
+
     // Widget state lives in the shell; rendering and management stay modular.
     property bool widgetsCenterOpen: false
     property bool editorialTimeWidgetEnabled: true
@@ -91,6 +100,21 @@ ShellRoot {
     property var latestNotification: null
 
     readonly property var primaryScreen: Quickshell.screens.length > 0 ? Quickshell.screens[0] : null
+
+    FileView {
+        id: controlIndicatorEvent
+
+        path: root.controlIndicatorEventPath
+        watchChanges: true
+
+        onFileChanged: {
+            this.reload()
+        }
+
+        onLoaded: {
+            root.consumeControlIndicatorEvent(this.text())
+        }
+    }
 
     Process {
         id: wallpaperPathProcess
@@ -413,16 +437,22 @@ ShellRoot {
         root.controlIndicatorRevision++
     }
 
-    IpcHandler {
-        target: "control-indicator"
+    function consumeControlIndicatorEvent(raw): void {
+        const line = String(raw).trim()
+        if (!line.length)
+            return
 
-        function volume(level: real): void {
-            root.showControlIndicator(level)
-        }
+        const parts = line.split("|")
+        if (parts.length < 2)
+            return
 
-        function brightness(level: real): void {
-            root.showControlIndicator(level)
-        }
+        const kind = parts[0]
+        const value = Number(parts[1])
+
+        if ((kind !== "volume" && kind !== "brightness") || !Number.isFinite(value))
+            return
+
+        root.showControlIndicator(value)
     }
 
     function setDoNotDisturb(enabled) {
@@ -773,7 +803,7 @@ ShellRoot {
             modelData: modelData
             requestedLevel: root.controlIndicatorLevel
             requestRevision: root.controlIndicatorRevision
-            activeScreen: root.primaryScreen
+            active: modelData === root.primaryScreen
         }
     }
 
