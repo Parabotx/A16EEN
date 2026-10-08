@@ -584,21 +584,8 @@ PanelWindow {
             onLoaded: {
                 if (!item)
                     return
-
-                // Give the dynamically loaded manager explicit ownership of the
-                // Loader's geometry. This prevents a zero-size loaded Item from
-                // leaving only the white CommandCenter card visible.
-                item.anchors.fill = navbarLoader
-                item.visible = true
                 item.active = true
                 item.backRequested.connect(root.closeNavbarView)
-
-                Qt.callLater(() => {
-                    if (root.navbarViewOpen && navbarLoader.item) {
-                        navbarLoader.item.anchors.fill = navbarLoader
-                        navbarLoader.item.forceActiveFocus()
-                    }
-                })
             }
         }
 
