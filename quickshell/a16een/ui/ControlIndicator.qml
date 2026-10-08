@@ -101,7 +101,7 @@ PanelWindow {
             if (!root.eventWatcherReady)
                 return
 
-            const payload = String(text).trim()
+            const payload = String(controlEvent.text()).trim()
             if (!payload.length)
                 return
 
