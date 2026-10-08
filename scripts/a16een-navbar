@@ -91,9 +91,16 @@ prune_inactive_slots() {
     done
 }
 
-normalize_color() {
+normalize_style() {
     local value="${1:-}"
+
     if [[ "$value" =~ ^#[0-9A-Fa-f]{6}([0-9A-Fa-f]{2})?$ ]]; then
+        printf 'solid:%s' "$value"
+        return
+    fi
+
+    if [[ "$value" =~ ^solid:#[0-9A-Fa-f]{6}([0-9A-Fa-f]{2})?$ ]] ||
+       [[ "$value" =~ ^(split-x|split-y|gradient-x|gradient-y|gradient-diag):#[0-9A-Fa-f]{6}:#[0-9A-Fa-f]{6}$ ]]; then
         printf '%s' "$value"
     fi
 }
@@ -127,15 +134,15 @@ JSON
 
 generate_icon() {
     local slot="$1"
-    local configured_icon configured_color icon_file output
+    local configured_icon configured_style icon_file output
     configured_icon="$(jq -r --arg slot "$slot" '.[$slot].icon // empty' "$SETTINGS_FILE" 2>/dev/null || true)"
-    configured_color="$(jq -r --arg slot "$slot" '.[$slot].color // empty' "$SETTINGS_FILE" 2>/dev/null || true)"
+    configured_style="$(jq -r --arg slot "$slot" '.[$slot].color // empty' "$SETTINGS_FILE" 2>/dev/null || true)"
 
     configured_icon="$(normalize_icon "$configured_icon")"
-    configured_color="$(normalize_color "$configured_color")"
+    configured_style="$(normalize_style "$configured_style")"
 
     [[ -n "$configured_icon" ]] || configured_icon="${DEFAULT_ICON[$slot]}"
-    [[ -n "$configured_color" ]] || configured_color="${DEFAULT_COLOR[$slot]}"
+    [[ -n "$configured_style" ]] || configured_style="solid:${DEFAULT_COLOR[$slot]}"
 
     icon_file="$ICON_ROOT/$configured_icon"
     if [[ ! -f "$icon_file" ]]; then
@@ -148,10 +155,68 @@ generate_icon() {
     fi
 
     output="$OUTPUT_DIR/$slot.svg"
+    local mode first second stroke gradient tmp
 
-    # Lucide icons are outline SVGs. Replace the stroke with the selected
-    # navbar color while preserving the rest of the original icon geometry.
-    sed -E         -e 's/stroke="[^"]*"/stroke="'$configured_color'"/g'         -e 's/stroke:\s*[^;"]+/stroke:'$configured_color'/g'         "$icon_file" > "$output"
+    case "$configured_style" in
+        solid:*)
+            mode="solid"
+            first="${configured_style#solid:}"
+            second="$first"
+            ;;
+        split-x:*)
+            mode="split-x"
+            first="${configured_style#split-x:}"
+            first="${first%%:*}"
+            second="${configured_style#split-x:$first:}"
+            ;;
+        split-y:*)
+            mode="split-y"
+            first="${configured_style#split-y:}"
+            first="${first%%:*}"
+            second="${configured_style#split-y:$first:}"
+            ;;
+        gradient-x:*)
+            mode="gradient-x"
+            first="${configured_style#gradient-x:}"
+            first="${first%%:*}"
+            second="${configured_style#gradient-x:$first:}"
+            ;;
+        gradient-y:*)
+            mode="gradient-y"
+            first="${configured_style#gradient-y:}"
+            first="${first%%:*}"
+            second="${configured_style#gradient-y:$first:}"
+            ;;
+        gradient-diag:*)
+            mode="gradient-diag"
+            first="${configured_style#gradient-diag:}"
+            first="${first%%:*}"
+            second="${configured_style#gradient-diag:$first:}"
+            ;;
+        *)
+            mode="solid"
+            first="${DEFAULT_COLOR[$slot]}"
+            second="$first"
+            ;;
+    esac
+
+    if [[ "$mode" == "solid" ]]; then
+        stroke="$first"
+        sed -E -e 's/stroke="[^"]*"/stroke="'$stroke'"/g' -e 's/stroke:\s*[^;"]+/stroke:'$stroke'/g' "$icon_file" > "$output"
+    else
+        case "$mode" in
+            split-x)       gradient='<linearGradient id="a16eenGradient" x1="0%" y1="0%" x2="100%" y2="0%"><stop offset="0%" stop-color="'$first'"/><stop offset="50%" stop-color="'$first'"/><stop offset="50%" stop-color="'$second'"/><stop offset="100%" stop-color="'$second'"/></linearGradient>' ;;
+            split-y)       gradient='<linearGradient id="a16eenGradient" x1="0%" y1="0%" x2="0%" y2="100%"><stop offset="0%" stop-color="'$first'"/><stop offset="50%" stop-color="'$first'"/><stop offset="50%" stop-color="'$second'"/><stop offset="100%" stop-color="'$second'"/></linearGradient>' ;;
+            gradient-x)    gradient='<linearGradient id="a16eenGradient" x1="0%" y1="0%" x2="100%" y2="0%"><stop offset="0%" stop-color="'$first'"/><stop offset="100%" stop-color="'$second'"/></linearGradient>' ;;
+            gradient-y)    gradient='<linearGradient id="a16eenGradient" x1="0%" y1="0%" x2="0%" y2="100%"><stop offset="0%" stop-color="'$first'"/><stop offset="100%" stop-color="'$second'"/></linearGradient>' ;;
+            gradient-diag) gradient='<linearGradient id="a16eenGradient" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" stop-color="'$first'"/><stop offset="100%" stop-color="'$second'"/></linearGradient>' ;;
+        esac
+
+        tmp="$(mktemp "$STATE_DIR/navbar-icon.XXXXXX")"
+        sed -E 's/stroke="[^"]*"/stroke="url(#a16eenGradient)"/g; s/stroke:\s*[^;"]+/stroke:url(#a16eenGradient)/g' "$icon_file" > "$tmp"
+        awk -v gradient="$gradient" 'NR == 1 { sub(/>/, "><defs>" gradient "</defs>", $0) } { print }' "$tmp" > "$output"
+        rm -f "$tmp"
+    fi
 
     grep -q '<svg' "$output"
     chmod 644 "$output"
@@ -180,7 +245,7 @@ set_setting() {
     fi
 
     icon="$(normalize_icon "$icon")"
-    color="$(normalize_color "$color")"
+    color="$(normalize_style "$color")"
 
     [[ -n "$icon" ]] || {
         echo "A16EEN navbar: invalid icon name." >&2
@@ -188,7 +253,7 @@ set_setting() {
     }
 
     [[ -n "$color" ]] || {
-        echo "A16EEN navbar: invalid color." >&2
+        echo "A16EEN navbar: invalid color/design." >&2
         return 2
     }
 
