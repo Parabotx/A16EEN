@@ -761,14 +761,14 @@ Item {
                             height: 34
                             clip: true
                             contentWidth: colorGrid.width
-                            contentHeight: 28
+                            contentHeight: colorGrid.height
                             boundsBehavior: Flickable.StopAtBounds
 
                             Grid {
                                 id: colorGrid
                                 height: 28
-                                columns: 12
-                                rowSpacing: 5
+                                columns: 24
+                                rowSpacing: 0
                                 columnSpacing: 5
 
                                 Repeater {
