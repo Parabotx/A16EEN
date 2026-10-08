@@ -721,6 +721,12 @@ Item {
                                             root.renderRevision
                                             return "file://" + root.generatedRoot + "/" + modelData.id + ".svg"
                                         }
+
+                                        onStatusChanged: {
+                                            if (status === Image.Error) {
+                                                source = Qt.resolvedUrl("../assets/icons/" + modelData.icon)
+                                            }
+                                        }
                                     }
                                 }
 
