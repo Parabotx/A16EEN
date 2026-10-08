@@ -94,20 +94,13 @@ PanelWindow {
     WlrLayershell.layer: WlrLayer.Overlay
     WlrLayershell.namespace: "a16een-dock"
 
-    // Keep the panel click-through everywhere except the actual dock
-    // and the small fullscreen reveal strip. The child regions are siblings
-    // so Combine produces their union instead of intersecting the dock with
-    // an 8px parent region.
+    // Use one explicit click region. This avoids nested Region coordinate
+    // conversions and keeps hit-testing identical to the visible dock.
     mask: Region {
-        Region {
-            item: root.dock
-            intersection: Intersection.Combine
-        }
-
-        Region {
-            item: edgeReveal
-            intersection: Intersection.Combine
-        }
+        x: root.dockVisible ? root.dock.x : root.width - 8
+        y: root.dockVisible ? root.dock.y : (root.height - 240) / 2
+        width: root.dockVisible ? root.dock.width : 8
+        height: root.dockVisible ? root.dock.height : 240
     }
 
     function workspaceIsFocused(name) {
