@@ -3,7 +3,7 @@ set -euo pipefail
 
 readonly STATE_DIR="${XDG_STATE_HOME:-$HOME/.local/state}/a16een"
 readonly COUNT_FILE="$STATE_DIR/workspace-count"
-readonly CONFIG_FILE="${XDG_CONFIG_HOME:-$HOME/.config}/niri/config.kdl"
+readonly CONFIG_FILE="${XDG_CONFIG_HOME:-$HOME/.config}/a16een/niri/config.kdl"
 readonly MIN_COUNT=2
 readonly MAX_COUNT=9
 readonly DEFAULT_COUNT=6
