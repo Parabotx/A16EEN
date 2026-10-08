@@ -354,6 +354,21 @@ PanelWindow {
     WlrLayershell.layer: WlrLayer.Overlay
     WlrLayershell.namespace: "a16een-dock"
 
+    MouseArea {
+        id: edgeReveal
+        anchors.left: root.horizontalNavbar || root.navbarPosition === "left"
+        anchors.right: !root.horizontalNavbar && root.navbarPosition === "right"
+        anchors.top: !root.horizontalNavbar || root.navbarPosition === "top"
+        anchors.bottom: root.horizontalNavbar && root.navbarPosition === "bottom"
+        width: root.horizontalNavbar ? parent.width : 8
+        height: root.horizontalNavbar ? 8 : parent.height
+        hoverEnabled: true
+        acceptedButtons: Qt.NoButton
+        z: 10
+        onEntered: root.revealDock()
+        onExited: root.scheduleHide()
+    }
+
     Rectangle {
         id: dock
         visible: root.dockVisible
