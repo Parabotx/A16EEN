@@ -1,6 +1,7 @@
 import QtQuick
 import Quickshell
 import Quickshell.Wayland
+import Quickshell.Io
 
 PanelWindow {
     id: root
@@ -10,15 +11,70 @@ PanelWindow {
     required property int focusedWorkspaceId
     required property bool fullscreenActive
 
+    signal launcherRequested()
+
     // Clean white A16EEN dock with a monochrome workspace language.
     readonly property color dockBackground: "#FFFFFF"
     readonly property color dockBorder: "#E5E7EB"
     readonly property color iconColor: "#111111"
     readonly property color hoverBackground: "#F3F4F6"
 
+    readonly property string navbarStatePath: {
+        const stateHome = Quickshell.env("XDG_STATE_HOME")
+        const home = Quickshell.env("HOME") || ""
+        const base = stateHome && stateHome.length
+            ? stateHome
+            : home + "/.local/state"
+        return base + "/a16een/navbar.json"
+    }
+
+    readonly property string navbarIconRoot: {
+        const stateHome = Quickshell.env("XDG_STATE_HOME")
+        const home = Quickshell.env("HOME") || ""
+        const base = stateHome && stateHome.length
+            ? stateHome
+            : home + "/.local/state"
+        return base + "/a16een/navbar-icons"
+    }
+
+    readonly property string navbarReadyPath: root.navbarIconRoot + "/ready"
     property var navbarSettings: ({})
-    property string navbarIconRoot: ""
-    property int navbarIconRevision: 0
+    property int navbarRevision: 0
+
+    function loadNavbarSettings(raw) {
+        try {
+            const parsed = JSON.parse(String(raw || ""))
+            root.navbarSettings = parsed && typeof parsed === "object" ? parsed : ({})
+        } catch (error) {
+            root.navbarSettings = ({})
+        }
+    }
+
+    function generatedIconPath(slot) {
+        return "file://" + root.navbarIconRoot + "/" + slot + ".svg"
+    }
+
+    function fallbackIconPath(iconName) {
+        return Qt.resolvedUrl("../assets/icons/" + iconName)
+    }
+
+    FileView {
+        id: navbarSettingsFile
+        path: root.navbarStatePath
+        watchChanges: true
+        printErrors: false
+        onLoaded: root.loadNavbarSettings(this.text())
+        onFileChanged: root.loadNavbarSettings(this.text())
+    }
+
+    FileView {
+        id: navbarReadyFile
+        path: root.navbarReadyPath
+        watchChanges: true
+        printErrors: false
+        onFileChanged: root.navbarRevision++
+        onLoaded: root.navbarRevision++
+    }
 
     property bool edgeRevealed: false
     readonly property bool dockVisible: !root.fullscreenActive || root.edgeRevealed
@@ -55,35 +111,6 @@ PanelWindow {
             height: root.dock.height
             intersection: Intersection.Combine
         }
-    }
-
-    function settingFor(slot, fallbackIcon) {
-        const setting = root.navbarSettings && root.navbarSettings[slot]
-            ? root.navbarSettings[slot]
-            : null
-
-        return {
-            icon: setting && setting.icon ? setting.icon : fallbackIcon,
-            color: setting && setting.color ? setting.color : root.iconColor
-        }
-    }
-
-    function navbarIcon(slot, fallbackIcon) {
-        return root.settingFor(slot, fallbackIcon).icon
-    }
-
-    function navbarColor(slot, fallbackIcon) {
-        return root.settingFor(slot, fallbackIcon).color
-    }
-
-    function generatedIconPath(slot) {
-        return root.navbarIconRoot.length
-            ? "file://" + root.navbarIconRoot + "/" + slot + ".svg"
-            : ""
-    }
-
-    function fallbackIconPath(iconName) {
-        return Qt.resolvedUrl("../assets/icons/" + iconName)
     }
 
     function workspaceIsFocused(name) {
@@ -169,13 +196,14 @@ PanelWindow {
                 radius: 11
                 color: homeMouse.containsMouse ? root.hoverBackground : "transparent"
 
-                NavbarIcon {
+                NavbarImage {
                     anchors.centerIn: parent
                     width: 19
                     height: 19
-                    iconPath: root.generatedIconPath("home")
-                    fallbackIconPath: root.fallbackIconPath("house.svg")
-                    refreshRevision: root.navbarIconRevision
+                    slot: "home"
+                    generatedPath: root.generatedIconPath("home")
+                    fallbackPath: root.fallbackIconPath("house.svg")
+                    refreshRevision: root.navbarRevision
                     active: root.workspaceIsFocused("home")
                     hovered: homeMouse.containsMouse
                 }
@@ -208,13 +236,14 @@ PanelWindow {
                 radius: 11
                 color: codeMouse.containsMouse ? root.hoverBackground : "transparent"
 
-                NavbarIcon {
+                NavbarImage {
                     anchors.centerIn: parent
                     width: 19
                     height: 19
-                    iconPath: root.generatedIconPath("code")
-                    fallbackIconPath: root.fallbackIconPath("code.svg")
-                    refreshRevision: root.navbarIconRevision
+                    slot: "code"
+                    generatedPath: root.generatedIconPath("code")
+                    fallbackPath: root.fallbackIconPath("code.svg")
+                    refreshRevision: root.navbarRevision
                     active: root.workspaceIsFocused("code")
                     hovered: codeMouse.containsMouse
                 }
@@ -247,13 +276,14 @@ PanelWindow {
                 radius: 11
                 color: webMouse.containsMouse ? root.hoverBackground : "transparent"
 
-                NavbarIcon {
+                NavbarImage {
                     anchors.centerIn: parent
                     width: 19
                     height: 19
-                    iconPath: root.generatedIconPath("web")
-                    fallbackIconPath: root.fallbackIconPath("globe.svg")
-                    refreshRevision: root.navbarIconRevision
+                    slot: "web"
+                    generatedPath: root.generatedIconPath("web")
+                    fallbackPath: root.fallbackIconPath("globe.svg")
+                    refreshRevision: root.navbarRevision
                     active: root.workspaceIsFocused("web")
                     hovered: webMouse.containsMouse
                 }
@@ -286,13 +316,14 @@ PanelWindow {
                 radius: 11
                 color: commsMouse.containsMouse ? root.hoverBackground : "transparent"
 
-                NavbarIcon {
+                NavbarImage {
                     anchors.centerIn: parent
                     width: 19
                     height: 19
-                    iconPath: root.generatedIconPath("comms")
-                    fallbackIconPath: root.fallbackIconPath("messages-square.svg")
-                    refreshRevision: root.navbarIconRevision
+                    slot: "comms"
+                    generatedPath: root.generatedIconPath("comms")
+                    fallbackPath: root.fallbackIconPath("messages-square.svg")
+                    refreshRevision: root.navbarRevision
                     active: root.workspaceIsFocused("comms")
                     hovered: commsMouse.containsMouse
                 }
@@ -325,13 +356,14 @@ PanelWindow {
                 radius: 11
                 color: studioMouse.containsMouse ? root.hoverBackground : "transparent"
 
-                NavbarIcon {
+                NavbarImage {
                     anchors.centerIn: parent
                     width: 19
                     height: 19
-                    iconPath: root.generatedIconPath("studio")
-                    fallbackIconPath: root.fallbackIconPath("sparkles.svg")
-                    refreshRevision: root.navbarIconRevision
+                    slot: "studio"
+                    generatedPath: root.generatedIconPath("studio")
+                    fallbackPath: root.fallbackIconPath("sparkles.svg")
+                    refreshRevision: root.navbarRevision
                     active: root.workspaceIsFocused("studio")
                     hovered: studioMouse.containsMouse
                 }
@@ -364,13 +396,14 @@ PanelWindow {
                 radius: 11
                 color: musicMouse.containsMouse ? root.hoverBackground : "transparent"
 
-                NavbarIcon {
+                NavbarImage {
                     anchors.centerIn: parent
                     width: 19
                     height: 19
-                    iconPath: root.generatedIconPath("music")
-                    fallbackIconPath: root.fallbackIconPath("music.svg")
-                    refreshRevision: root.navbarIconRevision
+                    slot: "music"
+                    generatedPath: root.generatedIconPath("music")
+                    fallbackPath: root.fallbackIconPath("music.svg")
+                    refreshRevision: root.navbarRevision
                     active: root.workspaceIsFocused("music")
                     hovered: musicMouse.containsMouse
                 }
@@ -398,4 +431,53 @@ PanelWindow {
             }
         }
     }
+    component NavbarImage: Item {
+        property string slot: ""
+        property string generatedPath: ""
+        property string fallbackPath: ""
+        property int refreshRevision: 0
+        property bool hovered: false
+        property bool active: false
+
+        implicitWidth: 19
+        implicitHeight: 19
+        scale: hovered ? 1.08 : (active ? 1.03 : 1)
+
+        Behavior on scale {
+            NumberAnimation {
+                duration: 120
+                easing.type: Easing.OutCubic
+            }
+        }
+
+        Image {
+            id: navbarImage
+            anchors.fill: parent
+            fillMode: Image.PreserveAspectFit
+            sourceSize.width: width
+            sourceSize.height: height
+            smooth: true
+            mipmap: true
+            cache: false
+            asynchronous: true
+            source: parent.generatedPath.length
+                ? parent.generatedPath
+                : parent.fallbackPath
+
+            onStatusChanged: {
+                if (status === Image.Error && parent.fallbackPath.length
+                    && source !== parent.fallbackPath) {
+                    source = parent.fallbackPath
+                }
+            }
+        }
+
+        onRefreshRevisionChanged: {
+            navbarImage.source = ""
+            Qt.callLater(() => {
+                navbarImage.source = root.generatedIconPath(slot)
+            })
+        }
+    }
+
 }
