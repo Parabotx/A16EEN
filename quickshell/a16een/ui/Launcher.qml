@@ -322,12 +322,17 @@ PanelWindow {
                             width: parent.width
                             height: 34
 
-                            IconImage {
+                            Image {
                                 anchors.centerIn: parent
-                                implicitWidth: 28
-                                implicitHeight: 28
+                                width: 28
+                                height: 28
+                                sourceSize.width: width
+                                sourceSize.height: height
+                                fillMode: Image.PreserveAspectFit
                                 asynchronous: true
+                                smooth: true
                                 mipmap: true
+                                cache: false
                                 source: root.iconSource(appTile.entry.icon)
                             }
                         }
