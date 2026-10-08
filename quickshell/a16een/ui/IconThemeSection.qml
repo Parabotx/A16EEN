@@ -15,6 +15,18 @@ Item {
     property string statusMessage: "READING ICON THEMES"
     property var themes: []
 
+    readonly property var themeCatalog: [
+        { id: "system", name: "System Default", description: "Use the desktop and Qt platform default", installed: true, themeName: "system" },
+        { id: "papirus", name: "Papirus", description: "Clean, modern full icon family", installed: false, themeName: "Papirus" },
+        { id: "papirus-dark", name: "Papirus Dark", description: "Dark folders with crisp application icons", installed: false, themeName: "Papirus-Dark" },
+        { id: "breeze", name: "Breeze", description: "KDE-style clean and balanced icons", installed: false, themeName: "breeze" },
+        { id: "elementary", name: "Elementary", description: "Minimal, polished vector icon system", installed: false, themeName: "elementary" },
+        { id: "tela-circle", name: "Tela Circle", description: "Colorful circular application icons", installed: false, themeName: "Tela-circle" },
+        { id: "tela-circle-blue", name: "Tela Circle Blue", description: "Blue-accent circular application icons", installed: false, themeName: "Tela-circle-blue" },
+        { id: "tela-circle-dracula", name: "Tela Circle Dracula", description: "Dark Dracula-inspired circular icons", installed: false, themeName: "Tela-circle-dracula" },
+        { id: "tokyo-night", name: "Tokyo Night", description: "Tokyo Night themed app and folder icons", installed: false, themeName: "TokyoNight-SE" }
+    ]
+
     readonly property color page: "#FFFFFF"
     readonly property color card: "#F7F8FA"
     readonly property color cardHover: "#EEF1F4"
@@ -56,8 +68,8 @@ Item {
             })
         }
 
-        root.themes = result
-        root.statusMessage = result.length ? "THEME LIBRARY READY" : "NO THEMES FOUND"
+        root.themes = result.length >= 2 ? result : root.themeCatalog
+        root.statusMessage = root.themes.length ? "THEME LIBRARY READY" : "NO THEMES FOUND"
         root.currentThemeReader.running = true
     }
 
