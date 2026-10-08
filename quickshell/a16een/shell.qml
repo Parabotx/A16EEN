@@ -36,6 +36,17 @@ ShellRoot {
 
     property var navbarSettings: root.navbarDefaults
 
+    readonly property string navbarIconRoot: {
+        const stateHome = Quickshell.env("XDG_STATE_HOME")
+        const home = Quickshell.env("HOME") || ""
+        const base = stateHome && stateHome.length
+            ? stateHome
+            : home + "/.local/state"
+        return base + "/a16een/navbar-icons"
+    }
+
+    property int navbarIconRevision: 0
+
     readonly property string navbarSettingsPath: {
         const stateHome = Quickshell.env("XDG_STATE_HOME")
         const home = Quickshell.env("HOME") || ""
@@ -120,6 +131,18 @@ ShellRoot {
     property var latestNotification: null
 
     readonly property var primaryScreen: Quickshell.screens.length > 0 ? Quickshell.screens[0] : null
+
+    Process {
+        id: navbarIconBuilder
+
+        command: ["a16een-navbar", "apply"]
+        running: true
+
+        onExited: function(exitCode, exitStatus) {
+            if (exitCode === 0)
+                root.navbarIconRevision++
+        }
+    }
 
     FileView {
         id: navbarSettingsFile
@@ -238,6 +261,9 @@ ShellRoot {
 
         root.navbarSettings = next
         navbarSettingsFile.setText(JSON.stringify(next, null, 2))
+
+        navbarIconBuilder.running = false
+        Qt.callLater(() => navbarIconBuilder.running = true)
     }
 
     function consumeNiriEvent(raw) {
@@ -733,6 +759,8 @@ ShellRoot {
             focusedWorkspaceId: root.focusedWorkspaceId
             fullscreenActive: root.focusedWindowFullscreen
             navbarSettings: root.navbarSettings
+            navbarIconRoot: root.navbarIconRoot
+            navbarIconRevision: root.navbarIconRevision
         }
     }
 
@@ -749,6 +777,8 @@ ShellRoot {
         timeShowSeconds: root.timeShowSeconds
         doNotDisturb: root.doNotDisturb
         navbarSettings: root.navbarSettings
+        navbarIconRoot: root.navbarIconRoot
+        navbarIconRevision: root.navbarIconRevision
 
         onCloseRequested: root.commandCenterOpen = false
 
