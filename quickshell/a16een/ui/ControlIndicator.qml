@@ -6,17 +6,20 @@ PanelWindow {
     id: root
 
     required property var modelData
+    required property var activeScreen
+    required property real requestedLevel
+    required property int requestRevision
 
     property real level: 0
+    property bool mounted: false
     property bool displaying: false
 
     screen: modelData
-    visible: root.displaying
+    visible: root.mounted
     color: "transparent"
     aboveWindows: true
     exclusiveZone: 0
-
-    implicitHeight: 10
+    implicitHeight: 34
 
     anchors {
         left: true
@@ -32,7 +35,10 @@ PanelWindow {
     WlrLayershell.namespace: "a16een-control-indicator"
 
     mask: Region {
-        item: capsule
+        x: Math.round((root.width - 182) / 2)
+        y: 11
+        width: 182
+        height: 12
     }
 
     Item {
@@ -40,6 +46,22 @@ PanelWindow {
         width: 180
         height: 10
         anchors.centerIn: parent
+        opacity: root.displaying ? 1 : 0
+        scale: root.displaying ? 1 : 0.94
+
+        Behavior on opacity {
+            NumberAnimation {
+                duration: 105
+                easing.type: Easing.OutCubic
+            }
+        }
+
+        Behavior on scale {
+            NumberAnimation {
+                duration: 135
+                easing.type: Easing.OutCubic
+            }
+        }
 
         Rectangle {
             anchors.fill: parent
@@ -56,26 +78,12 @@ PanelWindow {
             radius: 3
             color: "#000000"
 
-        Behavior on width {
-            NumberAnimation {
-                duration: 90
-                easing.type: Easing.OutCubic
+            Behavior on width {
+                NumberAnimation {
+                    duration: 90
+                    easing.type: Easing.OutCubic
+                }
             }
-        }
-    }
-
-    opacity: root.displaying ? 1 : 0
-    transform: Scale {
-        origin.x: root.width / 2
-        origin.y: root.height / 2
-        xScale: root.displaying ? 1 : 0.92
-        yScale: root.displaying ? 1 : 0.92
-    }
-
-    Behavior on opacity {
-        NumberAnimation {
-            duration: 105
-            easing.type: Easing.OutCubic
         }
     }
 
@@ -84,12 +92,39 @@ PanelWindow {
         interval: 850
         repeat: false
 
-        onTriggered: root.displaying = false
+        onTriggered: {
+            root.displaying = false
+            removeTimer.restart()
+        }
+    }
+
+    Timer {
+        id: removeTimer
+        interval: 140
+        repeat: false
+
+        onTriggered: root.mounted = false
     }
 
     function showLevel(value: real) {
         root.level = Math.max(0, Math.min(1, value))
+        root.mounted = true
         root.displaying = true
+        removeTimer.stop()
         hideTimer.restart()
+    }
+
+    onRequestRevisionChanged: {
+        if (root.activeScreen === root.modelData)
+            root.showLevel(root.requestedLevel)
+    }
+
+    onActiveScreenChanged: {
+        if (root.activeScreen !== root.modelData) {
+            hideTimer.stop()
+            removeTimer.stop()
+            root.displaying = false
+            root.mounted = false
+        }
     }
 }
