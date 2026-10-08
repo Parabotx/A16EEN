@@ -266,6 +266,7 @@ PanelWindow {
         root.controlViewOpen = false
         root.powerViewOpen = true
         root.iconThemeViewOpen = false
+        root.navbarViewOpen = false
         root.commandText = "/power"
         root.selectedCommandIndex = 0
         root.currentPowerProfile = ""
@@ -299,6 +300,7 @@ PanelWindow {
         root.iconThemeViewOpen = false
         root.controlViewOpen = true
         root.controlDetail = ""
+        root.navbarViewOpen = false
         root.commandText = "/controls"
         root.selectedCommandIndex = 0
         Qt.callLater(() => {
@@ -320,6 +322,7 @@ PanelWindow {
         root.widgetViewOpen = false
         root.controlViewOpen = true
         root.iconThemeViewOpen = false
+        root.navbarViewOpen = false
         root.controlDetail = key
         root.commandText = "/" + key
         root.selectedCommandIndex = 0
@@ -406,6 +409,7 @@ PanelWindow {
         root.workspacePresetViewOpen = false
         root.controlViewOpen = false
         root.iconThemeViewOpen = false
+        root.navbarViewOpen = false
         root.commandText = "/widgets"
         root.selectedCommandIndex = 0
         root.widgetsRequested()
@@ -1562,7 +1566,7 @@ PanelWindow {
             root.controlViewOpen = false
             root.controlDetail = ""
             Qt.callLater(() => widgetSection.forceActiveFocus())
-        } else if (root.opened && !root.powerViewOpen && !root.controlViewOpen && !root.iconThemeViewOpen && !root.workspacePresetViewOpen) {
+        } else if (root.opened && !root.powerViewOpen && !root.controlViewOpen && !root.iconThemeViewOpen && !root.workspacePresetViewOpen && !root.navbarViewOpen) {
             Qt.callLater(() => search.forceActiveFocus())
         }
     }
