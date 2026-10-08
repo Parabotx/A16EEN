@@ -94,14 +94,10 @@ PanelWindow {
     WlrLayershell.layer: WlrLayer.Overlay
     WlrLayershell.namespace: "a16een-dock"
 
-    // Use one explicit click region. This avoids nested Region coordinate
-    // conversions and keeps hit-testing identical to the visible dock.
-    mask: Region {
-        x: root.dockVisible ? root.dock.x : root.width - 8
-        y: root.dockVisible ? root.dock.y : (root.height - 240) / 2
-        width: root.dockVisible ? root.dock.width : 8
-        height: root.dockVisible ? root.dock.height : 240
-    }
+    // The dock is its own narrow 66px-wide edge surface, so it does
+    // not need a clickthrough mask. The surface itself is limited to the
+    // navbar edge and the individual MouseAreas receive pointer input.
+    width: 66
 
     function workspaceIsFocused(name) {
         const current = root.workspaces.find(workspace => workspace.name === name)
