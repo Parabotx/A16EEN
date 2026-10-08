@@ -43,6 +43,7 @@ Item {
         smooth: true
         mipmap: true
         asynchronous: true
+        cache: false
 
         onStatusChanged: {
             if (status === Image.Error && root.fallbackIconPath.length
