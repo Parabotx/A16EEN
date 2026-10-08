@@ -343,6 +343,25 @@ Item {
         root.renderRevision++
     }
 
+    function navbarIconColor(slot) {
+        const spec = String(root.settingFor(slot).color || "#111318")
+        if (spec.indexOf("solid:") === 0)
+            return spec.substring(6)
+        if (spec.charAt(0) === "#")
+            return spec
+        const parts = spec.split(":")
+        if (parts.length >= 2 && parts[1].charAt(0) === "#")
+            return parts[1]
+        return "#111318"
+    }
+
+    function iconSurfaceColor(slot) {
+        const color = root.navbarIconColor(slot).toUpperCase()
+        return color === "#FFFFFF" || color === "#FFFFFFFF"
+            ? "#111318"
+            : "#FFFFFF"
+    }
+
     function styleLabel(spec) {
         if (!spec)
             return "BLACK"
@@ -707,26 +726,16 @@ Item {
 
                                 Rectangle {
                                     width: 30; height: 30; radius: 9
-                                    color: "#FFFFFF"
+                                    color: root.iconSurfaceColor(modelData.id)
                                     border.width: 1
                                     border.color: root.border
-                                    Image {
+                                    NavbarIcon {
                                         anchors.centerIn: parent
-                                        width: 16; height: 16
-                                        sourceSize.width: width; sourceSize.height: height
-                                        fillMode: Image.PreserveAspectFit
-                                        asynchronous: true
-                                        cache: false
-                                        source: {
-                                            root.renderRevision
-                                            return "file://" + root.generatedRoot + "/" + modelData.id + ".svg"
-                                        }
-
-                                        onStatusChanged: {
-                                            if (status === Image.Error) {
-                                                source = Qt.resolvedUrl("../assets/icons/" + modelData.icon)
-                                            }
-                                        }
+                                        width: 16
+                                        height: 16
+                                        iconName: root.settingFor(modelData.id).icon
+                                        iconColor: root.navbarIconColor(modelData.id)
+                                        active: root.selectedSlot === modelData.id
                                     }
                                 }
 
@@ -776,19 +785,14 @@ Item {
 
                         Rectangle {
                             width: 46; height: 46; radius: 12
-                            color: "#FFFFFF"
+                            color: root.iconSurfaceColor(root.selectedSlot)
                             border.width: 1; border.color: root.border
-                            Image {
+                            NavbarIcon {
                                 anchors.centerIn: parent
-                                width: 22; height: 22
-                                sourceSize.width: width; sourceSize.height: height
-                                fillMode: Image.PreserveAspectFit
-                                asynchronous: true
-                                cache: false
-                                source: {
-                                    root.renderRevision
-                                    return "file://" + root.generatedRoot + "/" + root.selectedSlot + ".svg"
-                                }
+                                width: 22
+                                height: 22
+                                iconName: root.settingFor(root.selectedSlot).icon
+                                iconColor: root.navbarIconColor(root.selectedSlot)
                             }
                         }
 
@@ -1374,15 +1378,12 @@ Item {
                             anchors.margins: 12
                             spacing: 10
 
-                            Image {
+                            NavbarIcon {
                                 width: 36
                                 height: 36
                                 anchors.verticalCenter: parent.verticalCenter
-                                sourceSize.width: width
-                                sourceSize.height: height
-                                fillMode: Image.PreserveAspectFit
-                                asynchronous: true
-                                source: "file://" + root.generatedRoot + "/" + root.selectedSlot + ".svg"
+                                iconName: root.settingFor(root.selectedSlot).icon
+                                iconColor: root.navbarIconColor(root.selectedSlot)
                             }
 
                             Column {
