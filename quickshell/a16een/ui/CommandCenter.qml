@@ -13,6 +13,8 @@ PanelWindow {
     property bool controlViewOpen: false
     property string controlDetail: ""
     property bool iconThemeViewOpen: false
+    property bool navbarViewOpen: false
+    property var navbarSettings: ({})
     property bool workspacePresetViewOpen: false
     property bool doNotDisturb: false
     property string commandText: "/"
@@ -54,8 +56,9 @@ PanelWindow {
     signal timeUse24HourRequested(bool enabled)
     signal timeShowSecondsRequested(bool enabled)
     signal iconThemeChanged(string themeId)
+    signal navbarSettingsChanged(var settings)
 
-    readonly property color surface: root.widgetViewOpen || root.controlViewOpen || root.iconThemeViewOpen || root.workspacePresetViewOpen ? "#FFFFFF" : "#000000"
+    readonly property color surface: root.widgetViewOpen || root.controlViewOpen || root.iconThemeViewOpen || root.workspacePresetViewOpen || root.navbarViewOpen ? "#FFFFFF" : "#000000"
     readonly property color borderColor: "#1A1A1A"
     readonly property color fieldBackground: "#0A0A0A"
     readonly property color fieldBorder: "#1C1C1C"
@@ -82,6 +85,7 @@ PanelWindow {
         { id: "battery", name: "battery", keywords: ["battery", "power", "charge", "charging"] },
         { id: "dnd", name: "do not disturb", keywords: ["do not disturb", "dnd", "focus", "notifications"] },
         { id: "icons", name: "icons", keywords: ["icons", "icon theme", "icon themes", "app icons", "folder icons", "appearance"] },
+        { id: "navbar", name: "navbar", keywords: ["navbar", "navigation", "dock", "workspace icons", "navigation icons", "navbar icons", "icon color", "icon colour"] },
         { id: "presets", name: "workspace presets", keywords: ["workspace presets", "preset", "workspace setup", "app sets", "app group", "session setup", "launch setup"] },
         { id: "widgets", name: "widgets", keywords: ["widgets", "widget", "clock", "time", "day", "date", "desktop", "modules"] },
         { id: "restart-shell", name: "restart-shell", keywords: ["restart", "shell", "reload", "quickshell"] },
@@ -332,6 +336,7 @@ PanelWindow {
         root.controlViewOpen = false
         root.controlDetail = ""
         root.iconThemeViewOpen = true
+        root.navbarViewOpen = false
         root.commandText = "/icons"
         root.selectedCommandIndex = 0
         Qt.callLater(() => {
@@ -340,9 +345,33 @@ PanelWindow {
         })
     }
 
+    function openNavbarView() {
+        root.powerViewOpen = false
+        root.workspacePresetViewOpen = false
+        root.widgetViewOpen = false
+        root.controlViewOpen = false
+        root.controlDetail = ""
+        root.iconThemeViewOpen = false
+        root.navbarViewOpen = true
+        root.commandText = "/navbar"
+        root.selectedCommandIndex = 0
+        Qt.callLater(() => {
+            if (root.navbarViewOpen)
+                navbarSection.forceActiveFocus()
+        })
+    }
+
+    function closeNavbarView() {
+        root.navbarViewOpen = false
+        root.commandText = "/"
+        root.selectedCommandIndex = 0
+        Qt.callLater(() => search.forceActiveFocus())
+    }
+
     function closeIconThemeView() {
         root.iconThemeViewOpen = false
         root.workspacePresetViewOpen = false
+        root.navbarViewOpen = false
         root.commandText = "/"
         root.selectedCommandIndex = 0
         Qt.callLater(() => search.forceActiveFocus())
@@ -355,6 +384,7 @@ PanelWindow {
         root.controlDetail = ""
         root.iconThemeViewOpen = false
         root.workspacePresetViewOpen = true
+        root.navbarViewOpen = false
         root.commandText = "/presets"
         root.selectedCommandIndex = 0
         Qt.callLater(() => {
@@ -365,6 +395,7 @@ PanelWindow {
 
     function closeWorkspacePresetView() {
         root.workspacePresetViewOpen = false
+        root.navbarViewOpen = false
         root.commandText = "/"
         root.selectedCommandIndex = 0
         Qt.callLater(() => search.forceActiveFocus())
@@ -494,15 +525,15 @@ PanelWindow {
 
     Rectangle {
         id: card
-        width: root.powerViewOpen || root.widgetViewOpen || root.controlViewOpen || root.iconThemeViewOpen || root.workspacePresetViewOpen
+        width: root.powerViewOpen || root.widgetViewOpen || root.controlViewOpen || root.iconThemeViewOpen || root.workspacePresetViewOpen || root.navbarViewOpen
             ? Math.min(940, parent.width - 72)
             : Math.min(500, parent.width - 48)
-        height: root.powerViewOpen || root.widgetViewOpen || root.controlViewOpen || root.iconThemeViewOpen || root.workspacePresetViewOpen
+        height: root.powerViewOpen || root.widgetViewOpen || root.controlViewOpen || root.iconThemeViewOpen || root.workspacePresetViewOpen || root.navbarViewOpen
             ? Math.min(640, parent.height - 80)
             : 326
         anchors.centerIn: parent
-        anchors.verticalCenterOffset: root.powerViewOpen || root.controlViewOpen || root.iconThemeViewOpen || root.workspacePresetViewOpen ? 0 : 185
-        radius: root.powerViewOpen || root.controlViewOpen || root.iconThemeViewOpen || root.workspacePresetViewOpen ? 26 : 18
+        anchors.verticalCenterOffset: root.powerViewOpen || root.controlViewOpen || root.iconThemeViewOpen || root.workspacePresetViewOpen || root.navbarViewOpen ? 0 : 185
+        radius: root.powerViewOpen || root.controlViewOpen || root.iconThemeViewOpen || root.workspacePresetViewOpen || root.navbarViewOpen ? 26 : 18
         color: root.surface
         border.width: 1
         border.color: root.widgetViewOpen || root.controlViewOpen || root.iconThemeViewOpen || root.workspacePresetViewOpen ? "#E1E6EC" : "#202020"
@@ -523,7 +554,7 @@ PanelWindow {
         Rectangle {
             anchors.fill: parent
             anchors.margins: -5
-            radius: root.powerViewOpen || root.controlViewOpen || root.iconThemeViewOpen || root.workspacePresetViewOpen ? 31 : 23
+            radius: root.powerViewOpen || root.controlViewOpen || root.iconThemeViewOpen || root.workspacePresetViewOpen || root.navbarViewOpen ? 31 : 23
             color: "#16000000"
             z: -1
         }
@@ -543,6 +574,17 @@ PanelWindow {
             onBackRequested: root.closeIconThemeView()
             onThemeChangeRequested: root.iconThemeChanged(themeId)
         }
+
+        NavbarSection {
+            id: navbarSection
+            anchors.fill: parent
+            visible: root.navbarViewOpen
+            active: root.navbarViewOpen
+            navbarSettings: root.navbarSettings
+            onBackRequested: root.closeNavbarView()
+            onNavbarSettingsChanged: root.navbarSettingsChanged(settings)
+        }
+
 
         ControlCenterSection {
             id: controlSection
@@ -595,7 +637,7 @@ PanelWindow {
         // Normal command search.
         Item {
             anchors.fill: parent
-            visible: !root.powerViewOpen && !root.widgetViewOpen && !root.controlViewOpen && !root.iconThemeViewOpen && !root.workspacePresetViewOpen
+            visible: !root.powerViewOpen && !root.widgetViewOpen && !root.controlViewOpen && !root.iconThemeViewOpen && !root.workspacePresetViewOpen && !root.navbarViewOpen
 
             Rectangle {
                 id: searchBox
@@ -1256,6 +1298,8 @@ PanelWindow {
             root.closePowerView()
         else if (root.widgetViewOpen)
             root.closeWidgetView()
+        else if (root.navbarViewOpen)
+            root.closeNavbarView()
         else
             root.closeRequested()
     }
@@ -1487,6 +1531,9 @@ PanelWindow {
         case "presets":
             root.openWorkspacePresetView()
             break
+        case "navbar":
+            root.openNavbarView()
+            break
         case "wifi":
         case "bluetooth":
         case "audio":
@@ -1527,6 +1574,7 @@ PanelWindow {
             root.controlDetail = ""
             root.iconThemeViewOpen = false
             root.workspacePresetViewOpen = false
+            root.navbarViewOpen = false
             root.commandText = "/"
             root.selectedCommandIndex = 0
             return
@@ -1535,6 +1583,7 @@ PanelWindow {
         root.powerViewOpen = false
         root.controlViewOpen = false
         root.iconThemeViewOpen = false
+        root.navbarViewOpen = false
         root.commandText = "/"
         root.selectedCommandIndex = 0
         search.text = "/"
