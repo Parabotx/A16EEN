@@ -107,7 +107,6 @@ indicator_show() {
     local config_dir="${XDG_CONFIG_HOME:-$HOME/.config}/a16een/quickshell/a16een"
     local qs_bin="/usr/bin/qs"
 
-    [[ "${XDG_CURRENT_DESKTOP:-}" == "A16EEN" ]] || return 0
     [[ -x "$qs_bin" ]] || return 0
     [[ -n "$level" ]] || return 0
 
