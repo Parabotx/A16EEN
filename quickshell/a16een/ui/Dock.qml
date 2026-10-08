@@ -13,10 +13,28 @@ PanelWindow {
 
     signal launcherRequested()
 
-    readonly property color dockBackground: "#FFFFFF"
-    readonly property color dockBorder: "#E5E7EB"
-    readonly property color iconColor: "#111111"
-    readonly property color hoverBackground: "#F3F4F6"
+    property var navbarSettings: ({})
+    readonly property bool allWhiteNavbarStyles: {
+        if (!root.visibleWorkspaces.length)
+            return false
+        for (const workspace of root.visibleWorkspaces) {
+            const setting = root.navbarSettings[workspace.id]
+            const style = setting && setting.color ? String(setting.color).toUpperCase() : ""
+            if (style !== "#FFFFFF" && style !== "#FFFFFFFF"
+                && style !== "SOLID:#FFFFFF" && style !== "SOLID:#FFFFFFFF")
+                return false
+        }
+        return true
+    }
+
+    readonly property color dockBackground:
+        root.allWhiteNavbarStyles ? "#111318" : "#FFFFFF"
+    readonly property color dockBorder:
+        root.allWhiteNavbarStyles ? "#2A2E35" : "#E5E7EB"
+    readonly property color iconColor:
+        root.allWhiteNavbarStyles ? "#FFFFFF" : "#111111"
+    readonly property color hoverBackground:
+        root.allWhiteNavbarStyles ? "#252A33" : "#F3F4F6"
 
     readonly property string stateDir: {
         const stateHome = Quickshell.env("XDG_STATE_HOME")
@@ -26,6 +44,7 @@ PanelWindow {
 
     readonly property string navbarIconRoot: root.stateDir + "/navbar-icons"
     readonly property string navbarReadyPath: root.navbarIconRoot + "/ready"
+    readonly property string navbarSettingsPath: root.stateDir + "/navbar.json"
     readonly property string workspaceRegistryPath: root.stateDir + "/workspaces.json"
     readonly property string navbarLayoutPath: root.stateDir + "/navbar-layout.json"
     readonly property string navbarContentPath: root.stateDir + "/navbar-content.json"
@@ -128,6 +147,14 @@ PanelWindow {
         if (root.contentState.network === true)
             items.push({ kind: "content", id: "network" })
         return items
+    }
+
+    function loadNavbarSettings(raw) {
+        try {
+            const parsed = JSON.parse(String(raw || ""))
+            if (parsed && typeof parsed === "object")
+                root.navbarSettings = parsed
+        } catch (error) {}
     }
 
     function loadWorkspaceRegistry(raw) {
@@ -296,6 +323,15 @@ PanelWindow {
         printErrors: false
         onFileChanged: root.navbarRevision++
         onLoaded: root.navbarRevision++
+    }
+
+    FileView {
+        id: navbarSettingsFile
+        path: root.navbarSettingsPath
+        watchChanges: true
+        printErrors: false
+        onLoaded: root.loadNavbarSettings(this.text())
+        onFileChanged: root.loadNavbarSettings(this.text())
     }
 
     FileView {
