@@ -730,180 +730,164 @@ Item {
 
                     Column {
                         width: parent.width
-                        spacing: 7
+                        spacing: 6
 
                         Row {
                             width: parent.width
-                            height: 22
+                            height: 26
                             spacing: 8
+
                             Text {
-                                width: 60
-                                height: 22
+                                width: 58
+                                height: 26
                                 verticalAlignment: Text.AlignVCenter
-                                text: "COLORS"
+                                text: "COLOR"
                                 color: root.muted
                                 font.pixelSize: 7
                                 font.weight: Font.DemiBold
                             }
-                            Text {
-                                width: parent.width - 68
-                                height: 22
-                                verticalAlignment: Text.AlignVCenter
-                                text: root.styleLabel(root.settingFor(root.selectedSlot).color)
-                                color: root.textSecondary
-                                font.pixelSize: 7
-                                elide: Text.ElideRight
+
+                            Flickable {
+                                width: parent.width - 66
+                                height: 26
+                                clip: true
+                                contentWidth: colorRow.width
+                                contentHeight: colorRow.height
+                                boundsBehavior: Flickable.StopAtBounds
+
+                                Row {
+                                    id: colorRow
+                                    height: 22
+                                    spacing: 5
+
+                                    Repeater {
+                                        model: root.colors
+
+                                        delegate: Rectangle {
+                                            width: 22
+                                            height: 22
+                                            radius: 7
+                                            color: "#FFFFFF"
+                                            border.width: 1
+                                            border.color: root.settingFor(root.selectedSlot).color === "solid:" + modelData
+                                                ? root.text : root.border
+
+                                            Rectangle {
+                                                anchors.centerIn: parent
+                                                width: 12
+                                                height: 12
+                                                radius: 6
+                                                color: modelData
+                                                border.width: modelData.toUpperCase() === "#FFFFFF" ? 1 : 0
+                                                border.color: root.borderStrong
+                                            }
+
+                                            MouseArea {
+                                                anchors.fill: parent
+                                                cursorShape: Qt.PointingHandCursor
+                                                onClicked: root.applyColor(modelData)
+                                            }
+                                        }
+                                    }
+                                }
                             }
                         }
 
-                        Flickable {
+                        Row {
                             width: parent.width
                             height: 34
-                            clip: true
-                            contentWidth: colorGrid.width
-                            contentHeight: colorGrid.height
-                            boundsBehavior: Flickable.StopAtBounds
+                            spacing: 8
 
-                            Grid {
-                                id: colorGrid
-                                height: 28
-                                columns: 24
-                                rowSpacing: 0
-                                columnSpacing: 5
-
-                                Repeater {
-                                    model: root.colors
-                                    delegate: Rectangle {
-                                        width: 22
-                                        height: 22
-                                        radius: 7
-                                        color: "#FFFFFF"
-                                        border.width: 1
-                                        border.color: root.settingFor(root.selectedSlot).color === "solid:" + modelData
-                                            ? root.text : root.border
-                                        Rectangle {
-                                            anchors.centerIn: parent
-                                            width: 12
-                                            height: 12
-                                            radius: 6
-                                            color: modelData
-                                            border.width: modelData.toUpperCase() === "#FFFFFF" ? 1 : 0
-                                            border.color: root.borderStrong
-                                        }
-                                        MouseArea {
-                                            anchors.fill: parent
-                                            cursorShape: Qt.PointingHandCursor
-                                            onClicked: root.applyColor(modelData)
-                                        }
-                                    }
-                                }
+                            Text {
+                                width: 58
+                                height: 34
+                                verticalAlignment: Text.AlignVCenter
+                                text: "DESIGN"
+                                color: root.muted
+                                font.pixelSize: 7
+                                font.weight: Font.DemiBold
                             }
-                        }
 
-                        Text {
-                            width: parent.width
-                            height: 18
-                            verticalAlignment: Text.AlignVCenter
-                            text: "DESIGNS"
-                            color: root.muted
-                            font.pixelSize: 7
-                            font.weight: Font.DemiBold
-                        }
+                            Flickable {
+                                width: parent.width - 66
+                                height: 34
+                                clip: true
+                                contentWidth: designRow.width
+                                contentHeight: designRow.height
+                                boundsBehavior: Flickable.StopAtBounds
 
-                        Flickable {
-                            width: parent.width
-                            height: 76
-                            clip: true
-                            contentWidth: width
-                            contentHeight: styleGrid.height
-                            boundsBehavior: Flickable.StopAtBounds
+                                Row {
+                                    id: designRow
+                                    height: 30
+                                    spacing: 6
 
-                            Grid {
-                                id: styleGrid
-                                width: parent.width
-                                columns: 6
-                                rowSpacing: 5
-                                columnSpacing: 5
-                                height: Math.ceil(root.styleChoices.length / 6) * 34
+                                    Repeater {
+                                        model: root.styleChoices
 
-                                Repeater {
-                                    model: root.styleChoices
-                                    delegate: Rectangle {
-                                        width: (styleGrid.width - 25) / 6
-                                        height: 32
-                                        radius: 8
-                                        color: "#FFFFFF"
-                                        border.width: 1
-                                        border.color: root.settingFor(root.selectedSlot).color === modelData.spec
-                                            ? root.text : root.border
-
-                                        Rectangle {
-                                            anchors.left: parent.left
-                                            anchors.leftMargin: 6
-                                            anchors.verticalCenter: parent.verticalCenter
-                                            width: 20
-                                            height: 20
-                                            radius: 5
-                                            color: modelData.kind === "solid" ? modelData.a : "transparent"
+                                        delegate: Rectangle {
+                                            width: 92
+                                            height: 30
+                                            radius: 8
+                                            color: "#FFFFFF"
+                                            border.width: 1
+                                            border.color: root.settingFor(root.selectedSlot).color === modelData.spec
+                                                ? root.text : root.border
 
                                             Rectangle {
-                                                visible: modelData.kind === "split"
+                                                id: stylePreview
                                                 anchors.left: parent.left
-                                                anchors.top: parent.top
-                                                anchors.bottom: parent.bottom
-                                                width: parent.width / 2
+                                                anchors.leftMargin: 6
+                                                anchors.verticalCenter: parent.verticalCenter
+                                                width: 26
+                                                height: 18
                                                 radius: 5
                                                 color: modelData.a
-                                            }
 
-                                            Rectangle {
-                                                visible: modelData.kind === "split"
-                                                anchors.right: parent.right
-                                                anchors.top: parent.top
-                                                anchors.bottom: parent.bottom
-                                                width: parent.width / 2
-                                                radius: 5
-                                                color: modelData.b
-                                            }
+                                                Rectangle {
+                                                    visible: modelData.kind === "split"
+                                                    anchors.right: parent.right
+                                                    anchors.top: parent.top
+                                                    anchors.bottom: parent.bottom
+                                                    width: parent.width / 2
+                                                    radius: 5
+                                                    color: modelData.b
+                                                }
 
-                                            Rectangle {
-                                                visible: modelData.kind === "gradient"
-                                                anchors.fill: parent
-                                                radius: 5
-                                                gradient: Gradient {
-                                                    GradientStop { position: 0.0; color: modelData.a }
-                                                    GradientStop { position: 1.0; color: modelData.b }
+                                                Rectangle {
+                                                    visible: modelData.kind === "gradient"
+                                                    anchors.right: parent.right
+                                                    anchors.top: parent.top
+                                                    anchors.bottom: parent.bottom
+                                                    width: parent.width / 3
+                                                    color: modelData.b
                                                 }
                                             }
-                                        }
 
-                                        Text {
-                                            anchors.left: parent.left
-                                            anchors.leftMargin: 32
-                                            anchors.right: parent.right
-                                            anchors.rightMargin: 4
-                                            anchors.verticalCenter: parent.verticalCenter
-                                            text: modelData.name
-                                            color: root.textSecondary
-                                            font.pixelSize: 5.5
-                                            elide: Text.ElideRight
-                                        }
+                                            Text {
+                                                anchors.left: stylePreview.right
+                                                anchors.leftMargin: 5
+                                                anchors.right: parent.right
+                                                anchors.rightMargin: 4
+                                                anchors.verticalCenter: parent.verticalCenter
+                                                text: modelData.name
+                                                color: root.textSecondary
+                                                font.pixelSize: 6
+                                                elide: Text.ElideRight
+                                            }
 
-                                        MouseArea {
-                                            anchors.fill: parent
-                                            cursorShape: Qt.PointingHandCursor
-                                            onClicked: root.applyStyle(modelData.spec)
+                                            MouseArea {
+                                                anchors.fill: parent
+                                                cursorShape: Qt.PointingHandCursor
+                                                onClicked: root.applyStyle(modelData.spec)
+                                            }
                                         }
                                     }
                                 }
                             }
                         }
                     }
-                    }
-                }
-            }
-        }
 
+                }
     onActiveChanged: {
         if (root.active) {
             workspaceReader.running = true
