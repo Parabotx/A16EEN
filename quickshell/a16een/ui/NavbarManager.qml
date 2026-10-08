@@ -7,10 +7,15 @@ Item {
 
     property bool active: false
     property int workspaceCount: 6
-    property int pendingWorkspaceCount: 6
-    property string pendingWorkspaceSlot: ""
     property string selectedSlot: "home"
     property string iconSearch: ""
+    property bool addWorkspaceOpen: false
+    property bool removeWorkspaceOpen: false
+    property string newWorkspaceName: ""
+    property string newWorkspaceIcon: "folder.svg"
+    property string newWorkspaceSearch: ""
+    property string createdWorkspaceId: ""
+    property string workspaceStatus: ""
     property var navbarSettings: ({})
     property string statusText: "READY"
     property bool savingSettings: false
@@ -25,6 +30,7 @@ Item {
     }
 
     readonly property string settingsPath: root.stateDir + "/navbar.json"
+    readonly property string workspaceRegistryPath: root.stateDir + "/workspaces.json"
     readonly property string generatedRoot: root.stateDir + "/navbar-icons"
 
     readonly property color page: "#FFFFFF"
@@ -37,19 +43,16 @@ Item {
     readonly property color hover: "#E7EBEF"
     readonly property color selected: "#E2E8F0"
 
-    readonly property var slots: [
-        { id: "home", name: "HOME", description: "Main workspace", defaultIcon: "house.svg" },
-        { id: "code", name: "CODE", description: "Development workspace", defaultIcon: "code.svg" },
-        { id: "web", name: "WEB", description: "Browser workspace", defaultIcon: "globe.svg" },
-        { id: "comms", name: "COMMS", description: "Communication workspace", defaultIcon: "messages-square.svg" },
-        { id: "studio", name: "STUDIO", description: "Creative workspace", defaultIcon: "sparkles.svg" },
-        { id: "music", name: "MUSIC", description: "Music workspace", defaultIcon: "music.svg" },
-        { id: "games", name: "GAMES", description: "Gaming workspace", defaultIcon: "gamepad-2.svg" },
-        { id: "files", name: "FILES", description: "Files & storage", defaultIcon: "folder.svg" },
-        { id: "lab", name: "LAB", description: "Experiments & tools", defaultIcon: "terminal.svg" }
+    property var slots: [
+        { id: "home", name: "HOME", description: "Main workspace", defaultIcon: "house.svg", icon: "house.svg" },
+        { id: "code", name: "CODE", description: "Development workspace", defaultIcon: "code.svg", icon: "code.svg" },
+        { id: "web", name: "WEB", description: "Browser workspace", defaultIcon: "globe.svg", icon: "globe.svg" },
+        { id: "comms", name: "COMMS", description: "Communication workspace", defaultIcon: "messages-square.svg", icon: "messages-square.svg" },
+        { id: "studio", name: "STUDIO", description: "Creative workspace", defaultIcon: "sparkles.svg", icon: "sparkles.svg" },
+        { id: "music", name: "MUSIC", description: "Music workspace", defaultIcon: "music.svg", icon: "music.svg" }
     ]
 
-    readonly property var visibleSlots: root.slots.slice(0, root.workspaceCount)
+    readonly property var visibleSlots: root.slots
 
     readonly property var iconChoices: [
         { id: "house.svg", name: "House" },
@@ -208,8 +211,100 @@ Item {
     function defaultIcon(slot) {
         for (const entry of root.slots)
             if (entry.id === slot)
-                return entry.defaultIcon
+                return entry.icon || entry.defaultIcon
         return "house.svg"
+    }
+
+    function workspaceIdForName(name) {
+        return String(name || "")
+            .toLowerCase()
+            .replace(/[^a-z0-9]+/g, "-")
+            .replace(/^-+|-+$/g, "")
+    }
+
+    function addIconMatches() {
+        const q = root.newWorkspaceSearch.trim().toLowerCase()
+        if (!q)
+            return root.iconChoices
+        return root.iconChoices.filter(icon =>
+            icon.name.toLowerCase().includes(q) || icon.id.toLowerCase().includes(q)
+        )
+    }
+
+    function openAddWorkspace() {
+        if (root.slots.length >= 9)
+            return
+        root.newWorkspaceName = ""
+        root.newWorkspaceSearch = ""
+        root.newWorkspaceIcon = "folder.svg"
+        root.workspaceStatus = ""
+        root.addWorkspaceOpen = true
+        root.removeWorkspaceOpen = false
+        Qt.callLater(() => addNameInput.forceActiveFocus())
+    }
+
+    function cancelAddWorkspace() {
+        root.addWorkspaceOpen = false
+        root.workspaceStatus = ""
+    }
+
+    function submitAddWorkspace() {
+        const name = root.newWorkspaceName.trim()
+        const id = root.workspaceIdForName(name)
+        if (!name.length || !id.length) {
+            root.workspaceStatus = "ENTER A NAME"
+            return
+        }
+        if (name.length > 28) {
+            root.workspaceStatus = "NAME TOO LONG"
+            return
+        }
+        if (root.slots.some(slot => slot.id === id)) {
+            root.workspaceStatus = "NAME ALREADY EXISTS"
+            return
+        }
+
+        root.createdWorkspaceId = id
+        root.workspaceStatus = "ADDING..."
+        workspaceOperation = "add"
+        workspaceProcess.running = true
+    }
+
+    function openRemoveWorkspace() {
+        if (root.slots.length <= 2)
+            return
+        root.removeWorkspaceOpen = true
+        root.addWorkspaceOpen = false
+        root.workspaceStatus = ""
+    }
+
+    function cancelRemoveWorkspace() {
+        root.removeWorkspaceOpen = false
+        root.workspaceStatus = ""
+    }
+
+    function submitRemoveWorkspace() {
+        if (root.slots.length <= 2)
+            return
+        root.workspaceStatus = "REMOVING..."
+        workspaceOperation = "remove"
+        workspaceProcess.running = true
+    }
+
+    function loadWorkspaceRegistry(raw) {
+        try {
+            const parsed = JSON.parse(String(raw || ""))
+            if (!Array.isArray(parsed) || parsed.length < 1)
+                return
+
+            root.slots = parsed
+            root.workspaceCount = parsed.length
+
+            if (!parsed.some(slot => slot.id === root.selectedSlot))
+                root.selectedSlot = parsed[0].id
+        } catch (error) {
+            // Keep the last valid registry in memory during an atomic file update.
+        }
     }
 
     function settingFor(slot) {
@@ -279,21 +374,7 @@ Item {
         beginApply(root.defaultIcon(root.selectedSlot), "solid:#111318")
     }
 
-    function changeWorkspaceCount(nextCount) {
-        const value = Math.max(2, Math.min(9, Number(nextCount)))
-        if (value === root.workspaceCount || workspaceProcess.running)
-            return
 
-        root.pendingWorkspaceCount = value
-        if (value > root.workspaceCount) {
-            root.pendingWorkspaceSlot = root.slots[value - 1].id
-            root.statusText = "ADDING"
-        } else {
-            root.pendingWorkspaceSlot = root.slots[value - 1].id
-            root.statusText = "REMOVING"
-        }
-        workspaceProcess.running = true
-    }
 
     FileView {
         id: settingsFile
@@ -307,53 +388,63 @@ Item {
         }
     }
 
+    FileView {
+        id: workspaceRegistryFile
+        path: root.workspaceRegistryPath
+        watchChanges: true
+        printErrors: false
+        onLoaded: root.loadWorkspaceRegistry(this.text())
+        onFileChanged: root.loadWorkspaceRegistry(this.text())
+    }
+
+    property string workspaceOperation: ""
+
     Process {
-        id: workspaceReader
-        command: ["a16een-workspaces", "current"]
+        id: workspaceProcess
+        command: root.workspaceOperation === "add"
+            ? ["a16een-workspaces", "add", root.newWorkspaceName, root.newWorkspaceIcon]
+            : ["a16een-workspaces", "remove", root.selectedSlot]
         running: false
-        stdout: StdioCollector {
-            onStreamFinished: {
-                const value = Number(String(text).trim())
-                if (value >= 2 && value <= 9)
-                    root.workspaceCount = Math.floor(value)
+        onExited: function(exitCode) {
+            if (exitCode !== 0) {
+                root.workspaceStatus = root.workspaceOperation === "add"
+                    ? "ADDING FAILED"
+                    : "REMOVING FAILED"
+                return
             }
+
+            navbarApplyProcess.running = true
         }
     }
 
     Process {
-        id: workspaceProcess
-        command: [
-            "/bin/sh",
-            "-c",
-            "/usr/local/bin/a16een-workspaces set "
-                + String(root.pendingWorkspaceCount)
-                + " && /usr/local/bin/a16een-navbar apply"
-        ]
+        id: navbarApplyProcess
+        command: ["/usr/local/bin/a16een-navbar", "apply"]
         running: false
         onExited: function(exitCode) {
-            const oldCount = root.workspaceCount
-            if (exitCode === 0) {
-                root.workspaceCount = root.pendingWorkspaceCount
-
-                if (root.pendingWorkspaceCount > oldCount) {
-                    // The new workspace becomes selected immediately so the user
-                    // can choose its icon from the full Lucide catalog.
-                    root.selectedSlot = root.slots[root.pendingWorkspaceCount - 1].id
-                    root.statusText = "CHOOSE ICON"
-                } else {
-                    // Removing a workspace also removes its navbar entry.
-                    if (oldCount > root.pendingWorkspaceCount
-                        && root.selectedSlot === root.slots[oldCount - 1].id) {
-                        root.selectedSlot = root.slots[root.pendingWorkspaceCount - 1].id
-                    }
-                    root.statusText = "READY"
-                }
-            } else {
-                root.statusText = "WORKSPACE CHANGE FAILED"
+            if (exitCode !== 0) {
+                root.statusText = "NAVBAR APPLY FAILED"
+                return
             }
 
-            root.pendingWorkspaceSlot = ""
-            Qt.callLater(() => workspaceReader.running = true)
+            workspaceRegistryFile.reload()
+            settingsFile.reload()
+            root.renderRevision++
+
+            if (root.workspaceOperation === "add") {
+                root.selectedSlot = root.createdWorkspaceId
+                root.addWorkspaceOpen = false
+                root.workspaceStatus = ""
+                root.statusText = "READY"
+            } else {
+                root.removeWorkspaceOpen = false
+                if (root.slots.length > 0)
+                    root.selectedSlot = root.slots[Math.max(0, root.slots.length - 1)].id
+                root.workspaceStatus = ""
+                root.statusText = "READY"
+            }
+
+            root.workspaceOperation = ""
         }
     }
 
@@ -894,7 +985,7 @@ Item {
 
     onActiveChanged: {
         if (root.active) {
-            workspaceReader.running = true
+            workspaceRegistryFile.reload()
             settingsFile.reload()
         }
     }
