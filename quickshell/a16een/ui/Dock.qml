@@ -60,11 +60,13 @@ PanelWindow {
 
     readonly property var visibleWorkspaces: root.workspaceCatalog
 
-    readonly property int workspaceExtent: Math.max(
-        44,
-        root.visibleWorkspaces.length * 36
-            + Math.max(0, root.visibleWorkspaces.length - 1) * 4
-    )
+    readonly property int workspaceExtent: root.contentState.workspaces !== false
+        ? Math.max(
+            44,
+            root.visibleWorkspaces.length * 36
+                + Math.max(0, root.visibleWorkspaces.length - 1) * 4
+        )
+        : 0
 
     readonly property int contentCount: {
         let count = 0
@@ -77,7 +79,7 @@ PanelWindow {
     }
 
     readonly property int contentExtent: root.contentCount > 0
-        ? 12 + root.contentCount * 40
+        ? 12 + root.contentCount * 52
             + Math.max(0, root.contentCount - 1) * 4
         : 0
 
