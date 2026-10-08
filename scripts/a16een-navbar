@@ -102,6 +102,9 @@ repair_all_white_styles() {
                 mv -f "$tmp" "$SETTINGS_FILE"
                 changed=1
                 ;;
+            *)
+                ;;
+        esac
     done < <(workspace_ids)
 
     if (( changed == 1 )); then
