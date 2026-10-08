@@ -8,8 +8,9 @@ PanelWindow {
 
     required property var modelData
 
-    readonly property string eventPath: (Quickshell.stateDir || (Quickshell.env("XDG_STATE_HOME") || (Quickshell.env("HOME") + "/.local/state")))
+    readonly property string eventPath: (Quickshell.env("XDG_STATE_HOME") || (Quickshell.env("HOME") + "/.local/state"))
         + "/a16een/control-indicator"
+    property bool eventWatcherReady: false
 
     property string mode: ""
     property real level: 0
@@ -97,6 +98,9 @@ PanelWindow {
         onFileChanged: reload()
 
         onTextChanged: {
+            if (!root.eventWatcherReady)
+                return
+
             const payload = String(text).trim()
             if (!payload.length)
                 return
@@ -109,6 +113,14 @@ PanelWindow {
             else if (kind === "brightness")
                 root.showBrightness()
         }
+    }
+
+    Timer {
+        interval: 250
+        running: true
+        repeat: false
+
+        onTriggered: root.eventWatcherReady = true
     }
 
     Process {
