@@ -12,6 +12,8 @@ Item {
     property string iconSearch: ""
     property var navbarSettings: ({})
     property string statusText: "READY"
+    property string navbarPosition: "right"
+    property string pendingNavbarPosition: "right"
 
     signal backRequested()
 
@@ -22,6 +24,7 @@ Item {
     }
 
     readonly property string settingsPath: root.stateDir + "/navbar.json"
+    readonly property string layoutPath: root.stateDir + "/navbar-layout.json"
     readonly property string generatedRoot: root.stateDir + "/navbar-icons"
 
     readonly property color page: "#FFFFFF"
@@ -203,6 +206,27 @@ Item {
         }
     }
 
+    function loadNavbarLayout(raw) {
+        try {
+            const parsed = JSON.parse(String(raw || ""))
+            if (parsed && ["left", "right", "top", "bottom"].includes(parsed.position))
+                root.navbarPosition = parsed.position
+        } catch (error) {
+            root.navbarPosition = "right"
+        }
+    }
+
+    function setNavbarPosition(position) {
+        if (!["left", "right", "top", "bottom"].includes(position)
+            || position === root.navbarPosition
+            || layoutProcess.running)
+            return
+
+        root.pendingNavbarPosition = position
+        root.statusText = "MOVING NAVBAR"
+        layoutProcess.running = true
+    }
+
     function applyIcon(icon) {
         const current = root.settingFor(root.selectedSlot)
         const next = {}
@@ -252,6 +276,31 @@ Item {
         printErrors: false
         onLoaded: root.loadSettings(this.text())
         onFileChanged: root.loadSettings(this.text())
+    }
+
+    FileView {
+        id: layoutFile
+        path: root.layoutPath
+        watchChanges: true
+        printErrors: false
+        onLoaded: root.loadNavbarLayout(this.text())
+        onFileChanged: root.loadNavbarLayout(this.text())
+    }
+
+    Process {
+        id: layoutProcess
+        command: ["a16een-navbar-layout", "set", root.pendingNavbarPosition]
+        running: false
+        onExited: function(exitCode) {
+            if (exitCode === 0) {
+                root.navbarPosition = root.pendingNavbarPosition
+                root.statusText = "READY"
+                layoutFile.reload()
+            } else {
+                root.statusText = "NAVBAR MOVE FAILED"
+                layoutFile.reload()
+            }
+        }
     }
 
     Process {
@@ -391,9 +440,83 @@ Item {
             }
         }
 
+        Rectangle {
+            width: parent.width
+            height: 46
+            radius: 12
+            color: "#FBFCFD"
+            border.width: 1
+            border.color: root.border
+
+            Row {
+                anchors.fill: parent
+                anchors.margins: 7
+                spacing: 7
+
+                Text {
+                    width: 88
+                    height: parent.height
+                    verticalAlignment: Text.AlignVCenter
+                    text: "PLACEMENT"
+                    color: root.muted
+                    font.pixelSize: 7
+                    font.weight: Font.DemiBold
+                    font.letterSpacing: 1
+                }
+
+                Repeater {
+                    model: [
+                        { id: "left", name: "LEFT", icon: "menu.svg" },
+                        { id: "right", name: "RIGHT", icon: "menu.svg" },
+                        { id: "top", name: "TOP", icon: "monitor.svg" },
+                        { id: "bottom", name: "BOTTOM", icon: "monitor.svg" }
+                    ]
+
+                    delegate: Rectangle {
+                        width: (parent.width - 109) / 4
+                        height: 32
+                        radius: 9
+                        color: root.navbarPosition === modelData.id ? root.text : "#FFFFFF"
+                        border.width: 1
+                        border.color: root.navbarPosition === modelData.id ? root.text : root.border
+
+                        Row {
+                            anchors.centerIn: parent
+                            spacing: 6
+
+                            Image {
+                                width: 14
+                                height: 14
+                                sourceSize.width: width
+                                sourceSize.height: height
+                                fillMode: Image.PreserveAspectFit
+                                asynchronous: true
+                                source: Qt.resolvedUrl("../assets/icons/" + modelData.icon)
+                                opacity: root.navbarPosition === modelData.id ? 1 : 0.7
+                            }
+
+                            Text {
+                                text: modelData.name
+                                color: root.navbarPosition === modelData.id ? "#FFFFFF" : root.text
+                                font.pixelSize: 7
+                                font.weight: Font.DemiBold
+                            }
+                        }
+
+                        MouseArea {
+                            anchors.fill: parent
+                            cursorShape: Qt.PointingHandCursor
+                            enabled: !layoutProcess.running
+                            onClicked: root.setNavbarPosition(modelData.id)
+                        }
+                    }
+                }
+            }
+        }
+
         Row {
             width: parent.width
-            height: parent.height - 54
+            height: parent.height - 112
             spacing: 12
 
             Rectangle {
@@ -662,6 +785,7 @@ Item {
         if (root.active) {
             workspaceReader.running = true
             settingsFile.reload()
+            layoutFile.reload()
         }
     }
 
