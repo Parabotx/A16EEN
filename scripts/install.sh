@@ -253,6 +253,8 @@ else
     # Replace only after every staged file was copied and the compositor config validated.
     cp "$TMP_DEPLOY/config.kdl" "$NIRI_DIR/config.kdl"
     cp "$TMP_DEPLOY/shell.qml" "$QS_DIR/shell.qml"
+    # Remove obsolete experimental navbar renderers from older A16EEN revisions.
+    rm -f "$QS_DIR/ui/ArtGlyph.qml" "$QS_DIR/ui/NavbarIcon.qml"
     cp "$TMP_DEPLOY/ui/"*.qml "$QS_DIR/ui/"
     cp "$TMP_DEPLOY/ui/"*.js "$QS_DIR/ui/"
 
@@ -334,7 +336,7 @@ fi
 
 # Generate the navbar's lightweight colored Lucide SVGs before Quickshell
 # restarts, so the shell never depends on a race with the first frame.
-if ! "$ROOT_DIR/scripts/a16een-navbar" apply; then
+if ! bash "$ROOT_DIR/scripts/a16een-navbar" apply; then
     echo "WARNING: navbar icon generation failed; the navbar will use bundled fallbacks." >&2
 fi
 
