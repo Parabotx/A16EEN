@@ -1,0 +1,223 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+readonly STATE_DIR="${XDG_STATE_HOME:-$HOME/.local/state}/a16een"
+readonly COUNT_FILE="$STATE_DIR/workspace-count"
+readonly CONFIG_FILE="${XDG_CONFIG_HOME:-$HOME/.config}/niri/config.kdl"
+readonly MIN_COUNT=2
+readonly MAX_COUNT=9
+readonly DEFAULT_COUNT=6
+
+readonly WORKSPACES=(
+    "home"
+    "code"
+    "web"
+    "comms"
+    "studio"
+    "music"
+    "games"
+    "files"
+    "lab"
+)
+
+die() {
+    printf 'A16EEN workspaces: %s\n' "$*" >&2
+    exit 1
+}
+
+current_count() {
+    local count=""
+    if [[ -s "$COUNT_FILE" ]]; then
+        count="$(head -n 1 "$COUNT_FILE" | tr -d '[:space:]')"
+    fi
+
+    if [[ "$count" =~ ^[0-9]+$ ]] && (( count >= MIN_COUNT && count <= MAX_COUNT )); then
+        printf '%s\n' "$count"
+    else
+        printf '%s\n' "$DEFAULT_COUNT"
+    fi
+}
+
+validate_count() {
+    local count="$1"
+    [[ "$count" =~ ^[0-9]+$ ]] || die "workspace count must be a number."
+    (( count >= MIN_COUNT && count <= MAX_COUNT )) ||
+        die "workspace count must be between $MIN_COUNT and $MAX_COUNT."
+}
+
+write_workspace_block() {
+    local count="$1"
+    local file="$2"
+    local i=0
+
+    while (( i < count )); do
+        printf 'workspace "%s"\n' "${WORKSPACES[$i]}" >> "$file"
+        i=$((i + 1))
+    done
+}
+
+write_keybind_block() {
+    local count="$1"
+    local file="$2"
+    local i=0
+    local key
+
+    while (( i < count )); do
+        key=$((i + 1))
+        printf '    Mod+%d { focus-workspace "%s"; }\n' "$key" "${WORKSPACES[$i]}" >> "$file"
+        i=$((i + 1))
+    done
+
+    printf '\n' >> "$file"
+
+    i=0
+    while (( i < count )); do
+        key=$((i + 1))
+        printf '    Mod+Shift+%d { move-column-to-workspace "%s"; }\n' "$key" "${WORKSPACES[$i]}" >> "$file"
+        i=$((i + 1))
+    done
+}
+
+replace_block() {
+    local source="$1"
+    local destination="$2"
+    local begin="$3"
+    local end="$4"
+    local block="$5"
+
+    awk -v begin="$begin" -v end="$end" -v block="$block" '
+        $0 == begin {
+            print
+            while ((getline line < block) > 0)
+                print line
+            close(block)
+            inside=1
+            next
+        }
+        $0 == end {
+            inside=0
+            print
+            next
+        }
+        !inside { print }
+    ' "$source" > "$destination"
+}
+
+removed_workspaces_have_windows() {
+    local old_count="$1"
+    local new_count="$2"
+    local workspace_id
+    local window_count
+    local name
+    local workspaces_json
+    local windows_json
+
+    (( new_count < old_count )) || return 1
+
+    command -v niri >/dev/null 2>&1 || return 1
+    command -v jq >/dev/null 2>&1 || return 1
+
+    workspaces_json="$(niri msg --json workspaces 2>/dev/null || true)"
+    windows_json="$(niri msg --json windows 2>/dev/null || true)"
+    [[ -n "$workspaces_json" && -n "$windows_json" ]] || return 1
+
+    local i=$new_count
+    while (( i < old_count )); do
+        name="${WORKSPACES[$i]}"
+        workspace_id="$(jq -r --arg name "$name" '.[] | select(.name == $name) | .id' <<<"$workspaces_json" | head -n 1)"
+        [[ -n "$workspace_id" && "$workspace_id" != "null" ]] || {
+            i=$((i + 1))
+            continue
+        }
+
+        window_count="$(jq --argjson workspace_id "$workspace_id" '[.[] | select(.workspace_id == $workspace_id)] | length' <<<"$windows_json" 2>/dev/null || printf '0')"
+        if (( window_count > 0 )); then
+            printf '%s\n' "$name"
+            return 0
+        fi
+
+        i=$((i + 1))
+    done
+
+    return 1
+}
+
+set_count() {
+    local new_count="$1"
+    validate_count "$new_count"
+
+    [[ -f "$CONFIG_FILE" ]] || die "Niri config was not found at $CONFIG_FILE."
+
+    local old_count
+    old_count="$(current_count)"
+
+    if (( new_count == old_count )); then
+        printf '%s\n' "$old_count" > "$COUNT_FILE"
+        return 0
+    fi
+
+    local blocked
+    blocked="$(removed_workspaces_have_windows "$old_count" "$new_count" || true)"
+    if [[ -n "$blocked" ]]; then
+        die "cannot remove workspace '$blocked' because it still contains windows."
+    fi
+
+    local workspace_block keybind_block tmp_config tmp_workspace tmp_keybind backup
+
+    tmp_workspace="$(mktemp)"
+    tmp_keybind="$(mktemp)"
+    tmp_config="$(mktemp)"
+    backup="$(mktemp)"
+
+    cleanup() {
+        rm -f "$tmp_workspace" "$tmp_keybind" "$tmp_config" "$backup"
+    }
+    trap cleanup EXIT INT TERM
+
+    write_workspace_block "$new_count" "$tmp_workspace"
+    write_keybind_block "$new_count" "$tmp_keybind"
+
+    replace_block         "$CONFIG_FILE"         "$backup"         '// A16EEN WORKSPACES BEGIN'         '// A16EEN WORKSPACES END'         "$tmp_workspace"
+
+    replace_block         "$backup"         "$tmp_config"         '// A16EEN WORKSPACE BINDS BEGIN'         '// A16EEN WORKSPACE BINDS END'         "$tmp_keybind"
+
+    if command -v niri >/dev/null 2>&1; then
+        niri validate --config "$tmp_config" >/dev/null ||
+            die "Niri rejected the new workspace configuration."
+    fi
+
+    cp "$CONFIG_FILE" "$backup"
+    cp "$tmp_config" "$CONFIG_FILE"
+
+    if command -v niri >/dev/null 2>&1; then
+        if ! niri msg action load-config-file >/dev/null 2>&1; then
+            cp "$backup" "$CONFIG_FILE"
+            niri msg action load-config-file >/dev/null 2>&1 || true
+            die "Niri could not reload the new workspace configuration."
+        fi
+    fi
+
+    mkdir -p "$STATE_DIR"
+    printf '%s\n' "$new_count" > "$COUNT_FILE"
+    printf 'A16EEN workspaces: %s active named workspaces.\n' "$new_count"
+}
+
+apply_current() {
+    set_count "$(current_count)"
+}
+
+case "${1:-current}" in
+    current)
+        current_count
+        ;;
+    set)
+        [[ $# -eq 2 ]] || die "usage: a16een-workspaces set <2-9>"
+        set_count "$2"
+        ;;
+    apply)
+        apply_current
+        ;;
+    *)
+        die "usage: a16een-workspaces {current|set|apply}"
+        ;;
+esac
