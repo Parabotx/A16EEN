@@ -94,21 +94,18 @@ PanelWindow {
     WlrLayershell.layer: WlrLayer.Overlay
     WlrLayershell.namespace: "a16een-dock"
 
-    // The dock PanelWindow spans the full screen height and 66px of width.
-    // Without an input mask, transparent pixels still block clicks on the
-    // application underneath. Only the visible dock and the 8px reveal strip
-    // should ever participate in pointer hit-testing.
+    // Keep the panel click-through everywhere except the actual dock
+    // and the small fullscreen reveal strip. The child regions are siblings
+    // so Combine produces their union instead of intersecting the dock with
+    // an 8px parent region.
     mask: Region {
-        x: root.width - 8
-        y: (root.height - 240) / 2
-        width: 8
-        height: 240
+        Region {
+            item: root.dock
+            intersection: Intersection.Combine
+        }
 
         Region {
-            x: root.dock.x - (root.width - 8)
-            y: root.dock.y - ((root.height - 240) / 2)
-            width: root.dock.width
-            height: root.dock.height
+            item: edgeReveal
             intersection: Intersection.Combine
         }
     }
