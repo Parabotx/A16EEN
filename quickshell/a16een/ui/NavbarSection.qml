@@ -27,14 +27,14 @@ Item {
     readonly property string settingsPath: root.stateDir + "/navbar.json"
 
     readonly property color page: "#FFFFFF"
-    readonly property color panel: "#F8FAFB"
-    readonly property color panelHover: "#F2F5F7"
-    readonly property color border: "#E1E6EB"
-    readonly property color borderStrong: "#CDD4DB"
+    readonly property color panel: "#F4F6F8"
+    readonly property color panelHover: "#E7EBEF"
+    readonly property color border: "#CBD3DB"
+    readonly property color borderStrong: "#9AA6B2"
     readonly property color textPrimary: "#111318"
-    readonly property color textSecondary: "#68737E"
-    readonly property color textMuted: "#8E98A3"
-    readonly property color selectedBackground: "#EEF2F5"
+    readonly property color textSecondary: "#334155"
+    readonly property color textMuted: "#64748B"
+    readonly property color selectedBackground: "#E2E8F0"
     readonly property color accent: "#111318"
 
     readonly property var slots: [
@@ -389,7 +389,7 @@ Item {
                 Text {
                     text: "LUCIDE ICONS • WORKSPACES 2–9 • " + root.workspaceStatus
                     color: root.textMuted
-                    font.pixelSize: 8
+                    font.pixelSize: 9
                     font.weight: Font.Medium
                     font.letterSpacing: 0.55
                     elide: Text.ElideRight
@@ -445,7 +445,7 @@ Item {
                             Text {
                                 text: "WORKSPACES"
                                 color: root.textPrimary
-                                font.pixelSize: 8
+                                font.pixelSize: 11
                                 font.weight: Font.DemiBold
                                 font.letterSpacing: 1.0
                             }
@@ -710,7 +710,7 @@ Item {
                                 anchors.centerIn: parent
                                 text: "RESET"
                                 color: root.textPrimary
-                                font.pixelSize: 7
+                                font.pixelSize: 9
                                 font.weight: Font.DemiBold
                                 font.letterSpacing: 0.9
                             }
@@ -771,79 +771,66 @@ Item {
                         }
                     }
 
-                    Flickable {
+                    GridView {
                         id: iconScroll
                         Layout.fillWidth: true
                         Layout.fillHeight: true
                         clip: true
-                        contentWidth: width
-                        contentHeight: iconGrid.height
+                        cellWidth: Math.max(82, width / 7)
+                        cellHeight: 62
+                        model: root.filteredIconChoices
                         boundsBehavior: Flickable.StopAtBounds
+                        reuseItems: true
 
-                        GridLayout {
-                            id: iconGrid
-                            width: iconScroll.width
-                            columns: 7
-                            rowSpacing: 6
-                            columnSpacing: 6
-                            height: Math.max(
-                                58,
-                                Math.ceil(root.filteredIconChoices.length / 7) * 55
-                            )
+                        delegate: Rectangle {
+                            required property var modelData
+                            required property int index
+                            width: iconScroll.cellWidth - 6
+                            height: iconScroll.cellHeight - 6
+                            radius: 11
 
-                            Repeater {
-                                model: root.filteredIconChoices
+                            readonly property bool selected:
+                                root.settingFor(root.selectedSlot).icon === modelData.id
 
-                                delegate: Rectangle {
-                                    Layout.preferredWidth: (iconGrid.width - 36) / 7
-                                    Layout.preferredHeight: 55
-                                    radius: 11
+                            color: selected ? root.selectedBackground
+                                : (iconMouse.containsMouse ? root.panelHover : "#FFFFFF")
+                            border.width: selected ? 1.5 : 1
+                            border.color: selected ? root.accent : root.border
 
-                                    readonly property bool selected:
-                                        root.settingFor(root.selectedSlot).icon === modelData.id
+                            Column {
+                                anchors.centerIn: parent
+                                spacing: 4
 
-                                    color: selected ? root.selectedBackground
-                                        : (iconMouse.containsMouse ? root.panelHover : "#FFFFFF")
-                                    border.width: selected ? 1.4 : 1
-                                    border.color: selected ? root.accent : root.border
-
-                                    Column {
-                                        anchors.centerIn: parent
-                                        spacing: 3
-
-                                        Image {
-                                            anchors.horizontalCenter: parent.horizontalCenter
-                                            width: 20
-                                            height: 20
-                                            sourceSize.width: width
-                                            sourceSize.height: height
-                                            fillMode: Image.PreserveAspectFit
-                                            asynchronous: true
-                                            smooth: true
-                                            mipmap: true
-                                            cache: false
-                                            source: Qt.resolvedUrl("../assets/icons/" + modelData.id)
-                                        }
-
-                                        Text {
-                                            width: Math.max(40, parent.width - 4)
-                                            horizontalAlignment: Text.AlignHCenter
-                                            text: modelData.name
-                                            color: root.textSecondary
-                                            font.pixelSize: 6
-                                            font.weight: selected ? Font.DemiBold : Font.Normal
-                                            elide: Text.ElideRight
-                                        }
-                                    }
-
-                                    MouseArea {
-                                        id: iconMouse
-                                        anchors.fill: parent
-                                        hoverEnabled: true
-                                        cursorShape: Qt.PointingHandCursor
-                                        onClicked: root.patch({ icon: modelData.id })
-                                    }
+                                Image {
+                                    anchors.horizontalCenter: parent.horizontalCenter
+                                    width: 22
+                                    height: 22
+                                    sourceSize.width: width
+                                    sourceSize.height: height
+                                    fillMode: Image.PreserveAspectFit
+                                    asynchronous: true
+                                    smooth: true
+                                    mipmap: true
+                                    source: Qt.resolvedUrl("../assets/icons/" + modelData.id)
                                 }
+
+                                Text {
+                                    width: parent.width + 12
+                                    horizontalAlignment: Text.AlignHCenter
+                                    text: modelData.name
+                                    color: root.textSecondary
+                                    font.pixelSize: 7
+                                    font.weight: selected ? Font.DemiBold : Font.Normal
+                                    elide: Text.ElideRight
+                                }
+                            }
+
+                            MouseArea {
+                                id: iconMouse
+                                anchors.fill: parent
+                                hoverEnabled: true
+                                cursorShape: Qt.PointingHandCursor
+                                onClicked: root.patch({ icon: modelData.id })
                             }
                         }
                     }
@@ -909,7 +896,7 @@ Item {
                         Layout.fillWidth: true
                         text: "Selected states stay light so the Lucide glyph remains fully visible."
                         color: root.textMuted
-                        font.pixelSize: 6.5
+                        font.pixelSize: 8
                         wrapMode: Text.WordWrap
                     }
                 }
