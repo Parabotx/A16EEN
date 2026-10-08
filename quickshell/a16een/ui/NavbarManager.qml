@@ -28,14 +28,14 @@ Item {
     readonly property string settingsPath: root.stateDir + "/navbar.json"
 
 
-    readonly property color page: "#20252C"
-    readonly property color card: "#2E353E"
-    readonly property color cardHover: "#414B57"
-    readonly property color border: "#586575"
-    readonly property color borderStrong: "#7A8797"
-    readonly property color textPrimary: "#F4F6F9"
-    readonly property color textSecondary: "#CDD5DE"
-    readonly property color textMuted: "#A7B1BD"
+    readonly property color page: "#FFFFFF"
+    readonly property color card: "#F7F8FA"
+    readonly property color cardHover: "#EEF2F6"
+    readonly property color border: "#D9DEE5"
+    readonly property color borderStrong: "#B8C1CC"
+    readonly property color textPrimary: "#111318"
+    readonly property color textSecondary: "#5C6673"
+    readonly property color textMuted: "#8A939E"
     readonly property color accent: "#3B82F6"
 
     readonly property var slots: [
@@ -178,7 +178,7 @@ Item {
     function resetSelected() {
         root.patch({
             icon: root.defaultIcon(root.selectedSlot),
-            color: "#2E353E"
+            color: "#FFFFFF"
         })
     }
 
@@ -277,20 +277,12 @@ Item {
             }
         }
 
-        Loader {
-            id: placementLoader
+        NavbarPlacement {
+            id: placementControl
             Layout.fillWidth: true
-            Layout.preferredHeight: 46
+            Layout.preferredHeight: 58
             active: root.active
-            source: Qt.resolvedUrl("NavbarPlacement.qml")
-
-            onLoaded: {
-                if (!item)
-                    return
-                item.anchors.fill = placementLoader
-                item.active = true
-                item.positionChanged.connect(root.navbarPositionChanged)
-            }
+            onPositionChanged: root.navbarPositionChanged(position)
         }
 
         RowLayout {
@@ -422,7 +414,7 @@ Item {
                             Layout.preferredWidth: 46
                             Layout.preferredHeight: 46
                             radius: 13
-                            color: "#353E49"
+                            color: "#EEF2F6"
                             border.width: 1
                             border.color: root.border
 
@@ -626,10 +618,7 @@ Item {
         if (root.active) {
             settingsFile.reload()
             navbarReadyFile.reload()
-            Qt.callLater(() => {
-                if (placementLoader.item)
-                    placementLoader.item.active = true
-            })
+            placementControl.active = true
         }
     }
 

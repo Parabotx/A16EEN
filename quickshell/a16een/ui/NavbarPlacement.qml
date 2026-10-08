@@ -20,13 +20,13 @@ Item {
 
     readonly property string layoutPath: root.stateDir + "/navbar-layout.json"
 
-    readonly property color panel: "#2E353E"
-    readonly property color border: "#586575"
-    readonly property color borderStrong: "#7A8797"
-    readonly property color text: "#F4F6F9"
-    readonly property color muted: "#A7B1BD"
-    readonly property color hover: "#414B57"
-    readonly property color selected: "#5E6B7A"
+    readonly property color panel: "#FFFFFF"
+    readonly property color border: "#D9DEE5"
+    readonly property color borderStrong: "#B8C1CC"
+    readonly property color text: "#111318"
+    readonly property color muted: "#7B8592"
+    readonly property color hover: "#EEF2F6"
+    readonly property color selected: "#DDE3EA"
 
     function loadPosition(raw) {
         try {
@@ -79,7 +79,7 @@ Item {
     Rectangle {
         anchors.fill: parent
         radius: 12
-        color: "#252C34"
+        color: "#F7F8FA"
         border.width: 1
         border.color: root.border
 
@@ -92,7 +92,7 @@ Item {
                 width: 88
                 height: parent.height
                 verticalAlignment: Text.AlignVCenter
-                text: "PLACEMENT"
+                text: "NAVBAR POSITION"
                 color: root.muted
                 font.pixelSize: 7
                 font.weight: Font.DemiBold
@@ -111,8 +111,8 @@ Item {
                     width: Math.max(82, (parent.width - 181) / 4)
                     height: 32
                     radius: 9
-                    color: root.position === modelData.id ? "#F4F6F9"
-                        : (placementMouse.containsMouse ? root.hover : "#323943")
+                    color: root.position === modelData.id ? root.selected
+                        : (placementMouse.containsMouse ? root.hover : "#FFFFFF")
                     border.width: 1
                     border.color: root.position === modelData.id
                         ? root.text : root.border
@@ -123,7 +123,7 @@ Item {
 
                         Text {
                             text: modelData.glyph
-                            color: root.position === modelData.id ? "#1A1E23" : root.text
+                            color: root.position === modelData.id ? "#111318" : root.text
                             font.pixelSize: 14
                             font.weight: Font.DemiBold
                         }
@@ -152,7 +152,7 @@ Item {
                 verticalAlignment: Text.AlignVCenter
                 horizontalAlignment: Text.AlignRight
                 text: root.statusText
-                color: root.muted
+                color: root.text
                 font.pixelSize: 7
                 font.weight: Font.DemiBold
             }
