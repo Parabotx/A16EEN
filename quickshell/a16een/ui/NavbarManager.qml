@@ -704,7 +704,10 @@ Item {
                             width: parent.width - 130
                             spacing: 2
                             Text {
-                                text: root.selectedSlot.toUpperCase()
+                                text: {
+                                    const entry = root.selectedWorkspaceEntry()
+                                    return entry ? String(entry.name).toUpperCase() : root.selectedSlot.toUpperCase()
+                                }
                                 color: root.text
                                 font.pixelSize: 13
                                 font.weight: Font.DemiBold
@@ -1268,7 +1271,10 @@ Item {
                                     font.weight: Font.DemiBold
                                 }
                                 Text {
-                                    text: "Workspace: " + root.selectedSlot
+                                    text: {
+                                        const entry = root.selectedWorkspaceEntry()
+                                        return "Workspace: " + (entry ? entry.name : root.selectedSlot)
+                                    }
                                     color: root.muted
                                     font.pixelSize: 7
                                 }
