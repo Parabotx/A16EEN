@@ -356,8 +356,8 @@ PanelWindow {
         root.commandText = "/navbar"
         root.selectedCommandIndex = 0
         Qt.callLater(() => {
-            if (root.navbarViewOpen && navbarLoader.item)
-                navbarLoader.item.forceActiveFocus()
+            if (root.navbarViewOpen)
+                navbarManager.forceActiveFocus()
         })
     }
 
@@ -573,19 +573,14 @@ PanelWindow {
             onBackRequested: root.closeIconThemeView()
             onThemeChangeRequested: root.iconThemeChanged(themeId)
         }
-        Loader {
-            id: navbarLoader
+        NavbarManager {
+            id: navbarManager
             anchors.fill: parent
-            active: root.navbarViewOpen
             visible: root.navbarViewOpen
-            source: Qt.resolvedUrl("NavbarManager.qml")
+            active: root.navbarViewOpen
+            z: 20
 
-            onLoaded: {
-                if (!item)
-                    return
-                item.active = true
-                item.backRequested.connect(root.closeNavbarView)
-            }
+            onBackRequested: root.closeNavbarView()
         }
 
         ControlCenterSection {
