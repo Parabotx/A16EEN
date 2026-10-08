@@ -279,7 +279,6 @@ Item {
 
                                     Text {
                                         text: modelData.name
-                                        color: root.selectedSlot === modelData.id ? "#FFFFFF" : root.textPrimary
                                         font.pixelSize: 9
                                         font.weight: Font.DemiBold
                                     }
@@ -357,7 +356,6 @@ Item {
 
                             Text {
                                 text: root.selectedSlot.toUpperCase()
-                                color: root.textPrimary
                                 font.pixelSize: 13
                                 font.weight: Font.DemiBold
                                 font.letterSpacing: 1
@@ -458,8 +456,6 @@ Item {
                                             width: 58
                                             horizontalAlignment: Text.AlignHCenter
                                             text: modelData.name
-                                            color: root.settingFor(root.selectedSlot).icon === modelData.id
-                                                ? "#FFFFFF" : root.textSecondary
                                             font.pixelSize: 6
                                             font.weight: root.settingFor(root.selectedSlot).icon === modelData.id
                                                 ? Font.DemiBold : Font.Normal
