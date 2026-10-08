@@ -17,6 +17,8 @@ PanelWindow {
     readonly property color hoverBackground: "#F3F4F6"
 
     property var navbarSettings: ({})
+    property string navbarIconRoot: ""
+    property int navbarIconRevision: 0
 
     property bool edgeRevealed: false
     readonly property bool dockVisible: !root.fullscreenActive || root.edgeRevealed
@@ -72,6 +74,16 @@ PanelWindow {
 
     function navbarColor(slot, fallbackIcon) {
         return root.settingFor(slot, fallbackIcon).color
+    }
+
+    function generatedIconPath(slot) {
+        return root.navbarIconRoot.length
+            ? "file://" + root.navbarIconRoot + "/" + slot + ".svg"
+            : ""
+    }
+
+    function fallbackIconPath(iconName) {
+        return Qt.resolvedUrl("../assets/icons/" + iconName)
     }
 
     function workspaceIsFocused(name) {
@@ -161,8 +173,9 @@ PanelWindow {
                     anchors.centerIn: parent
                     width: 19
                     height: 19
-                    iconName: root.navbarIcon("home", "house.svg")
-                    iconColor: root.navbarColor("home", "house.svg")
+                    iconPath: root.generatedIconPath("home")
+                    fallbackIconPath: root.fallbackIconPath("house.svg")
+                    refreshRevision: root.navbarIconRevision
                     active: root.workspaceIsFocused("home")
                     hovered: homeMouse.containsMouse
                 }
@@ -199,8 +212,9 @@ PanelWindow {
                     anchors.centerIn: parent
                     width: 19
                     height: 19
-                    iconName: root.navbarIcon("code", "code.svg")
-                    iconColor: root.navbarColor("code", "code.svg")
+                    iconPath: root.generatedIconPath("code")
+                    fallbackIconPath: root.fallbackIconPath("code.svg")
+                    refreshRevision: root.navbarIconRevision
                     active: root.workspaceIsFocused("code")
                     hovered: codeMouse.containsMouse
                 }
@@ -237,8 +251,9 @@ PanelWindow {
                     anchors.centerIn: parent
                     width: 19
                     height: 19
-                    iconName: root.navbarIcon("web", "globe.svg")
-                    iconColor: root.navbarColor("web", "globe.svg")
+                    iconPath: root.generatedIconPath("web")
+                    fallbackIconPath: root.fallbackIconPath("globe.svg")
+                    refreshRevision: root.navbarIconRevision
                     active: root.workspaceIsFocused("web")
                     hovered: webMouse.containsMouse
                 }
@@ -275,8 +290,9 @@ PanelWindow {
                     anchors.centerIn: parent
                     width: 19
                     height: 19
-                    iconName: root.navbarIcon("comms", "messages-square.svg")
-                    iconColor: root.navbarColor("comms", "messages-square.svg")
+                    iconPath: root.generatedIconPath("comms")
+                    fallbackIconPath: root.fallbackIconPath("messages-square.svg")
+                    refreshRevision: root.navbarIconRevision
                     active: root.workspaceIsFocused("comms")
                     hovered: commsMouse.containsMouse
                 }
@@ -313,8 +329,9 @@ PanelWindow {
                     anchors.centerIn: parent
                     width: 19
                     height: 19
-                    iconName: root.navbarIcon("studio", "sparkles.svg")
-                    iconColor: root.navbarColor("studio", "sparkles.svg")
+                    iconPath: root.generatedIconPath("studio")
+                    fallbackIconPath: root.fallbackIconPath("sparkles.svg")
+                    refreshRevision: root.navbarIconRevision
                     active: root.workspaceIsFocused("studio")
                     hovered: studioMouse.containsMouse
                 }
@@ -351,8 +368,9 @@ PanelWindow {
                     anchors.centerIn: parent
                     width: 19
                     height: 19
-                    iconName: root.navbarIcon("music", "music.svg")
-                    iconColor: root.navbarColor("music", "music.svg")
+                    iconPath: root.generatedIconPath("music")
+                    fallbackIconPath: root.fallbackIconPath("music.svg")
+                    refreshRevision: root.navbarIconRevision
                     active: root.workspaceIsFocused("music")
                     hovered: musicMouse.containsMouse
                 }
