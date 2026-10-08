@@ -573,32 +573,20 @@ PanelWindow {
             onBackRequested: root.closeIconThemeView()
             onThemeChangeRequested: root.iconThemeChanged(themeId)
         }
-        Component {
-            id: navbarManagerComponent
-
-            NavbarManager {
-                anchors.fill: parent
-                visible: true
-                active: true
-            }
-        }
-
         Loader {
             id: navbarLoader
             anchors.fill: parent
             active: root.navbarViewOpen
             visible: root.navbarViewOpen
-            focus: root.navbarViewOpen
             z: 30
-            sourceComponent: navbarManagerComponent
-        }
+            source: Qt.resolvedUrl("NavbarManager.qml")
 
-        Connections {
-            target: navbarLoader.item
-            enabled: root.navbarViewOpen && navbarLoader.item !== null
-
-            function onBackRequested() {
-                root.closeNavbarView()
+            onLoaded: {
+                if (!item)
+                    return
+                item.visible = true
+                item.active = true
+                item.backRequested.connect(root.closeNavbarView)
             }
         }
 
