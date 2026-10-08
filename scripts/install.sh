@@ -338,15 +338,45 @@ else
     echo "==> Preserved existing A16EEN portal preference."
 fi
 
-echo "==> Syncing A16EEN UI icons"
-if ! bash "$ROOT_DIR/scripts/a16een-icons"; then
-    echo "WARNING: icon synchronization failed; using the bundled fallback SVGs." >&2
+# Icon downloads are intentionally content-versioned. Unrelated A16EEN
+# updates should not spend time re-fetching the same 113 Lucide SVGs.
+ICON_SYNC_MARKER="$STATE_DIR/ui-icons-script-sha"
+ICON_SYNC_SHA="$(sha256sum "$ROOT_DIR/scripts/a16een-icons" | awk '{print $1}')"
+PREVIOUS_ICON_SYNC_SHA=""
+if [ -f "$ICON_SYNC_MARKER" ]; then
+    PREVIOUS_ICON_SYNC_SHA="$(cat "$ICON_SYNC_MARKER")"
 fi
 
-# Generate the navbar's lightweight colored Lucide SVGs before Quickshell
-# restarts, so the shell never depends on a race with the first frame.
-if ! bash "$ROOT_DIR/scripts/a16een-navbar" apply; then
-    echo "WARNING: navbar icon generation failed; the navbar will use bundled fallbacks." >&2
+if [ "$ICON_SYNC_SHA" != "$PREVIOUS_ICON_SYNC_SHA" ]; then
+    echo "==> Syncing A16EEN UI icons"
+    if bash "$ROOT_DIR/scripts/a16een-icons"; then
+        printf '%s\n' "$ICON_SYNC_SHA" > "$ICON_SYNC_MARKER"
+    else
+        echo "WARNING: icon synchronization failed; using the bundled fallback SVGs." >&2
+    fi
+else
+    echo "==> A16EEN UI icons already synced; skipping download."
+fi
+
+# Navbar SVGs are regenerated only when the navbar generator itself changes
+# or when its generated state is missing. User-selected navbar settings remain
+# in ~/.local/state/a16een/navbar.json and are applied by the manager.
+NAVBAR_SYNC_MARKER="$STATE_DIR/navbar-script-sha"
+NAVBAR_SYNC_SHA="$(sha256sum "$ROOT_DIR/scripts/a16een-navbar" | awk '{print $1}')"
+PREVIOUS_NAVBAR_SYNC_SHA=""
+if [ -f "$NAVBAR_SYNC_MARKER" ]; then
+    PREVIOUS_NAVBAR_SYNC_SHA="$(cat "$NAVBAR_SYNC_MARKER")"
+fi
+
+if [ "$NAVBAR_SYNC_SHA" != "$PREVIOUS_NAVBAR_SYNC_SHA" ] || [ ! -f "$STATE_DIR/navbar-icons/ready" ]; then
+    echo "==> Generating A16EEN navbar icons"
+    if bash "$ROOT_DIR/scripts/a16een-navbar" apply; then
+        printf '%s\n' "$NAVBAR_SYNC_SHA" > "$NAVBAR_SYNC_MARKER"
+    else
+        echo "WARNING: navbar icon generation failed; the navbar will use bundled fallbacks." >&2
+    fi
+else
+    echo "==> A16EEN navbar icons already generated; skipping rebuild."
 fi
 
 # If A16EEN is already running, restart only its Quickshell process after
