@@ -1,6 +1,5 @@
 import QtQuick
 import QtQuick.Layouts
-import Quickshell
 import Quickshell.Io
 
 Item {
@@ -8,15 +7,10 @@ Item {
 
     property bool active: false
     property var navbarSettings: ({})
-    property string selectedSlot: "home"
-    property string pendingIcon: "house.svg"
-    property string pendingColor: "#111318"
     property int workspaceCount: 6
     property int pendingWorkspaceCount: 6
     property string workspaceStatus: "READY"
     property string iconSearch: ""
-
-    signal backRequested()
 
     readonly property string stateDir: {
         const stateHome = Quickshell.env("XDG_STATE_HOME")
@@ -25,17 +19,24 @@ Item {
     }
 
     readonly property string settingsPath: root.stateDir + "/navbar.json"
+    readonly property string generatedPathRoot: root.stateDir + "/navbar-icons"
+    signal backRequested()
+
+    property string selectedSlot: "home"
+    property string pendingIcon: "house.svg"
+    property string pendingColor: "#111318"
 
     readonly property color page: "#FFFFFF"
-    readonly property color panel: "#F4F6F8"
-    readonly property color panelHover: "#E7EBEF"
+    readonly property color card: "#F4F6F8"
+    readonly property color cardHover: "#E7EBEF"
     readonly property color border: "#CBD3DB"
     readonly property color borderStrong: "#9AA6B2"
     readonly property color textPrimary: "#111318"
     readonly property color textSecondary: "#334155"
     readonly property color textMuted: "#64748B"
-    readonly property color selectedBackground: "#E2E8F0"
     readonly property color accent: "#111318"
+
+    readonly property int minWorkspaceCount: 2
 
     readonly property var slots: [
         { id: "home", name: "HOME", description: "Main workspace", defaultIcon: "house.svg" },
@@ -184,7 +185,7 @@ Item {
     readonly property var filteredIconChoices: {
         const q = root.iconSearch.trim().toLowerCase()
         if (!q)
-            return root.iconChoices
+            return root.iconChoices.slice(0, 42)
 
         return root.iconChoices.filter(icon =>
             icon.name.toLowerCase().includes(q)
@@ -193,11 +194,14 @@ Item {
     }
 
     function defaultIcon(slot) {
-        for (const value of root.slots) {
-            if (value.id === slot)
-                return value.defaultIcon
+        switch (slot) {
+        case "code": return "code.svg"
+        case "web": return "globe.svg"
+        case "comms": return "messages-square.svg"
+        case "studio": return "sparkles.svg"
+        case "music": return "music.svg"
+        default: return "house.svg"
         }
-        return "house.svg"
     }
 
     function baseIconPath(slot) {
@@ -205,7 +209,7 @@ Item {
     }
 
     function generatedIconPath(slot) {
-        return "file://" + root.stateDir + "/navbar-icons/" + slot + ".svg"
+        return "file://" + root.generatedPathRoot + "/" + slot + ".svg"
     }
 
     function settingFor(slot) {
@@ -245,7 +249,7 @@ Item {
         root.pendingIcon = icon
         root.pendingColor = color
         root.navbarSettings = next
-        root.workspaceStatus = "APPLYING " + root.selectedSlot.toUpperCase()
+        root.statusText = "APPLYING " + root.selectedSlot.toUpperCase()
 
         rebuildProcess.running = false
         Qt.callLater(() => rebuildProcess.running = true)
@@ -256,10 +260,6 @@ Item {
             icon: root.defaultIcon(root.selectedSlot),
             color: "#111318"
         })
-    }
-
-    function selectWorkspace(id) {
-        root.selectedSlot = id
     }
 
     function applyWorkspaceCount(count) {
@@ -273,6 +273,8 @@ Item {
         Qt.callLater(() => workspaceProcess.running = true)
     }
 
+    property string statusText: "READY"
+
     FileView {
         id: settingsFile
         path: root.settingsPath
@@ -284,6 +286,26 @@ Item {
     }
 
     Process {
+        id: rebuildProcess
+        command: [
+            "/usr/local/bin/a16een-navbar",
+            "set",
+            root.selectedSlot,
+            root.pendingIcon,
+            root.pendingColor
+        ]
+        running: false
+
+        onExited: function(exitCode, exitStatus) {
+            if (exitCode === 0) {
+                root.statusText = "APPLIED"
+            } else {
+                root.statusText = "ICON REBUILD FAILED"
+                settingsFile.reload()
+            }
+        }
+    }
+    Process {
         id: workspaceReader
         command: ["a16een-workspaces", "current"]
         running: false
@@ -292,7 +314,7 @@ Item {
             onStreamFinished: {
                 const value = Number(String(text).trim())
                 if (value >= 2 && value <= 9)
-                    root.workspaceCount = value
+                    root.workspaceCount = Math.floor(value)
             }
         }
     }
@@ -308,33 +330,13 @@ Item {
                 root.workspaceStatus = "APPLIED • " + root.workspaceCount
                 if (!root.visibleSlots.some(slot => slot.id === root.selectedSlot))
                     root.selectedSlot = root.visibleSlots[root.visibleSlots.length - 1].id
-                Qt.callLater(() => workspaceReader.running = true)
             } else {
                 root.workspaceStatus = "CHANGE BLOCKED"
-                Qt.callLater(() => workspaceReader.running = true)
             }
+            Qt.callLater(() => workspaceReader.running = true)
         }
     }
 
-    Process {
-        id: rebuildProcess
-        command: [
-            "/usr/local/bin/a16een-navbar",
-            "set",
-            root.selectedSlot,
-            root.pendingIcon,
-            root.pendingColor
-        ]
-        running: false
-
-        onExited: function(exitCode, exitStatus) {
-            root.workspaceStatus = exitCode === 0
-                ? "APPLIED • " + root.selectedSlot.toUpperCase()
-                : "ICON APPLY FAILED"
-            if (exitCode !== 0)
-                settingsFile.reload()
-        }
-    }
 
     Rectangle {
         anchors.fill: parent
@@ -343,19 +345,19 @@ Item {
 
     ColumnLayout {
         anchors.fill: parent
-        anchors.margins: 22
+        anchors.margins: 26
         spacing: 12
 
         RowLayout {
             Layout.fillWidth: true
-            Layout.preferredHeight: 44
-            spacing: 10
+            Layout.preferredHeight: 54
+            spacing: 14
 
             Rectangle {
                 Layout.preferredWidth: 38
                 Layout.preferredHeight: 38
                 radius: 11
-                color: root.panel
+                color: root.card
                 border.width: 1
                 border.color: root.border
 
@@ -376,12 +378,12 @@ Item {
 
             ColumnLayout {
                 Layout.fillWidth: true
-                spacing: 2
+                spacing: 3
 
                 Text {
                     text: "NAVBAR"
                     color: root.textPrimary
-                    font.pixelSize: 17
+                    font.pixelSize: 18
                     font.weight: Font.DemiBold
                     font.letterSpacing: 1.3
                 }
@@ -391,26 +393,73 @@ Item {
                     color: root.textMuted
                     font.pixelSize: 9
                     font.weight: Font.Medium
-                    font.letterSpacing: 0.55
+                    font.letterSpacing: 0.6
                     elide: Text.ElideRight
                 }
             }
 
-            Rectangle {
-                Layout.preferredWidth: 80
-                Layout.preferredHeight: 32
-                radius: 10
-                color: "#FFFFFF"
-                border.width: 1
-                border.color: root.borderStrong
+            RowLayout {
+                spacing: 5
+
+                Rectangle {
+                    width: 28
+                    height: 30
+                    radius: 9
+                    color: minusMouse.containsMouse ? root.cardHover : "#FFFFFF"
+                    border.width: 1
+                    border.color: root.borderStrong
+
+                    Text {
+                        anchors.centerIn: parent
+                        text: "−"
+                        color: root.textPrimary
+                        font.pixelSize: 15
+                    }
+
+                    MouseArea {
+                        id: minusMouse
+                        anchors.fill: parent
+                        hoverEnabled: true
+                        cursorShape: Qt.PointingHandCursor
+                        enabled: root.workspaceCount > 2 && !workspaceProcess.running
+                        opacity: enabled ? 1 : 0.35
+                        onClicked: root.applyWorkspaceCount(root.workspaceCount - 1)
+                    }
+                }
 
                 Text {
-                    anchors.centerIn: parent
-                    text: root.workspaceCount + " WORKSPACES"
+                    Layout.preferredWidth: 32
+                    horizontalAlignment: Text.AlignHCenter
+                    text: root.workspaceCount
                     color: root.textPrimary
-                    font.pixelSize: 7
+                    font.pixelSize: 12
                     font.weight: Font.DemiBold
-                    font.letterSpacing: 0.6
+                }
+
+                Rectangle {
+                    width: 28
+                    height: 30
+                    radius: 9
+                    color: plusMouse.containsMouse ? root.cardHover : "#FFFFFF"
+                    border.width: 1
+                    border.color: root.borderStrong
+
+                    Text {
+                        anchors.centerIn: parent
+                        text: "+"
+                        color: root.textPrimary
+                        font.pixelSize: 14
+                    }
+
+                    MouseArea {
+                        id: plusMouse
+                        anchors.fill: parent
+                        hoverEnabled: true
+                        cursorShape: Qt.PointingHandCursor
+                        enabled: root.workspaceCount < 9 && !workspaceProcess.running
+                        opacity: enabled ? 1 : 0.35
+                        onClicked: root.applyWorkspaceCount(root.workspaceCount + 1)
+                    }
                 }
             }
         }
@@ -421,215 +470,107 @@ Item {
             spacing: 12
 
             Rectangle {
-                Layout.preferredWidth: 236
+                Layout.preferredWidth: 196
                 Layout.fillHeight: true
                 radius: 17
-                color: root.panel
+                color: "#FBFCFD"
                 border.width: 1
                 border.color: root.border
 
                 ColumnLayout {
                     anchors.fill: parent
-                    anchors.margins: 11
-                    spacing: 8
+                    anchors.margins: 9
+                    spacing: 4
 
-                    RowLayout {
-                        Layout.fillWidth: true
-                        Layout.preferredHeight: 42
-                        spacing: 6
-
-                        ColumnLayout {
-                            Layout.fillWidth: true
-                            spacing: 2
-
-                            Text {
-                                text: "WORKSPACES"
-                                color: root.textPrimary
-                                font.pixelSize: 11
-                                font.weight: Font.DemiBold
-                                font.letterSpacing: 1.0
-                            }
-
-                            Text {
-                                text: "NAVBAR POSITIONS"
-                                color: root.textMuted
-                                font.pixelSize: 6
-                                font.weight: Font.Medium
-                                font.letterSpacing: 0.7
-                            }
-                        }
-
-                        Rectangle {
-                            Layout.preferredWidth: 28
-                            Layout.preferredHeight: 28
-                            radius: 9
-                            color: minusMouse.containsMouse ? root.panelHover : "#FFFFFF"
-                            border.width: 1
-                            border.color: root.borderStrong
-
-                            Text {
-                                anchors.centerIn: parent
-                                text: "−"
-                                color: root.textPrimary
-                                font.pixelSize: 15
-                            }
-
-                            MouseArea {
-                                id: minusMouse
-                                anchors.fill: parent
-                                hoverEnabled: true
-                                cursorShape: Qt.PointingHandCursor
-                                enabled: root.workspaceCount > 2 && !workspaceProcess.running
-                                opacity: enabled ? 1 : 0.35
-                                onClicked: root.applyWorkspaceCount(root.workspaceCount - 1)
-                            }
-                        }
-
-                        Text {
-                            Layout.preferredWidth: 27
-                            horizontalAlignment: Text.AlignHCenter
-                            text: root.workspaceCount
-                            color: root.textPrimary
-                            font.pixelSize: 14
-                            font.weight: Font.DemiBold
-                        }
-
-                        Rectangle {
-                            Layout.preferredWidth: 28
-                            Layout.preferredHeight: 28
-                            radius: 9
-                            color: plusMouse.containsMouse ? root.panelHover : "#FFFFFF"
-                            border.width: 1
-                            border.color: root.borderStrong
-
-                            Text {
-                                anchors.centerIn: parent
-                                text: "+"
-                                color: root.textPrimary
-                                font.pixelSize: 14
-                            }
-
-                            MouseArea {
-                                id: plusMouse
-                                anchors.fill: parent
-                                hoverEnabled: true
-                                cursorShape: Qt.PointingHandCursor
-                                enabled: root.workspaceCount < 9 && !workspaceProcess.running
-                                opacity: enabled ? 1 : 0.35
-                                onClicked: root.applyWorkspaceCount(root.workspaceCount + 1)
-                            }
-                        }
+                    Text {
+                        Layout.leftMargin: 7
+                        Layout.topMargin: 4
+                        text: "WORKSPACES"
+                        color: root.textMuted
+                        font.pixelSize: 7
+                        font.weight: Font.DemiBold
+                        font.letterSpacing: 1.0
                     }
 
-                    Flickable {
-                        id: workspaceScroll
-                        Layout.fillWidth: true
-                        Layout.fillHeight: true
-                        clip: true
-                        contentWidth: width
-                        contentHeight: workspaceColumn.height
-                        boundsBehavior: Flickable.StopAtBounds
+                    Repeater {
+                        model: root.visibleSlots
 
-                        ColumnLayout {
-                            id: workspaceColumn
-                            width: workspaceScroll.width
-                            spacing: 5
+                        delegate: Rectangle {
+                            Layout.fillWidth: true
+                            Layout.preferredHeight: 62
+                            radius: 13
+                            color: root.selectedSlot === modelData.id
+                                ? "#111318"
+                                : (slotMouse.containsMouse ? root.cardHover : "transparent")
 
-                            Repeater {
-                                model: root.visibleSlots
+                            RowLayout {
+                                anchors.fill: parent
+                                anchors.leftMargin: 10
+                                anchors.rightMargin: 10
+                                spacing: 10
 
-                                delegate: Rectangle {
+                                Rectangle {
+                                    Layout.preferredWidth: 36
+                                    Layout.preferredHeight: 36
+                                    radius: 11
+                                    color: root.selectedSlot === modelData.id ? "#1D2430" : "#FFFFFF"
+                                    border.width: 1
+                                    border.color: root.selectedSlot === modelData.id ? "#263140" : root.border
+
+                                    Image {
+                                        anchors.centerIn: parent
+                                        width: 18
+                                        height: 18
+                                        sourceSize.width: width
+                                        sourceSize.height: height
+                                        fillMode: Image.PreserveAspectFit
+                                        smooth: true
+                                        mipmap: true
+                                        asynchronous: true
+                                        cache: false
+                                        source: root.generatedIconPath(modelData.id)
+                                    }
+                                }
+
+                                ColumnLayout {
                                     Layout.fillWidth: true
-                                    Layout.preferredHeight: 58
-                                    radius: 13
+                                    spacing: 2
 
-                                    readonly property bool selected: root.selectedSlot === modelData.id
-
-                                    color: selected ? "#FFFFFF" : (slotMouse.containsMouse ? root.panelHover : "transparent")
-                                    border.width: selected ? 1.4 : 1
-                                    border.color: selected ? root.accent : "transparent"
-
-                                    Rectangle {
-                                        width: 3
-                                        height: 24
-                                        radius: 2
-                                        anchors.left: parent.left
-                                        anchors.leftMargin: 3
-                                        anchors.verticalCenter: parent.verticalCenter
-                                        color: selected ? root.accent : "transparent"
+                                    Text {
+                                        text: modelData.name
+                                        color: root.selectedSlot === modelData.id ? "#FFFFFF" : root.textPrimary
+                                        font.pixelSize: 9
+                                        font.weight: Font.DemiBold
                                     }
 
-                                    RowLayout {
-                                        anchors.fill: parent
-                                        anchors.leftMargin: 11
-                                        anchors.rightMargin: 9
-                                        spacing: 10
-
-                                        Rectangle {
-                                            Layout.preferredWidth: 34
-                                            Layout.preferredHeight: 34
-                                            radius: 11
-                                            color: "#FFFFFF"
-                                            border.width: 1
-                                            border.color: selected ? root.borderStrong : root.border
-
-                                            Image {
-                                                anchors.centerIn: parent
-                                                width: 17
-                                                height: 17
-                                                sourceSize.width: width
-                                                sourceSize.height: height
-                                                fillMode: Image.PreserveAspectFit
-                                                asynchronous: true
-                                                smooth: true
-                                                mipmap: true
-                                                cache: false
-                                                source: root.generatedIconPath(modelData.id)
-                                            }
-                                        }
-
-                                        ColumnLayout {
-                                            Layout.fillWidth: true
-                                            spacing: 2
-
-                                            Text {
-                                                text: (index + 1).toString().padStart(2, "0") + "  " + modelData.name
-                                                color: root.textPrimary
-                                                font.pixelSize: 8
-                                                font.weight: Font.DemiBold
-                                            }
-
-                                            Text {
-                                                text: modelData.description
-                                                color: root.textMuted
-                                                font.pixelSize: 6.5
-                                                elide: Text.ElideRight
-                                            }
-                                        }
-                                    }
-
-                                    MouseArea {
-                                        id: slotMouse
-                                        anchors.fill: parent
-                                        hoverEnabled: true
-                                        cursorShape: Qt.PointingHandCursor
-                                        onClicked: root.selectWorkspace(modelData.id)
+                                    Text {
+                                        text: modelData.description
+                                        color: root.selectedSlot === modelData.id ? "#9CA6B2" : root.textMuted
+                                        font.pixelSize: 7
+                                        elide: Text.ElideRight
                                     }
                                 }
                             }
+
+                            MouseArea {
+                                id: slotMouse
+                                anchors.fill: parent
+                                hoverEnabled: true
+                                cursorShape: Qt.PointingHandCursor
+                                onClicked: root.selectedSlot = modelData.id
+                            }
                         }
                     }
 
+                    Item { Layout.fillHeight: true }
+
                     Text {
-                        Layout.fillWidth: true
-                        text: root.workspaceCount >= 9
-                            ? "MAXIMUM WORKSPACES"
-                            : "USE + / − TO CHANGE WORKSPACE COUNT"
+                        Layout.leftMargin: 7
+                        text: "CHANGES APPLY INSTANTLY"
                         color: root.textMuted
                         font.pixelSize: 6
                         font.weight: Font.DemiBold
-                        font.letterSpacing: 0.6
-                        horizontalAlignment: Text.AlignHCenter
+                        font.letterSpacing: 0.7
                     }
                 }
             }
@@ -638,37 +579,37 @@ Item {
                 Layout.fillWidth: true
                 Layout.fillHeight: true
                 radius: 17
-                color: root.panel
+                color: "#FBFCFD"
                 border.width: 1
                 border.color: root.border
 
                 ColumnLayout {
                     anchors.fill: parent
-                    anchors.margins: 15
-                    spacing: 8
+                    anchors.margins: 17
+                    spacing: 9
 
                     RowLayout {
                         Layout.fillWidth: true
-                        spacing: 10
+                        spacing: 12
 
                         Rectangle {
-                            Layout.preferredWidth: 48
-                            Layout.preferredHeight: 48
+                            Layout.preferredWidth: 46
+                            Layout.preferredHeight: 46
                             radius: 13
                             color: "#FFFFFF"
                             border.width: 1
-                            border.color: root.borderStrong
+                            border.color: root.border
 
                             Image {
                                 anchors.centerIn: parent
-                                width: 23
-                                height: 23
+                                width: 22
+                                height: 22
                                 sourceSize.width: width
                                 sourceSize.height: height
                                 fillMode: Image.PreserveAspectFit
-                                asynchronous: true
                                 smooth: true
                                 mipmap: true
+                                asynchronous: true
                                 cache: false
                                 source: root.generatedIconPath(root.selectedSlot)
                             }
@@ -683,26 +624,26 @@ Item {
                                 color: root.textPrimary
                                 font.pixelSize: 13
                                 font.weight: Font.DemiBold
-                                font.letterSpacing: 0.9
+                                font.letterSpacing: 1
                             }
 
                             Text {
                                 text: root.settingFor(root.selectedSlot).icon
                                     .replace(".svg", "")
+                                    .replace("lucide-", "")
                                     .toUpperCase()
-                                    + " • "
-                                    + root.settingFor(root.selectedSlot).color.toUpperCase()
+                                    + " • " + root.settingFor(root.selectedSlot).color.toUpperCase()
                                 color: root.textSecondary
-                                font.pixelSize: 7
+                                font.pixelSize: 8
                                 font.weight: Font.Medium
                             }
                         }
 
                         Rectangle {
-                            Layout.preferredWidth: 74
+                            Layout.preferredWidth: 78
                             Layout.preferredHeight: 30
                             radius: 10
-                            color: resetMouse.containsMouse ? root.panelHover : "#FFFFFF"
+                            color: resetMouse.containsMouse ? "#EEF1F4" : "#FFFFFF"
                             border.width: 1
                             border.color: root.borderStrong
 
@@ -710,7 +651,7 @@ Item {
                                 anchors.centerIn: parent
                                 text: "RESET"
                                 color: root.textPrimary
-                                font.pixelSize: 9
+                                font.pixelSize: 7
                                 font.weight: Font.DemiBold
                                 font.letterSpacing: 0.9
                             }
@@ -725,157 +666,154 @@ Item {
                         }
                     }
 
-                    Rectangle {
+                    RowLayout {
                         Layout.fillWidth: true
-                        Layout.preferredHeight: 34
-                        radius: 10
-                        color: "#FFFFFF"
-                        border.width: 1
-                        border.color: root.borderStrong
+                        spacing: 6
 
                         Text {
-                            anchors.left: parent.left
-                            anchors.leftMargin: 11
-                            anchors.verticalCenter: parent.verticalCenter
-                            text: "Search Lucide icons"
+                            text: "ICON"
                             color: root.textMuted
-                            font.pixelSize: 8
-                            visible: iconSearchInput.text.length === 0 && !iconSearchInput.activeFocus
-                        }
-
-                        TextInput {
-                            id: iconSearchInput
-                            anchors.fill: parent
-                            anchors.leftMargin: 11
-                            anchors.rightMargin: 11
-                            color: root.textPrimary
-                            selectionColor: "#DCE2E7"
-                            selectedTextColor: root.textPrimary
-                            font.pixelSize: 8
-                            verticalAlignment: Text.AlignVCenter
-                            clip: true
-                            text: root.iconSearch
-                            selectByMouse: true
-
-                            onTextChanged: root.iconSearch = text
-                        }
-
-                        Text {
-                            anchors.right: parent.right
-                            anchors.rightMargin: 10
-                            anchors.verticalCenter: parent.verticalCenter
-                            text: root.filteredIconChoices.length + " / " + root.iconChoices.length
-                            color: root.textMuted
-                            font.pixelSize: 6.5
+                            font.pixelSize: 7
                             font.weight: Font.DemiBold
+                            font.letterSpacing: 1.0
+                        }
+
+                        Rectangle {
+                            Layout.fillWidth: true
+                            height: 32
+                            radius: 9
+                            color: "#FFFFFF"
+                            border.width: 1
+                            border.color: root.borderStrong
+
+                            TextInput {
+                                anchors.fill: parent
+                                anchors.leftMargin: 10
+                                anchors.rightMargin: 56
+                                color: root.textPrimary
+                                font.pixelSize: 8
+                                verticalAlignment: Text.AlignVCenter
+                                text: root.iconSearch
+                                selectByMouse: true
+                                onTextChanged: root.iconSearch = text
+                            }
+
+                            Text {
+                                anchors.right: parent.right
+                                anchors.rightMargin: 10
+                                anchors.verticalCenter: parent.verticalCenter
+                                text: (root.iconSearch.length ? root.filteredIconChoices.length : 42) + " / 113"
+                                color: root.textMuted
+                                font.pixelSize: 6.5
+                                font.weight: Font.DemiBold
+                            }
                         }
                     }
 
-                    GridView {
+                    Flickable {
                         id: iconScroll
                         Layout.fillWidth: true
-                        Layout.fillHeight: true
+                        Layout.preferredHeight: 248
                         clip: true
-                        cellWidth: Math.max(82, width / 7)
-                        cellHeight: 62
-                        model: root.filteredIconChoices
-                        boundsBehavior: Flickable.StopAtBounds
-                        cacheBuffer: 124
+                        contentWidth: width
+                        contentHeight: iconGrid.height
 
-                        delegate: Rectangle {
-                            width: iconScroll.cellWidth - 6
-                            height: iconScroll.cellHeight - 6
-                            radius: 11
+                        GridLayout {
+                            id: iconGrid
 
-                            property var iconData: modelData
-                            property bool selected:
-                                root.settingFor(root.selectedSlot).icon === iconData.id
+                            width: iconScroll.width
+                            height: Math.ceil(root.filteredIconChoices.length / 6) * 57
+                                + Math.max(0, Math.ceil(root.iconChoices.length / 6) - 1) * 7
+                            columns: 6
+                            rowSpacing: 7
+                            columnSpacing: 7
 
-                            color: selected ? root.selectedBackground
-                                : (iconMouse.containsMouse ? root.panelHover : "#FFFFFF")
-                            border.width: selected ? 1.5 : 1
-                            border.color: selected ? root.accent : root.border
+                            Repeater {
+                                model: root.filteredIconChoices
 
-                            Column {
-                                anchors.centerIn: parent
-                                spacing: 4
+                                delegate: Rectangle {
+                                    Layout.preferredWidth: (iconGrid.width - 35) / 6
+                                    Layout.preferredHeight: 57
+                                    radius: 12
+                                    color: root.settingFor(root.selectedSlot).icon === modelData.id
+                                        ? "#111318"
+                                        : (iconMouse.containsMouse ? root.cardHover : "#FFFFFF")
+                                    border.width: root.settingFor(root.selectedSlot).icon === modelData.id ? 1.3 : 1
+                                    border.color: root.settingFor(root.selectedSlot).icon === modelData.id
+                                        ? "#111318" : root.border
 
-                                Image {
-                                    anchors.horizontalCenter: parent.horizontalCenter
-                                    width: 22
-                                    height: 22
-                                    sourceSize.width: width
-                                    sourceSize.height: height
-                                    fillMode: Image.PreserveAspectFit
-                                    asynchronous: true
-                                    smooth: true
-                                    mipmap: true
-                                    source: Qt.resolvedUrl("../assets/icons/" + iconData.id)
+                                    Column {
+                                        anchors.centerIn: parent
+                                        spacing: 3
+
+                                        Image {
+                                            anchors.horizontalCenter: parent.horizontalCenter
+                                            width: 20
+                                            height: 20
+                                            sourceSize.width: width
+                                            sourceSize.height: height
+                                            fillMode: Image.PreserveAspectFit
+                                            smooth: true
+                                            mipmap: true
+                                            asynchronous: true
+                                            cache: false
+                                            source: Qt.resolvedUrl("../assets/icons/" + modelData.id)
+                                        }
+
+                                        Text {
+                                            width: 58
+                                            horizontalAlignment: Text.AlignHCenter
+                                            text: modelData.name
+                                            color: root.settingFor(root.selectedSlot).icon === modelData.id
+                                                ? "#FFFFFF" : root.textSecondary
+                                            font.pixelSize: 6
+                                            font.weight: root.settingFor(root.selectedSlot).icon === modelData.id
+                                                ? Font.DemiBold : Font.Normal
+                                            elide: Text.ElideRight
+                                        }
+                                    }
+
+                                    MouseArea {
+                                        id: iconMouse
+                                        anchors.fill: parent
+                                        hoverEnabled: true
+                                        cursorShape: Qt.PointingHandCursor
+                                        onClicked: root.patch({ icon: modelData.id })
+                                    }
                                 }
-
-                                Text {
-                                    width: parent.width + 12
-                                    horizontalAlignment: Text.AlignHCenter
-                                    text: iconData.name
-                                    color: root.textSecondary
-                                    font.pixelSize: 7
-                                    font.weight: selected ? Font.DemiBold : Font.Normal
-                                    elide: Text.ElideRight
-                                }
-                            }
-
-                            MouseArea {
-                                id: iconMouse
-                                anchors.fill: parent
-                                hoverEnabled: true
-                                cursorShape: Qt.PointingHandCursor
-                                onClicked: root.patch({ icon: iconData.id })
                             }
                         }
+                    }
+
+                    Text {
+                        text: "COLOR"
+                        color: root.textMuted
+                        font.pixelSize: 7
+                        font.weight: Font.DemiBold
+                        font.letterSpacing: 1.0
                     }
 
                     RowLayout {
                         Layout.fillWidth: true
                         spacing: 7
 
-                        Text {
-                            text: "COLOR"
-                            color: root.textMuted
-                            font.pixelSize: 7
-                            font.weight: Font.DemiBold
-                            font.letterSpacing: 0.9
-                        }
-
-                        Text {
-                            Layout.fillWidth: true
-                            text: root.settingFor(root.selectedSlot).color.toUpperCase()
-                            color: root.textSecondary
-                            font.pixelSize: 7
-                            font.weight: Font.Medium
-                            elide: Text.ElideRight
-                        }
-                    }
-
-                    RowLayout {
-                        Layout.fillWidth: true
-                        spacing: 6
-
                         Repeater {
                             model: root.colorChoices
 
                             delegate: Rectangle {
-                                Layout.preferredWidth: 27
-                                Layout.preferredHeight: 27
+                                Layout.preferredWidth: 29
+                                Layout.preferredHeight: 29
                                 radius: 9
                                 color: "#FFFFFF"
-                                border.width: 1
+                                border.width: root.settingFor(root.selectedSlot).color.toUpperCase() === modelData.id.toUpperCase()
+                                    ? 1.5 : 1
                                 border.color: root.settingFor(root.selectedSlot).color.toUpperCase() === modelData.id.toUpperCase()
                                     ? root.accent : root.border
 
                                 Rectangle {
                                     anchors.centerIn: parent
-                                    width: 15
-                                    height: 15
+                                    width: 16
+                                    height: 16
                                     radius: 8
                                     color: modelData.id
                                 }
@@ -893,9 +831,9 @@ Item {
 
                     Text {
                         Layout.fillWidth: true
-                        text: "Selected states stay light so the Lucide glyph remains fully visible."
+                        text: "The selected icon and color are used directly by the right-side navbar."
                         color: root.textMuted
-                        font.pixelSize: 8
+                        font.pixelSize: 7
                         wrapMode: Text.WordWrap
                     }
                 }
