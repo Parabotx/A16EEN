@@ -161,6 +161,10 @@ set_count() {
     validate_count "$new_count"
 
     [[ -f "$CONFIG_FILE" ]] || die "Niri config was not found at $CONFIG_FILE."
+    grep -Fqx '// A16EEN WORKSPACES BEGIN' "$CONFIG_FILE" || die "Niri config is missing A16EEN workspace markers."
+    grep -Fqx '// A16EEN WORKSPACES END' "$CONFIG_FILE" || die "Niri config is missing A16EEN workspace markers."
+    grep -Fqx '// A16EEN WORKSPACE BINDS BEGIN' "$CONFIG_FILE" || die "Niri config is missing A16EEN workspace bind markers."
+    grep -Fqx '// A16EEN WORKSPACE BINDS END' "$CONFIG_FILE" || die "Niri config is missing A16EEN workspace bind markers."
 
     local old_count
     old_count="$(configured_count)"
