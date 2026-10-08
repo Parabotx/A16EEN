@@ -87,6 +87,8 @@ generate_icon() {
     chmod 644 "$output"
 }
 
+
+
 main() {
     ensure_settings
     mkdir -p "$OUTPUT_DIR"
@@ -96,6 +98,7 @@ main() {
         generate_icon "$slot"
     done
 
+    touch "$OUTPUT_DIR/ready"
     echo "A16EEN navbar icons generated."
 }
 
