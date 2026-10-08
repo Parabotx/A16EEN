@@ -28,14 +28,14 @@ Item {
     readonly property string settingsPath: root.stateDir + "/navbar.json"
 
 
-    readonly property color page: "#0B0C0F"
-    readonly property color card: "#15171B"
-    readonly property color cardHover: "#20242A"
-    readonly property color border: "#2B3038"
-    readonly property color borderStrong: "#3A414B"
-    readonly property color textPrimary: "#F5F7FA"
-    readonly property color textSecondary: "#AEB6C2"
-    readonly property color textMuted: "#7D8794"
+    readonly property color page: "#20252C"
+    readonly property color card: "#2B313A"
+    readonly property color cardHover: "#3B434E"
+    readonly property color border: "#46515E"
+    readonly property color borderStrong: "#667384"
+    readonly property color textPrimary: "#F4F6F9"
+    readonly property color textSecondary: "#C4CDD8"
+    readonly property color textMuted: "#98A4B2"
     readonly property color accent: "#3B82F6"
 
     readonly property var slots: [
@@ -178,7 +178,7 @@ Item {
     function resetSelected() {
         root.patch({
             icon: root.defaultIcon(root.selectedSlot),
-            color: "#111318"
+            color: "#2B313A"
         })
     }
 
@@ -329,7 +329,7 @@ Item {
                             Layout.preferredHeight: 62
                             radius: 13
                             color: root.selectedSlot === modelData.id
-                                ? "#252A32"
+                                ? "#3C4652"
                                 : (slotMouse.containsMouse ? root.cardHover : "transparent")
 
                             RowLayout {
@@ -342,9 +342,9 @@ Item {
                                     Layout.preferredWidth: 36
                                     Layout.preferredHeight: 36
                                     radius: 11
-                                    color: root.selectedSlot === modelData.id ? "#303742" : "#15171B"
+                                    color: root.selectedSlot === modelData.id ? "#515D6A" : "#323943"
                                     border.width: 1
-                                    border.color: root.selectedSlot === modelData.id ? "#46505E" : root.border
+                                    border.color: root.selectedSlot === modelData.id ? "#728092" : root.border
 
                                     NavbarIcon {
                                         anchors.centerIn: parent
@@ -422,7 +422,7 @@ Item {
                             Layout.preferredWidth: 46
                             Layout.preferredHeight: 46
                             radius: 13
-                            color: "#15171B"
+                            color: "#323943"
                             border.width: 1
                             border.color: root.border
 
@@ -465,7 +465,7 @@ Item {
                             Layout.preferredWidth: 78
                             Layout.preferredHeight: 30
                             radius: 10
-                            color: resetMouse.containsMouse ? "#20242A" : "#15171B"
+                            color: resetMouse.containsMouse ? "#3B434E" : "#323943"
                             border.width: 1
                             border.color: root.borderStrong
 

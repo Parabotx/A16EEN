@@ -21,12 +21,12 @@ Item {
     readonly property string layoutPath: root.stateDir + "/navbar-layout.json"
 
     readonly property color panel: "#F4F6F8"
-    readonly property color border: "#CBD3DB"
-    readonly property color borderStrong: "#9AA6B2"
-    readonly property color text: "#111318"
-    readonly property color muted: "#64748B"
-    readonly property color hover: "#E7EBEF"
-    readonly property color selected: "#E2E8F0"
+    readonly property color border: "#46515E"
+    readonly property color borderStrong: "#667384"
+    readonly property color text: "#F4F6F9"
+    readonly property color muted: "#98A4B2"
+    readonly property color hover: "#3B434E"
+    readonly property color selected: "#515D6A"
 
     function loadPosition(raw) {
         try {
@@ -79,7 +79,7 @@ Item {
     Rectangle {
         anchors.fill: parent
         radius: 12
-        color: "#FBFCFD"
+        color: "#262C34"
         border.width: 1
         border.color: root.border
 
@@ -92,7 +92,7 @@ Item {
                 width: 88
                 height: parent.height
                 verticalAlignment: Text.AlignVCenter
-                text: "PLACEMENT"
+                text: "NAVBAR PLACEMENT"
                 color: root.muted
                 font.pixelSize: 7
                 font.weight: Font.DemiBold
@@ -101,18 +101,18 @@ Item {
 
             Repeater {
                 model: [
-                    { id: "left", name: "LEFT", icon: "menu.svg" },
-                    { id: "right", name: "RIGHT", icon: "menu.svg" },
-                    { id: "top", name: "TOP", icon: "monitor.svg" },
-                    { id: "bottom", name: "BOTTOM", icon: "monitor.svg" }
+                    { id: "left", name: "LEFT", glyph: "←" },
+                    { id: "right", name: "RIGHT", glyph: "→" },
+                    { id: "top", name: "TOP", glyph: "↑" },
+                    { id: "bottom", name: "BOTTOM", glyph: "↓" }
                 ]
 
                 delegate: Rectangle {
                     width: (parent.width - 109) / 4
                     height: 32
                     radius: 9
-                    color: root.position === modelData.id ? root.text
-                        : (placementMouse.containsMouse ? root.hover : "#FFFFFF")
+                    color: root.position === modelData.id ? "#F4F6F9"
+                        : (placementMouse.containsMouse ? root.hover : "#323943")
                     border.width: 1
                     border.color: root.position === modelData.id
                         ? root.text : root.border
@@ -121,20 +121,16 @@ Item {
                         anchors.centerIn: parent
                         spacing: 6
 
-                        Image {
-                            width: 14
-                            height: 14
-                            sourceSize.width: width
-                            sourceSize.height: height
-                            fillMode: Image.PreserveAspectFit
-                            asynchronous: true
-                            source: Qt.resolvedUrl("../assets/icons/" + modelData.icon)
-                            opacity: root.position === modelData.id ? 1 : 0.7
+                        Text {
+                            text: modelData.glyph
+                            color: root.position === modelData.id ? "#1A1E23" : root.text
+                            font.pixelSize: 14
+                            font.weight: Font.DemiBold
                         }
 
                         Text {
                             text: modelData.name
-                            color: root.position === modelData.id ? "#FFFFFF" : root.text
+                            color: root.position === modelData.id ? "#1A1E23" : root.text
                             font.pixelSize: 7
                             font.weight: Font.DemiBold
                         }
