@@ -394,14 +394,27 @@ fi
 # Never trust the ready marker when one of the live workspace SVGs is
 # missing, invalid, or still rendered white. This catches stale files left by
 # older navbar-renderer revisions.
-# Gradient icons encode visible paint in stop-color values, so checking only
-# the stroke attribute can miss a valid SVG whose entire gradient is white.
+# Gradient icons encode visible paint in stop-color values. Treat a gradient
+# as unhealthy only when every stop is white; white-to-color gradients are valid.
 NAVBAR_ASSETS_HEALTHY=1
 for slot in home code web comms studio music; do
     generated="$STATE_DIR/navbar-icons/$slot.svg"
+    GRADIENT_ALL_WHITE=0
+    if grep -q 'stop-color=' "$generated" 2>/dev/null; then
+        GRADIENT_ALL_WHITE=1
+        while IFS= read -r stop; do
+            value="${stop#stop-color=\"}"
+            value="${value%\"}"
+            case "$(printf '%s' "$value" | tr '[:lower:]' '[:upper:]')" in
+                WHITE|#FFFFFF|#FFFFFFFF) ;;
+                *) GRADIENT_ALL_WHITE=0; break ;;
+            esac
+        done < <(grep -Eo 'stop-color="[^"]+"' "$generated" || true)
+    fi
+
     if [ ! -s "$generated" ] || ! grep -q '<svg' "$generated" \
        || grep -Eiq 'stroke="(white|#fff([0-9a-f]{2})?|#ffffff([0-9a-f]{2})?)"' "$generated" \
-       || grep -Eiq 'stop-color="(white|#fff([0-9a-f]{2})?|#ffffff([0-9a-f]{2})?)"' "$generated"; then
+       || [ "$GRADIENT_ALL_WHITE" -eq 1 ]; then
         NAVBAR_ASSETS_HEALTHY=0
         break
     fi
