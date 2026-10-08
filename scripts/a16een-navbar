@@ -86,7 +86,7 @@ prune_inactive_slots() {
 
         [[ -s "$SETTINGS_FILE" ]] || continue
         tmp="$(mktemp "$STATE_DIR/navbar.json.XXXXXX")"
-        jq --arg slot "$slot" "del(.[$slot])" "$SETTINGS_FILE" > "$tmp"
+        jq --arg slot "$slot" 'del(.[$slot])' "$SETTINGS_FILE" > "$tmp"
         mv -f "$tmp" "$SETTINGS_FILE"
     done
 }
