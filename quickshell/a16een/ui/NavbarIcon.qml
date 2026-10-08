@@ -32,7 +32,7 @@ Item {
         if (root.iconName.length)
             return root.iconName
 
-        const path = String(root.fallbackIconPath || root.iconPath || "")
+        const path = String(root.iconPath || root.fallbackIconPath || "")
         const marker = "/assets/icons/"
         const index = path.lastIndexOf(marker)
         if (index >= 0)
