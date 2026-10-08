@@ -101,6 +101,17 @@ ensure_desktop_session() {
     fi
 }
 
+indicator_ipc() {
+    local kind="$1"
+    local config_dir="${XDG_CONFIG_HOME:-$HOME/.config}/a16een/quickshell/a16een"
+
+    [[ "${XDG_CURRENT_DESKTOP:-}" == "A16EEN" ]] || return 0
+    command -v qs >/dev/null 2>&1 || return 0
+
+    qs -c "$config_dir" ipc call control-indicator "$kind" >/dev/null 2>&1 || true
+}
+
+
 confirm_destructive() {
     local action="$1"
     local assume_yes="$2"
@@ -277,9 +288,17 @@ case "$command" in
         [[ $# -eq 1 ]] || die "usage: a16een volume up|down|mute"
         require_cmd wpctl
         case "$1" in
-            up) exec wpctl set-volume @DEFAULT_AUDIO_SINK@ 5%+ -l 1.0 ;;
-            down) exec wpctl set-volume @DEFAULT_AUDIO_SINK@ 5%- ;;
-            mute) exec wpctl set-mute @DEFAULT_AUDIO_SINK@ toggle ;;
+            up)
+                wpctl set-volume @DEFAULT_AUDIO_SINK@ 5%+ -l 1.0
+                indicator_ipc volume
+                ;;
+            down)
+                wpctl set-volume @DEFAULT_AUDIO_SINK@ 5%-
+                indicator_ipc volume
+                ;;
+            mute)
+                wpctl set-mute @DEFAULT_AUDIO_SINK@ toggle
+                ;;
             *) die "usage: a16een volume up|down|mute" ;;
         esac
         ;;
@@ -288,8 +307,14 @@ case "$command" in
         [[ $# -eq 1 ]] || die "usage: a16een brightness up|down"
         require_cmd brightnessctl
         case "$1" in
-            up) exec brightnessctl set +10% ;;
-            down) exec brightnessctl set 10%- ;;
+            up)
+                brightnessctl set +10%
+                indicator_ipc brightness
+                ;;
+            down)
+                brightnessctl set 10%-
+                indicator_ipc brightness
+                ;;
             *) die "usage: a16een brightness up|down" ;;
         esac
         ;;
