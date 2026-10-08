@@ -172,6 +172,11 @@ add_workspace() {
         die "a workspace named '$display_name' already exists."
     fi
 
+    if niri msg -j workspaces 2>/dev/null |
+        jq -e --arg id "$id" '.[] | select(.name == $id)' >/dev/null 2>&1; then
+        die "Niri already has a workspace named '$display_name'."
+    fi
+
     # Niri always keeps an empty workspace at the bottom. Focus it, then give it
     # a persistent name through IPC. This avoids rewriting/reloading the config.
     niri msg action focus-workspace 999 >/dev/null 2>&1 ||
@@ -237,8 +242,9 @@ remove_workspace() {
 }
 
 apply_registry() {
-    # Compatibility entry point. The registry is already live through Niri IPC.
-    ensure_registry
+    # Recreate any A16EEN workspaces that are persisted in the registry but
+    # are not currently named in the running Niri session.
+    restore_registry
 }
 
 case "${1:-current}" in
