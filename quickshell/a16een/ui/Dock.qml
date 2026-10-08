@@ -258,7 +258,29 @@ PanelWindow {
     }
 
     function focusWorkspace(name) {
-        Quickshell.execDetached(["niri", "msg", "action", "focus-workspace", name])
+        const target = String(name || "").trim()
+        if (!target.length)
+            return
+
+        // Focus named workspaces directly. When a workspace was left unnamed
+        // by an older session/config migration, restore the A16EEN registry
+        // first and then retry the focus action.
+        const command = [
+            "/bin/sh",
+            "-c",
+            'target="$1"; ' +
+            'if niri msg -j workspaces 2>/dev/null | jq -e --arg name "$target" ' +
+            ''any(.[]; .name == $name)' >/dev/null 2>&1; then ' +
+            'niri msg action focus-workspace "$target"; ' +
+            'else ' +
+            'a16een-workspaces apply >/dev/null 2>&1 && ' +
+            'niri msg action focus-workspace "$target"; ' +
+            'fi',
+            "a16een-focus-workspace",
+            target
+        ]
+
+        Quickshell.execDetached(command)
     }
 
     function contentValue(id) {
