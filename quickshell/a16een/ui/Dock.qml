@@ -461,8 +461,9 @@ PanelWindow {
         anchors.bottom: root.horizontalNavbar && root.navbarPosition === "bottom"
         width: root.horizontalNavbar ? parent.width : 8
         height: root.horizontalNavbar ? 8 : parent.height
-        // Keep the reveal trigger confined to the 8px screen edge for
-        // vertical layouts. Workspace buttons are explicitly above it.
+        // Only participate in pointer input while the navbar itself is
+        // hidden. When visible, workspace buttons own the hit testing.
+        enabled: !root.dockVisible
         hoverEnabled: true
         acceptedButtons: Qt.NoButton
         z: 0
