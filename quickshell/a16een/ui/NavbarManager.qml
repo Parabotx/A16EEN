@@ -271,7 +271,8 @@ Item {
     }
 
     function openRemoveWorkspace() {
-        if (root.slots.length <= 2)
+        const entry = root.selectedWorkspaceEntry()
+        if (!entry || entry.builtin || root.workspaceProcess.running)
             return
         root.removeWorkspaceOpen = true
         root.addWorkspaceOpen = false
@@ -284,7 +285,8 @@ Item {
     }
 
     function submitRemoveWorkspace() {
-        if (root.slots.length <= 2)
+        const entry = root.selectedWorkspaceEntry()
+        if (!entry || entry.builtin || root.workspaceProcess.running)
             return
         root.workspaceStatus = "REMOVING..."
         workspaceOperation = "remove"
@@ -305,6 +307,13 @@ Item {
         } catch (error) {
             // Keep the last valid registry in memory during an atomic file update.
         }
+    }
+
+    function selectedWorkspaceEntry() {
+        for (const entry of root.slots)
+            if (entry.id === root.selectedSlot)
+                return entry
+        return null
     }
 
     function settingFor(slot) {
@@ -730,10 +739,14 @@ Item {
 
                             Rectangle {
                                 width: 68; height: 30; radius: 9
-                                color: root.slots.length <= 2 ? root.panel : "#FFFFFF"
+                                readonly property bool removable: {
+                                    const entry = root.selectedWorkspaceEntry()
+                                    return !!entry && !entry.builtin
+                                }
+                                color: removable ? "#FFFFFF" : root.panel
                                 border.width: 1
-                                border.color: root.slots.length <= 2 ? root.border : "#F2B8B5"
-                                opacity: root.slots.length <= 2 ? 0.45 : 1
+                                border.color: removable ? "#F2B8B5" : root.border
+                                opacity: removable ? 1 : 0.45
                                 Text {
                                     anchors.centerIn: parent
                                     text: "REMOVE"
@@ -744,7 +757,10 @@ Item {
                                 MouseArea {
                                     anchors.fill: parent
                                     cursorShape: Qt.PointingHandCursor
-                                    enabled: root.slots.length > 2 && !root.workspaceProcess.running
+                                    enabled: {
+                                        const entry = root.selectedWorkspaceEntry()
+                                        return !!entry && !entry.builtin && !root.workspaceProcess.running
+                                    }
                                     onClicked: root.openRemoveWorkspace()
                                 }
                             }
