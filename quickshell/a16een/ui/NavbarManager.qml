@@ -6,6 +6,7 @@ Item {
     id: root
 
     property bool active: false
+    property int activeSection: 0
     property int workspaceCount: 6
     property string selectedSlot: "home"
     property string iconSearch: ""
@@ -42,6 +43,13 @@ Item {
     readonly property color muted: "#64748B"
     readonly property color hover: "#E7EBEF"
     readonly property color selected: "#E2E8F0"
+
+    readonly property var sectionTabs: [
+        { id: 0, title: "WORKSPACE STUDIO", subtitle: "Workspaces & icons", icon: "layers.svg" },
+        { id: 1, title: "LAYOUT & POSITION", subtitle: "Where the navbar lives", icon: "sliders-horizontal.svg" },
+        { id: 2, title: "NAVBAR CONTENT", subtitle: "Time, battery & status", icon: "settings.svg" },
+        { id: 3, title: "APPEARANCE", subtitle: "Color & design", icon: "palette.svg" }
+    ]
 
     property var slots: [
         { id: "home", name: "HOME", description: "Main workspace", defaultIcon: "house.svg", icon: "house.svg" },
@@ -582,7 +590,84 @@ Item {
 
         Row {
             width: parent.width
-            height: parent.height - 54
+            height: 46
+            spacing: 7
+
+            Repeater {
+                model: root.sectionTabs
+
+                delegate: Rectangle {
+                    required property var modelData
+                    width: (parent.width - 21) / 4
+                    height: 46
+                    radius: 12
+                    color: root.activeSection === modelData.id ? root.text : root.panel
+                    border.width: 1
+                    border.color: root.activeSection === modelData.id ? root.text : root.border
+
+                    Row {
+                        anchors.fill: parent
+                        anchors.margins: 8
+                        spacing: 8
+
+                        Rectangle {
+                            width: 30
+                            height: 30
+                            radius: 9
+                            anchors.verticalCenter: parent.verticalCenter
+                            color: root.activeSection === modelData.id ? "#25282E" : "#FFFFFF"
+                            border.width: 1
+                            border.color: root.activeSection === modelData.id ? "#383D46" : root.border
+
+                            Image {
+                                anchors.centerIn: parent
+                                width: 16
+                                height: 16
+                                sourceSize.width: width
+                                sourceSize.height: height
+                                fillMode: Image.PreserveAspectFit
+                                asynchronous: true
+                                source: Qt.resolvedUrl("../assets/icons/" + modelData.icon)
+                            }
+                        }
+
+                        Column {
+                            width: parent.width - 38
+                            anchors.verticalCenter: parent.verticalCenter
+                            spacing: 2
+
+                            Text {
+                                width: parent.width
+                                text: modelData.title
+                                color: root.activeSection === modelData.id ? "#FFFFFF" : root.text
+                                font.pixelSize: 7
+                                font.weight: Font.DemiBold
+                                elide: Text.ElideRight
+                            }
+
+                            Text {
+                                width: parent.width
+                                text: modelData.subtitle
+                                color: root.activeSection === modelData.id ? "#AAB2BC" : root.muted
+                                font.pixelSize: 5.5
+                                elide: Text.ElideRight
+                            }
+                        }
+                    }
+
+                    MouseArea {
+                        anchors.fill: parent
+                        cursorShape: Qt.PointingHandCursor
+                        onClicked: root.activeSection = modelData.id
+                    }
+                }
+            }
+        }
+
+        Row {
+            width: parent.width
+            height: root.activeSection === 0 ? parent.height - 100 : 0
+            visible: root.activeSection === 0
             spacing: 12
 
             Rectangle {
@@ -1027,6 +1112,37 @@ Item {
         }
     }
 
+
+        NavbarLayoutSection {
+            width: parent.width
+            height: root.activeSection === 1 ? parent.height - 100 : 0
+            visible: root.activeSection === 1
+            active: root.active && root.activeSection === 1
+            stateDir: root.stateDir
+        }
+
+        NavbarContentSection {
+            width: parent.width
+            height: root.activeSection === 2 ? parent.height - 100 : 0
+            visible: root.activeSection === 2
+            active: root.active && root.activeSection === 2
+            stateDir: root.stateDir
+        }
+
+        NavbarAppearanceSection {
+            width: parent.width
+            height: root.activeSection === 3 ? parent.height - 100 : 0
+            visible: root.activeSection === 3
+            active: root.active && root.activeSection === 3
+            selectedSlot: root.selectedSlot
+            selectedIcon: root.settingFor(root.selectedSlot).icon
+            selectedStyle: root.settingFor(root.selectedSlot).color
+            colors: root.colors
+            styleChoices: root.styleChoices
+            onIconStyleSelected: root.applyStyle(style)
+            onColorSelected: root.applyColor(color)
+        }
+
     Rectangle {
         visible: root.addWorkspaceOpen || root.removeWorkspaceOpen
         anchors.fill: parent
@@ -1370,6 +1486,7 @@ Item {
 
     onActiveChanged: {
         if (root.active) {
+            root.activeSection = 0
             workspaceRegistryFile.reload()
             settingsFile.reload()
         }
