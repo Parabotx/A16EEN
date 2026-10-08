@@ -138,6 +138,17 @@ PanelWindow {
         onFileChanged: root.loadNavbarPosition(this.text())
     }
 
+    // FileView change notifications can be coalesced by the compositor/runtime.
+    // A lightweight refresh keeps repeated placement changes responsive without
+    // touching the navbar rendering path.
+    Timer {
+        id: navbarLayoutRefresh
+        interval: 250
+        repeat: true
+        running: true
+        onTriggered: navbarLayoutFile.reload()
+    }
+
     screen: modelData
     color: "transparent"
     aboveWindows: true
