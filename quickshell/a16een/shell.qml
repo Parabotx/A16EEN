@@ -409,14 +409,14 @@ ShellRoot {
     IpcHandler {
         target: "control-indicator"
 
-        function volume(): void {
+        function volume(level: real): void {
             if (root.primaryScreen)
-                controlIndicator.showVolume()
+                controlIndicator.showLevel(level)
         }
 
-        function brightness(): void {
+        function brightness(level: real): void {
             if (root.primaryScreen)
-                controlIndicator.showBrightness()
+                controlIndicator.showLevel(level)
         }
     }
 
