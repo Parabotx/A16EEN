@@ -70,22 +70,25 @@ cleanup() {
 }
 trap cleanup EXIT INT TERM
 
+successful=0
+
 for icon in "${ICONS[@]}"; do
     target="$tmp_dir/$icon"
 
-    if ! curl -fsSL \
-        --proto '=https' \
-        --tlsv1.2 \
-        "${ICON_BASE_URL}/${icon}" \
-        -o "$target"; then
-        echo "A16EEN icon sync failed while downloading $icon." >&2
-        echo "Keeping the previous icon set." >&2
-        exit 0
+    if ! curl -fsSL         --proto '=https'         --tlsv1.2         "${ICON_BASE_URL}/${icon}"         -o "$target"; then
+        echo "A16EEN icon sync skipped unavailable icon: $icon." >&2
+        rm -f "$target"
+        continue
     fi
 
-    # A16EEN's dock uses a monochrome icon language. Normalize Lucide's
-    # currentColor stroke to the same black fallback during synchronization.
+    if ! grep -q '<svg' "$target"; then
+        echo "A16EEN icon sync skipped invalid SVG: $icon." >&2
+        rm -f "$target"
+        continue
+    fi
+
     sed -i 's/stroke="currentColor"/stroke="#111111"/g' "$target"
+    successful=$((successful + 1))
 done
 
 mkdir -p "$ICON_ROOT"
