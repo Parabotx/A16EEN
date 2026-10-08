@@ -3,7 +3,6 @@ set -euo pipefail
 
 readonly STATE_DIR="${XDG_STATE_HOME:-$HOME/.local/state}/a16een"
 readonly SETTINGS_FILE="$STATE_DIR/navbar.json"
-readonly COUNT_FILE="$STATE_DIR/workspace-count"
 readonly ICON_ROOT="${XDG_CONFIG_HOME:-$HOME/.config}/a16een/quickshell/a16een/assets/icons"
 readonly OUTPUT_DIR="$STATE_DIR/navbar-icons"
 
@@ -104,9 +103,6 @@ ensure_settings() {
         mv -f "$merge_tmp" "$SETTINGS_FILE"
     fi
 }
-JSON
-    fi
-}
 
 generate_icon() {
     local slot="$1"
@@ -125,9 +121,6 @@ generate_icon() {
     [[ -n "$configured_style" ]] || configured_style="solid:#111318"
 
     icon_file="$ICON_ROOT/$configured_icon"
-    if [[ ! -f "$icon_file" ]]; then
-        icon_file="$ICON_ROOT/${DEFAULT_ICON[$slot]}"
-    fi
 
     if [[ ! -f "$icon_file" ]]; then
         echo "A16EEN navbar: missing Lucide icon for $slot: $configured_icon" >&2
