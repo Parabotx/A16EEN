@@ -7,8 +7,11 @@ Item {
     // Proven local renderer: render the bundled Lucide SVG and colorize its
     // alpha. This avoids the fragile file:// generated-SVG path used by the
     // broken navbar renderer.
-    property string iconName: "house.svg"
+    property string iconName: ""
     property color iconColor: "#111111"
+    property string iconPath: ""
+    property string fallbackIconPath: ""
+    property int refreshRevision: 0
     property bool hovered: false
     property bool active: false
 
@@ -24,12 +27,18 @@ Item {
         }
     }
 
+    readonly property string effectiveSource: {
+        if (root.iconName.length)
+            return Qt.resolvedUrl("../assets/icons/" + root.iconName)
+        if (root.fallbackIconPath.length)
+            return root.fallbackIconPath
+        return root.iconPath
+    }
+
     Image {
         id: iconImage
         anchors.fill: parent
-        source: root.iconName.length
-            ? Qt.resolvedUrl("../assets/icons/" + root.iconName)
-            : ""
+        source: root.effectiveSource
         fillMode: Image.PreserveAspectFit
         sourceSize.width: width
         sourceSize.height: height
@@ -43,5 +52,23 @@ Item {
             colorization: 1
             colorizationColor: root.iconColor
         }
+
+        onStatusChanged: {
+            if (status === Image.Error && root.fallbackIconPath.length
+                && source !== root.fallbackIconPath) {
+                source = root.fallbackIconPath
+            }
+        }
     }
+
+    function refresh() {
+        iconImage.source = ""
+        Qt.callLater(() => iconImage.source = root.effectiveSource)
+    }
+
+    onIconNameChanged: root.refresh()
+    onIconPathChanged: root.refresh()
+    onFallbackIconPathChanged: root.refresh()
+    onRefreshRevisionChanged: root.refresh()
+    Component.onCompleted: root.refresh()
 }
