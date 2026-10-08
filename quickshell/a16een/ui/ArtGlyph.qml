@@ -38,10 +38,10 @@ Item {
             joinStyle: ShapePath.RoundJoin
             startX: 4.6
             startY: 4.2
-            PathCubic { control1X: 2.2; control1Y: 6.5; control2X: 2.5; control2Y: 10.1; endX: 5.1; endY: 12.1 }
-            PathCubic { control1X: 7.7; control1Y: 14.1; control2X: 11.5; control2Y: 13.1; endX: 13.1; endY: 10.7 }
-            PathCubic { control1X: 14.8; control1Y: 8.2; control2X: 14.3; control2Y: 5.5; endX: 12.1; endY: 3.7 }
-            PathCubic { control1X: 9.8; control1Y: 1.8; control2X: 6.9; control2Y: 2.1; endX: 4.6; endY: 4.2 }
+            PathCubic { control1X: 2.2; control1Y: 6.5; control2X: 2.5; control2Y: 10.1; x: 5.1; y: 12.1 }
+            PathCubic { control1X: 7.7; control1Y: 14.1; control2X: 11.5; control2Y: 13.1; x: 13.1; y: 10.7 }
+            PathCubic { control1X: 14.8; control1Y: 8.2; control2X: 14.3; control2Y: 5.5; x: 12.1; y: 3.7 }
+            PathCubic { control1X: 9.8; control1Y: 1.8; control2X: 6.9; control2Y: 2.1; x: 4.6; y: 4.2 }
             PathMove { x: 12.3; y: 12.1 }
             PathLine { x: 16.8; y: 16.6 }
         }
@@ -149,8 +149,8 @@ Item {
             capStyle: ShapePath.RoundCap
             startX: 2.5
             startY: 9.5
-            PathCubic { control1X: 4.3; control1Y: 4.7; control2X: 14.7; control2Y: 4.7; endX: 16.5; endY: 9.5 }
-            PathCubic { control1X: 14.7; control1Y: 14.3; control2X: 4.3; control2Y: 14.3; endX: 2.5; endY: 9.5 }
+            PathCubic { control1X: 4.3; control1Y: 4.7; control2X: 14.7; control2Y: 4.7; x: 16.5; y: 9.5 }
+            PathCubic { control1X: 14.7; control1Y: 14.3; control2X: 4.3; control2Y: 14.3; x: 2.5; y: 9.5 }
         }
 
         ShapePath {
@@ -160,8 +160,8 @@ Item {
             capStyle: ShapePath.RoundCap
             startX: 9.5
             startY: 2.7
-            PathCubic { control1X: 6.6; control1Y: 5.1; control2X: 6.6; control2Y: 13.9; endX: 9.5; endY: 16.3 }
-            PathCubic { control1X: 12.4; control1Y: 13.9; control2X: 12.4; control2Y: 5.1; endX: 9.5; endY: 2.7 }
+            PathCubic { control1X: 6.6; control1Y: 5.1; control2X: 6.6; control2Y: 13.9; x: 9.5; y: 16.3 }
+            PathCubic { control1X: 12.4; control1Y: 13.9; control2X: 12.4; control2Y: 5.1; x: 9.5; y: 2.7 }
             PathMove { x: 3.0; y: 9.5 }
             PathLine { x: 16.0; y: 9.5 }
         }
@@ -263,8 +263,8 @@ Item {
             startX: 12.6
             startY: 3.0
             PathLine { x: 12.6; y: 11.5 }
-            PathCubic { control1X: 11.5; control1Y: 13.2; control2X: 8.5; control2Y: 14.2; endX: 7.1; endY: 12.5 }
-            PathCubic { control1X: 5.9; control1Y: 11.0; control2X: 6.7; control2Y: 9.5; endX: 8.2; endY: 9.1 }
+            PathCubic { control1X: 11.5; control1Y: 13.2; control2X: 8.5; control2Y: 14.2; x: 7.1; y: 12.5 }
+            PathCubic { control1X: 5.9; control1Y: 11.0; control2X: 6.7; control2Y: 9.5; x: 8.2; y: 9.1 }
             PathMove { x: 12.6; y: 3.0 }
             PathLine { x: 15.8; y: 4.5 }
         }
