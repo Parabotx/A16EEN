@@ -56,7 +56,7 @@ PanelWindow {
     signal timeShowSecondsRequested(bool enabled)
     signal iconThemeChanged(string themeId)
 
-    readonly property color surface: root.widgetViewOpen || root.controlViewOpen || root.iconThemeViewOpen || root.workspacePresetViewOpen || root.navbarViewOpen ? "#FFFFFF" : "#000000"
+    readonly property color surface: root.widgetViewOpen || root.controlViewOpen || root.iconThemeViewOpen || root.workspacePresetViewOpen ? "#FFFFFF" : "#000000"
     readonly property color borderColor: "#1A1A1A"
     readonly property color fieldBackground: "#0A0A0A"
     readonly property color fieldBorder: "#1C1C1C"
@@ -356,8 +356,8 @@ PanelWindow {
         root.commandText = "/navbar"
         root.selectedCommandIndex = 0
         Qt.callLater(() => {
-            if (root.navbarViewOpen)
-                navbarManager.forceActiveFocus()
+            if (root.navbarViewOpen && navbarLoader.item)
+                navbarLoader.item.forceActiveFocus()
         })
     }
 
@@ -535,7 +535,7 @@ PanelWindow {
         radius: root.powerViewOpen || root.controlViewOpen || root.iconThemeViewOpen || root.workspacePresetViewOpen || root.navbarViewOpen ? 26 : 18
         color: root.surface
         border.width: 1
-        border.color: root.widgetViewOpen || root.controlViewOpen || root.iconThemeViewOpen || root.workspacePresetViewOpen || root.navbarViewOpen ? "#E1E6EC" : "#202020"
+        border.color: root.widgetViewOpen || root.controlViewOpen || root.iconThemeViewOpen || root.workspacePresetViewOpen ? "#E1E6EC" : "#202020"
         clip: true
 
         Behavior on width {
@@ -573,14 +573,19 @@ PanelWindow {
             onBackRequested: root.closeIconThemeView()
             onThemeChangeRequested: root.iconThemeChanged(themeId)
         }
-        NavbarManager {
-            id: navbarManager
+        Loader {
+            id: navbarLoader
             anchors.fill: parent
-            visible: root.navbarViewOpen
             active: root.navbarViewOpen
-            z: 20
+            visible: root.navbarViewOpen
+            source: Qt.resolvedUrl("NavbarSection.qml")
 
-            onBackRequested: root.closeNavbarView()
+            onLoaded: {
+                if (!item)
+                    return
+                item.active = true
+                item.backRequested.connect(root.closeNavbarView)
+            }
         }
 
         ControlCenterSection {
@@ -634,7 +639,7 @@ PanelWindow {
         // Normal command search.
         Item {
             anchors.fill: parent
-            visible: !root.powerViewOpen && !root.widgetViewOpen && !root.controlViewOpen && !root.iconThemeViewOpen && !root.workspacePresetViewOpen && !root.navbarViewOpen
+            visible: !root.powerViewOpen && !root.widgetViewOpen && !root.controlViewOpen && !root.iconThemeViewOpen && !root.workspacePresetViewOpen
 
             Rectangle {
                 id: searchBox
@@ -659,7 +664,7 @@ PanelWindow {
                     selectedTextColor: root.primaryText
                     font.pixelSize: 12
                     clip: true
-                    focus: root.opened && !root.powerViewOpen && !root.widgetViewOpen && !root.controlViewOpen && !root.iconThemeViewOpen && !root.workspacePresetViewOpen && !root.navbarViewOpen
+                    focus: root.opened && !root.powerViewOpen && !root.widgetViewOpen && !root.controlViewOpen && !root.iconThemeViewOpen && !root.workspacePresetViewOpen
                     activeFocusOnPress: true
                     verticalAlignment: Text.AlignVCenter
                     selectByMouse: true
@@ -1586,7 +1591,7 @@ PanelWindow {
         search.text = "/"
 
         Qt.callLater(() => {
-            if (root.opened && !root.widgetViewOpen && !root.powerViewOpen && !root.controlViewOpen && !root.iconThemeViewOpen && !root.workspacePresetViewOpen && !root.navbarViewOpen)
+            if (root.opened && !root.widgetViewOpen && !root.powerViewOpen && !root.controlViewOpen && !root.iconThemeViewOpen && !root.workspacePresetViewOpen)
                 search.forceActiveFocus()
         })
     }
