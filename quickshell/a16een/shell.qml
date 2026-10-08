@@ -24,37 +24,6 @@ ShellRoot {
     property string powerProfile: "balanced"
     property bool doNotDisturb: false
     property int iconThemeRevision: 0
-
-    readonly property var navbarDefaults: ({
-        home: { icon: "house.svg", color: "#111318" },
-        code: { icon: "code.svg", color: "#111318" },
-        web: { icon: "globe.svg", color: "#111318" },
-        comms: { icon: "messages-square.svg", color: "#111318" },
-        studio: { icon: "sparkles.svg", color: "#111318" },
-        music: { icon: "music.svg", color: "#111318" }
-    })
-
-    property var navbarSettings: root.navbarDefaults
-
-    readonly property string navbarIconRoot: {
-        const stateHome = Quickshell.env("XDG_STATE_HOME")
-        const home = Quickshell.env("HOME") || ""
-        const base = stateHome && stateHome.length
-            ? stateHome
-            : home + "/.local/state"
-        return base + "/a16een/navbar-icons"
-    }
-
-    property int navbarIconRevision: 0
-
-    readonly property string navbarSettingsPath: {
-        const stateHome = Quickshell.env("XDG_STATE_HOME")
-        const home = Quickshell.env("HOME") || ""
-        const base = stateHome && stateHome.length
-            ? stateHome
-            : home + "/.local/state"
-        return base + "/a16een/navbar.json"
-    }
     property real controlIndicatorLevel: 0
     property int controlIndicatorRevision: 0
 
@@ -132,27 +101,6 @@ ShellRoot {
 
     readonly property var primaryScreen: Quickshell.screens.length > 0 ? Quickshell.screens[0] : null
 
-    Process {
-        id: navbarIconBuilder
-
-        command: ["a16een-navbar", "apply"]
-        running: true
-
-        onExited: function(exitCode, exitStatus) {
-            if (exitCode === 0)
-                root.navbarIconRevision++
-        }
-    }
-
-    FileView {
-        id: navbarSettingsFile
-
-        path: root.navbarSettingsPath
-        watchChanges: false
-
-        onLoaded: root.loadNavbarSettings(this.text())
-    }
-
     FileView {
         id: controlIndicatorEvent
 
@@ -210,60 +158,6 @@ ShellRoot {
             powerProfileProcess.running = false
             powerProfileProcess.running = true
         }
-    }
-
-    function loadNavbarSettings(raw) {
-        const next = {}
-        let parsed = null
-
-        try {
-            parsed = JSON.parse(String(raw || ""))
-        } catch (error) {
-            parsed = null
-        }
-
-        for (const slot of Object.keys(root.navbarDefaults)) {
-            const fallback = root.navbarDefaults[slot]
-            const saved = parsed && parsed[slot] ? parsed[slot] : {}
-
-            const validIcon = typeof saved.icon === "string"
-                && /^[a-z0-9-]+\.svg$/i.test(saved.icon)
-            const validColor = typeof saved.color === "string"
-                && /^#[0-9a-f]{6,8}$/i.test(saved.color)
-
-            next[slot] = {
-                icon: validIcon ? saved.icon : fallback.icon,
-                color: validColor ? saved.color : fallback.color
-            }
-        }
-
-        root.navbarSettings = next
-    }
-
-    function saveNavbarSettings(settings) {
-        const source = settings && typeof settings === "object" ? settings : ({})
-        const next = {}
-
-        for (const slot of Object.keys(root.navbarDefaults)) {
-            const fallback = root.navbarDefaults[slot]
-            const saved = source[slot] || {}
-
-            const validIcon = typeof saved.icon === "string"
-                && /^[a-z0-9-]+\.svg$/i.test(saved.icon)
-            const validColor = typeof saved.color === "string"
-                && /^#[0-9a-f]{6,8}$/i.test(saved.color)
-
-            next[slot] = {
-                icon: validIcon ? saved.icon : fallback.icon,
-                color: validColor ? saved.color : fallback.color
-            }
-        }
-
-        root.navbarSettings = next
-        navbarSettingsFile.setText(JSON.stringify(next, null, 2))
-
-        navbarIconBuilder.running = false
-        Qt.callLater(() => navbarIconBuilder.running = true)
     }
 
     function consumeNiriEvent(raw) {
@@ -758,9 +652,14 @@ ShellRoot {
             workspaces: root.workspaces
             focusedWorkspaceId: root.focusedWorkspaceId
             fullscreenActive: root.focusedWindowFullscreen
-            navbarSettings: root.navbarSettings
-            navbarIconRoot: root.navbarIconRoot
-            navbarIconRevision: root.navbarIconRevision
+
+            onLauncherRequested: {
+                root.launcherOpen = true
+                root.dashboardOpen = false
+                root.commandCenterOpen = false
+                root.wallpaperPickerOpen = false
+                root.widgetsCenterOpen = false
+            }
         }
     }
 
@@ -776,9 +675,6 @@ ShellRoot {
         timeUse24Hour: root.timeUse24Hour
         timeShowSeconds: root.timeShowSeconds
         doNotDisturb: root.doNotDisturb
-        navbarSettings: root.navbarSettings
-        navbarIconRoot: root.navbarIconRoot
-        navbarIconRevision: root.navbarIconRevision
 
         onCloseRequested: root.commandCenterOpen = false
 
@@ -851,7 +747,6 @@ ShellRoot {
 
         onDoNotDisturbRequested: root.setDoNotDisturb(enabled)
         onIconThemeChanged: root.iconThemeRevision++
-        onNavbarSettingsChanged: root.saveNavbarSettings(settings)
     }
 
     ScreenshotCenter {
