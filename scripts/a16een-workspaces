@@ -208,6 +208,9 @@ remove_workspace() {
     jq -e --arg id "$id" '.[] | select(.id == $id)' "$REGISTRY_FILE" >/dev/null ||
         die "workspace '$id' was not found."
 
+    jq -e --arg id "$id" '.[] | select(.id == $id and (.builtin // false) == true)' "$REGISTRY_FILE" >/dev/null &&
+        die "default A16EEN workspaces cannot be removed; only added workspaces can be removed."
+
     local target
     target="$(jq -r --arg id "$id" '[.[] | select(.id != $id)][0].id' "$REGISTRY_FILE")"
     [[ -n "$target" && "$target" != "null" ]] || die "no workspace is available for migration."
