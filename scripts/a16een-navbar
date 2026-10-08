@@ -89,6 +89,58 @@ generate_icon() {
 
 
 
+set_setting() {
+    [[ $# -eq 3 ]] || {
+        echo "Usage: a16een-navbar set <slot> <icon.svg> <color>" >&2
+        return 2
+    }
+
+    local slot="$1"
+    local icon="$2"
+    local color="$3"
+
+    case "$slot" in
+        home|code|web|comms|studio|music) ;;
+        *)
+            echo "A16EEN navbar: invalid workspace slot: $slot" >&2
+            return 2
+            ;;
+    esac
+
+    icon="$(normalize_icon "$icon")"
+    color="$(normalize_color "$color")"
+
+    [[ -n "$icon" ]] || {
+        echo "A16EEN navbar: invalid icon name." >&2
+        return 2
+    }
+
+    [[ -n "$color" ]] || {
+        echo "A16EEN navbar: invalid color." >&2
+        return 2
+    }
+
+    [[ -f "$ICON_ROOT/$icon" ]] || {
+        echo "A16EEN navbar: icon is not installed: $icon" >&2
+        return 1
+    }
+
+    ensure_settings
+
+    local tmp
+    tmp="$(mktemp "$STATE_DIR/navbar.json.XXXXXX")"
+    if ! jq --arg slot "$slot" --arg icon "$icon" --arg color "$color" \
+        '.[$slot] = {"icon": $icon, "color": $color}' \
+        "$SETTINGS_FILE" > "$tmp"; then
+        rm -f "$tmp"
+        echo "A16EEN navbar: could not update settings." >&2
+        return 1
+    fi
+
+    mv -f "$tmp" "$SETTINGS_FILE"
+    main
+}
+
 main() {
     ensure_settings
     mkdir -p "$OUTPUT_DIR"
@@ -104,5 +156,6 @@ main() {
 
 case "${1:-apply}" in
     apply) main ;;
+    set) shift; set_setting "$@" ;;
     *) echo "Usage: a16een-navbar [apply]" >&2; exit 2 ;;
 esac
