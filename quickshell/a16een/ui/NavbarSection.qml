@@ -268,6 +268,7 @@ Item {
                                         height: 18
                                         iconPath: root.generatedIconPath(modelData.id)
                                         fallbackIconPath: root.baseIconPath(modelData.id)
+                                        iconColor: root.selectedSlot === modelData.id ? "#FFFFFF" : root.textPrimary
                                         refreshRevision: root.navbarIconRevision
                                         active: root.selectedSlot === modelData.id
                                     }
@@ -346,6 +347,7 @@ Item {
                                 height: 22
                                 iconPath: root.generatedIconPath(root.selectedSlot)
                                 fallbackIconPath: root.baseIconPath(root.selectedSlot)
+                                iconColor: root.textPrimary
                                 refreshRevision: root.navbarIconRevision
                             }
                         }
@@ -450,6 +452,7 @@ Item {
                                             height: 20
                                             iconPath: Qt.resolvedUrl("../assets/icons/" + modelData.id)
                                             fallbackIconPath: root.baseIconPath(root.selectedSlot)
+                                            iconColor: root.settingFor(root.selectedSlot).icon === modelData.id ? "#FFFFFF" : root.textSecondary
                                         }
 
                                         Text {
