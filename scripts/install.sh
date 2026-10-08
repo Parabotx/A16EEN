@@ -350,6 +350,7 @@ PREVIOUS_ICON_SYNC_SHA=""
 if [ -f "$ICON_SYNC_MARKER" ]; then
     PREVIOUS_ICON_SYNC_SHA="$(cat "$ICON_SYNC_MARKER")"
 fi
+ICON_SYNCED=0
 
 # The icon marker alone is not enough: an interrupted download or an older
 # A16EEN revision can leave the runtime SVG library present but unusable.
@@ -368,6 +369,7 @@ if [ "$ICON_SYNC_SHA" != "$PREVIOUS_ICON_SYNC_SHA" ] || [ "$ICON_ASSETS_HEALTHY"
     echo "==> Syncing A16EEN UI icons"
     if bash "$ROOT_DIR/scripts/a16een-icons"; then
         printf '%s\n' "$ICON_SYNC_SHA" > "$ICON_SYNC_MARKER"
+        ICON_SYNCED=1
     else
         echo "WARNING: icon synchronization failed; using the bundled fallback SVGs." >&2
     fi
@@ -385,7 +387,7 @@ if [ -f "$NAVBAR_SYNC_MARKER" ]; then
     PREVIOUS_NAVBAR_SYNC_SHA="$(cat "$NAVBAR_SYNC_MARKER")"
 fi
 
-if [ "$NAVBAR_SYNC_SHA" != "$PREVIOUS_NAVBAR_SYNC_SHA" ] || [ ! -f "$STATE_DIR/navbar-icons/ready" ]; then
+if [ "$NAVBAR_SYNC_SHA" != "$PREVIOUS_NAVBAR_SYNC_SHA" ]    || [ ! -f "$STATE_DIR/navbar-icons/ready" ]    || [ "$ICON_SYNCED" -eq 1 ]; then
     echo "==> Generating A16EEN navbar icons"
     if bash "$ROOT_DIR/scripts/a16een-navbar" apply; then
         printf '%s\n' "$NAVBAR_SYNC_SHA" > "$NAVBAR_SYNC_MARKER"
