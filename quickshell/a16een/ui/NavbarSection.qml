@@ -7,10 +7,8 @@ Item {
 
     property bool active: false
     property var navbarSettings: ({})
-    property int workspaceCount: 6
-    property int pendingWorkspaceCount: 6
-    property string workspaceStatus: "READY"
-    property string iconSearch: ""
+    property string navbarIconRoot: ""
+    property int navbarIconRevision: 0
 
     readonly property string stateDir: {
         const stateHome = Quickshell.env("XDG_STATE_HOME")
@@ -21,10 +19,9 @@ Item {
     readonly property string settingsPath: root.stateDir + "/navbar.json"
     readonly property string generatedPathRoot: root.stateDir + "/navbar-icons"
     signal backRequested()
+    signal navbarSettingsChanged(var settings)
 
     property string selectedSlot: "home"
-    property string pendingIcon: "house.svg"
-    property string pendingColor: "#111318"
 
     readonly property color page: "#FFFFFF"
     readonly property color card: "#F4F6F8"
@@ -36,7 +33,9 @@ Item {
     readonly property color textMuted: "#64748B"
     readonly property color accent: "#111318"
 
-    readonly property int minWorkspaceCount: 2
+    property int workspaceCount: 6
+    property int pendingWorkspaceCount: 6
+    property string workspaceStatus: "READY"
 
     readonly property var slots: [
         { id: "home", name: "HOME", description: "Main workspace", defaultIcon: "house.svg" },
@@ -182,17 +181,6 @@ Item {
         { id: "#7C3AED", name: "Violet" }
     ]
 
-    readonly property var filteredIconChoices: {
-        const q = root.iconSearch.trim().toLowerCase()
-        if (!q)
-            return root.iconChoices.slice(0, 42)
-
-        return root.iconChoices.filter(icon =>
-            icon.name.toLowerCase().includes(q)
-            || icon.id.toLowerCase().includes(q)
-        )
-    }
-
     function defaultIcon(slot) {
         switch (slot) {
         case "code": return "code.svg"
@@ -209,7 +197,10 @@ Item {
     }
 
     function generatedIconPath(slot) {
-        return "file://" + root.generatedPathRoot + "/" + slot + ".svg"
+        const pathRoot = root.navbarIconRoot.length
+            ? root.navbarIconRoot
+            : root.generatedPathRoot
+        return "file://" + pathRoot + "/" + slot + ".svg"
     }
 
     function settingFor(slot) {
@@ -233,33 +224,22 @@ Item {
     }
 
     function patch(p) {
-        const current = root.settingFor(root.selectedSlot)
-        const icon = p.icon || current.icon
-        const color = p.color || current.color
-
         const next = {}
         for (const slot of root.slots)
             next[slot.id] = root.settingFor(slot.id)
 
         next[root.selectedSlot] = {
-            icon: icon,
-            color: color
+            icon: p.icon || root.settingFor(root.selectedSlot).icon,
+            color: p.color || root.settingFor(root.selectedSlot).color
         }
 
-        root.pendingIcon = icon
-        root.pendingColor = color
         root.navbarSettings = next
-        root.statusText = "APPLYING " + root.selectedSlot.toUpperCase()
+        root.statusText = "SAVING " + root.selectedSlot.toUpperCase()
+        settingsFile.setText(JSON.stringify(next, null, 2))
+        root.navbarSettingsChanged(next)
 
         rebuildProcess.running = false
         Qt.callLater(() => rebuildProcess.running = true)
-    }
-
-    function resetSelected() {
-        root.patch({
-            icon: root.defaultIcon(root.selectedSlot),
-            color: "#111318"
-        })
     }
 
     function applyWorkspaceCount(count) {
@@ -268,9 +248,16 @@ Item {
             return
 
         root.pendingWorkspaceCount = value
-        root.workspaceStatus = "APPLYING " + value + " WORKSPACES"
+        root.workspaceStatus = "APPLYING " + value
         workspaceProcess.running = false
         Qt.callLater(() => workspaceProcess.running = true)
+    }
+
+    function resetSelected() {
+        root.patch({
+            icon: root.defaultIcon(root.selectedSlot),
+            color: "#111318"
+        })
     }
 
     property string statusText: "READY"
@@ -287,24 +274,19 @@ Item {
 
     Process {
         id: rebuildProcess
-        command: [
-            "/usr/local/bin/a16een-navbar",
-            "set",
-            root.selectedSlot,
-            root.pendingIcon,
-            root.pendingColor
-        ]
+        command: ["/usr/local/bin/a16een-navbar", "apply"]
         running: false
 
         onExited: function(exitCode, exitStatus) {
             if (exitCode === 0) {
                 root.statusText = "APPLIED"
+                root.navbarIconRevision++
             } else {
                 root.statusText = "ICON REBUILD FAILED"
-                settingsFile.reload()
             }
         }
     }
+
     Process {
         id: workspaceReader
         command: ["a16een-workspaces", "current"]
@@ -327,16 +309,15 @@ Item {
         onExited: function(exitCode, exitStatus) {
             if (exitCode === 0) {
                 root.workspaceCount = root.pendingWorkspaceCount
-                root.workspaceStatus = "APPLIED • " + root.workspaceCount
+                root.workspaceStatus = "APPLIED"
                 if (!root.visibleSlots.some(slot => slot.id === root.selectedSlot))
                     root.selectedSlot = root.visibleSlots[root.visibleSlots.length - 1].id
             } else {
-                root.workspaceStatus = "CHANGE BLOCKED"
+                root.workspaceStatus = "BLOCKED"
+                Qt.callLater(() => workspaceReader.running = true)
             }
-            Qt.callLater(() => workspaceReader.running = true)
         }
     }
-
 
     Rectangle {
         anchors.fill: parent
@@ -383,7 +364,7 @@ Item {
                 Text {
                     text: "NAVBAR"
                     color: root.textPrimary
-                    font.pixelSize: 18
+                    font.pixelSize: 17
                     font.weight: Font.DemiBold
                     font.letterSpacing: 1.3
                 }
@@ -391,10 +372,9 @@ Item {
                 Text {
                     text: "LUCIDE ICONS • WORKSPACES 2–9 • " + root.workspaceStatus
                     color: root.textMuted
-                    font.pixelSize: 9
+                    font.pixelSize: 8
                     font.weight: Font.Medium
-                    font.letterSpacing: 0.6
-                    elide: Text.ElideRight
+                    font.letterSpacing: 0.7
                 }
             }
 
@@ -428,7 +408,7 @@ Item {
                 }
 
                 Text {
-                    Layout.preferredWidth: 32
+                    width: 30
                     horizontalAlignment: Text.AlignHCenter
                     text: root.workspaceCount
                     color: root.textPrimary
@@ -462,7 +442,6 @@ Item {
                     }
                 }
             }
-        }
 
         RowLayout {
             Layout.fillWidth: true
@@ -517,18 +496,14 @@ Item {
                                     border.width: 1
                                     border.color: root.selectedSlot === modelData.id ? "#263140" : root.border
 
-                                    Image {
+                                    NavbarIcon {
                                         anchors.centerIn: parent
                                         width: 18
                                         height: 18
-                                        sourceSize.width: width
-                                        sourceSize.height: height
-                                        fillMode: Image.PreserveAspectFit
-                                        smooth: true
-                                        mipmap: true
-                                        asynchronous: true
-                                        cache: false
-                                        source: root.generatedIconPath(modelData.id)
+                                        iconPath: root.generatedIconPath(modelData.id)
+                                        fallbackIconPath: root.baseIconPath(modelData.id)
+                                        refreshRevision: root.navbarIconRevision
+                                        active: root.selectedSlot === modelData.id
                                     }
                                 }
 
@@ -600,18 +575,13 @@ Item {
                             border.width: 1
                             border.color: root.border
 
-                            Image {
+                            NavbarIcon {
                                 anchors.centerIn: parent
                                 width: 22
                                 height: 22
-                                sourceSize.width: width
-                                sourceSize.height: height
-                                fillMode: Image.PreserveAspectFit
-                                smooth: true
-                                mipmap: true
-                                asynchronous: true
-                                cache: false
-                                source: root.generatedIconPath(root.selectedSlot)
+                                iconPath: root.generatedIconPath(root.selectedSlot)
+                                fallbackIconPath: root.baseIconPath(root.selectedSlot)
+                                refreshRevision: root.navbarIconRevision
                             }
                         }
 
@@ -666,48 +636,12 @@ Item {
                         }
                     }
 
-                    RowLayout {
-                        Layout.fillWidth: true
-                        spacing: 6
-
-                        Text {
-                            text: "ICON"
-                            color: root.textMuted
-                            font.pixelSize: 7
-                            font.weight: Font.DemiBold
-                            font.letterSpacing: 1.0
-                        }
-
-                        Rectangle {
-                            Layout.fillWidth: true
-                            height: 32
-                            radius: 9
-                            color: "#FFFFFF"
-                            border.width: 1
-                            border.color: root.borderStrong
-
-                            TextInput {
-                                anchors.fill: parent
-                                anchors.leftMargin: 10
-                                anchors.rightMargin: 56
-                                color: root.textPrimary
-                                font.pixelSize: 8
-                                verticalAlignment: Text.AlignVCenter
-                                text: root.iconSearch
-                                selectByMouse: true
-                                onTextChanged: root.iconSearch = text
-                            }
-
-                            Text {
-                                anchors.right: parent.right
-                                anchors.rightMargin: 10
-                                anchors.verticalCenter: parent.verticalCenter
-                                text: (root.iconSearch.length ? root.filteredIconChoices.length : 42) + " / 113"
-                                color: root.textMuted
-                                font.pixelSize: 6.5
-                                font.weight: Font.DemiBold
-                            }
-                        }
+                    Text {
+                        text: "ICON"
+                        color: root.textMuted
+                        font.pixelSize: 7
+                        font.weight: Font.DemiBold
+                        font.letterSpacing: 1.0
                     }
 
                     Flickable {
@@ -722,14 +656,14 @@ Item {
                             id: iconGrid
 
                             width: iconScroll.width
-                            height: Math.ceil(root.filteredIconChoices.length / 6) * 57
+                            height: Math.ceil(root.iconChoices.length / 6) * 57
                                 + Math.max(0, Math.ceil(root.iconChoices.length / 6) - 1) * 7
                             columns: 6
                             rowSpacing: 7
                             columnSpacing: 7
 
                             Repeater {
-                                model: root.filteredIconChoices
+                                model: root.iconChoices
 
                                 delegate: Rectangle {
                                     Layout.preferredWidth: (iconGrid.width - 35) / 6
@@ -746,18 +680,12 @@ Item {
                                         anchors.centerIn: parent
                                         spacing: 3
 
-                                        Image {
+                                        NavbarIcon {
                                             anchors.horizontalCenter: parent.horizontalCenter
                                             width: 20
                                             height: 20
-                                            sourceSize.width: width
-                                            sourceSize.height: height
-                                            fillMode: Image.PreserveAspectFit
-                                            smooth: true
-                                            mipmap: true
-                                            asynchronous: true
-                                            cache: false
-                                            source: Qt.resolvedUrl("../assets/icons/" + modelData.id)
+                                            iconPath: Qt.resolvedUrl("../assets/icons/" + modelData.id)
+                                            fallbackIconPath: root.baseIconPath(root.selectedSlot)
                                         }
 
                                         Text {
@@ -842,7 +770,6 @@ Item {
     }
 
     Keys.onEscapePressed: root.backRequested()
-
     onActiveChanged: {
         if (root.active) {
             workspaceReader.running = true
