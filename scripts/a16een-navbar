@@ -13,6 +13,9 @@ declare -Ar DEFAULT_ICON=(
     [comms]="messages-square.svg"
     [studio]="sparkles.svg"
     [music]="music.svg"
+    [games]="gamepad-2.svg"
+    [files]="folder.svg"
+    [lab]="terminal.svg"
 )
 
 declare -Ar DEFAULT_COLOR=(
@@ -22,6 +25,9 @@ declare -Ar DEFAULT_COLOR=(
     [comms]="#111318"
     [studio]="#111318"
     [music]="#111318"
+    [games]="#111318"
+    [files]="#111318"
+    [lab]="#111318"
 )
 
 normalize_color() {
@@ -49,7 +55,10 @@ ensure_settings() {
   "web": {"icon":"globe.svg","color":"#111318"},
   "comms": {"icon":"messages-square.svg","color":"#111318"},
   "studio": {"icon":"sparkles.svg","color":"#111318"},
-  "music": {"icon":"music.svg","color":"#111318"}
+  "music": {"icon":"music.svg","color":"#111318"},
+  "games": {"icon":"gamepad-2.svg","color":"#111318"},
+  "files": {"icon":"folder.svg","color":"#111318"},
+  "lab": {"icon":"terminal.svg","color":"#111318"}
 }
 JSON
     fi
@@ -100,7 +109,7 @@ set_setting() {
     local color="$3"
 
     case "$slot" in
-        home|code|web|comms|studio|music) ;;
+        home|code|web|comms|studio|music|games|files|lab) ;;
         *)
             echo "A16EEN navbar: invalid workspace slot: $slot" >&2
             return 2
