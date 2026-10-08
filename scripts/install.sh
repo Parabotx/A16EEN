@@ -394,11 +394,14 @@ fi
 # Never trust the ready marker when one of the live workspace SVGs is
 # missing, invalid, or still rendered white. This catches stale files left by
 # older navbar-renderer revisions.
+# Gradient icons encode visible paint in stop-color values, so checking only
+# the stroke attribute can miss a valid SVG whose entire gradient is white.
 NAVBAR_ASSETS_HEALTHY=1
 for slot in home code web comms studio music; do
     generated="$STATE_DIR/navbar-icons/$slot.svg"
     if [ ! -s "$generated" ] || ! grep -q '<svg' "$generated" \
-       || grep -Eiq 'stroke="(white|#fff([0-9a-f]{2})?|#ffffff([0-9a-f]{2})?)"' "$generated"; then
+       || grep -Eiq 'stroke="(white|#fff([0-9a-f]{2})?|#ffffff([0-9a-f]{2})?)"' "$generated" \
+       || grep -Eiq 'stop-color="(white|#fff([0-9a-f]{2})?|#ffffff([0-9a-f]{2})?)"' "$generated"; then
         NAVBAR_ASSETS_HEALTHY=0
         break
     fi
