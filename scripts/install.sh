@@ -272,7 +272,6 @@ else
     trap - EXIT INT TERM
 fi
 
-printf '%s\n' "$SOURCE_COMMIT" > "$STATE_DIR/installed-commit"
 
 # Restore the persistent A16EEN workspace registry after every deployment.
 # Workspace creation/removal is handled live through Niri IPC; the source
@@ -475,6 +474,8 @@ echo
 echo "╭──────────────────────────────────────────────╮"
 echo "│           A16EEN installation complete       │"
 echo "╰──────────────────────────────────────────────╯"
+printf '%s\n' "$SOURCE_COMMIT" > "$STATE_DIR/installed-commit"
+
 echo "Run 'a16een-update' whenever you want to check for updates."
 echo "Built-in wallpapers: $QS_DIR/assets/wallpapers"
 echo "Personal wallpapers: $USER_WALLPAPER_DIR"
