@@ -10,13 +10,13 @@ PanelWindow {
     required property int focusedWorkspaceId
     required property bool fullscreenActive
 
-    signal launcherRequested()
-
     // Clean white A16EEN dock with a monochrome workspace language.
     readonly property color dockBackground: "#FFFFFF"
     readonly property color dockBorder: "#E5E7EB"
     readonly property color iconColor: "#111111"
     readonly property color hoverBackground: "#F3F4F6"
+
+    property var navbarSettings: ({})
 
     property bool edgeRevealed: false
     readonly property bool dockVisible: !root.fullscreenActive || root.edgeRevealed
@@ -53,6 +53,25 @@ PanelWindow {
             height: root.dock.height
             intersection: Intersection.Combine
         }
+    }
+
+    function settingFor(slot, fallbackIcon) {
+        const setting = root.navbarSettings && root.navbarSettings[slot]
+            ? root.navbarSettings[slot]
+            : null
+
+        return {
+            icon: setting && setting.icon ? setting.icon : fallbackIcon,
+            color: setting && setting.color ? setting.color : root.iconColor
+        }
+    }
+
+    function navbarIcon(slot, fallbackIcon) {
+        return root.settingFor(slot, fallbackIcon).icon
+    }
+
+    function navbarColor(slot, fallbackIcon) {
+        return root.settingFor(slot, fallbackIcon).color
     }
 
     function workspaceIsFocused(name) {
@@ -136,39 +155,14 @@ PanelWindow {
                 width: 32
                 height: 32
                 radius: 11
-                color: "transparent"
-
-                ArtGlyph {
-                    anchors.centerIn: parent
-                    width: 19
-                    height: 19
-                    glyph: "search"
-                    hovered: launcherMouse.containsMouse
-                }
-
-                MouseArea {
-                    id: launcherMouse
-                    anchors.fill: parent
-                    onEntered: root.revealDock()
-                    onExited: root.scheduleHide()
-                    hoverEnabled: true
-                    cursorShape: Qt.PointingHandCursor
-                    onClicked: root.launcherRequested()
-                }
-
-            }
-
-            Rectangle {
-                width: 32
-                height: 32
-                radius: 11
                 color: homeMouse.containsMouse ? root.hoverBackground : "transparent"
 
-                ArtGlyph {
+                NavbarIcon {
                     anchors.centerIn: parent
                     width: 19
                     height: 19
-                    glyph: "home"
+                    iconName: root.navbarIcon("home", "house.svg")
+                    iconColor: root.navbarColor("home", "house.svg")
                     active: root.workspaceIsFocused("home")
                     hovered: homeMouse.containsMouse
                 }
@@ -201,11 +195,12 @@ PanelWindow {
                 radius: 11
                 color: codeMouse.containsMouse ? root.hoverBackground : "transparent"
 
-                ArtGlyph {
+                NavbarIcon {
                     anchors.centerIn: parent
                     width: 19
                     height: 19
-                    glyph: "code"
+                    iconName: root.navbarIcon("code", "code.svg")
+                    iconColor: root.navbarColor("code", "code.svg")
                     active: root.workspaceIsFocused("code")
                     hovered: codeMouse.containsMouse
                 }
@@ -238,11 +233,12 @@ PanelWindow {
                 radius: 11
                 color: webMouse.containsMouse ? root.hoverBackground : "transparent"
 
-                ArtGlyph {
+                NavbarIcon {
                     anchors.centerIn: parent
                     width: 19
                     height: 19
-                    glyph: "web"
+                    iconName: root.navbarIcon("web", "globe.svg")
+                    iconColor: root.navbarColor("web", "globe.svg")
                     active: root.workspaceIsFocused("web")
                     hovered: webMouse.containsMouse
                 }
@@ -275,11 +271,12 @@ PanelWindow {
                 radius: 11
                 color: commsMouse.containsMouse ? root.hoverBackground : "transparent"
 
-                ArtGlyph {
+                NavbarIcon {
                     anchors.centerIn: parent
                     width: 19
                     height: 19
-                    glyph: "comms"
+                    iconName: root.navbarIcon("comms", "messages-square.svg")
+                    iconColor: root.navbarColor("comms", "messages-square.svg")
                     active: root.workspaceIsFocused("comms")
                     hovered: commsMouse.containsMouse
                 }
@@ -312,11 +309,12 @@ PanelWindow {
                 radius: 11
                 color: studioMouse.containsMouse ? root.hoverBackground : "transparent"
 
-                ArtGlyph {
+                NavbarIcon {
                     anchors.centerIn: parent
                     width: 19
                     height: 19
-                    glyph: "studio"
+                    iconName: root.navbarIcon("studio", "sparkles.svg")
+                    iconColor: root.navbarColor("studio", "sparkles.svg")
                     active: root.workspaceIsFocused("studio")
                     hovered: studioMouse.containsMouse
                 }
@@ -349,11 +347,12 @@ PanelWindow {
                 radius: 11
                 color: musicMouse.containsMouse ? root.hoverBackground : "transparent"
 
-                ArtGlyph {
+                NavbarIcon {
                     anchors.centerIn: parent
                     width: 19
                     height: 19
-                    glyph: "music"
+                    iconName: root.navbarIcon("music", "music.svg")
+                    iconColor: root.navbarColor("music", "music.svg")
                     active: root.workspaceIsFocused("music")
                     hovered: musicMouse.containsMouse
                 }
