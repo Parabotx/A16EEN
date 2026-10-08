@@ -8,6 +8,7 @@ Item {
     property bool active: false
     property int workspaceCount: 6
     property int pendingWorkspaceCount: 6
+    property string pendingWorkspaceSlot: ""
     property string selectedSlot: "home"
     property string iconSearch: ""
     property var navbarSettings: ({})
@@ -167,7 +168,7 @@ Item {
     readonly property var filteredIcons: {
         const q = root.iconSearch.trim().toLowerCase()
         if (!q)
-            return root.iconChoices.slice(0, 42)
+            return root.iconChoices
         return root.iconChoices.filter(icon =>
             icon.name.toLowerCase().includes(q) || icon.id.toLowerCase().includes(q)
         )
@@ -240,8 +241,15 @@ Item {
         const value = Math.max(2, Math.min(9, Number(nextCount)))
         if (value === root.workspaceCount || workspaceProcess.running)
             return
+
         root.pendingWorkspaceCount = value
-        root.statusText = "APPLYING " + value
+        if (value > root.workspaceCount) {
+            root.pendingWorkspaceSlot = root.slots[value - 1].id
+            root.statusText = "ADDING"
+        } else {
+            root.pendingWorkspaceSlot = root.slots[value - 1].id
+            root.statusText = "REMOVING"
+        }
         workspaceProcess.running = true
     }
 
@@ -269,15 +277,37 @@ Item {
 
     Process {
         id: workspaceProcess
-        command: ["a16een-workspaces", "set", String(root.pendingWorkspaceCount)]
+        command: [
+            "/bin/sh",
+            "-c",
+            "/usr/local/bin/a16een-workspaces set "
+                + String(root.pendingWorkspaceCount)
+                + " && /usr/local/bin/a16een-navbar apply"
+        ]
         running: false
         onExited: function(exitCode) {
+            const oldCount = root.workspaceCount
             if (exitCode === 0) {
                 root.workspaceCount = root.pendingWorkspaceCount
-                root.statusText = "READY"
+
+                if (root.pendingWorkspaceCount > oldCount) {
+                    // The new workspace becomes selected immediately so the user
+                    // can choose its icon from the full Lucide catalog.
+                    root.selectedSlot = root.slots[root.pendingWorkspaceCount - 1].id
+                    root.statusText = "CHOOSE ICON"
+                } else {
+                    // Removing a workspace also removes its navbar entry.
+                    if (oldCount > root.pendingWorkspaceCount
+                        && root.selectedSlot === root.slots[oldCount - 1].id) {
+                        root.selectedSlot = root.slots[root.pendingWorkspaceCount - 1].id
+                    }
+                    root.statusText = "READY"
+                }
             } else {
-                root.statusText = "BLOCKED"
+                root.statusText = "WORKSPACE CHANGE FAILED"
             }
+
+            root.pendingWorkspaceSlot = ""
             Qt.callLater(() => workspaceReader.running = true)
         }
     }
@@ -360,7 +390,16 @@ Item {
                     width: 28; height: 30; radius: 9
                     color: minusMouse.containsMouse ? root.hover : "#FFFFFF"
                     border.width: 1; border.color: root.borderStrong
-                    Text { anchors.centerIn: parent; text: "−"; color: root.text; font.pixelSize: 15 }
+                    Image {
+                        anchors.centerIn: parent
+                        width: 15
+                        height: 15
+                        sourceSize.width: width
+                        sourceSize.height: height
+                        fillMode: Image.PreserveAspectFit
+                        source: Qt.resolvedUrl("../assets/icons/circle-minus.svg")
+                        asynchronous: true
+                    }
                     MouseArea {
                         id: minusMouse
                         anchors.fill: parent; hoverEnabled: true; cursorShape: Qt.PointingHandCursor
@@ -379,7 +418,16 @@ Item {
                     width: 28; height: 30; radius: 9
                     color: plusMouse.containsMouse ? root.hover : "#FFFFFF"
                     border.width: 1; border.color: root.borderStrong
-                    Text { anchors.centerIn: parent; text: "+"; color: root.text; font.pixelSize: 14 }
+                    Image {
+                        anchors.centerIn: parent
+                        width: 15
+                        height: 15
+                        sourceSize.width: width
+                        sourceSize.height: height
+                        fillMode: Image.PreserveAspectFit
+                        source: Qt.resolvedUrl("../assets/icons/circle-plus.svg")
+                        asynchronous: true
+                    }
                     MouseArea {
                         id: plusMouse
                         anchors.fill: parent; hoverEnabled: true; cursorShape: Qt.PointingHandCursor
@@ -568,8 +616,9 @@ Item {
                         height: parent.height - 190
                         clip: true
                         contentWidth: width
-                        contentHeight: iconGrid.height
+                        contentHeight: Math.max(iconGrid.height, height)
                         boundsBehavior: Flickable.StopAtBounds
+                        interactive: iconGrid.height > height
 
                         Grid {
                             id: iconGrid
