@@ -201,18 +201,22 @@ PanelWindow {
 
     MouseArea {
         id: edgeReveal
-        anchors.left: root.horizontalNavbar || root.navbarPosition === "left"
-        anchors.right: !root.horizontalNavbar && root.navbarPosition === "right"
-        anchors.top: root.horizontalNavbar && root.navbarPosition === "top"
-            ? parent.top : (!root.horizontalNavbar ? undefined : undefined)
-        anchors.bottom: root.horizontalNavbar && root.navbarPosition === "bottom"
-            ? parent.bottom : (!root.horizontalNavbar ? undefined : undefined)
-        anchors.verticalCenter: !root.horizontalNavbar ? parent.verticalCenter : undefined
+
+        // This is a normal QtQuick MouseArea, so use geometry instead of
+        // boolean values in anchors.left/right/top/bottom. It is active only
+        // while fullscreen hides the navbar, which keeps workspace clicks clean.
+        x: root.horizontalNavbar
+            ? 0
+            : (root.navbarPosition === "right" ? parent.width - width : 0)
+        y: root.horizontalNavbar
+            ? (root.navbarPosition === "bottom" ? parent.height - height : 0)
+            : 0
         width: root.horizontalNavbar ? parent.width : 8
-        height: root.horizontalNavbar ? 8 : 240
+        height: root.horizontalNavbar ? 8 : parent.height
+        enabled: root.fullscreenActive && !root.dockVisible
         hoverEnabled: true
         acceptedButtons: Qt.NoButton
-        z: 10
+        z: 0
         onEntered: root.revealDock()
         onExited: root.scheduleHide()
     }
