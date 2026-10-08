@@ -258,7 +258,7 @@ PanelWindow {
     }
 
     function focusWorkspace(name) {
-        Quickshell.execDetached(["niri", "msg", "action", "focus-workspace", name])
+        Quickshell.execDetached(["a16een-focus-workspace", name])
     }
 
     function contentValue(id) {
