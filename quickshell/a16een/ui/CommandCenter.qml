@@ -578,7 +578,7 @@ PanelWindow {
             anchors.fill: parent
             active: root.navbarViewOpen
             visible: root.navbarViewOpen
-            source: Qt.resolvedUrl("NavbarSection.qml")
+            source: Qt.resolvedUrl("NavbarManager.qml")
 
             onLoaded: {
                 if (!item)
