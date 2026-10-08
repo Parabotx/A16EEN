@@ -496,12 +496,14 @@ Item {
                 color: root.panel
                 border.width: 1
                 border.color: root.border
+
                 Text {
                     anchors.centerIn: parent
                     text: "←"
                     color: root.textSecondary
                     font.pixelSize: 16
                 }
+
                 MouseArea {
                     anchors.fill: parent
                     cursorShape: Qt.PointingHandCursor
@@ -510,8 +512,9 @@ Item {
             }
 
             Column {
-                width: parent.width - 170
+                width: parent.width - 210
                 spacing: 2
+
                 Text {
                     text: "NAVBAR"
                     color: root.text
@@ -519,49 +522,29 @@ Item {
                     font.weight: Font.DemiBold
                     font.letterSpacing: 1.2
                 }
+
                 Text {
-                    text: "LUCIDE ICONS • WORKSPACES 2–9 • " + root.statusText
+                    text: root.slots.length + " WORKSPACES • " + root.statusText
                     color: root.muted
                     font.pixelSize: 9
                 }
             }
 
-            Row {
-                spacing: 4
-                Rectangle {
-                    width: 28; height: 30; radius: 9
-                    color: minusMouse.containsMouse ? root.hover : "#FFFFFF"
-                    border.width: 1; border.color: root.borderStrong
+            Rectangle {
+                width: 150
+                height: 34
+                radius: 10
+                color: root.slots.length >= 9 || root.workspaceProcess.running
+                    ? root.panel : root.text
+                opacity: root.slots.length >= 9 ? 0.45 : 1
+                border.width: 1
+                border.color: root.borderStrong
+
+                Row {
+                    anchors.centerIn: parent
+                    spacing: 7
+
                     Image {
-                        anchors.centerIn: parent
-                        width: 15
-                        height: 15
-                        sourceSize.width: width
-                        sourceSize.height: height
-                        fillMode: Image.PreserveAspectFit
-                        source: Qt.resolvedUrl("../assets/icons/circle-minus.svg")
-                        asynchronous: true
-                    }
-                    MouseArea {
-                        id: minusMouse
-                        anchors.fill: parent; hoverEnabled: true; cursorShape: Qt.PointingHandCursor
-                        enabled: root.workspaceCount > 2 && !workspaceProcess.running
-                        opacity: enabled ? 1 : 0.35
-                        onClicked: root.changeWorkspaceCount(root.workspaceCount - 1)
-                    }
-                }
-                Text {
-                    width: 30; height: 30; verticalAlignment: Text.AlignVCenter
-                    horizontalAlignment: Text.AlignHCenter
-                    text: root.workspaceCount
-                    color: root.text; font.pixelSize: 12; font.weight: Font.DemiBold
-                }
-                Rectangle {
-                    width: 28; height: 30; radius: 9
-                    color: plusMouse.containsMouse ? root.hover : "#FFFFFF"
-                    border.width: 1; border.color: root.borderStrong
-                    Image {
-                        anchors.centerIn: parent
                         width: 15
                         height: 15
                         sourceSize.width: width
@@ -570,13 +553,20 @@ Item {
                         source: Qt.resolvedUrl("../assets/icons/circle-plus.svg")
                         asynchronous: true
                     }
-                    MouseArea {
-                        id: plusMouse
-                        anchors.fill: parent; hoverEnabled: true; cursorShape: Qt.PointingHandCursor
-                        enabled: root.workspaceCount < 9 && !workspaceProcess.running
-                        opacity: enabled ? 1 : 0.35
-                        onClicked: root.changeWorkspaceCount(root.workspaceCount + 1)
+
+                    Text {
+                        text: "ADD WORKSPACE"
+                        color: "#FFFFFF"
+                        font.pixelSize: 8
+                        font.weight: Font.DemiBold
                     }
+                }
+
+                MouseArea {
+                    anchors.fill: parent
+                    cursorShape: Qt.PointingHandCursor
+                    enabled: root.slots.length < 9 && !root.workspaceProcess.running
+                    onClicked: root.openAddWorkspace()
                 }
             }
         }
@@ -718,11 +708,46 @@ Item {
                             }
                         }
 
-                        Rectangle {
-                            width: 66; height: 30; radius: 9
-                            color: "#FFFFFF"; border.width: 1; border.color: root.borderStrong
-                            Text { anchors.centerIn: parent; text: "RESET"; color: root.text; font.pixelSize: 7; font.weight: Font.DemiBold }
-                            MouseArea { anchors.fill: parent; cursorShape: Qt.PointingHandCursor; onClicked: root.resetSelected() }
+                        Row {
+                            spacing: 6
+
+                            Rectangle {
+                                width: 62; height: 30; radius: 9
+                                color: "#FFFFFF"; border.width: 1; border.color: root.borderStrong
+                                Text {
+                                    anchors.centerIn: parent
+                                    text: "RESET"
+                                    color: root.text
+                                    font.pixelSize: 7
+                                    font.weight: Font.DemiBold
+                                }
+                                MouseArea {
+                                    anchors.fill: parent
+                                    cursorShape: Qt.PointingHandCursor
+                                    onClicked: root.resetSelected()
+                                }
+                            }
+
+                            Rectangle {
+                                width: 68; height: 30; radius: 9
+                                color: root.slots.length <= 2 ? root.panel : "#FFFFFF"
+                                border.width: 1
+                                border.color: root.slots.length <= 2 ? root.border : "#F2B8B5"
+                                opacity: root.slots.length <= 2 ? 0.45 : 1
+                                Text {
+                                    anchors.centerIn: parent
+                                    text: "REMOVE"
+                                    color: root.slots.length <= 2 ? root.muted : "#B42318"
+                                    font.pixelSize: 7
+                                    font.weight: Font.DemiBold
+                                }
+                                MouseArea {
+                                    anchors.fill: parent
+                                    cursorShape: Qt.PointingHandCursor
+                                    enabled: root.slots.length > 2 && !root.workspaceProcess.running
+                                    onClicked: root.openRemoveWorkspace()
+                                }
+                            }
                         }
                     }
 
@@ -978,6 +1003,344 @@ Item {
                         }
                     }
 
+                }
+            }
+        }
+    }
+
+    Rectangle {
+        visible: root.addWorkspaceOpen || root.removeWorkspaceOpen
+        anchors.fill: parent
+        color: "#66000000"
+        z: 100
+
+        MouseArea {
+            anchors.fill: parent
+            onClicked: {
+                if (root.addWorkspaceOpen)
+                    root.cancelAddWorkspace()
+                else
+                    root.cancelRemoveWorkspace()
+            }
+        }
+
+        Rectangle {
+            width: Math.min(parent.width - 48, 650)
+            height: root.addWorkspaceOpen ? Math.min(parent.height - 48, 560) : 220
+            anchors.centerIn: parent
+            radius: 20
+            color: "#FFFFFF"
+            border.width: 1
+            border.color: root.borderStrong
+
+            MouseArea {
+                anchors.fill: parent
+                onClicked: {}
+            }
+
+            Column {
+                anchors.fill: parent
+                anchors.margins: 20
+                spacing: 12
+
+                Row {
+                    width: parent.width
+                    height: 36
+
+                    Column {
+                        width: parent.width - 44
+                        spacing: 2
+
+                        Text {
+                            text: root.addWorkspaceOpen ? "ADD WORKSPACE" : "REMOVE WORKSPACE"
+                            color: root.text
+                            font.pixelSize: 16
+                            font.weight: Font.DemiBold
+                        }
+
+                        Text {
+                            text: root.addWorkspaceOpen
+                                ? "Choose a name and icon before creating it."
+                                : "The selected workspace and its navbar icon will be removed."
+                            color: root.muted
+                            font.pixelSize: 8
+                        }
+                    }
+
+                    Rectangle {
+                        width: 32; height: 32; radius: 9
+                        color: root.panel
+                        border.width: 1; border.color: root.border
+                        Text {
+                            anchors.centerIn: parent
+                            text: "×"
+                            color: root.textSecondary
+                            font.pixelSize: 16
+                        }
+                        MouseArea {
+                            anchors.fill: parent
+                            cursorShape: Qt.PointingHandCursor
+                            onClicked: {
+                                if (root.addWorkspaceOpen)
+                                    root.cancelAddWorkspace()
+                                else
+                                    root.cancelRemoveWorkspace()
+                            }
+                        }
+                    }
+                }
+
+                Column {
+                    visible: root.addWorkspaceOpen
+                    width: parent.width
+                    spacing: 8
+
+                    Text {
+                        text: "NAME"
+                        color: root.muted
+                        font.pixelSize: 7
+                        font.weight: Font.DemiBold
+                    }
+
+                    Rectangle {
+                        width: parent.width
+                        height: 38
+                        radius: 10
+                        color: "#FFFFFF"
+                        border.width: 1
+                        border.color: addNameInput.activeFocus ? root.text : root.borderStrong
+
+                        TextInput {
+                            id: addNameInput
+                            anchors.fill: parent
+                            anchors.leftMargin: 11
+                            anchors.rightMargin: 11
+                            color: root.text
+                            font.pixelSize: 10
+                            verticalAlignment: Text.AlignVCenter
+                            text: root.newWorkspaceName
+                            onTextChanged: root.newWorkspaceName = text
+                            maximumLength: 28
+                            selectByMouse: true
+                        }
+                    }
+
+                    Text {
+                        text: "ICON"
+                        color: root.muted
+                        font.pixelSize: 7
+                        font.weight: Font.DemiBold
+                    }
+
+                    Rectangle {
+                        width: parent.width
+                        height: 34
+                        radius: 9
+                        color: "#FFFFFF"
+                        border.width: 1
+                        border.color: root.borderStrong
+
+                        TextInput {
+                            anchors.fill: parent
+                            anchors.leftMargin: 10
+                            anchors.rightMargin: 10
+                            color: root.text
+                            font.pixelSize: 8
+                            verticalAlignment: Text.AlignVCenter
+                            text: root.newWorkspaceSearch
+                            onTextChanged: root.newWorkspaceSearch = text
+                            clip: true
+                        }
+                    }
+
+                    Flickable {
+                        width: parent.width
+                        height: 190
+                        clip: true
+                        contentWidth: width
+                        contentHeight: addIconGrid.height
+                        boundsBehavior: Flickable.StopAtBounds
+
+                        Grid {
+                            id: addIconGrid
+                            width: parent.width
+                            columns: 8
+                            rowSpacing: 5
+                            columnSpacing: 5
+                            height: Math.ceil(root.addIconMatches().length / 8) * 42
+
+                            Repeater {
+                                model: root.addIconMatches()
+
+                                delegate: Rectangle {
+                                    width: (addIconGrid.width - 35) / 8
+                                    height: 42
+                                    radius: 8
+                                    color: root.newWorkspaceIcon === modelData.id ? root.selected : "#FFFFFF"
+                                    border.width: 1
+                                    border.color: root.newWorkspaceIcon === modelData.id ? root.text : root.border
+
+                                    Image {
+                                        anchors.centerIn: parent
+                                        width: 19
+                                        height: 19
+                                        sourceSize.width: width
+                                        sourceSize.height: height
+                                        fillMode: Image.PreserveAspectFit
+                                        asynchronous: true
+                                        source: Qt.resolvedUrl("../assets/icons/" + modelData.id)
+                                    }
+
+                                    Text {
+                                        anchors.left: parent.left
+                                        anchors.right: parent.right
+                                        anchors.bottom: parent.bottom
+                                        anchors.bottomMargin: 4
+                                        horizontalAlignment: Text.AlignHCenter
+                                        text: modelData.name
+                                        color: root.textSecondary
+                                        font.pixelSize: 5
+                                        elide: Text.ElideRight
+                                    }
+
+                                    MouseArea {
+                                        anchors.fill: parent
+                                        cursorShape: Qt.PointingHandCursor
+                                        onClicked: root.newWorkspaceIcon = modelData.id
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+
+                Column {
+                    visible: root.removeWorkspaceOpen
+                    width: parent.width
+                    spacing: 10
+
+                    Rectangle {
+                        width: parent.width
+                        height: 64
+                        radius: 12
+                        color: root.panel
+                        border.width: 1
+                        border.color: root.border
+
+                        Row {
+                            anchors.fill: parent
+                            anchors.margins: 12
+                            spacing: 10
+
+                            Image {
+                                width: 36
+                                height: 36
+                                anchors.verticalCenter: parent.verticalCenter
+                                sourceSize.width: width
+                                sourceSize.height: height
+                                fillMode: Image.PreserveAspectFit
+                                asynchronous: true
+                                source: "file://" + root.generatedRoot + "/" + root.selectedSlot + ".svg"
+                            }
+
+                            Column {
+                                anchors.verticalCenter: parent.verticalCenter
+                                Text {
+                                    text: root.settingFor(root.selectedSlot).icon
+                                    color: root.text
+                                    font.pixelSize: 10
+                                    font.weight: Font.DemiBold
+                                }
+                                Text {
+                                    text: "Workspace: " + root.selectedSlot
+                                    color: root.muted
+                                    font.pixelSize: 7
+                                }
+                            }
+                        }
+                    }
+
+                    Text {
+                        width: parent.width
+                        text: "This removes the workspace from A16EEN and the navbar. Any open windows will be moved to another workspace first."
+                        color: root.textSecondary
+                        wrapMode: Text.WordWrap
+                        font.pixelSize: 8
+                    }
+                }
+
+                Text {
+                    visible: root.workspaceStatus.length > 0
+                    width: parent.width
+                    text: root.workspaceStatus
+                    color: root.workspaceStatus.indexOf("FAILED") >= 0 ||
+                        root.workspaceStatus.indexOf("EXISTS") >= 0 ||
+                        root.workspaceStatus.indexOf("LONG") >= 0 ||
+                        root.workspaceStatus.indexOf("NAME") >= 0
+                        ? "#B42318" : root.textSecondary
+                    font.pixelSize: 8
+                }
+
+                Item { width: 1; height: 1 }
+
+                Row {
+                    width: parent.width
+                    height: 38
+                    spacing: 8
+
+                    Rectangle {
+                        width: parent.width / 2 - 4
+                        height: 38
+                        radius: 10
+                        color: root.panel
+                        border.width: 1
+                        border.color: root.border
+
+                        Text {
+                            anchors.centerIn: parent
+                            text: "CANCEL"
+                            color: root.textSecondary
+                            font.pixelSize: 8
+                            font.weight: Font.DemiBold
+                        }
+
+                        MouseArea {
+                            anchors.fill: parent
+                            cursorShape: Qt.PointingHandCursor
+                            onClicked: {
+                                if (root.addWorkspaceOpen)
+                                    root.cancelAddWorkspace()
+                                else
+                                    root.cancelRemoveWorkspace()
+                            }
+                        }
+                    }
+
+                    Rectangle {
+                        width: parent.width / 2 - 4
+                        height: 38
+                        radius: 10
+                        color: root.text
+                        Text {
+                            anchors.centerIn: parent
+                            text: root.addWorkspaceOpen ? "ADD WORKSPACE" : "REMOVE WORKSPACE"
+                            color: "#FFFFFF"
+                            font.pixelSize: 8
+                            font.weight: Font.DemiBold
+                        }
+
+                        MouseArea {
+                            anchors.fill: parent
+                            cursorShape: Qt.PointingHandCursor
+                            enabled: !root.workspaceProcess.running
+                            onClicked: {
+                                if (root.addWorkspaceOpen)
+                                    root.submitAddWorkspace()
+                                else
+                                    root.submitRemoveWorkspace()
+                            }
+                        }
+                    }
                 }
             }
         }
