@@ -1,0 +1,64 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+readonly STATE_DIR="${XDG_STATE_HOME:-$HOME/.local/state}/a16een"
+readonly STATE_FILE="$STATE_DIR/navbar-content.json"
+
+ensure_state() {
+    mkdir -p "$STATE_DIR"
+    if [[ ! -s "$STATE_FILE" ]]; then
+        cat > "$STATE_FILE" <<'JSON'
+{
+  "workspaces": true,
+  "time": false,
+  "date": false,
+  "battery": false,
+  "volume": false,
+  "network": false
+}
+JSON
+    fi
+
+    jq empty "$STATE_FILE" >/dev/null 2>&1 || {
+        echo "A16EEN navbar content state is invalid." >&2
+        return 1
+    }
+}
+
+get_state() {
+    ensure_state
+    cat "$STATE_FILE"
+}
+
+set_item() {
+    [[ $# -eq 2 ]] || {
+        echo "Usage: a16een-navbar-content set <item> <on|off>" >&2
+        return 2
+    }
+
+    local item="$1"
+    local value="$2"
+
+    case "$item" in
+        workspaces|time|date|battery|volume|network) ;;
+        *) echo "Invalid navbar content item: $item" >&2; return 2 ;;
+    esac
+
+    case "$value" in
+        on) value=true ;;
+        off) value=false ;;
+        *) echo "Value must be on or off." >&2; return 2 ;;
+    esac
+
+    ensure_state
+    local tmp="$STATE_DIR/navbar-content.json.XXXXXX"
+    jq --arg item "$item" --argjson value "$value" '.[$item] = $value' "$STATE_FILE" > "$tmp"
+    mv -f "$tmp" "$STATE_FILE"
+    printf '%s\n' "$value"
+}
+
+case "${1:-get}" in
+    get) get_state ;;
+    set) shift; set_item "$@" ;;
+    *) echo "Usage: a16een-navbar-content {get|set <item> <on|off>}" >&2; exit 2 ;;
+esac
