@@ -3,8 +3,21 @@ set -euo pipefail
 
 readonly STATE_DIR="${XDG_STATE_HOME:-$HOME/.local/state}/a16een"
 readonly SETTINGS_FILE="$STATE_DIR/navbar.json"
+readonly COUNT_FILE="$STATE_DIR/workspace-count"
 readonly ICON_ROOT="${XDG_CONFIG_HOME:-$HOME/.config}/a16een/quickshell/a16een/assets/icons"
 readonly OUTPUT_DIR="$STATE_DIR/navbar-icons"
+
+readonly WORKSPACES=(
+    "home"
+    "code"
+    "web"
+    "comms"
+    "studio"
+    "music"
+    "games"
+    "files"
+    "lab"
+)
 
 declare -Ar DEFAULT_ICON=(
     [home]="house.svg"
@@ -29,6 +42,54 @@ declare -Ar DEFAULT_COLOR=(
     [files]="#111318"
     [lab]="#111318"
 )
+
+active_count() {
+    local count=""
+    if [[ -s "$COUNT_FILE" ]]; then
+        count="$(head -n 1 "$COUNT_FILE" | tr -d "[:space:]")"
+    fi
+
+    if [[ "$count" =~ ^[0-9]+$ ]] && (( count >= 2 && count <= ${#WORKSPACES[@]} )); then
+        printf "%s\n" "$count"
+    else
+        printf "6\n"
+    fi
+}
+
+is_known_slot() {
+    local candidate="$1"
+    local slot
+    for slot in "${WORKSPACES[@]}"; do
+        [[ "$slot" == "$candidate" ]] && return 0
+    done
+    return 1
+}
+
+is_active_slot() {
+    local candidate="$1"
+    local count="$(active_count)"
+    local i
+    for ((i=0; i<count; i++)); do
+        [[ "${WORKSPACES[$i]}" == "$candidate" ]] && return 0
+    done
+    return 1
+}
+
+prune_inactive_slots() {
+    mkdir -p "$STATE_DIR" "$OUTPUT_DIR"
+    local count="$(active_count)"
+    local i slot tmp
+
+    for ((i=count; i<${#WORKSPACES[@]}; i++)); do
+        slot="${WORKSPACES[$i]}"
+        rm -f "$OUTPUT_DIR/$slot.svg"
+
+        [[ -s "$SETTINGS_FILE" ]] || continue
+        tmp="$(mktemp "$STATE_DIR/navbar.json.XXXXXX")"
+        jq --arg slot "$slot" "del(.[$slot])" "$SETTINGS_FILE" > "$tmp"
+        mv -f "$tmp" "$SETTINGS_FILE"
+    done
+}
 
 normalize_color() {
     local value="${1:-}"
@@ -108,13 +169,15 @@ set_setting() {
     local icon="$2"
     local color="$3"
 
-    case "$slot" in
-        home|code|web|comms|studio|music|games|files|lab) ;;
-        *)
-            echo "A16EEN navbar: invalid workspace slot: $slot" >&2
-            return 2
-            ;;
-    esac
+    if ! is_known_slot "$slot"; then
+        echo "A16EEN navbar: invalid workspace slot: $slot" >&2
+        return 2
+    fi
+
+    if ! is_active_slot "$slot"; then
+        echo "A16EEN navbar: workspace slot is not active: $slot" >&2
+        return 2
+    fi
 
     icon="$(normalize_icon "$icon")"
     color="$(normalize_color "$color")"
@@ -154,13 +217,17 @@ main() {
     ensure_settings
     mkdir -p "$OUTPUT_DIR"
 
-    local slot
-    for slot in "${!DEFAULT_ICON[@]}"; do
+    prune_inactive_slots
+
+    local count="$(active_count)"
+    local i slot
+    for ((i=0; i<count; i++)); do
+        slot="${WORKSPACES[$i]}"
         generate_icon "$slot"
     done
 
     touch "$OUTPUT_DIR/ready"
-    echo "A16EEN navbar icons generated."
+    echo "A16EEN navbar icons generated for $count active workspaces."
 }
 
 case "${1:-apply}" in
