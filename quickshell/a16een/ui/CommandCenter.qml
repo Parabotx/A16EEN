@@ -57,9 +57,9 @@ PanelWindow {
     signal iconThemeChanged(string themeId)
     signal navbarPositionChanged(string position)
 
-    // NavbarManager owns its own light page. Do not turn the entire
-    // command-center window into a white cover when /navbar is open.
-    readonly property color surface: root.widgetViewOpen || root.controlViewOpen || root.iconThemeViewOpen || root.workspacePresetViewOpen ? "#FFFFFF" : "#000000"
+    // The expanded command-center card becomes a light card for navbar mode.
+    // The card itself is bounded; this does not create a screen-wide cover.
+    readonly property color surface: root.widgetViewOpen || root.controlViewOpen || root.iconThemeViewOpen || root.workspacePresetViewOpen || root.navbarViewOpen ? "#FFFFFF" : "#000000"
     readonly property color borderColor: "#1A1A1A"
     readonly property color fieldBackground: "#0A0A0A"
     readonly property color fieldBorder: "#1C1C1C"
@@ -581,14 +581,30 @@ PanelWindow {
             anchors.fill: parent
             active: root.navbarViewOpen
             visible: root.navbarViewOpen
+            focus: root.navbarViewOpen
+            z: 30
             source: Qt.resolvedUrl("NavbarManager.qml")
 
             onLoaded: {
                 if (!item)
                     return
+
+                // Explicitly own the loader geometry and stacking so the
+                // manager cannot disappear behind the command-center layers.
+                item.anchors.fill = navbarLoader
+                item.visible = true
                 item.active = true
                 item.backRequested.connect(root.closeNavbarView)
                 item.navbarPositionChanged.connect(root.navbarPositionChanged)
+
+                Qt.callLater(() => {
+                    if (root.navbarViewOpen && navbarLoader.item) {
+                        navbarLoader.item.anchors.fill = navbarLoader
+                        navbarLoader.item.visible = true
+                        navbarLoader.item.active = true
+                        navbarLoader.item.forceActiveFocus()
+                    }
+                })
             }
         }
 
