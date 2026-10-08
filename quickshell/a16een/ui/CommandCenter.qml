@@ -14,7 +14,6 @@ PanelWindow {
     property string controlDetail: ""
     property bool iconThemeViewOpen: false
     property bool navbarViewOpen: false
-    property var navbarSettings: ({})
     property bool workspacePresetViewOpen: false
     property bool doNotDisturb: false
     property string commandText: "/"
@@ -56,9 +55,8 @@ PanelWindow {
     signal timeUse24HourRequested(bool enabled)
     signal timeShowSecondsRequested(bool enabled)
     signal iconThemeChanged(string themeId)
-    signal navbarSettingsChanged(var settings)
 
-    readonly property color surface: root.widgetViewOpen || root.controlViewOpen || root.iconThemeViewOpen || root.workspacePresetViewOpen || root.navbarViewOpen ? "#FFFFFF" : "#000000"
+    readonly property color surface: root.widgetViewOpen || root.controlViewOpen || root.iconThemeViewOpen || root.workspacePresetViewOpen ? "#FFFFFF" : "#000000"
     readonly property color borderColor: "#1A1A1A"
     readonly property color fieldBackground: "#0A0A0A"
     readonly property color fieldBorder: "#1C1C1C"
@@ -85,7 +83,7 @@ PanelWindow {
         { id: "battery", name: "battery", keywords: ["battery", "power", "charge", "charging"] },
         { id: "dnd", name: "do not disturb", keywords: ["do not disturb", "dnd", "focus", "notifications"] },
         { id: "icons", name: "icons", keywords: ["icons", "icon theme", "icon themes", "app icons", "folder icons", "appearance"] },
-        { id: "navbar", name: "navbar", keywords: ["navbar", "navigation", "dock", "workspace icons", "navigation icons", "navbar icons", "icon color", "icon colour"] },
+        { id: "navbar", name: "navbar", keywords: ["navbar", "navigation", "dock", "workspace icons", "navbar icons", "icon color", "icon colour"] },
         { id: "presets", name: "workspace presets", keywords: ["workspace presets", "preset", "workspace setup", "app sets", "app group", "session setup", "launch setup"] },
         { id: "widgets", name: "widgets", keywords: ["widgets", "widget", "clock", "time", "day", "date", "desktop", "modules"] },
         { id: "restart-shell", name: "restart-shell", keywords: ["restart", "shell", "reload", "quickshell"] },
@@ -299,8 +297,8 @@ PanelWindow {
         root.widgetViewOpen = false
         root.iconThemeViewOpen = false
         root.controlViewOpen = true
-        root.controlDetail = ""
         root.navbarViewOpen = false
+        root.controlDetail = ""
         root.commandText = "/controls"
         root.selectedCommandIndex = 0
         Qt.callLater(() => {
@@ -322,7 +320,6 @@ PanelWindow {
         root.widgetViewOpen = false
         root.controlViewOpen = true
         root.iconThemeViewOpen = false
-        root.navbarViewOpen = false
         root.controlDetail = key
         root.commandText = "/" + key
         root.selectedCommandIndex = 0
@@ -359,8 +356,8 @@ PanelWindow {
         root.commandText = "/navbar"
         root.selectedCommandIndex = 0
         Qt.callLater(() => {
-            if (root.navbarViewOpen)
-                navbarSection.forceActiveFocus()
+            if (root.navbarViewOpen && navbarLoader.item)
+                navbarLoader.item.forceActiveFocus()
         })
     }
 
@@ -374,7 +371,6 @@ PanelWindow {
     function closeIconThemeView() {
         root.iconThemeViewOpen = false
         root.workspacePresetViewOpen = false
-        root.navbarViewOpen = false
         root.commandText = "/"
         root.selectedCommandIndex = 0
         Qt.callLater(() => search.forceActiveFocus())
@@ -398,7 +394,6 @@ PanelWindow {
 
     function closeWorkspacePresetView() {
         root.workspacePresetViewOpen = false
-        root.navbarViewOpen = false
         root.commandText = "/"
         root.selectedCommandIndex = 0
         Qt.callLater(() => search.forceActiveFocus())
@@ -578,19 +573,20 @@ PanelWindow {
             onBackRequested: root.closeIconThemeView()
             onThemeChangeRequested: root.iconThemeChanged(themeId)
         }
-
-        NavbarSection {
-            id: navbarSection
+        Loader {
+            id: navbarLoader
             anchors.fill: parent
-            visible: root.navbarViewOpen
             active: root.navbarViewOpen
-            navbarSettings: root.navbarSettings
-            navbarIconRoot: root.navbarIconRoot
-            navbarIconRevision: root.navbarIconRevision
-            onBackRequested: root.closeNavbarView()
-            onNavbarSettingsChanged: root.navbarSettingsChanged(settings)
-        }
+            visible: root.navbarViewOpen
+            source: Qt.resolvedUrl("NavbarSection.qml")
 
+            onLoaded: {
+                if (!item)
+                    return
+                item.active = true
+                item.backRequested.connect(root.closeNavbarView)
+            }
+        }
 
         ControlCenterSection {
             id: controlSection
@@ -643,7 +639,7 @@ PanelWindow {
         // Normal command search.
         Item {
             anchors.fill: parent
-            visible: !root.powerViewOpen && !root.widgetViewOpen && !root.controlViewOpen && !root.iconThemeViewOpen && !root.workspacePresetViewOpen && !root.navbarViewOpen
+            visible: !root.powerViewOpen && !root.widgetViewOpen && !root.controlViewOpen && !root.iconThemeViewOpen && !root.workspacePresetViewOpen
 
             Rectangle {
                 id: searchBox
