@@ -16,10 +16,11 @@ PanelWindow {
     aboveWindows: true
     exclusiveZone: 0
 
-    implicitWidth: 180
     implicitHeight: 10
 
     anchors {
+        left: true
+        right: true
         bottom: true
     }
 
@@ -30,20 +31,30 @@ PanelWindow {
     WlrLayershell.layer: WlrLayer.Overlay
     WlrLayershell.namespace: "a16een-control-indicator"
 
-    Rectangle {
-        anchors.fill: parent
-        radius: 5
-        color: "#FFFFFF"
-        opacity: 0.98
+    mask: Region {
+        item: capsule
     }
 
-    Rectangle {
-        x: 2
-        y: 2
-        width: Math.max(2, (parent.width - 4) * Math.max(0, Math.min(1, root.level)))
-        height: parent.height - 4
-        radius: 3
-        color: "#000000"
+    Item {
+        id: capsule
+        width: 180
+        height: 10
+        anchors.centerIn: parent
+
+        Rectangle {
+            anchors.fill: parent
+            radius: 5
+            color: "#FFFFFF"
+            opacity: 0.98
+        }
+
+        Rectangle {
+            x: 2
+            y: 2
+            width: Math.max(2, (parent.width - 4) * Math.max(0, Math.min(1, root.level)))
+            height: parent.height - 4
+            radius: 3
+            color: "#000000"
 
         Behavior on width {
             NumberAnimation {
