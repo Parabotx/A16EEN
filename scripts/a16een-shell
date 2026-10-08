@@ -66,6 +66,13 @@ backoff=1
 
 while true; do
     load_icon_theme
+
+    # Recreate user-defined named workspaces from A16EEN's persistent registry.
+    # This uses Niri IPC and does not rewrite or reload the compositor config.
+    if command -v a16een-workspaces >/dev/null 2>&1; then
+        a16een-workspaces apply >/dev/null 2>>"$LOG_FILE" || true
+    fi
+
     timestamp="$(date '+%Y-%m-%d %H:%M:%S')"
     printf '[%s] starting Quickshell (attempt %d)\n' "$timestamp" "$((attempt + 1))" >>"$LOG_FILE"
 
