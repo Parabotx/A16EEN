@@ -381,7 +381,11 @@ fi
 # or when its generated state is missing. User-selected navbar settings remain
 # in ~/.local/state/a16een/navbar.json and are applied by the manager.
 NAVBAR_SYNC_MARKER="$STATE_DIR/navbar-script-sha"
-NAVBAR_SYNC_SHA="$(sha256sum "$ROOT_DIR/scripts/a16een-navbar" | awk '{print $1}')"
+# Runtime renderer revision invalidates stale generated navbar SVGs after
+# a rendering-path repair, even when the generator source itself is unchanged.
+NAVBAR_RUNTIME_REVISION="3"
+NAVBAR_SCRIPT_HASH="$(sha256sum "$ROOT_DIR/scripts/a16een-navbar" | awk '{print $1}')"
+NAVBAR_SYNC_SHA="$(printf '%s:%s' "$NAVBAR_RUNTIME_REVISION" "$NAVBAR_SCRIPT_HASH" | sha256sum | awk '{print $1}')"
 PREVIOUS_NAVBAR_SYNC_SHA=""
 if [ -f "$NAVBAR_SYNC_MARKER" ]; then
     PREVIOUS_NAVBAR_SYNC_SHA="$(cat "$NAVBAR_SYNC_MARKER")"
