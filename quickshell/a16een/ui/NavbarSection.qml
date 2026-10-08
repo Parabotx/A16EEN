@@ -6,6 +6,8 @@ Item {
 
     property bool active: false
     property var navbarSettings: ({})
+    property string navbarIconRoot: ""
+    property int navbarIconRevision: 0
     signal backRequested()
     signal navbarSettingsChanged(var settings)
 
@@ -70,6 +72,16 @@ Item {
         case "music": return "music.svg"
         default: return "house.svg"
         }
+    }
+
+    function baseIconPath(slot) {
+        return Qt.resolvedUrl("../assets/icons/" + root.defaultIcon(slot))
+    }
+
+    function generatedIconPath(slot) {
+        if (!root.navbarIconRoot.length)
+            return root.baseIconPath(slot)
+        return "file://" + root.navbarIconRoot + "/" + slot + ".svg"
     }
 
     function settingFor(slot) {
@@ -220,10 +232,10 @@ Item {
                                         anchors.centerIn: parent
                                         width: 18
                                         height: 18
-                                        iconName: root.settingFor(modelData.id).icon
-                                        iconColor: root.selectedSlot === modelData.id
-                                            ? root.accent
-                                            : root.settingFor(modelData.id).color
+                                        iconPath: root.generatedIconPath(modelData.id)
+                                        fallbackIconPath: root.baseIconPath(modelData.id)
+                                        refreshRevision: root.navbarIconRevision
+                                        active: root.selectedSlot === modelData.id
                                     }
                                 }
 
@@ -299,8 +311,9 @@ Item {
                                 anchors.centerIn: parent
                                 width: 22
                                 height: 22
-                                iconName: root.settingFor(root.selectedSlot).icon
-                                iconColor: root.settingFor(root.selectedSlot).color
+                                iconPath: root.generatedIconPath(root.selectedSlot)
+                                fallbackIconPath: root.baseIconPath(root.selectedSlot)
+                                refreshRevision: root.navbarIconRevision
                             }
                         }
 
@@ -393,10 +406,10 @@ Item {
                                         anchors.horizontalCenter: parent.horizontalCenter
                                         width: 22
                                         height: 22
-                                        iconName: modelData.id
-                                        iconColor: root.settingFor(root.selectedSlot).icon === modelData.id
-                                            ? root.accent
-                                            : root.settingFor(root.selectedSlot).color
+                                        iconPath: root.generatedIconPath(root.selectedSlot)
+                                        fallbackIconPath: root.baseIconPath(root.selectedSlot)
+                                        refreshRevision: root.navbarIconRevision
+                                        active: root.settingFor(root.selectedSlot).icon === modelData.id
                                     }
 
                                     Text {
