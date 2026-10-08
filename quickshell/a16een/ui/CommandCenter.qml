@@ -639,7 +639,7 @@ PanelWindow {
         // Normal command search.
         Item {
             anchors.fill: parent
-            visible: !root.powerViewOpen && !root.widgetViewOpen && !root.controlViewOpen && !root.iconThemeViewOpen && !root.workspacePresetViewOpen
+            visible: !root.powerViewOpen && !root.widgetViewOpen && !root.controlViewOpen && !root.iconThemeViewOpen && !root.workspacePresetViewOpen && !root.navbarViewOpen
 
             Rectangle {
                 id: searchBox
@@ -664,7 +664,7 @@ PanelWindow {
                     selectedTextColor: root.primaryText
                     font.pixelSize: 12
                     clip: true
-                    focus: root.opened && !root.powerViewOpen && !root.widgetViewOpen && !root.controlViewOpen && !root.iconThemeViewOpen && !root.workspacePresetViewOpen
+                    focus: root.opened && !root.powerViewOpen && !root.widgetViewOpen && !root.controlViewOpen && !root.iconThemeViewOpen && !root.workspacePresetViewOpen && !root.navbarViewOpen
                     activeFocusOnPress: true
                     verticalAlignment: Text.AlignVCenter
                     selectByMouse: true
@@ -1591,7 +1591,7 @@ PanelWindow {
         search.text = "/"
 
         Qt.callLater(() => {
-            if (root.opened && !root.widgetViewOpen && !root.powerViewOpen && !root.controlViewOpen && !root.iconThemeViewOpen && !root.workspacePresetViewOpen)
+            if (root.opened && !root.widgetViewOpen && !root.powerViewOpen && !root.controlViewOpen && !root.iconThemeViewOpen && !root.workspacePresetViewOpen && !root.navbarViewOpen)
                 search.forceActiveFocus()
         })
     }
