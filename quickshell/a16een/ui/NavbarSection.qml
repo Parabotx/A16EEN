@@ -771,79 +771,65 @@ Item {
                         }
                     }
 
-                    Flickable {
+                    GridView {
                         id: iconScroll
                         Layout.fillWidth: true
                         Layout.fillHeight: true
                         clip: true
-                        contentWidth: width
-                        contentHeight: iconGrid.height
+                        cellWidth: Math.max(82, width / 7)
+                        cellHeight: 62
+                        model: root.filteredIconChoices
                         boundsBehavior: Flickable.StopAtBounds
+                        cacheBuffer: 124
 
-                        GridLayout {
-                            id: iconGrid
-                            width: iconScroll.width
-                            columns: 7
-                            rowSpacing: 6
-                            columnSpacing: 6
-                            height: Math.max(
-                                58,
-                                Math.ceil(root.filteredIconChoices.length / 7) * 55
-                            )
+                        delegate: Rectangle {
+                            width: iconScroll.cellWidth - 6
+                            height: iconScroll.cellHeight - 6
+                            radius: 11
 
-                            Repeater {
-                                model: root.filteredIconChoices
+                            property var iconData: modelData
+                            property bool selected:
+                                root.settingFor(root.selectedSlot).icon === iconData.id
 
-                                delegate: Rectangle {
-                                    Layout.preferredWidth: (iconGrid.width - 36) / 7
-                                    Layout.preferredHeight: 55
-                                    radius: 11
+                            color: selected ? root.selectedBackground
+                                : (iconMouse.containsMouse ? root.panelHover : "#FFFFFF")
+                            border.width: selected ? 1.5 : 1
+                            border.color: selected ? root.accent : root.border
 
-                                    readonly property bool selected:
-                                        root.settingFor(root.selectedSlot).icon === modelData.id
+                            Column {
+                                anchors.centerIn: parent
+                                spacing: 4
 
-                                    color: selected ? root.selectedBackground
-                                        : (iconMouse.containsMouse ? root.panelHover : "#FFFFFF")
-                                    border.width: selected ? 1.4 : 1
-                                    border.color: selected ? root.accent : root.border
-
-                                    Column {
-                                        anchors.centerIn: parent
-                                        spacing: 3
-
-                                        Image {
-                                            anchors.horizontalCenter: parent.horizontalCenter
-                                            width: 20
-                                            height: 20
-                                            sourceSize.width: width
-                                            sourceSize.height: height
-                                            fillMode: Image.PreserveAspectFit
-                                            asynchronous: true
-                                            smooth: true
-                                            mipmap: true
-                                            cache: false
-                                            source: Qt.resolvedUrl("../assets/icons/" + modelData.id)
-                                        }
-
-                                        Text {
-                                            width: Math.max(40, parent.width - 4)
-                                            horizontalAlignment: Text.AlignHCenter
-                                            text: modelData.name
-                                            color: root.textSecondary
-                                            font.pixelSize: 6
-                                            font.weight: selected ? Font.DemiBold : Font.Normal
-                                            elide: Text.ElideRight
-                                        }
-                                    }
-
-                                    MouseArea {
-                                        id: iconMouse
-                                        anchors.fill: parent
-                                        hoverEnabled: true
-                                        cursorShape: Qt.PointingHandCursor
-                                        onClicked: root.patch({ icon: modelData.id })
-                                    }
+                                Image {
+                                    anchors.horizontalCenter: parent.horizontalCenter
+                                    width: 22
+                                    height: 22
+                                    sourceSize.width: width
+                                    sourceSize.height: height
+                                    fillMode: Image.PreserveAspectFit
+                                    asynchronous: true
+                                    smooth: true
+                                    mipmap: true
+                                    source: Qt.resolvedUrl("../assets/icons/" + iconData.id)
                                 }
+
+                                Text {
+                                    width: parent.width + 12
+                                    horizontalAlignment: Text.AlignHCenter
+                                    text: iconData.name
+                                    color: root.textSecondary
+                                    font.pixelSize: 7
+                                    font.weight: selected ? Font.DemiBold : Font.Normal
+                                    elide: Text.ElideRight
+                                }
+                            }
+
+                            MouseArea {
+                                id: iconMouse
+                                anchors.fill: parent
+                                hoverEnabled: true
+                                cursorShape: Qt.PointingHandCursor
+                                onClicked: root.patch({ icon: iconData.id })
                             }
                         }
                     }
