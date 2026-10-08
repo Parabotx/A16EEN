@@ -7,8 +7,6 @@ Item {
 
     property bool active: false
     property var navbarSettings: ({})
-    property string navbarIconRoot: ""
-    property int navbarIconRevision: 0
 
     readonly property string stateDir: {
         const stateHome = Quickshell.env("XDG_STATE_HOME")
@@ -19,37 +17,29 @@ Item {
     readonly property string settingsPath: root.stateDir + "/navbar.json"
     readonly property string generatedPathRoot: root.stateDir + "/navbar-icons"
     signal backRequested()
-    signal navbarSettingsChanged(var settings)
 
     property string selectedSlot: "home"
+    property string pendingIcon: "house.svg"
+    property string pendingColor: "#111318"
 
     readonly property color page: "#FFFFFF"
-    readonly property color card: "#F4F6F8"
-    readonly property color cardHover: "#E7EBEF"
-    readonly property color border: "#CBD3DB"
-    readonly property color borderStrong: "#9AA6B2"
+    readonly property color card: "#F7F8FA"
+    readonly property color cardHover: "#EEF1F4"
+    readonly property color border: "#E1E5EA"
+    readonly property color borderStrong: "#CDD3DA"
     readonly property color textPrimary: "#111318"
-    readonly property color textSecondary: "#334155"
-    readonly property color textMuted: "#64748B"
-    readonly property color accent: "#111318"
-
-    property int workspaceCount: 6
-    property int pendingWorkspaceCount: 6
-    property string workspaceStatus: "READY"
+    readonly property color textSecondary: "#66707C"
+    readonly property color textMuted: "#8A939E"
+    readonly property color accent: "#3B82F6"
 
     readonly property var slots: [
-        { id: "home", name: "HOME", description: "Main workspace", defaultIcon: "house.svg" },
-        { id: "code", name: "CODE", description: "Development workspace", defaultIcon: "code.svg" },
-        { id: "web", name: "WEB", description: "Browser workspace", defaultIcon: "globe.svg" },
-        { id: "comms", name: "COMMS", description: "Communication workspace", defaultIcon: "messages-square.svg" },
-        { id: "studio", name: "STUDIO", description: "Creative workspace", defaultIcon: "sparkles.svg" },
-        { id: "music", name: "MUSIC", description: "Music workspace", defaultIcon: "music.svg" },
-        { id: "games", name: "GAMES", description: "Gaming workspace", defaultIcon: "gamepad-2.svg" },
-        { id: "files", name: "FILES", description: "Files & storage", defaultIcon: "folder.svg" },
-        { id: "lab", name: "LAB", description: "Experiments & tools", defaultIcon: "terminal.svg" }
+        { id: "home", name: "HOME", description: "Main workspace" },
+        { id: "code", name: "CODE", description: "Development workspace" },
+        { id: "web", name: "WEB", description: "Browser workspace" },
+        { id: "comms", name: "COMMS", description: "Communication workspace" },
+        { id: "studio", name: "STUDIO", description: "Creative workspace" },
+        { id: "music", name: "MUSIC", description: "Music workspace" }
     ]
-
-    readonly property var visibleSlots: root.slots.slice(0, root.workspaceCount)
 
     readonly property var iconChoices: [
         { id: "house.svg", name: "House" },
@@ -97,74 +87,7 @@ Item {
         { id: "cloud.svg", name: "Cloud" },
         { id: "map-pin.svg", name: "Map Pin" },
         { id: "compass.svg", name: "Compass" },
-        { id: "command.svg", name: "Command" },
-        { id: "accessibility.svg", name: "Accessibility" },
-        { id: "alarm-clock.svg", name: "Alarm Clock" },
-        { id: "archive.svg", name: "Archive" },
-        { id: "badge-check.svg", name: "Badge Check" },
-        { id: "bell.svg", name: "Bell" },
-        { id: "book-open.svg", name: "Book Open" },
-        { id: "bookmark.svg", name: "Bookmark" },
-        { id: "calendar.svg", name: "Calendar" },
-        { id: "check.svg", name: "Check" },
-        { id: "badge-alert.svg", name: "Badge Alert" },
-        { id: "circle.svg", name: "Circle" },
-        { id: "circle-check.svg", name: "Circle Check" },
-        { id: "circle-minus.svg", name: "Circle Minus" },
-        { id: "circle-plus.svg", name: "Circle Plus" },
-        { id: "clipboard.svg", name: "Clipboard" },
-        { id: "clock.svg", name: "Clock" },
-        { id: "cloud-sun.svg", name: "Cloud Sun" },
-        { id: "cpu.svg", name: "CPU" },
-        { id: "database.svg", name: "Database" },
-        { id: "download.svg", name: "Download" },
-        { id: "ellipsis.svg", name: "Ellipsis" },
-        { id: "external-link.svg", name: "External Link" },
-        { id: "file.svg", name: "File" },
-        { id: "file-code.svg", name: "File Code" },
-        { id: "list-filter.svg", name: "List Filter" },
-        { id: "flag.svg", name: "Flag" },
-        { id: "gauge.svg", name: "Gauge" },
-        { id: "git-branch.svg", name: "Git Branch" },
-        { id: "git-pull-request.svg", name: "Git Pull Request" },
-        { id: "hard-drive.svg", name: "Hard Drive" },
-        { id: "headphones.svg", name: "Headphones" },
-        { id: "image.svg", name: "Image" },
-        { id: "inbox.svg", name: "Inbox" },
-        { id: "key.svg", name: "Key" },
-        { id: "keyboard.svg", name: "Keyboard" },
-        { id: "layers.svg", name: "Layers" },
-        { id: "link.svg", name: "Link" },
-        { id: "list.svg", name: "List" },
-        { id: "lock.svg", name: "Lock" },
-        { id: "mail.svg", name: "Mail" },
-        { id: "menu.svg", name: "Menu" },
-        { id: "mic.svg", name: "Mic" },
-        { id: "mouse.svg", name: "Mouse" },
-        { id: "network.svg", name: "Network" },
-        { id: "package.svg", name: "Package" },
-        { id: "pen.svg", name: "Pen" },
-        { id: "phone.svg", name: "Phone" },
-        { id: "play.svg", name: "Play" },
-        { id: "printer.svg", name: "Printer" },
-        { id: "save.svg", name: "Save" },
-        { id: "search.svg", name: "Search" },
-        { id: "server.svg", name: "Server" },
-        { id: "settings.svg", name: "Settings" },
-        { id: "shield-check.svg", name: "Shield Check" },
-        { id: "shopping-bag.svg", name: "Shopping Bag" },
-        { id: "sliders-horizontal.svg", name: "Sliders" },
-        { id: "smartphone.svg", name: "Smartphone" },
-        { id: "star.svg", name: "Star" },
-        { id: "tag.svg", name: "Tag" },
-        { id: "trash.svg", name: "Trash" },
-        { id: "upload.svg", name: "Upload" },
-        { id: "user.svg", name: "User" },
-        { id: "users.svg", name: "Users" },
-        { id: "video.svg", name: "Video" },
-        { id: "wifi.svg", name: "WiFi" },
-        { id: "wrench.svg", name: "Wrench" },
-        { id: "x.svg", name: "Close" }
+        { id: "command.svg", name: "Command" }
     ]
 
     readonly property var colorChoices: [
@@ -197,10 +120,7 @@ Item {
     }
 
     function generatedIconPath(slot) {
-        const pathRoot = root.navbarIconRoot.length
-            ? root.navbarIconRoot
-            : root.generatedPathRoot
-        return "file://" + pathRoot + "/" + slot + ".svg"
+        return "file://" + root.generatedPathRoot + "/" + slot + ".svg"
     }
 
     function settingFor(slot) {
@@ -224,33 +144,26 @@ Item {
     }
 
     function patch(p) {
+        const current = root.settingFor(root.selectedSlot)
+        const icon = p.icon || current.icon
+        const color = p.color || current.color
+
         const next = {}
         for (const slot of root.slots)
             next[slot.id] = root.settingFor(slot.id)
 
         next[root.selectedSlot] = {
-            icon: p.icon || root.settingFor(root.selectedSlot).icon,
-            color: p.color || root.settingFor(root.selectedSlot).color
+            icon: icon,
+            color: color
         }
 
+        root.pendingIcon = icon
+        root.pendingColor = color
         root.navbarSettings = next
-        root.statusText = "SAVING " + root.selectedSlot.toUpperCase()
-        settingsFile.setText(JSON.stringify(next, null, 2))
-        root.navbarSettingsChanged(next)
+        root.statusText = "APPLYING " + root.selectedSlot.toUpperCase()
 
         rebuildProcess.running = false
         Qt.callLater(() => rebuildProcess.running = true)
-    }
-
-    function applyWorkspaceCount(count) {
-        const value = Math.max(2, Math.min(9, Number(count)))
-        if (value === root.workspaceCount && value === root.pendingWorkspaceCount)
-            return
-
-        root.pendingWorkspaceCount = value
-        root.workspaceStatus = "APPLYING " + value
-        workspaceProcess.running = false
-        Qt.callLater(() => workspaceProcess.running = true)
     }
 
     function resetSelected() {
@@ -274,47 +187,21 @@ Item {
 
     Process {
         id: rebuildProcess
-        command: ["/usr/local/bin/a16een-navbar", "apply"]
+        command: [
+            "/usr/local/bin/a16een-navbar",
+            "set",
+            root.selectedSlot,
+            root.pendingIcon,
+            root.pendingColor
+        ]
         running: false
 
         onExited: function(exitCode, exitStatus) {
             if (exitCode === 0) {
                 root.statusText = "APPLIED"
-                root.navbarIconRevision++
             } else {
                 root.statusText = "ICON REBUILD FAILED"
-            }
-        }
-    }
-
-    Process {
-        id: workspaceReader
-        command: ["a16een-workspaces", "current"]
-        running: false
-
-        stdout: StdioCollector {
-            onStreamFinished: {
-                const value = Number(String(text).trim())
-                if (value >= 2 && value <= 9)
-                    root.workspaceCount = Math.floor(value)
-            }
-        }
-    }
-
-    Process {
-        id: workspaceProcess
-        command: ["a16een-workspaces", "set", String(root.pendingWorkspaceCount)]
-        running: false
-
-        onExited: function(exitCode, exitStatus) {
-            if (exitCode === 0) {
-                root.workspaceCount = root.pendingWorkspaceCount
-                root.workspaceStatus = "APPLIED"
-                if (!root.visibleSlots.some(slot => slot.id === root.selectedSlot))
-                    root.selectedSlot = root.visibleSlots[root.visibleSlots.length - 1].id
-            } else {
-                root.workspaceStatus = "BLOCKED"
-                Qt.callLater(() => workspaceReader.running = true)
+                settingsFile.reload()
             }
         }
     }
@@ -370,78 +257,14 @@ Item {
                 }
 
                 Text {
-                    text: "LUCIDE ICONS • WORKSPACES 2–9 • " + root.workspaceStatus
+                    text: "LUCIDE ICONS • COLOR • " + root.statusText
                     color: root.textMuted
                     font.pixelSize: 8
                     font.weight: Font.Medium
                     font.letterSpacing: 0.7
                 }
             }
-
-            RowLayout {
-                spacing: 5
-
-                Rectangle {
-                    width: 28
-                    height: 30
-                    radius: 9
-                    color: minusMouse.containsMouse ? root.cardHover : "#FFFFFF"
-                    border.width: 1
-                    border.color: root.borderStrong
-
-                    Text {
-                        anchors.centerIn: parent
-                        text: "−"
-                        color: root.textPrimary
-                        font.pixelSize: 15
-                    }
-
-                    MouseArea {
-                        id: minusMouse
-                        anchors.fill: parent
-                        hoverEnabled: true
-                        cursorShape: Qt.PointingHandCursor
-                        enabled: root.workspaceCount > 2 && !workspaceProcess.running
-                        opacity: enabled ? 1 : 0.35
-                        onClicked: root.applyWorkspaceCount(root.workspaceCount - 1)
-                    }
-                }
-
-                Text {
-                    width: 30
-                    horizontalAlignment: Text.AlignHCenter
-                    text: root.workspaceCount
-                    color: root.textPrimary
-                    font.pixelSize: 12
-                    font.weight: Font.DemiBold
-                }
-
-                Rectangle {
-                    width: 28
-                    height: 30
-                    radius: 9
-                    color: plusMouse.containsMouse ? root.cardHover : "#FFFFFF"
-                    border.width: 1
-                    border.color: root.borderStrong
-
-                    Text {
-                        anchors.centerIn: parent
-                        text: "+"
-                        color: root.textPrimary
-                        font.pixelSize: 14
-                    }
-
-                    MouseArea {
-                        id: plusMouse
-                        anchors.fill: parent
-                        hoverEnabled: true
-                        cursorShape: Qt.PointingHandCursor
-                        enabled: root.workspaceCount < 9 && !workspaceProcess.running
-                        opacity: enabled ? 1 : 0.35
-                        onClicked: root.applyWorkspaceCount(root.workspaceCount + 1)
-                    }
-                }
-            }
+        }
 
         RowLayout {
             Layout.fillWidth: true
@@ -472,7 +295,7 @@ Item {
                     }
 
                     Repeater {
-                        model: root.visibleSlots
+                        model: root.slots
 
                         delegate: Rectangle {
                             Layout.fillWidth: true
@@ -496,14 +319,18 @@ Item {
                                     border.width: 1
                                     border.color: root.selectedSlot === modelData.id ? "#263140" : root.border
 
-                                    NavbarIcon {
+                                    Image {
                                         anchors.centerIn: parent
                                         width: 18
                                         height: 18
-                                        iconPath: root.generatedIconPath(modelData.id)
-                                        fallbackIconPath: root.baseIconPath(modelData.id)
-                                        refreshRevision: root.navbarIconRevision
-                                        active: root.selectedSlot === modelData.id
+                                        sourceSize.width: width
+                                        sourceSize.height: height
+                                        fillMode: Image.PreserveAspectFit
+                                        smooth: true
+                                        mipmap: true
+                                        asynchronous: true
+                                        cache: false
+                                        source: root.generatedIconPath(modelData.id)
                                     }
                                 }
 
@@ -575,13 +402,18 @@ Item {
                             border.width: 1
                             border.color: root.border
 
-                            NavbarIcon {
+                            Image {
                                 anchors.centerIn: parent
                                 width: 22
                                 height: 22
-                                iconPath: root.generatedIconPath(root.selectedSlot)
-                                fallbackIconPath: root.baseIconPath(root.selectedSlot)
-                                refreshRevision: root.navbarIconRevision
+                                sourceSize.width: width
+                                sourceSize.height: height
+                                fillMode: Image.PreserveAspectFit
+                                smooth: true
+                                mipmap: true
+                                asynchronous: true
+                                cache: false
+                                source: root.generatedIconPath(root.selectedSlot)
                             }
                         }
 
@@ -680,12 +512,18 @@ Item {
                                         anchors.centerIn: parent
                                         spacing: 3
 
-                                        NavbarIcon {
+                                        Image {
                                             anchors.horizontalCenter: parent.horizontalCenter
                                             width: 20
                                             height: 20
-                                            iconPath: Qt.resolvedUrl("../assets/icons/" + modelData.id)
-                                            fallbackIconPath: root.baseIconPath(root.selectedSlot)
+                                            sourceSize.width: width
+                                            sourceSize.height: height
+                                            fillMode: Image.PreserveAspectFit
+                                            smooth: true
+                                            mipmap: true
+                                            asynchronous: true
+                                            cache: false
+                                            source: Qt.resolvedUrl("../assets/icons/" + modelData.id)
                                         }
 
                                         Text {
@@ -770,13 +608,6 @@ Item {
     }
 
     Keys.onEscapePressed: root.backRequested()
-    onActiveChanged: {
-        if (root.active) {
-            workspaceReader.running = true
-            settingsFile.reload()
-        }
-    }
-
     focus: root.active
     activeFocusOnTab: true
 }
