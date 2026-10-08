@@ -406,6 +406,20 @@ ShellRoot {
         }
     }
 
+    IpcHandler {
+        target: "control-indicator"
+
+        function volume(): void {
+            if (root.primaryScreen)
+                controlIndicator.showVolume()
+        }
+
+        function brightness(): void {
+            if (root.primaryScreen)
+                controlIndicator.showBrightness()
+        }
+    }
+
     function setDoNotDisturb(enabled) {
         root.doNotDisturb = enabled
         dndWriter.running = false
@@ -745,6 +759,11 @@ ShellRoot {
         systemLoad: root.systemLoad
         volumePercent: root.volumePercent
         volumeMuted: root.volumeMuted
+    }
+
+    ControlIndicator {
+        id: controlIndicator
+        modelData: root.primaryScreen
     }
 
     NotificationToast {
