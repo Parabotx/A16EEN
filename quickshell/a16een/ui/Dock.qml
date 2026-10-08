@@ -262,25 +262,40 @@ PanelWindow {
         if (!target.length)
             return
 
-        // Focus named workspaces directly. When a workspace was left unnamed
-        // by an older session/config migration, restore the A16EEN registry
-        // first and then retry the focus action.
-        const command = [
+        const current = root.workspaces.find(workspace =>
+            String(workspace.name || "") === target
+        )
+
+        // Use Niri's stable workspace ID through the raw IPC interface.
+        // Workspace IDs remain stable even when workspace indexes move.
+        if (current && Number.isFinite(Number(current.id))) {
+            Quickshell.execDetached([
+                "niri",
+                "msg",
+                "raw-request",
+                JSON.stringify({
+                    Action: {
+                        FocusWorkspace: {
+                            reference: {
+                                Id: Number(current.id)
+                            }
+                        }
+                    }
+                })
+            ])
+            return
+        }
+
+        // Older sessions can briefly expose the workspace before its name has
+        // been restored. Fall back to the named action after repairing the
+        // persistent A16EEN registry.
+        Quickshell.execDetached([
             "/bin/sh",
             "-c",
-            'target="$1"; ' +
-            'if niri msg -j workspaces 2>/dev/null | jq -e --arg name "$target" ' +
-            "'any(.[]; .name == $name)' >/dev/null 2>&1; then " +
-            'niri msg action focus-workspace "$target"; ' +
-            'else ' +
-            'a16een-workspaces apply >/dev/null 2>&1 && ' +
-            'niri msg action focus-workspace "$target"; ' +
-            'fi',
+            'target="$1"; a16een-workspaces apply >/dev/null 2>&1 && niri msg action focus-workspace "$target"',
             "a16een-focus-workspace",
             target
-        ]
-
-        Quickshell.execDetached(command)
+        ])
     }
 
     function contentValue(id) {
