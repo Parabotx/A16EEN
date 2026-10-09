@@ -35,5 +35,12 @@ var definitions = [
         subtitle: "Desktop task manager",
         detail: "Today's tasks with progress and persistence",
         defaultEnabled: false
+    },
+    {
+        id: "music",
+        title: "MUSIC PLAYER",
+        subtitle: "Local music library",
+        detail: "Play, pause, skip and seek songs in ~/Music",
+        defaultEnabled: false
     }
 ]
