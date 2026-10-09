@@ -494,8 +494,10 @@ PanelWindow {
         if (hasInlinePosition) {
             let markup = ""
             if (attachmentType === "audio") {
-                markup = ' &nbsp;<a href="a16een-audio:' + item.id
-                    + '" style="color:#4B6D94; text-decoration:none;">▶ Voice note</a>&nbsp; '
+                // Render voice notes as a small inline play button, not a text label.
+                // Spaces after the anchor keep the next typed characters outside the link.
+                markup = '&nbsp;<a href="a16een-audio:' + item.id
+                    + '" style="color:#365A7D; background-color:#EAF2FA; text-decoration:none; font-weight:bold;">▶</a>&nbsp; '
             } else {
                 markup = ' &nbsp;<img src="' + root.escapeHtml(String(path))
                     + '" width="144" />&nbsp; '
@@ -522,7 +524,8 @@ PanelWindow {
             Qt.callLater(() => {
                 noteEditor.cursorPosition = Math.min(
                     noteEditor.length,
-                    item.position + (attachmentType === "audio" ? 13 : 1)
+                    // NBSP + play glyph + NBSP + space: place the caret outside the link.
+                    item.position + (attachmentType === "audio" ? 4 : 1)
                 )
             })
         }
