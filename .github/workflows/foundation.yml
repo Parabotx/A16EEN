@@ -165,7 +165,7 @@ jobs:
           grep -Fq 'libraryOpen ? 284 : 170' quickshell/a16een/ui/MusicWidget.qml
           grep -Fq 'property bool shuffleEnabled: false' quickshell/a16een/ui/MusicWidget.qml
           grep -Fq 'root.runAction(["repeat"])' quickshell/a16een/ui/MusicWidget.qml
-          grep -Fq 'visible: lottie.status !== LottieAnimation.Ready' quickshell/a16een/ui/MusicDancer.qml
+          grep -Fq 'visible: !root.lottieReady' quickshell/a16een/ui/MusicDancer.qml
           grep -Fq 'no dancer is available:' quickshell/a16een/ui/MusicWidget.qml
           grep -Fq 'root.dancerSource = ""' quickshell/a16een/ui/MusicWidget.qml
           grep -Fq 'action == "dancer"' scripts/a16een-music
