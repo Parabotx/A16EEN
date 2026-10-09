@@ -155,8 +155,8 @@
             </object>
         </child>
 
-                <child>
-                    <object class="GtkBox" id="info-box">
+        <child type="overlay">
+            <object class="GtkBox" id="info-box">
                         <property name="name">info-box</property>
                         <property name="halign">center</property>
                         <property name="valign">start</property>
