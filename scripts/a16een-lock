@@ -86,18 +86,20 @@ fi
 # only after its session lock has been acquired. GTKLock does not itself send
 # the USR2 signal that older versions of this wrapper waited for.
 if command -v gtklock >/dev/null 2>&1; then
-    GTKLOCK_ARGS=(
+    # Parse A16EEN's config explicitly before any GTKLock config-group
+    # options. This prevents an existing ~/.config/gtklock/config.ini from
+    # enabling idle-hide/start-hidden and suppressing the whole visual layout.
+    GTKLOCK_ARGS=()
+    if [[ -r "$LOCK_CONFIG" ]]; then
+        GTKLOCK_ARGS+=(--config "$LOCK_CONFIG")
+        log "Using isolated A16EEN GTKLock settings first: $LOCK_CONFIG"
+    else
+        log "ERROR: A16EEN GTKLock config is missing: $LOCK_CONFIG"
+    fi
+    GTKLOCK_ARGS+=(
         --time-format '%H:%M'
         --date-format '%A, %d %B %Y'
     )
-    # Avoid inheriting a separate ~/.config/gtklock/config.ini which may hide
-    # the clock/form or blank the cursor until user input.
-    if [[ -r "$LOCK_CONFIG" ]]; then
-        GTKLOCK_ARGS+=(--config "$LOCK_CONFIG")
-        log "Using A16EEN GTKLock settings: $LOCK_CONFIG"
-    else
-        log "WARNING: A16EEN GTKLock config not found: $LOCK_CONFIG"
-    fi
     if [[ -s "$LOCK_IMAGE" ]]; then
         GTKLOCK_ARGS+=(--background "$LOCK_IMAGE")
     fi
@@ -113,7 +115,7 @@ if command -v gtklock >/dev/null 2>&1; then
         GTKLOCK_READY_FILE="$LOCK_DIR/gtklock-ready"
         GTKLOCK_ARGS+=(--lock-command "touch $GTKLOCK_READY_FILE")
         log "Starting GTKLock with the A16EEN password-field theme."
-        env "XCURSOR_THEME=${XCURSOR_THEME:-Adwaita}" "XCURSOR_SIZE=${XCURSOR_SIZE:-24}" gtklock "${GTKLOCK_ARGS[@]}" &
+        env "XCURSOR_THEME=${XCURSOR_THEME:-Adwaita}" "XCURSOR_SIZE=${XCURSOR_SIZE:-24}" gtklock "${GTKLOCK_ARGS[@]}" >>"$LOCK_LOG" 2>&1 &
         GTKLOCK_PID=$!
         GTKLOCK_READY_SENT=0
 
