@@ -30,8 +30,8 @@ PanelWindow {
     exclusiveZone: 0
 
     // Size the shell surface to the three compact buttons, with minimal padding.
-    width: root.horizontalNavbar ? 100 : 36
-    height: root.horizontalNavbar ? 36 : 96
+    width: root.horizontalNavbar ? 100 : 44
+    height: root.horizontalNavbar ? 44 : 96
 
     anchors {
         left: !root.horizontalNavbar && root.navbarPosition === "left"
@@ -46,8 +46,8 @@ PanelWindow {
     margins {
         left: root.horizontalNavbar ? 12 : 66
         right: root.horizontalNavbar ? 118 : 68
-        top: root.horizontalNavbar ? 4 : 12
-        bottom: root.horizontalNavbar ? 4 : 72
+        top: root.horizontalNavbar ? 0 : 12
+        bottom: root.horizontalNavbar ? 0 : 72
     }
 
     WlrLayershell.layer: WlrLayer.Overlay
