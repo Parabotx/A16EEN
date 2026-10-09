@@ -144,6 +144,12 @@ if [ "${SKIP_DEPS:-0}" != "1" ]; then
     fi
 else
     echo "==> Skipping dependency installation."
+    if ! command -v gtklock >/dev/null 2>&1; then
+        echo "WARNING: GTKLock is not available in PATH."
+        echo "         The custom lock-screen clock, date, card, and corner badge require GTKLock."
+        echo "         A16EEN will keep the secure swaylock fallback, which may show only the wallpaper."
+        echo "         Option 2 skips packages; install GTKLock separately to enable the full lock-screen design."
+    fi
 fi
 
 SOURCE_COMMIT="unknown"
