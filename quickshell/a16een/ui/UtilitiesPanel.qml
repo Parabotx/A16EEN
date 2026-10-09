@@ -1,7 +1,6 @@
 import QtQuick
 import Quickshell
 import Quickshell.Wayland
-import qs.ui
 
 PanelWindow {
     id: root
@@ -332,7 +331,7 @@ PanelWindow {
     readonly property string wifiStatusText: {
         if (details.wifiState === "unavailable")
             return "Unavailable"
-        if (details.wifiState === "off")
+        if (details.wifiRadioState === "off")
             return "Turned off"
         return details.wifiName !== "Not connected" ? "Connected" : "Enabled"
     }
