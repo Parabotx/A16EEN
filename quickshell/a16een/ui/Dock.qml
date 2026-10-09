@@ -787,7 +787,7 @@ PanelWindow {
                 opacity: root.powerMenuOpen ? 1 : 0
                 scale: root.powerMenuOpen ? 1 : 0.96
                 transformOrigin: root.navbarPosition === "right" ? Item.TopRight
-                    : (root.navbarPosition === "bottom" ? Item.BottomRight : Item.TopLeft)
+                    : (root.navbarPosition === "bottom" ? Item.BottomLeft : Item.TopLeft)
 
                 Behavior on opacity {
                     NumberAnimation { duration: 155; easing.type: Easing.OutCubic }
@@ -802,6 +802,12 @@ PanelWindow {
                     radius: 19
                     color: "#14000000"
                     z: -1
+                }
+
+                MouseArea {
+                    anchors.fill: parent
+                    acceptedButtons: Qt.AllButtons
+                    onClicked: mouse.accepted = true
                 }
 
                 Column {
