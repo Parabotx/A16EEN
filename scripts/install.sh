@@ -500,6 +500,9 @@ SESSION_ACTIVE=0
 case ":${XDG_CURRENT_DESKTOP:-}:" in
     *:A16EEN:*) SESSION_ACTIVE=1 ;;
 esac
+if pgrep -u "$(id -u)" -x niri >/dev/null 2>&1; then
+    SESSION_ACTIVE=1
+fi
 
 if { [ "$RESTARTED_SHELL" -eq 1 ] || [ "$SESSION_ACTIVE" -eq 1 ]; } &&
    ! pgrep -f '[a]16een-shell' >/dev/null 2>&1; then
