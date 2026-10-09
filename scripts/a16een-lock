@@ -9,6 +9,7 @@ CONFIG_DIR="${A16EEN_CONFIG_DIR:-$HOME/.config/a16een}"
 LOCK_THEME_DIR="$CONFIG_DIR/lockscreen"
 LOCK_STYLE="$LOCK_THEME_DIR/gtklock.css"
 LOCK_LAYOUT="$LOCK_THEME_DIR/gtklock.ui"
+LOCK_CONFIG="$LOCK_THEME_DIR/gtklock.ini"
 DEFAULT_WALLPAPER="$CONFIG_DIR/quickshell/a16een/assets/wallpapers/default.png"
 mkdir -p "$LOG_DIR" 2>/dev/null || true
 log() { printf '[%s] %s\n' "$(date '+%Y-%m-%d %H:%M:%S')" "$*" >>"$LOCK_LOG" 2>/dev/null || true; }
@@ -89,6 +90,14 @@ if command -v gtklock >/dev/null 2>&1; then
         --time-format '%H:%M'
         --date-format '%A, %d %B %Y'
     )
+    # Avoid inheriting a separate ~/.config/gtklock/config.ini which may hide
+    # the clock/form or blank the cursor until user input.
+    if [[ -r "$LOCK_CONFIG" ]]; then
+        GTKLOCK_ARGS+=(--config "$LOCK_CONFIG")
+        log "Using A16EEN GTKLock settings: $LOCK_CONFIG"
+    else
+        log "WARNING: A16EEN GTKLock config not found: $LOCK_CONFIG"
+    fi
     if [[ -s "$LOCK_IMAGE" ]]; then
         GTKLOCK_ARGS+=(--background "$LOCK_IMAGE")
     fi
