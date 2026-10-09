@@ -14,6 +14,8 @@ PanelWindow {
     property int volumePercent: 0
     property bool volumeMuted: false
 
+    signal lockRequested()
+
     screen: modelData
     color: "transparent"
     visible: opened
@@ -164,6 +166,7 @@ PanelWindow {
 
             PowerActions {
                 Layout.fillWidth: true
+                onLockRequested: root.lockRequested()
             }
 
             Item { Layout.fillHeight: true }
