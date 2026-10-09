@@ -114,11 +114,15 @@ PanelWindow {
 
         // Keep the dancer component alive during an empty/failed lookup too:
         // MusicDancer shows a lightweight animated fallback until Lottie is ready.
-        if (dancerLoader.item
-                && String(dancerLoader.item.animationSource || "") === root.dancerSource)
+        // Update the existing item's property directly. Calling setSource() again
+        // with the same QML URL can leave the old item and its empty source intact.
+        if (dancerLoader.item) {
+            if (String(dancerLoader.item.animationSource || "") !== root.dancerSource)
+                dancerLoader.item.animationSource = root.dancerSource
             return
+        }
 
-        // Supply animationSource before component creation to avoid source-change races.
+        // Set the first source before component creation to avoid a source-change race.
         dancerLoader.active = true
         dancerLoader.setSource(Qt.resolvedUrl("MusicDancer.qml"), {
             "animationSource": root.dancerSource
@@ -166,8 +170,11 @@ PanelWindow {
             root.playback = result
 
             if (root.isPlaying) {
-                if (!wasPlaying || previousPath !== String(root.playback.path || ""))
+                if (!wasPlaying || previousPath !== String(root.playback.path || "")) {
                     root.requestDancer()
+                } else if (root.widgetEnabled) {
+                    root.syncDancerLoader()
+                }
             } else {
                 // Clearing the URL unloads the optional dancer component completely;
                 // no animation keeps running while paused.
@@ -262,6 +269,11 @@ PanelWindow {
         if (root.widgetEnabled) {
             root.refreshLibrary()
             root.refreshPlayback()
+            if (root.isPlaying) {
+                root.syncDancerLoader()
+                if (root.dancerSource.length === 0)
+                    root.requestDancer()
+            }
         } else {
             root.dancerSource = ""
             root.dancerOffsetX = 0
@@ -551,54 +563,76 @@ PanelWindow {
                 Row {
                     id: timelineLabels
                     width: parent.width
-                    height: 13
+                    height: 17
 
-                    Text {
-                        id: elapsedTime
-                        text: root.formatTime(root.playback.time)
-                        color: "#6F4E3C"
-                        font.pixelSize: 8
-                        font.family: "Inter"
-                        font.weight: Font.DemiBold
-                        verticalAlignment: Text.AlignVCenter
-                        renderType: Text.NativeRendering
+                    Rectangle {
+                        id: elapsedTimePill
+                        width: elapsedTime.implicitWidth + 12
+                        height: 17
+                        radius: 8.5
+                        color: "#F0E2D0"
+                        border.width: 1
+                        border.color: "#E7D3BA"
+
+                        Text {
+                            id: elapsedTime
+                            anchors.centerIn: parent
+                            text: root.formatTime(root.playback.time)
+                            color: "#6F4E3C"
+                            font.pixelSize: 8
+                            font.family: "Inter"
+                            font.weight: Font.DemiBold
+                            renderType: Text.NativeRendering
+                        }
                     }
 
                     Item {
-                        width: Math.max(1, timelineLabels.width
-                            - elapsedTime.implicitWidth - remainingTime.implicitWidth - 2)
+                        width: Math.max(0, timelineLabels.width
+                            - elapsedTimePill.width - totalTimePill.width)
                         height: 1
                     }
 
-                    Text {
-                        id: totalTime
-                        text: root.formatTime(root.playback.duration)
-                        color: root.muted
-                        font.pixelSize: 8
-                        font.family: "Inter"
-                        font.weight: Font.Medium
-                        verticalAlignment: Text.AlignVCenter
-                        horizontalAlignment: Text.AlignRight
-                        renderType: Text.NativeRendering
+                    Rectangle {
+                        id: totalTimePill
+                        width: totalTime.implicitWidth + 12
+                        height: 17
+                        radius: 8.5
+                        color: "#FBF7F0"
+                        border.width: 1
+                        border.color: "#EAE0D3"
+
+                        Text {
+                            id: totalTime
+                            anchors.centerIn: parent
+                            text: root.formatTime(root.playback.duration)
+                            color: "#8C7B6C"
+                            font.pixelSize: 8
+                            font.family: "Inter"
+                            font.weight: Font.Medium
+                            renderType: Text.NativeRendering
+                        }
                     }
                 }
 
                 Item {
                     id: progressTrack
                     width: parent.width
-                    height: 10
+                    height: 12
 
                     Rectangle {
+                        id: progressRail
                         x: 1
-                        y: 3
+                        y: 4
                         width: Math.max(0, parent.width - 2)
                         height: 4
                         radius: 2
-                        color: "#E9DCC9"
+                        color: "#E8D9C6"
+                        border.width: 0
+                        clip: true
 
                         Rectangle {
-                            width: Math.max(0, parent.width * root.progress)
-                            height: parent.height
+                            width: Math.max(0, progressRail.width * root.progress)
+                            height: progressRail.height
                             radius: 2
                             gradient: Gradient {
                                 GradientStop { position: 0.0; color: "#D9A66A" }
@@ -612,19 +646,29 @@ PanelWindow {
                         }
                     }
 
+                    // A pearl-white thumb with a fine outline makes the seek position
+                    // feel like a precise, draggable control instead of a hard dot.
                     Rectangle {
                         id: progressThumb
-                        width: 8
-                        height: 8
+                        width: 10
+                        height: 10
                         x: Math.max(0, Math.min(parent.width - width,
                             1 + (parent.width - 2) * root.progress - width / 2))
                         y: 1
-                        radius: 4
+                        radius: 5
                         color: "#FFFCF7"
                         border.width: 1
-                        border.color: "#BE8D78"
+                        border.color: "#B98B79"
                         visible: root.playback.duration > 0
                         z: 2
+
+                        Rectangle {
+                            anchors.centerIn: parent
+                            width: 3
+                            height: 3
+                            radius: 1.5
+                            color: "#C58B75"
+                        }
 
                         Behavior on x {
                             NumberAnimation { duration: 180; easing.type: Easing.OutCubic }
