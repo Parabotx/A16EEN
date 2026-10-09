@@ -100,11 +100,21 @@ if command -v gtklock >/dev/null 2>&1; then
     fi
 
     log "Starting GTKLock with the A16EEN password-field theme."
+
+    # GTKLock signals its parent only after the Wayland session is securely locked.
+    gtklock_locked() {
+        printf '%s\n' "A16EEN_LOCK_READY"
+        log "GTKLock signaled that the session is securely locked."
+    }
+    trap gtklock_locked USR2
+
     if gtklock "${GTKLOCK_ARGS[@]}"; then
+        trap - USR2
         log "GTKLock exited after the session was unlocked."
         exit 0
     else
         status=$?
+        trap - USR2
         log "GTKLock failed to start or exited unexpectedly (status $status); trying secure swaylock fallback."
     fi
 fi
