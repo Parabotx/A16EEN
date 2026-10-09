@@ -142,7 +142,9 @@ Item {
 
     function previewIconColor(slot) {
         const color = root.settingFor(slot).color
-        return color.toUpperCase() === "#111318" ? "#F5F7FA" : color
+        // The manager uses a light surface: keep default black icons black.
+        // A user-selected white icon is previewed in black for visibility only.
+        return color.toUpperCase() === "#FFFFFF" ? "#111318" : color
     }
 
     function settingFor(slot) {
@@ -294,7 +296,7 @@ Item {
                 Layout.preferredWidth: 196
                 Layout.fillHeight: true
                 radius: 17
-                color: "#111318"
+                color: "#F7F8FA"
                 border.width: 1
                 border.color: root.border
 
@@ -321,7 +323,7 @@ Item {
                             Layout.preferredHeight: 62
                             radius: 13
                             color: root.selectedSlot === modelData.id
-                                ? "#3C4652"
+                                ? "#E4EAF1"
                                 : (slotMouse.containsMouse ? root.cardHover : "transparent")
 
                             RowLayout {
@@ -334,9 +336,9 @@ Item {
                                     Layout.preferredWidth: 36
                                     Layout.preferredHeight: 36
                                     radius: 11
-                                    color: root.selectedSlot === modelData.id ? "#515D6A" : "#323943"
+                                    color: root.selectedSlot === modelData.id ? "#E7EDF4" : "#FFFFFF"
                                     border.width: 1
-                                    border.color: root.selectedSlot === modelData.id ? "#728092" : root.border
+                                    border.color: root.selectedSlot === modelData.id ? "#B8C1CC" : root.border
 
                                     NavbarIcon {
                                         anchors.centerIn: parent
@@ -356,14 +358,14 @@ Item {
 
                                     Text {
                                         text: modelData.name
-                                        color: root.selectedSlot === modelData.id ? "#FFFFFF" : root.textPrimary
+                                        color: root.textPrimary
                                         font.pixelSize: 9
                                         font.weight: Font.DemiBold
                                     }
 
                                     Text {
                                         text: modelData.description
-                                        color: root.selectedSlot === modelData.id ? "#9CA6B2" : root.textMuted
+                                        color: root.textMuted
                                         font.pixelSize: 7
                                         elide: Text.ElideRight
                                     }
@@ -397,7 +399,7 @@ Item {
                 Layout.fillWidth: true
                 Layout.fillHeight: true
                 radius: 17
-                color: "#111318"
+                color: "#F7F8FA"
                 border.width: 1
                 border.color: root.border
 
@@ -414,7 +416,7 @@ Item {
                             Layout.preferredWidth: 46
                             Layout.preferredHeight: 46
                             radius: 13
-                            color: "#EEF2F6"
+                            color: "#FFFFFF"
                             border.width: 1
                             border.color: root.border
 
@@ -457,7 +459,7 @@ Item {
                             Layout.preferredWidth: 78
                             Layout.preferredHeight: 30
                             radius: 10
-                            color: resetMouse.containsMouse ? "#3B434E" : "#323943"
+                            color: resetMouse.containsMouse ? "#EEF2F6" : "#FFFFFF"
                             border.width: 1
                             border.color: root.borderStrong
 
@@ -514,11 +516,11 @@ Item {
                                     Layout.preferredHeight: 57
                                     radius: 12
                                     color: root.settingFor(root.selectedSlot).icon === modelData.id
-                                        ? "#252A32"
-                                        : (iconMouse.containsMouse ? root.cardHover : "#15171B")
+                                        ? "#E4EAF1"
+                                        : (iconMouse.containsMouse ? root.cardHover : "#FFFFFF")
                                     border.width: root.settingFor(root.selectedSlot).icon === modelData.id ? 1.3 : 1
                                     border.color: root.settingFor(root.selectedSlot).icon === modelData.id
-                                        ? "#111318" : root.border
+                                        ? "#8E9AA8" : root.border
 
                                     Column {
                                         anchors.centerIn: parent
@@ -537,8 +539,7 @@ Item {
                                             width: 58
                                             horizontalAlignment: Text.AlignHCenter
                                             text: modelData.name
-                                            color: root.settingFor(root.selectedSlot).icon === modelData.id
-                                                ? "#FFFFFF" : root.textSecondary
+                                            color: root.textPrimary
                                             font.pixelSize: 6
                                             font.weight: root.settingFor(root.selectedSlot).icon === modelData.id
                                                 ? Font.DemiBold : Font.Normal
@@ -577,7 +578,7 @@ Item {
                                 Layout.preferredWidth: 29
                                 Layout.preferredHeight: 29
                                 radius: 9
-                                color: "#15171B"
+                                color: "#FFFFFF"
                                 border.width: root.settingFor(root.selectedSlot).color.toUpperCase() === modelData.id.toUpperCase()
                                     ? 1.5 : 1
                                 border.color: root.settingFor(root.selectedSlot).color.toUpperCase() === modelData.id.toUpperCase()
