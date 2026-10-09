@@ -520,7 +520,7 @@ PanelWindow {
         }
 
         Rectangle {
-            x: glyphRoot.horizontal ? width - 3 : Math.round((glyphRoot.width - width) / 2)
+            x: glyphRoot.horizontal ? glyphRoot.width - width : Math.round((glyphRoot.width - width) / 2)
             y: glyphRoot.horizontal ? Math.round((glyphRoot.height - height) / 2) : 1
             width: glyphRoot.horizontal ? 3 : 4
             height: glyphRoot.horizontal ? 4 : 3
