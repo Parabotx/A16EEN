@@ -104,9 +104,7 @@ PanelWindow {
     }
 
     function syncDancerLoader() {
-        const shouldLoad = root.widgetEnabled
-            && root.isPlaying
-            && root.dancerSource.length > 0
+        const shouldLoad = root.widgetEnabled && root.isPlaying
 
         if (!shouldLoad) {
             dancerLoader.active = false
@@ -114,8 +112,13 @@ PanelWindow {
             return
         }
 
-        // Supply animationSource before component creation. This avoids a race
-        // where Lottie first loads with an empty URL and never begins painting.
+        // Keep the dancer component alive during an empty/failed lookup too:
+        // MusicDancer shows a lightweight animated fallback until Lottie is ready.
+        if (dancerLoader.item
+                && String(dancerLoader.item.animationSource || "") === root.dancerSource)
+            return
+
+        // Supply animationSource before component creation to avoid source-change races.
         dancerLoader.active = true
         dancerLoader.setSource(Qt.resolvedUrl("MusicDancer.qml"), {
             "animationSource": root.dancerSource
@@ -125,6 +128,12 @@ PanelWindow {
     function requestDancer() {
         if (!root.widgetEnabled || !root.isPlaying || dancerProcess.running)
             return
+        if (root.dancerSource.length > 0) {
+            root.dancerSource = ""
+            root.dancerOffsetX = 0
+            root.dancerOffsetY = 0
+            root.syncDancerLoader()
+        }
         dancerProcess.running = true
     }
 
@@ -135,7 +144,8 @@ PanelWindow {
             const result = JSON.parse(String(raw || "{}"))
             root.dancerSource = String(result.path || "")
             if (root.dancerSource.length > 0) {
-                console.info("A16EEN Music: selected dancer", result.fileName || root.dancerSource)
+                console.info("A16EEN Music: selected dancer", result.fileName || root.dancerSource,
+                    "valid files:", result.validCount, "directory:", result.directory || "unknown")
             } else {
                 console.warn("A16EEN Music: no dancer is available:",
                     result.reason || "unknown reason",
