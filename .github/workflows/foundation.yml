@@ -182,7 +182,9 @@ jobs:
           grep -Fq 'loop-file' scripts/a16een-music
           grep -Fq 'eof-reached' scripts/a16een-music
           grep -Fq 'result.eofReached === true' quickshell/a16een/ui/MusicWidget.qml
-          grep -Fq 'repeatMode === 1 ? "1" : "∞"' quickshell/a16een/ui/MusicWidget.qml
+          grep -Fq 'repeatIndicatorMode: 1' quickshell/a16een/ui/MusicWidget.qml
+          grep -Fq 'repeatIndicatorMode: 2' quickshell/a16een/ui/MusicWidget.qml
+          grep -Fq 'parent.parent.repeatIndicatorMode === 1 ? "1" : "∞"' quickshell/a16een/ui/MusicWidget.qml
           grep -Fq 'find_cover' scripts/a16een-music
           ! grep -Fq 'qt6-lottie' scripts/install.sh
           grep -Fq 'text: root.formatTime(root.seekDragging' quickshell/a16een/ui/MusicWidget.qml

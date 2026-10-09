@@ -765,8 +765,16 @@ PanelWindow {
 
                     ControlButton {
                         iconName: "music-repeat"
-                        selected: root.repeatMode !== 0
-                        onClicked: root.setRepeatMode((root.repeatMode + 1) % 3)
+                        repeatIndicatorMode: 1
+                        selected: root.repeatMode === 1
+                        onClicked: root.setRepeatMode(root.repeatMode === 1 ? 0 : 1)
+                    }
+
+                    ControlButton {
+                        iconName: "music-repeat"
+                        repeatIndicatorMode: 2
+                        selected: root.repeatMode === 2
+                        onClicked: root.setRepeatMode(root.repeatMode === 2 ? 0 : 2)
                     }
 
                     ControlButton {
@@ -914,6 +922,7 @@ PanelWindow {
         property bool primary: false
         property bool selected: false
         property bool enabledControl: true
+        property int repeatIndicatorMode: 0
         signal clicked()
 
         width: primary ? 39 : 29
@@ -939,7 +948,8 @@ PanelWindow {
         }
 
         Rectangle {
-            visible: parent.iconName === "music-repeat" && root.repeatMode !== 0
+            visible: parent.repeatIndicatorMode !== 0
+                && parent.repeatIndicatorMode === root.repeatMode
             anchors.right: parent.right
             anchors.bottom: parent.bottom
             anchors.rightMargin: 1
@@ -954,7 +964,7 @@ PanelWindow {
 
             Text {
                 anchors.centerIn: parent
-                text: root.repeatMode === 1 ? "1" : "∞"
+                text: parent.parent.repeatIndicatorMode === 1 ? "1" : "∞"
                 color: "#57483B"
                 font.pixelSize: 7
                 font.weight: Font.Bold
