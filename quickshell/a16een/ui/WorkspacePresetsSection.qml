@@ -128,7 +128,7 @@ Item {
     }
 
     function beginAdd() {
-        if (root.openProcess.running || root.saveProcess.running)
+        if (openProcess.running || saveProcess.running)
             return
 
         root.editorOpen = false
@@ -233,7 +233,7 @@ Item {
     }
 
     function saveEditor() {
-        if (root.saveProcess.running)
+        if (saveProcess.running)
             return
 
         const name = root.draftName.trim()
@@ -243,11 +243,11 @@ Item {
         }
 
         root.statusMessage = "SAVING PRESET"
-        root.saveProcess.running = true
+        saveProcess.running = true
     }
 
     function openPreset(preset) {
-        if (!preset || root.openProcess.running)
+        if (!preset || openProcess.running)
             return
 
         root.openPresetId = String(preset.id || "")
@@ -255,7 +255,7 @@ Item {
             return
 
         root.statusMessage = "OPENING " + String(preset.name || root.openPresetId).toUpperCase()
-        root.openProcess.running = true
+        openProcess.running = true
     }
 
     function askDelete(index) {
@@ -266,7 +266,7 @@ Item {
     }
 
     function confirmDelete() {
-        if (root.deleteIndex < 0 || root.deleteProcess.running)
+        if (root.deleteIndex < 0 || deleteProcess.running)
             return
 
         const preset = root.presets[root.deleteIndex]
@@ -275,7 +275,7 @@ Item {
 
         root.deletePresetId = String(preset.id || "")
         root.deleteIndex = -1
-        root.deleteProcess.running = true
+        deleteProcess.running = true
         root.statusMessage = "REMOVING PRESET"
     }
 
@@ -323,7 +323,7 @@ Item {
                 root.draftApps = []
                 root.draftId = ""
                 root.draftName = ""
-                root.presetReader.running = true
+                presetReader.running = true
             } else {
                 root.statusMessage = "SAVE FAILED"
             }
@@ -357,7 +357,7 @@ Item {
         onExited: function(exitCode) {
             root.statusMessage = exitCode === 0 ? "PRESET REMOVED" : "REMOVE FAILED"
             if (exitCode === 0)
-                root.presetReader.running = true
+                presetReader.running = true
         }
     }
 
@@ -506,7 +506,7 @@ Item {
 
                 Text {
                     anchors.centerIn: parent
-                    text: root.saveProcess.running ? "SAVING…" : "SAVE PRESET"
+                    text: saveProcess.running ? "SAVING…" : "SAVE PRESET"
                     color: root.canSave ? (saveMouse.containsMouse ? "#FFFFFF" : root.textPrimary) : root.textMuted
                     font.pixelSize: 7
                     font.weight: Font.DemiBold
@@ -666,7 +666,7 @@ Item {
                                 MouseArea {
                                     id: openMouse
                                     anchors.fill: parent
-                                    enabled: !root.openProcess.running
+                                    enabled: !openProcess.running
                                     hoverEnabled: true
                                     cursorShape: Qt.PointingHandCursor
                                     onClicked: root.openPreset(modelData)
@@ -692,7 +692,7 @@ Item {
 
                                 MouseArea {
                                     anchors.fill: parent
-                                    enabled: !root.openProcess.running
+                                    enabled: !openProcess.running
                                     cursorShape: Qt.PointingHandCursor
                                     onClicked: root.beginEdit(modelData)
                                 }
@@ -717,7 +717,7 @@ Item {
 
                                 MouseArea {
                                     anchors.fill: parent
-                                    enabled: !root.openProcess.running
+                                    enabled: !openProcess.running
                                     cursorShape: Qt.PointingHandCursor
                                     onClicked: root.askDelete(index)
                                 }
@@ -1365,7 +1365,7 @@ Item {
 
     readonly property bool canSave:
         root.editorOpen &&
-        !root.saveProcess.running &&
+        !saveProcess.running &&
         root.draftName.trim().length > 0 &&
         root.draftApps.length > 0
 }
