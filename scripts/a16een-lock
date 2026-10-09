@@ -60,8 +60,12 @@ run_locker() {
     done
 
     if wait "$pid"; then status=0; else status=$?; fi
-    if (( status != 0 )); then log "Locker failed (status $status): $*"; fi
-    if (( ! ready_sent && status == 0 )); then log "Locker exited before ready marker."; fi
+    if (( status != 0 )); then
+        log "Locker failed (status $status): $*"
+    elif (( ! ready_sent )); then
+        log "Locker exited before ready marker; treating it as a failed start."
+        status=75
+    fi
     return "$status"
 }
 
