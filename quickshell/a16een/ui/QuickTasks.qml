@@ -67,9 +67,9 @@ PanelWindow {
     }
 
     margins {
-        left: !root.horizontalNavbar && root.navbarPosition === "left" ? 78 : 12
+        left: !root.horizontalNavbar && root.navbarPosition === "left" ? 66 : 12
         right: root.horizontalNavbar ? 118
-            : (!root.horizontalNavbar && root.navbarPosition === "right" ? 78 : 12)
+            : (!root.horizontalNavbar && root.navbarPosition === "right" ? 68 : 12)
         top: root.horizontalNavbar && root.navbarPosition === "top" ? 58 : 12
         bottom: root.horizontalNavbar && root.navbarPosition === "bottom" ? 58
             : (!root.horizontalNavbar ? 72 : 12)
