@@ -711,10 +711,7 @@ PanelWindow {
                 anchors.fill: parent
                 hoverEnabled: true
                 cursorShape: Qt.PointingHandCursor
-                onClicked: {
-                    root.powerMenuOpen = !root.powerMenuOpen
-                    root.pendingPowerAction = ""
-                }
+                onClicked: root.togglePowerMenu()
             }
         }
     }
@@ -888,6 +885,21 @@ PanelWindow {
             }
         }
 
+    }
+
+    function togglePowerMenu() {
+        if (root.powerMenuOpen) {
+            root.powerMenuOpen = false
+            root.pendingPowerAction = ""
+            return
+        }
+
+        powerMenuHideTimer.stop()
+        root.pendingPowerAction = ""
+        // Mount the transparent layer first, then change the animated state on
+        // the next event-loop turn so its initial opacity/scale can transition.
+        root.powerMenuSurfaceVisible = true
+        Qt.callLater(() => root.powerMenuOpen = true)
     }
 
     function triggerPowerAction(actionId) {
