@@ -751,7 +751,7 @@ PanelWindow {
         margins {
             left: root.horizontalNavbar ? 100 : (root.navbarPosition === "left" ? 8 : 12)
             right: root.horizontalNavbar ? 12 : (root.navbarPosition === "right" ? 8 : 12)
-            top: root.navbarPosition === "top" ? 0 : (root.horizontalNavbar ? 12 : 116)
+            top: root.navbarPosition === "top" ? 0 : (root.horizontalNavbar ? 12 : 124)
             bottom: root.navbarPosition === "bottom" ? 12 : 0
         }
 
