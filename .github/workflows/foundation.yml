@@ -135,6 +135,9 @@ jobs:
           grep -Fq 'musicWidgetEnabledRequested' quickshell/a16een/ui/CommandCenter.qml
           grep -Fq 'property bool musicEnabled: false' quickshell/a16een/ui/WidgetSection.qml
           grep -Fq 'A16EEN MUSIC' quickshell/a16een/ui/MusicWidget.qml
+          grep -Fq 'import Qt.labs.lottieqt' quickshell/a16een/ui/MusicWidget.qml
+          grep -Fq 'LottieAnimation {' quickshell/a16een/ui/MusicWidget.qml
+          grep -Fq 'source: root.dancerSource' quickshell/a16een/ui/MusicWidget.qml
           grep -Fq 'anchors.bottom: parent.bottom' quickshell/a16een/ui/MusicWidget.qml
           grep -Fq 'libraryOpen ? 284 : 170' quickshell/a16een/ui/MusicWidget.qml
           grep -Fq 'property bool shuffleEnabled: false' quickshell/a16een/ui/MusicWidget.qml
@@ -146,7 +149,11 @@ jobs:
           grep -Fq 'loop-file' scripts/a16een-music
           grep -Fq 'find_cover' scripts/a16een-music
           grep -Fq 'MUSIC_DANCER_SOURCE_DIR' scripts/install.sh
+          grep -Fq 'dancer-$dancer_index.json' scripts/install.sh
+          grep -Fq 'qt6-lottie' scripts/install.sh
           grep -Fq 'music-dancers/dancer-' scripts/a16een-update
+          grep -Fq 'dancer-{index}.json' scripts/a16een-music
+          grep -Fq 'qt6-lottie' scripts/install.sh
           grep -Fq 'mpv' scripts/install.sh
           test -f quickshell/a16een/ui/WallpaperPicker.qml
           test -f quickshell/a16een/ui/NotificationToast.qml
