@@ -31,8 +31,15 @@ PanelWindow {
     exclusionMode: ExclusionMode.Ignore
     exclusiveZone: 0
     focusable: root.opened
-    readonly property int popupWidth: root.sidebarVisible ? 390 : 290
-    readonly property int popupHeight: 340
+    readonly property real screenWidth: root.modelData ? root.modelData.width : 1920
+    readonly property real screenHeight: root.modelData ? root.modelData.height : 1080
+    readonly property int popupWidth: root.sidebarVisible ? 360 : 280
+    readonly property int popupHeight: 320
+
+    // Explicit output dimensions are important: this overlay must retain a
+    // screen-sized input surface, or its card coordinates can collapse to (0, 0).
+    width: root.screenWidth
+    height: root.screenHeight
 
     // A transparent screen surface catches clicks outside the actual card.
     anchors {
@@ -228,15 +235,15 @@ PanelWindow {
         // Explicit screen coordinates avoid Qt anchor-state leftovers when
         // rotating the navbar between left/right/top/bottom.
         x: root.horizontalNavbar
-            ? Math.max(8, root.width - width - 102)
+            ? Math.max(8, root.screenWidth - width - 102)
             : (root.navbarPosition === "left"
-                ? 66
-                : Math.max(8, root.width - width - 68))
+                ? Math.min(66, Math.max(8, root.screenWidth - width - 8))
+                : Math.max(8, root.screenWidth - width - 68))
         y: root.horizontalNavbar
             ? (root.navbarPosition === "top"
-                ? 42
-                : Math.max(8, root.height - height - 42))
-            : Math.max(8, root.height - height - 72)
+                ? 40
+                : Math.max(8, root.screenHeight - height - 40))
+            : Math.max(8, root.screenHeight - height - 72)
         radius: 19
         color: "#FFFFFF"
         border.width: 1
