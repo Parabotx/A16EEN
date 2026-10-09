@@ -19,8 +19,8 @@ PanelWindow {
         root.navbarPosition === "top" || root.navbarPosition === "bottom"
     readonly property real screenWidth: root.modelData ? root.modelData.width : 1920
     readonly property real screenHeight: root.modelData ? root.modelData.height : 1080
-    readonly property int popupWidth: 420
-    readonly property int popupHeight: 320
+    readonly property int popupWidth: 360
+    readonly property int popupHeight: 300
     readonly property real popupX: root.horizontalNavbar
         ? 100
         : (root.navbarPosition === "left"
@@ -70,13 +70,38 @@ PanelWindow {
         id: card
         x: Math.max(8, Math.min(root.popupX, root.screenWidth - width - 8))
         y: Math.max(8, Math.min(root.popupY, root.screenHeight - height - 8))
+            + (root.opened ? 0 : 8)
         width: Math.min(root.popupWidth, root.screenWidth - 16)
         height: Math.min(root.popupHeight, root.screenHeight - 16)
         z: 1
+        opacity: root.opened ? 1 : 0
+        scale: root.opened ? 1 : 0.96
+        transformOrigin: Item.Center
+
+        Behavior on opacity {
+            NumberAnimation {
+                duration: 170
+                easing.type: Easing.OutCubic
+            }
+        }
+
+        Behavior on scale {
+            NumberAnimation {
+                duration: 210
+                easing.type: Easing.OutCubic
+            }
+        }
+
+        Behavior on y {
+            NumberAnimation {
+                duration: 210
+                easing.type: Easing.OutCubic
+            }
+        }
 
         Rectangle {
             anchors.fill: parent
-            radius: 19
+            radius: 16
             color: "#FFFFFF"
             border.width: 1
             border.color: "#D9DEE5"
@@ -84,7 +109,7 @@ PanelWindow {
             Rectangle {
                 anchors.fill: parent
                 anchors.margins: -4
-                radius: 23
+                radius: 20
                 color: "#16000000"
                 z: -1
             }
@@ -96,96 +121,84 @@ PanelWindow {
                 onClicked: mouse.accepted = true
             }
 
-            Row {
+            Column {
                 id: cardContent
                 anchors.fill: parent
                 anchors.margins: 12
                 spacing: 8
                 z: 1
-                layoutDirection: root.navbarPosition === "right"
-                    ? Qt.RightToLeft : Qt.LeftToRight
 
-                Item {
-                    id: sidebar
-                    width: 36
-                    height: parent.height
+                Row {
+                    id: modeTabs
+                    width: parent.width
+                    height: 29
+                    spacing: 6
 
-                    Column {
-                        anchors.centerIn: parent
-                        spacing: 8
+                    Repeater {
+                        model: [
+                            { id: "wifi", label: "Wi-Fi", icon: "wifi" },
+                            { id: "bluetooth", label: "Bluetooth", icon: "bluetooth" }
+                        ]
 
-                        Rectangle {
-                            id: wifiTab
-                            width: 32
-                            height: 32
-                            radius: 10
-                            color: root.selectedMode === "wifi"
-                                ? "#EEF1F4"
-                                : (wifiTabMouse.containsMouse ? "#F7F8FA" : "transparent")
-                            border.width: root.selectedMode === "wifi" ? 1 : 0
-                            border.color: "#D9DEE5"
+                        delegate: Rectangle {
+                            id: tabButton
+                            required property var modelData
+                            width: (modeTabs.width - modeTabs.spacing) / 2
+                            height: 29
+                            radius: 9
+                            color: root.selectedMode === tabButton.modelData.id
+                                ? "#20262E"
+                                : (tabMouse.containsMouse ? "#EEF1F4" : "#F6F7F9")
+                            border.width: 1
+                            border.color: root.selectedMode === tabButton.modelData.id
+                                ? "#20262E" : "#E3E8ED"
 
-                            Image {
+                            Behavior on color {
+                                ColorAnimation { duration: 120 }
+                            }
+
+                            Row {
                                 anchors.centerIn: parent
-                                width: 16
-                                height: 16
-                                source: Qt.resolvedUrl("../assets/icons/lucide-wifi-dark.svg")
-                                sourceSize.width: 32
-                                sourceSize.height: 32
-                                smooth: true
+                                spacing: 6
+
+                                Image {
+                                    width: 14
+                                    height: 14
+                                    anchors.verticalCenter: parent.verticalCenter
+                                    source: Qt.resolvedUrl("../assets/icons/"
+                                        + "lucide-" + tabButton.modelData.icon
+                                        + (root.selectedMode === tabButton.modelData.id
+                                            ? "-refined.svg" : "-refined-dark.svg"))
+                                    sourceSize.width: 28
+                                    sourceSize.height: 28
+                                    smooth: true
+                                }
+
+                                Text {
+                                    anchors.verticalCenter: parent.verticalCenter
+                                    text: tabButton.modelData.label
+                                    color: root.selectedMode === tabButton.modelData.id
+                                        ? "#FFFFFF" : "#5D6875"
+                                    font.pixelSize: 10
+                                    font.weight: Font.DemiBold
+                                }
                             }
 
                             MouseArea {
-                                id: wifiTabMouse
+                                id: tabMouse
                                 anchors.fill: parent
                                 hoverEnabled: true
                                 cursorShape: Qt.PointingHandCursor
-                                onClicked: root.modeRequested("wifi")
-                            }
-                        }
-
-                        Rectangle {
-                            id: bluetoothTab
-                            width: 32
-                            height: 32
-                            radius: 10
-                            color: root.selectedMode === "bluetooth"
-                                ? "#EEF1F4"
-                                : (bluetoothTabMouse.containsMouse ? "#F7F8FA" : "transparent")
-                            border.width: root.selectedMode === "bluetooth" ? 1 : 0
-                            border.color: "#D9DEE5"
-
-                            Image {
-                                anchors.centerIn: parent
-                                width: 16
-                                height: 16
-                                source: Qt.resolvedUrl("../assets/icons/lucide-bluetooth-dark.svg")
-                                sourceSize.width: 32
-                                sourceSize.height: 32
-                                smooth: true
-                            }
-
-                            MouseArea {
-                                id: bluetoothTabMouse
-                                anchors.fill: parent
-                                hoverEnabled: true
-                                cursorShape: Qt.PointingHandCursor
-                                onClicked: root.modeRequested("bluetooth")
+                                onClicked: root.modeRequested(tabButton.modelData.id)
                             }
                         }
                     }
                 }
 
-                Rectangle {
-                    width: 1
-                    height: parent.height
-                    color: "#E7EAEE"
-                }
-
                 Item {
                     id: detailPane
-                    width: cardContent.width - sidebar.width - 1 - cardContent.spacing * 2
-                    height: parent.height
+                    width: parent.width
+                    height: parent.height - modeTabs.height - cardContent.spacing
 
                     ControlDetailSection {
                         id: details
@@ -200,5 +213,4 @@ PanelWindow {
             }
         }
     }
-
 }
