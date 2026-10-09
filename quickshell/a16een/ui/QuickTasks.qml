@@ -13,6 +13,7 @@ PanelWindow {
     property bool creating: false
     property var tasks: []
     property bool storageReady: false
+    property date now: new Date()
     property int calendarYear: 0
     property int calendarMonth: 1
     property int selectedYear: 0
@@ -31,7 +32,7 @@ PanelWindow {
     ]
     readonly property var weekdayShortNames: ["ሰ", "ማ", "ረ", "ሐ", "አ", "ቅ", "እ"]
 
-    readonly property var todayEthiopian: root.toEthiopianDate(new Date())
+    readonly property var todayEthiopian: root.toEthiopianDate(root.now)
 
     readonly property var calendarCells: {
         const firstDayJdn = root.ethiopianYearStartJdn(root.calendarYear)
@@ -99,6 +100,13 @@ PanelWindow {
             if (root.storageReady)
                 taskStorage.setText(JSON.stringify({ version: 1, tasks: root.tasks }))
         }
+    }
+
+    Timer {
+        interval: 60000
+        repeat: true
+        running: root.opened
+        onTriggered: root.now = new Date()
     }
 
     function pad(value) {
@@ -177,6 +185,7 @@ PanelWindow {
     }
 
     function startCreating() {
+        root.now = new Date()
         const today = root.todayEthiopian
         root.calendarYear = today.year
         root.calendarMonth = today.month
@@ -227,6 +236,7 @@ PanelWindow {
 
     onOpenedChanged: {
         if (opened) {
+            root.now = new Date()
             root.creating = false
             const today = root.todayEthiopian
             if (root.selectedYear === 0) {
