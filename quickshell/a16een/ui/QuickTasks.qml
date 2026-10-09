@@ -57,8 +57,8 @@ PanelWindow {
     exclusiveZone: 0
     focusable: root.opened
 
-    width: 344
-    height: root.creating ? 478 : 352
+    width: 324
+    height: root.creating ? 430 : 310
 
     anchors {
         left: !root.horizontalNavbar && root.navbarPosition === "left"
