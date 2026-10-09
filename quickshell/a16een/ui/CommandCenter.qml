@@ -46,6 +46,7 @@ PanelWindow {
     signal screenshotSettingsRequested()
     signal widgetsRequested()
     signal widgetsCloseRequested()
+    signal presetsRequested()
     signal doNotDisturbRequested(bool enabled)
     signal editorialTimeWidgetEnabledRequested(bool enabled)
     signal calendarWidgetEnabledRequested(bool enabled)
@@ -379,20 +380,12 @@ PanelWindow {
         Qt.callLater(() => search.forceActiveFocus())
     }
 
+    // Presets now belong to the compact navbar popover. Route every entry
+    // point here to that panel instead of opening the legacy large view.
     function openWorkspacePresetView() {
-        root.powerViewOpen = false
-        root.widgetViewOpen = false
-        root.controlViewOpen = false
-        root.controlDetail = ""
-        root.iconThemeViewOpen = false
-        root.workspacePresetViewOpen = true
-        root.navbarViewOpen = false
-        root.commandText = "/presets"
-        root.selectedCommandIndex = 0
-        Qt.callLater(() => {
-            if (root.workspacePresetViewOpen)
-                workspacePresetSection.forceActiveFocus()
-        })
+        root.workspacePresetViewOpen = false
+        root.closeRequested()
+        root.presetsRequested()
     }
 
     function closeWorkspacePresetView() {
