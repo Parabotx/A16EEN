@@ -116,7 +116,7 @@ PanelWindow {
         Column {
             visible: !root.horizontalNavbar
             anchors.centerIn: parent
-            spacing: 3
+            spacing: 2
 
             Repeater {
                 model: root.actions
@@ -125,20 +125,20 @@ PanelWindow {
                     id: actionButton
                     required property var modelData
 
-                    width: 24
-                    height: 24
-                    radius: 8
+                    width: 22
+                    height: 22
+                    radius: 7
                     color: actionHover.containsMouse ? "#F1F3F6" : "transparent"
                     border.width: actionHover.containsMouse ? 1 : 0
                     border.color: "#E2E6EB"
 
                     Image {
                         anchors.centerIn: parent
-                        width: 14
-                        height: 14
+                        width: 13
+                        height: 13
                         source: Qt.resolvedUrl("../assets/icons/" + actionButton.modelData.icon)
-                        sourceSize.width: 32
-                        sourceSize.height: 32
+                        sourceSize.width: 30
+                        sourceSize.height: 30
                         fillMode: Image.PreserveAspectFit
                         smooth: true
                     }
