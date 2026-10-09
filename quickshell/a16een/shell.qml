@@ -26,8 +26,8 @@ ShellRoot {
     property int iconThemeRevision: 0
     property string navbarPosition: "right"
     property bool quickNotesOpen: false
+    property bool quickTasksOpen: false
     property bool navbarRevealed: false
-    property bool calendarQuickOpenPulse: false
 
     readonly property string navbarLayoutPath: {
         const stateHome = Quickshell.env("XDG_STATE_HOME")
@@ -90,6 +90,7 @@ ShellRoot {
         && !root.widgetsCenterOpen
         && !root.screenshotCenterOpen
         && !root.quickNotesOpen
+        && !root.quickTasksOpen
 
     readonly property bool wallpaperAnimationAllowed: {
         switch (root.powerProfile) {
@@ -681,9 +682,6 @@ ShellRoot {
             focusedWorkspaceId: root.focusedWorkspaceId
             fullscreenActive: root.focusedWindowFullscreen
             navbarPosition: root.navbarPosition
-            isPrimaryScreen: modelData === root.primaryScreen
-            calendarQuickOpenPulse: root.calendarQuickOpenPulse
-
             onDockVisibilityChanged: {
                 if (modelData === root.primaryScreen)
                     root.navbarRevealed = visible
@@ -706,6 +704,7 @@ ShellRoot {
 
         onNotesRequested: {
             root.quickNotesOpen = true
+            root.quickTasksOpen = false
             root.commandCenterOpen = false
             root.launcherOpen = false
             root.dashboardOpen = false
@@ -716,8 +715,8 @@ ShellRoot {
         }
 
         onTasksRequested: {
-            const shouldOpen = !root.tasksWidgetEnabled
-            root.tasksWidgetEnabled = shouldOpen
+            const shouldOpen = !root.quickTasksOpen
+            root.quickTasksOpen = shouldOpen
             if (shouldOpen) {
                 root.quickNotesOpen = false
                 root.commandCenterOpen = false
@@ -732,7 +731,7 @@ ShellRoot {
 
         onPresetsRequested: {
             root.quickNotesOpen = false
-            root.tasksWidgetEnabled = false
+            root.quickTasksOpen = false
             root.launcherOpen = false
             root.dashboardOpen = false
             root.wallpaperPickerOpen = false
@@ -743,24 +742,22 @@ ShellRoot {
             Qt.callLater(() => commandCenter.openWorkspacePresetView())
         }
 
-        onCalendarRequested: {
-            root.quickNotesOpen = false
-            root.commandCenterOpen = false
-            root.launcherOpen = false
-            root.dashboardOpen = false
-            root.wallpaperPickerOpen = false
-            root.widgetsCenterOpen = false
-            root.screenshotCenterOpen = false
-            root.screenshotSettingsOpen = false
-            root.calendarQuickOpenPulse = true
-            Qt.callLater(() => root.calendarQuickOpenPulse = false)
-        }
     }
 
     QuickNotes {
         modelData: root.primaryScreen
+        navbarPosition: root.navbarPosition
+        dockVisible: !root.focusedWindowFullscreen || root.navbarRevealed
         opened: root.quickNotesOpen
         onCloseRequested: root.quickNotesOpen = false
+    }
+
+    QuickTasks {
+        modelData: root.primaryScreen
+        navbarPosition: root.navbarPosition
+        dockVisible: !root.focusedWindowFullscreen || root.navbarRevealed
+        opened: root.quickTasksOpen
+        onCloseRequested: root.quickTasksOpen = false
     }
 
     CommandCenter {
