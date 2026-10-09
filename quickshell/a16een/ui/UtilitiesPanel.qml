@@ -19,8 +19,8 @@ PanelWindow {
         root.navbarPosition === "top" || root.navbarPosition === "bottom"
     readonly property real screenWidth: root.modelData ? root.modelData.width : 1920
     readonly property real screenHeight: root.modelData ? root.modelData.height : 1080
-    readonly property int popupWidth: 580
-    readonly property int popupHeight: 418
+    readonly property int popupWidth: 420
+    readonly property int popupHeight: 320
     readonly property real popupX: root.horizontalNavbar
         ? 100
         : (root.navbarPosition === "left"
@@ -99,208 +99,80 @@ PanelWindow {
             Row {
                 id: cardContent
                 anchors.fill: parent
-                anchors.margins: 14
-                spacing: 12
+                anchors.margins: 12
+                spacing: 8
                 z: 1
+                layoutDirection: root.navbarPosition === "right"
+                    ? Qt.RightToLeft : Qt.LeftToRight
 
-                Column {
+                Item {
                     id: sidebar
-                    width: 118
+                    width: 36
                     height: parent.height
-                    spacing: 8
 
-                    Item {
-                        width: parent.width
-                        height: 42
+                    Column {
+                        anchors.centerIn: parent
+                        spacing: 8
 
-                        Column {
-                            anchors.left: parent.left
-                            anchors.verticalCenter: parent.verticalCenter
-                            spacing: 4
+                        Rectangle {
+                            id: wifiTab
+                            width: 32
+                            height: 32
+                            radius: 10
+                            color: root.selectedMode === "wifi"
+                                ? "#EEF1F4"
+                                : (wifiTabMouse.containsMouse ? "#F7F8FA" : "transparent")
+                            border.width: root.selectedMode === "wifi" ? 1 : 0
+                            border.color: "#D9DEE5"
 
-                            Text {
-                                text: "UTILITIES"
-                                color: "#111318"
-                                font.pixelSize: 11
-                                font.weight: Font.DemiBold
-                                font.letterSpacing: 1.1
+                            Image {
+                                anchors.centerIn: parent
+                                width: 16
+                                height: 16
+                                source: Qt.resolvedUrl("../assets/icons/lucide-wifi-dark.svg")
+                                sourceSize.width: 32
+                                sourceSize.height: 32
+                                smooth: true
                             }
 
-                            Text {
-                                text: "CONNECTIONS"
-                                color: "#8A939E"
-                                font.pixelSize: 7
-                                font.weight: Font.DemiBold
-                                font.letterSpacing: 1.0
-                            }
-                        }
-                    }
-
-                    Rectangle {
-                        width: parent.width
-                        height: 1
-                        color: "#E7EAEE"
-                    }
-
-                    Rectangle {
-                        id: wifiTab
-                        width: parent.width
-                        height: 58
-                        radius: 12
-                        color: root.selectedMode === "wifi" ? "#F1F3F5" : (wifiTabMouse.containsMouse ? "#F8F9FA" : "transparent")
-                        border.width: root.selectedMode === "wifi" ? 1 : 0
-                        border.color: "#D9DEE5"
-
-                        Row {
-                            anchors.fill: parent
-                            anchors.leftMargin: 9
-                            anchors.rightMargin: 6
-                            spacing: 8
-
-                            Item {
-                                width: 22
-                                height: 22
-                                anchors.verticalCenter: parent.verticalCenter
-
-                                Image {
-                                    anchors.centerIn: parent
-                                    width: 17
-                                    height: 17
-                                    source: Qt.resolvedUrl("../assets/icons/lucide-wifi-dark.svg")
-                                    sourceSize.width: 34
-                                    sourceSize.height: 34
-                                    smooth: true
-                                    opacity: 0.9
-                                }
-
-                                Rectangle {
-                                    width: 6
-                                    height: 6
-                                    radius: 3
-                                    anchors.right: parent.right
-                                    anchors.bottom: parent.bottom
-                                    color: details.wifiState === "on" && details.wifiName !== "Not connected" ? "#3FA779"
-                                        : (details.wifiState === "off" ? "#B8C0C9" : "#D5A94F")
-                                    border.width: 1
-                                    border.color: "#FFFFFF"
-                                }
-                            }
-
-                            Column {
-                                anchors.verticalCenter: parent.verticalCenter
-                                width: parent.width - 30
-                                spacing: 4
-
-                                Text {
-                                    text: "Wi-Fi"
-                                    color: "#171B21"
-                                    font.pixelSize: 10
-                                    font.weight: Font.DemiBold
-                                }
-
-                                Text {
-                                    width: parent.width
-                                    text: root.wifiStatusText
-                                    color: "#7A8490"
-                                    font.pixelSize: 7
-                                    elide: Text.ElideRight
-                                }
+                            MouseArea {
+                                id: wifiTabMouse
+                                anchors.fill: parent
+                                hoverEnabled: true
+                                cursorShape: Qt.PointingHandCursor
+                                onClicked: root.modeRequested("wifi")
                             }
                         }
 
-                        MouseArea {
-                            id: wifiTabMouse
-                            anchors.fill: parent
-                            hoverEnabled: true
-                            cursorShape: Qt.PointingHandCursor
-                            onClicked: root.modeRequested("wifi")
-                        }
-                    }
+                        Rectangle {
+                            id: bluetoothTab
+                            width: 32
+                            height: 32
+                            radius: 10
+                            color: root.selectedMode === "bluetooth"
+                                ? "#EEF1F4"
+                                : (bluetoothTabMouse.containsMouse ? "#F7F8FA" : "transparent")
+                            border.width: root.selectedMode === "bluetooth" ? 1 : 0
+                            border.color: "#D9DEE5"
 
-                    Rectangle {
-                        id: bluetoothTab
-                        width: parent.width
-                        height: 58
-                        radius: 12
-                        color: root.selectedMode === "bluetooth" ? "#F1F3F5" : (bluetoothTabMouse.containsMouse ? "#F8F9FA" : "transparent")
-                        border.width: root.selectedMode === "bluetooth" ? 1 : 0
-                        border.color: "#D9DEE5"
-
-                        Row {
-                            anchors.fill: parent
-                            anchors.leftMargin: 9
-                            anchors.rightMargin: 6
-                            spacing: 8
-
-                            Item {
-                                width: 22
-                                height: 22
-                                anchors.verticalCenter: parent.verticalCenter
-
-                                Image {
-                                    anchors.centerIn: parent
-                                    width: 17
-                                    height: 17
-                                    source: Qt.resolvedUrl("../assets/icons/lucide-bluetooth-dark.svg")
-                                    sourceSize.width: 34
-                                    sourceSize.height: 34
-                                    smooth: true
-                                    opacity: 0.9
-                                }
-
-                                Rectangle {
-                                    width: 6
-                                    height: 6
-                                    radius: 3
-                                    anchors.right: parent.right
-                                    anchors.bottom: parent.bottom
-                                    color: details.bluetoothState === "on" ? "#3FA779"
-                                        : (details.bluetoothState === "off" ? "#B8C0C9" : "#D5A94F")
-                                    border.width: 1
-                                    border.color: "#FFFFFF"
-                                }
+                            Image {
+                                anchors.centerIn: parent
+                                width: 16
+                                height: 16
+                                source: Qt.resolvedUrl("../assets/icons/lucide-bluetooth-dark.svg")
+                                sourceSize.width: 32
+                                sourceSize.height: 32
+                                smooth: true
                             }
 
-                            Column {
-                                anchors.verticalCenter: parent.verticalCenter
-                                width: parent.width - 30
-                                spacing: 4
-
-                                Text {
-                                    text: "Bluetooth"
-                                    color: "#171B21"
-                                    font.pixelSize: 9
-                                    font.weight: Font.DemiBold
-                                }
-
-                                Text {
-                                    width: parent.width
-                                    text: root.bluetoothStatusText
-                                    color: "#7A8490"
-                                    font.pixelSize: 7
-                                    elide: Text.ElideRight
-                                }
+                            MouseArea {
+                                id: bluetoothTabMouse
+                                anchors.fill: parent
+                                hoverEnabled: true
+                                cursorShape: Qt.PointingHandCursor
+                                onClicked: root.modeRequested("bluetooth")
                             }
                         }
-
-                        MouseArea {
-                            id: bluetoothTabMouse
-                            anchors.fill: parent
-                            hoverEnabled: true
-                            cursorShape: Qt.PointingHandCursor
-                            onClicked: root.modeRequested("bluetooth")
-                        }
-                    }
-
-                    Item { width: 1; height: 1 }
-
-                    Text {
-                        width: parent.width
-                        text: "LIVE STATUS"
-                        color: "#A0A8B2"
-                        font.pixelSize: 7
-                        font.weight: Font.DemiBold
-                        font.letterSpacing: 1.0
                     }
                 }
 
@@ -329,21 +201,4 @@ PanelWindow {
         }
     }
 
-    readonly property string wifiStatusText: {
-        if (details.wifiState === "unavailable")
-            return "Unavailable"
-        if (details.wifiRadioState === "off")
-            return "Turned off"
-        return details.wifiName !== "Not connected" ? "Connected" : "Enabled"
-    }
-
-    readonly property string bluetoothStatusText: {
-        if (details.bluetoothState === "unavailable")
-            return "Unavailable"
-        if (details.bluetoothState === "off")
-            return "Turned off"
-        return details.bluetoothDevices.some(device => device.connected)
-            ? "Connected"
-            : "Enabled"
-    }
 }
