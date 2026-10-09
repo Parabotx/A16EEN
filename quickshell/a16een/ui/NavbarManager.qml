@@ -28,7 +28,7 @@ Item {
     readonly property string settingsPath: root.stateDir + "/navbar.json"
 
 
-    readonly property color page: "#FFFFFF"
+    readonly property color page: "#F3F5F7"
     readonly property color card: "#F7F8FA"
     readonly property color cardHover: "#EEF2F6"
     readonly property color border: "#D9DEE5"
