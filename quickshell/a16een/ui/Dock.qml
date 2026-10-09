@@ -309,12 +309,14 @@ PanelWindow {
 
         Rectangle {
             id: batteryPill
-            x: (root.horizontalNavbar || root.navbarPosition === "right")
-                ? parent.width - width - 2
-                : 2
+            x: root.horizontalNavbar
+                ? parent.width - width
+                : (root.navbarPosition === "right" ? parent.width - width - 2 : 2)
             y: root.navbarPosition === "top"
-                ? 2
-                : parent.height - height - 2
+                ? 0
+                : (root.navbarPosition === "bottom"
+                    ? parent.height - height
+                    : Math.round((parent.height - height) / 2))
             width: root.horizontalNavbar
                 ? (batteryHoverSensor.containsMouse ? 92 : 40)
                 : (batteryHoverSensor.containsMouse ? 76 : 38)
@@ -535,8 +537,8 @@ PanelWindow {
 
         Rectangle {
             anchors.fill: parent
-            anchors.margins: 1
-            radius: root.horizontalNavbar ? 18 : 16
+            anchors.margins: root.horizontalNavbar ? 0 : 1
+            radius: root.horizontalNavbar ? 17 : 16
             color: "#FFFFFF"
             border.width: 1
             border.color: "#D9DEE5"
