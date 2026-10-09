@@ -27,6 +27,7 @@ The project is being designed as a cohesive desktop product rather than a conven
 - Network connection indicator
 - Bluetooth power indicator
 - Safe session controls with confirmation for reboot and power-off
+- GTKLock password-entry lock screen with visible cursor, live time/date, and the current wallpaper (including a captured frame for animated backgrounds)
 - Volume, microphone, media, and brightness keybindings
 - Dedicated **A16EEN** Wayland session entry
 - Lightweight curated font set for UI, display, text, and mono use
@@ -156,6 +157,8 @@ pipewire
 wireplumber
 upower
 swaylock
+gtklock
+ffmpeg
 xwayland-satellite
 xdg-desktop-portal-gtk
 networkmanager
