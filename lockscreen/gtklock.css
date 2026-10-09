@@ -1,4 +1,4 @@
-/* A16EEN lock screen — live clock, quiet glass card, visible security badge. */
+/* A16EEN lock screen — minimal clock, compact password field, quiet security badge. */
 
 window {
     background-color: #090C11;
@@ -13,22 +13,23 @@ window {
     padding: 0;
 }
 
-/* Centered password card. The shell wallpaper is kept crisp behind the glass. */
+/* Keep the content visually grouped without a large enclosing panel. */
 #lock-card {
     margin: 0;
-    padding: 34px 38px;
-    min-width: 440px;
-    background-color: rgba(11, 15, 22, 0.80);
-    border: 1px solid rgba(255, 255, 255, 0.18);
-    border-radius: 26px;
+    padding: 0;
+    min-width: 0;
+    background-color: transparent;
+    border: none;
+    border-radius: 0;
+    box-shadow: none;
 }
 
 #info-box {
-    margin-bottom: 2px;
+    margin: 0;
 }
 
 #time-box {
-    margin-bottom: 7px;
+    margin: 0;
 }
 
 #clock-label,
@@ -36,7 +37,7 @@ window {
 window.hidden #lock-card #clock-label {
     color: #FFFFFF;
     font-family: Inter, sans-serif;
-    font-size: 62pt;
+    font-size: 56pt;
     font-weight: 600;
     opacity: 1;
 }
@@ -46,7 +47,7 @@ window.hidden #lock-card #clock-label {
 window.hidden #lock-card #date-label {
     color: rgba(246, 248, 251, 0.90);
     font-family: Inter, sans-serif;
-    font-size: 13pt;
+    font-size: 12pt;
     opacity: 1;
 }
 
@@ -57,22 +58,26 @@ window.hidden #security-row,
 }
 
 #lock-header {
-    margin-top: 2px;
-    margin-bottom: 7px;
+    margin-top: 0;
+    margin-bottom: 0;
 }
 
 #lock-brand {
-    color: #F8F9FB;
+    color: rgba(248, 249, 251, 0.76);
     font-family: Inter, sans-serif;
-    font-size: 11pt;
+    font-size: 8pt;
     font-weight: 700;
     letter-spacing: 3px;
 }
 
-#lock-hint {
-    color: rgba(241, 244, 248, 0.68);
-    font-family: Inter, sans-serif;
-    font-size: 10pt;
+/* Retain the required GTKLock widget, but don't show instructional copy. */
+#lock-hint,
+#input-label {
+    min-height: 0;
+    margin: 0;
+    padding: 0;
+    opacity: 0;
+    font-size: 0;
 }
 
 /* This floating status chip lives in the actual top-right screen corner. */
@@ -95,54 +100,33 @@ window.hidden #security-row,
     letter-spacing: 1.2px;
 }
 
-#input-label {
-    color: rgba(246, 248, 251, 0.84);
-    font-family: Inter, sans-serif;
-    font-size: 10pt;
-    padding-right: 8px;
-}
-
+/* A compact white password pill, designed to disappear into the composition. */
 #input-field {
-    min-width: 320px;
-    min-height: 48px;
-    padding: 8px 14px;
-    color: #FFFFFF;
-    background-color: rgba(255, 255, 255, 0.09);
-    border: 1px solid rgba(255, 255, 255, 0.20);
+    min-width: 236px;
+    min-height: 38px;
+    padding: 4px 12px;
+    color: #171A20;
+    caret-color: #171A20;
+    background-color: #F8F9FB;
+    border: 1px solid rgba(255, 255, 255, 0.96);
     border-radius: 12px;
     font-family: Inter, sans-serif;
-    font-size: 12pt;
+    font-size: 11pt;
     box-shadow: none;
 }
 
 #input-field:focus {
-    background-color: rgba(255, 255, 255, 0.12);
+    color: #171A20;
+    background-color: #FFFFFF;
     border: 1px solid #D7B56D;
-    box-shadow: none;
+    box-shadow: 0 0 0 2px rgba(215, 181, 109, 0.16);
 }
 
 #unlock-button {
-    min-height: 40px;
-    padding: 7px 18px;
-    color: #141820;
-    background-color: #D7B56D;
-    background-image: none;
-    border: 1px solid #D7B56D;
-    border-radius: 11px;
-    font-family: Inter, sans-serif;
-    font-size: 10pt;
-    font-weight: 700;
-    box-shadow: none;
-}
-
-#unlock-button:hover {
-    background-color: #E5C982;
-    border-color: #E5C982;
-}
-
-#unlock-button:active {
-    background-color: #C4A258;
-    border-color: #C4A258;
+    min-height: 0;
+    padding: 0;
+    opacity: 0;
+    font-size: 0;
 }
 
 #error-label,
