@@ -200,7 +200,6 @@ fi
 
 BASE_ARGS=(
     "${LOCKER_ARGS[@]}"
-    --indicator
     --indicator-radius 54
     --indicator-thickness 4
     --show-failed-attempts
