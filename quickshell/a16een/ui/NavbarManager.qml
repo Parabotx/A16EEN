@@ -35,7 +35,7 @@ Item {
     readonly property color borderStrong: "#B8C1CC"
     readonly property color textPrimary: "#111318"
     readonly property color textSecondary: "#5C6673"
-    readonly property color textMuted: "#8A939E"
+    readonly property color textMuted: "#66707C"
     readonly property color accent: "#3B82F6"
 
     readonly property var slots: [
@@ -49,13 +49,10 @@ Item {
 
     readonly property var iconChoices: [
         { id: "house.svg", name: "House" },
-        { id: "house-heart.svg", name: "House Heart" },
-        { id: "house-plus.svg", name: "House Plus" },
-        { id: "house-wifi.svg", name: "House WiFi" },
-        { id: "monitor.svg", name: "Monitor" },
-        { id: "app-window.svg", name: "App Window" },
+        { id: "lucide-monitor.svg", name: "Monitor" },
+        { id: "lucide-app-window.svg", name: "App Window" },
         { id: "folder.svg", name: "Folder" },
-        { id: "folder-open.svg", name: "Folder Open" },
+        { id: "lucide-folder-open.svg", name: "Folder Open" },
         { id: "code.svg", name: "Code" },
         { id: "code-2.svg", name: "Code 2" },
         { id: "terminal.svg", name: "Terminal" },
@@ -63,40 +60,21 @@ Item {
         { id: "messages-square.svg", name: "Messages" },
         { id: "music.svg", name: "Music" },
         { id: "sparkles.svg", name: "Sparkles" },
-        { id: "palette.svg", name: "Palette" },
-        { id: "sun.svg", name: "Sun" },
-        { id: "moon.svg", name: "Moon" },
-        { id: "volume-2.svg", name: "Volume" },
-        { id: "skull.svg", name: "Skull" },
-        { id: "ghost.svg", name: "Ghost" },
-        { id: "alien.svg", name: "Alien" },
-        { id: "bug.svg", name: "Bug" },
-        { id: "bot.svg", name: "Bot" },
-        { id: "radiation.svg", name: "Radiation" },
-        { id: "biohazard.svg", name: "Biohazard" },
-        { id: "orbit.svg", name: "Orbit" },
-        { id: "rocket.svg", name: "Rocket" },
-        { id: "gamepad-2.svg", name: "Gamepad" },
-        { id: "dice-5.svg", name: "Dice" },
-        { id: "coffee.svg", name: "Coffee" },
-        { id: "camera.svg", name: "Camera" },
-        { id: "heart.svg", name: "Heart" },
-        { id: "flame.svg", name: "Flame" },
-        { id: "crown.svg", name: "Crown" },
-        { id: "diamond.svg", name: "Diamond" },
-        { id: "zap.svg", name: "Zap" },
-        { id: "fish.svg", name: "Fish" },
-        { id: "cat.svg", name: "Cat" },
-        { id: "eye.svg", name: "Eye" },
-        { id: "brain.svg", name: "Brain" },
-        { id: "wand-sparkles.svg", name: "Wand" },
-        { id: "circle-help.svg", name: "Help" },
-        { id: "graduation-cap.svg", name: "Graduation" },
-        { id: "briefcase-business.svg", name: "Briefcase" },
-        { id: "cloud.svg", name: "Cloud" },
-        { id: "map-pin.svg", name: "Map Pin" },
-        { id: "compass.svg", name: "Compass" },
-        { id: "command.svg", name: "Command" }
+        { id: "lucide-palette.svg", name: "Palette" },
+        { id: "lucide-sun.svg", name: "Sun" },
+        { id: "lucide-moon.svg", name: "Moon" },
+        { id: "lucide-volume-2.svg", name: "Volume" },
+        { id: "lucide-settings.svg", name: "Settings" },
+        { id: "lucide-sliders-horizontal.svg", name: "Sliders" },
+        { id: "lucide-battery.svg", name: "Battery" },
+        { id: "lucide-wifi.svg", name: "Wi-Fi" },
+        { id: "lucide-bluetooth.svg", name: "Bluetooth" },
+        { id: "lucide-bell-off.svg", name: "Notifications Off" },
+        { id: "lucide-clipboard.svg", name: "Clipboard" },
+        { id: "lucide-crop.svg", name: "Crop" },
+        { id: "lucide-mouse-pointer.svg", name: "Pointer" },
+        { id: "search.svg", name: "Search" },
+        { id: "lucide-arrow-left.svg", name: "Arrow Left" }
     ]
 
     readonly property var colorChoices: [
@@ -140,11 +118,18 @@ Item {
         }
     }
 
+    function colorHexFromStyle(style) {
+        // Navbar settings store styles as solid:#RRGGBB or split/gradient strings.
+        // QML color properties need a real color, so extract the first hex stop.
+        const match = String(style || "#111318").match(/#[0-9A-Fa-f]{6}/)
+        return match ? match[0].toUpperCase() : "#111318"
+    }
+
     function previewIconColor(slot) {
-        const color = root.settingFor(slot).color
         // The manager uses a light surface: keep default black icons black.
         // A user-selected white icon is previewed in black for visibility only.
-        return color.toUpperCase() === "#FFFFFF" ? "#111318" : color
+        const color = root.colorHexFromStyle(root.settingFor(slot).color)
+        return color === "#FFFFFF" ? "#111318" : color
     }
 
     function settingFor(slot) {
@@ -284,7 +269,7 @@ Item {
             Layout.fillWidth: true
             Layout.preferredHeight: 58
             active: root.active
-            onPositionChanged: root.navbarPositionChanged(position)
+            onPositionApplied: root.navbarPositionChanged(position)
         }
 
         RowLayout {
@@ -446,7 +431,7 @@ Item {
                                     .replace(".svg", "")
                                     .replace("lucide-", "")
                                     .toUpperCase()
-                                    + " • " + root.settingFor(root.selectedSlot).color.toUpperCase()
+                                    + " • " + root.colorHexFromStyle(root.settingFor(root.selectedSlot).color)
                                 color: root.textSecondary
                                 font.pixelSize: 8
                                 font.weight: Font.Medium
@@ -576,7 +561,7 @@ Item {
                                 Layout.preferredHeight: 29
                                 radius: 9
                                 color: "#FFFFFF"
-                                border.width: root.settingFor(root.selectedSlot).color.toUpperCase() === modelData.id.toUpperCase()
+                                border.width: root.colorHexFromStyle(root.settingFor(root.selectedSlot).color) === modelData.id.toUpperCase()
                                     ? 1.5 : 1
                                 border.color: root.settingFor(root.selectedSlot).color.toUpperCase() === modelData.id.toUpperCase()
                                     ? root.accent : root.border
