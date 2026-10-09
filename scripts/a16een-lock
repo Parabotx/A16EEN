@@ -139,9 +139,9 @@ else
 fi
 
 # Cursor hiding is optional, since not every swaylock build exposes it.
-HIDE_CURSOR_ARGS=()
+HIDE_CURSOR_SUPPORTED=0
 if grep -q -- '--hide-cursor' <<<"$SWAYLOCK_HELP"; then
-    HIDE_CURSOR_ARGS+=(--hide-cursor)
+    HIDE_CURSOR_SUPPORTED=1
 fi
 
 # Keep BASE_ARGS limited to options supported by standard swaylock builds.
@@ -160,8 +160,10 @@ BASE_ARGS=(
     --line-color 00000000
     --separator-color 00000000
     --text-color F8FAFC
-    "${HIDE_CURSOR_ARGS[@]}"
 )
+if (( HIDE_CURSOR_SUPPORTED )); then
+    BASE_ARGS+=(--hide-cursor)
+fi
 
 if grep -q -- '--clock' <<<"$SWAYLOCK_HELP" \
     && grep -q -- '--effect-vignette' <<<"$SWAYLOCK_HELP" \
@@ -196,11 +198,19 @@ if run_locker swaylock "${BASE_ARGS[@]}"; then exit 0; fi
 # was available rather than replacing it with a solid gray-blue screen.
 if [[ -s "$LOCK_IMAGE" ]]; then
     log "Trying wallpaper-only secure fallback."
-    if run_locker swaylock --image "$LOCK_IMAGE" --scaling fill "${HIDE_CURSOR_ARGS[@]}"; then exit 0; fi
+    if (( HIDE_CURSOR_SUPPORTED )); then
+        if run_locker swaylock --image "$LOCK_IMAGE" --scaling fill --hide-cursor; then exit 0; fi
+    else
+        if run_locker swaylock --image "$LOCK_IMAGE" --scaling fill; then exit 0; fi
+    fi
 fi
 
 log "Starting minimal secure swaylock fallback."
-if run_locker swaylock --color 101720 "${HIDE_CURSOR_ARGS[@]}"; then exit 0; fi
+if (( HIDE_CURSOR_SUPPORTED )); then
+    if run_locker swaylock --color 101720 --hide-cursor; then exit 0; fi
+else
+    if run_locker swaylock --color 101720; then exit 0; fi
+fi
 
 log "ERROR: every swaylock launch attempt failed."
 printf '%s\n' "A16EEN: swaylock could not start. See $LOCK_LOG" >&2
