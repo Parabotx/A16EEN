@@ -250,7 +250,15 @@ PanelWindow {
             z: -1
         }
 
+        MouseArea {
+            anchors.fill: parent
+            z: 0
+            acceptedButtons: Qt.AllButtons
+            onClicked: mouse.accepted = true
+        }
+
         Row {
+            z: 1
             anchors.fill: parent
             anchors.margins: 12
             spacing: root.sidebarVisible ? 10 : 0
