@@ -294,17 +294,6 @@ PanelWindow {
             return "#111318"
         }
 
-        // The hover sensor has stable geometry; the pill below it animates.
-        // Qt.NoButton allows clicks to pass through this transparent sensor.
-        MouseArea {
-            id: batteryHoverSensor
-            anchors.fill: parent
-            hoverEnabled: true
-            acceptedButtons: Qt.NoButton
-            cursorShape: Qt.ArrowCursor
-            z: 0
-        }
-
         Rectangle {
             id: batteryPill
             x: (root.horizontalNavbar || root.navbarPosition === "right")
@@ -336,6 +325,18 @@ PanelWindow {
                 radius: 16
                 color: "#10000000"
                 z: -1
+            }
+
+            // Track the visible capsule, not the whole transparent native window.
+            // Its parent grows away from the screen-facing edge, while the outer
+            // PanelWindow remains fixed-size so Wayland geometry stays stable.
+            MouseArea {
+                id: batteryHoverSensor
+                anchors.fill: parent
+                hoverEnabled: true
+                acceptedButtons: Qt.NoButton
+                cursorShape: Qt.ArrowCursor
+                z: 10
             }
 
             BatteryGlyph {
