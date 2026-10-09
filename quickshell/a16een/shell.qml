@@ -923,6 +923,21 @@ ShellRoot {
         systemLoad: root.systemLoad
         volumePercent: root.volumePercent
         volumeMuted: root.volumeMuted
+
+        onLockRequested: {
+            // Close shell overlays before the secure Wayland locker appears.
+            root.dashboardOpen = false
+            root.quickNotesOpen = false
+            root.quickTasksOpen = false
+            root.quickPresetsOpen = false
+            root.commandCenterOpen = false
+            root.launcherOpen = false
+            root.wallpaperPickerOpen = false
+            root.widgetsCenterOpen = false
+            root.screenshotCenterOpen = false
+            root.screenshotSettingsOpen = false
+            Quickshell.execDetached(["a16een-lock"])
+        }
     }
 
     Variants {
