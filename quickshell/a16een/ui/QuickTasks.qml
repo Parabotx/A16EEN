@@ -55,11 +55,24 @@ PanelWindow {
     aboveWindows: true
     exclusionMode: ExclusionMode.Ignore
     exclusiveZone: 0
-    focusable: false
+    focusable: root.opened
+    WlrLayershell.keyboardFocus: root.opened
+        ? WlrKeyboardFocus.OnDemand
+        : WlrKeyboardFocus.None
     readonly property real screenWidth: root.modelData ? root.modelData.width : 1920
     readonly property real screenHeight: root.modelData ? root.modelData.height : 1080
     readonly property int popupWidth: 304
     readonly property int popupHeight: root.creating ? 410 : 292
+    readonly property real popupX: root.horizontalNavbar
+        ? root.screenWidth - root.popupWidth - 102
+        : (root.navbarPosition === "left"
+            ? 66
+            : root.screenWidth - root.popupWidth - 68)
+    readonly property real popupY: root.horizontalNavbar
+        ? (root.navbarPosition === "top"
+            ? 40
+            : root.screenHeight - root.popupHeight - 40)
+        : root.screenHeight - root.popupHeight - 72
 
     // Keep this overlay explicitly screen-sized so popup coordinates are
     // stable when the navbar is moved to the left or right edge.
@@ -76,7 +89,6 @@ PanelWindow {
 
     WlrLayershell.layer: WlrLayer.Overlay
     WlrLayershell.namespace: "a16een-quick-tasks"
-    WlrLayershell.keyboardFocus: WlrKeyboardFocus.None
 
     FileView {
         id: taskStorage
@@ -264,43 +276,14 @@ PanelWindow {
         onClicked: root.closeRequested()
     }
 
-    PanelWindow {
+    Item {
         id: taskPopup
-        screen: root.modelData
         visible: root.opened && root.dockVisible && root.modelData !== null
-        color: "transparent"
-        aboveWindows: true
-        exclusionMode: ExclusionMode.Ignore
-        exclusiveZone: 0
-        focusable: root.opened
+        x: root.popupX
+        y: root.popupY
         width: root.popupWidth
         height: root.popupHeight
-
-        anchors {
-            left: !root.horizontalNavbar && root.navbarPosition === "left"
-            right: root.horizontalNavbar || root.navbarPosition === "right"
-            top: root.horizontalNavbar && root.navbarPosition === "top"
-            bottom: root.horizontalNavbar
-                ? root.navbarPosition === "bottom"
-                : true
-        }
-
-        margins {
-            left: !root.horizontalNavbar && root.navbarPosition === "left" ? 66 : 0
-            right: root.horizontalNavbar
-                ? 102
-                : (root.navbarPosition === "right" ? 68 : 0)
-            top: root.horizontalNavbar && root.navbarPosition === "top" ? 40 : 0
-            bottom: root.horizontalNavbar
-                ? (root.navbarPosition === "bottom" ? 40 : 0)
-                : 72
-        }
-
-        WlrLayershell.layer: WlrLayer.Overlay
-        WlrLayershell.namespace: "a16een-quick-tasks-popup"
-        WlrLayershell.keyboardFocus: root.opened
-            ? WlrKeyboardFocus.OnDemand
-            : WlrKeyboardFocus.None
+        z: 1
 
         Rectangle {
             id: taskCard
@@ -336,25 +319,6 @@ PanelWindow {
                 height: 31
                 spacing: 8
 
-                Column {
-                    anchors.verticalCenter: parent.verticalCenter
-                    width: parent.width - 83
-                    spacing: 2
-
-                    Text {
-                        text: root.creating ? "NEW TASK" : "TASKS"
-                        color: "#171B20"
-                        font.pixelSize: 15
-                        font.weight: Font.DemiBold
-                        font.letterSpacing: 0.7
-                    }
-                    Text {
-                        text: root.creating ? "Choose a name and date" : root.tasks.length + " saved"
-                        color: "#818B98"
-                        font.pixelSize: 10
-                    }
-                }
-
                 Rectangle {
                     width: 31
                     height: 31
@@ -374,6 +338,25 @@ PanelWindow {
                         hoverEnabled: true
                         cursorShape: Qt.PointingHandCursor
                         onClicked: root.closeRequested()
+                    }
+                }
+
+                Column {
+                    anchors.verticalCenter: parent.verticalCenter
+                    width: parent.width - 39
+                    spacing: 2
+
+                    Text {
+                        text: root.creating ? "NEW TASK" : "TASKS"
+                        color: "#171B20"
+                        font.pixelSize: 15
+                        font.weight: Font.DemiBold
+                        font.letterSpacing: 0.7
+                    }
+                    Text {
+                        text: root.creating ? "Choose a name and date" : root.tasks.length + " saved"
+                        color: "#818B98"
+                        font.pixelSize: 10
                     }
                 }
             }
