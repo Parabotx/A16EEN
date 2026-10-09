@@ -430,13 +430,14 @@ Item {
             Rectangle {
                 id: wifiStatusCard
                 width: parent.width
-                height: 100
-                radius: 18
+                height: root.embedded ? 60 : 100
+                radius: root.embedded ? 12 : 18
                 color: root.tile
                 border.width: 1
                 border.color: root.border
 
                 Image {
+                    visible: !root.embedded
                     x: 20
                     y: 21
                     width: 22
@@ -446,33 +447,36 @@ Item {
                 }
 
                 Column {
-                    x: 58
-                    y: 17
-                    spacing: 4
+                    x: root.embedded ? 10 : 58
+                    y: root.embedded ? 10 : 17
+                    width: parent.width - (root.embedded ? 88 : 120)
+                    spacing: root.embedded ? 3 : 4
 
                     Text {
                         text: root.wifiName
                         color: root.textPrimary
-                        font.pixelSize: 15
+                        font.pixelSize: root.embedded ? 10 : 15
                         font.weight: Font.DemiBold
                         elide: Text.ElideRight
                     }
 
                     Text {
-                        text: (root.wifiState === "on" ? "CONNECTED" : "NOT CONNECTED") + "  •  " + root.wifiDevice
+                        text: root.embedded
+                            ? (root.wifiName !== "Not connected" ? "Connected" : (root.wifiRadioState === "off" ? "Wi-Fi off" : "Not connected"))
+                            : ((root.wifiState === "on" ? "CONNECTED" : "NOT CONNECTED") + "  •  " + root.wifiDevice)
                         color: root.textSecondary
-                        font.pixelSize: 9
+                        font.pixelSize: root.embedded ? 7 : 9
                         font.letterSpacing: 0.8
                     }
                 }
 
                 Rectangle {
                     anchors.right: parent.right
-                    anchors.rightMargin: 16
+                    anchors.rightMargin: root.embedded ? 8 : 16
                     anchors.verticalCenter: parent.verticalCenter
-                    width: root.wifiState === "on" ? 92 : 84
-                    height: 34
-                    radius: 10
+                    width: root.embedded ? 62 : (root.wifiState === "on" ? 92 : 84)
+                    height: root.embedded ? 26 : 34
+                    radius: root.embedded ? 8 : 10
                     color: "#FFFFFF"
                     border.width: 1
                     border.color: root.borderStrong
@@ -483,9 +487,9 @@ Item {
                             ? "DISCONNECT"
                             : (root.wifiRadioState === "on" ? "TURN OFF" : "TURN ON")
                         color: root.textPrimary
-                        font.pixelSize: 8
+                        font.pixelSize: root.embedded ? 6 : 8
                         font.weight: Font.DemiBold
-                        font.letterSpacing: 0.8
+                        font.letterSpacing: 0.4
                     }
 
                     MouseArea {
@@ -503,33 +507,34 @@ Item {
 
             Row {
                 anchors.top: wifiStatusCard.bottom
-                anchors.topMargin: 12
+                anchors.topMargin: root.embedded ? 6 : 12
                 width: parent.width
-                height: 34
+                height: root.embedded ? 26 : 34
 
                 Text {
                     anchors.verticalCenter: parent.verticalCenter
-                    text: "AVAILABLE NETWORKS"
+                    width: parent.width - (root.embedded ? 66 : 84)
+                    text: root.embedded ? "NETWORKS" : "AVAILABLE NETWORKS"
                     color: root.textPrimary
-                    font.pixelSize: 9
+                    font.pixelSize: root.embedded ? 7 : 9
                     font.weight: Font.DemiBold
                     font.letterSpacing: 1.0
                 }
 
-                Item { width: parent.width - 190; height: 1 }
+                Item { width: 1; height: 1; visible: false }
 
                 Rectangle {
-                    width: 74
-                    height: 30
-                    radius: 9
+                    width: root.embedded ? 58 : 74
+                    height: root.embedded ? 24 : 30
+                    radius: root.embedded ? 8 : 9
                     color: refreshWifiMouse.containsMouse ? root.tileHover : root.tile
                     border.width: 1
                     border.color: root.border
                     Text {
                         anchors.centerIn: parent
-                        text: "REFRESH"
+                        text: root.embedded ? "↻" : "REFRESH"
                         color: root.textSecondary
-                        font.pixelSize: 7
+                        font.pixelSize: root.embedded ? 12 : 7
                         font.weight: Font.DemiBold
                         font.letterSpacing: 0.8
                     }
@@ -548,7 +553,7 @@ Item {
 
             Flickable {
                 anchors.top: wifiStatusCard.bottom
-                anchors.topMargin: 52
+                anchors.topMargin: root.embedded ? 36 : 52
                 anchors.left: parent.left
                 anchors.right: parent.right
                 anchors.bottom: parent.bottom
@@ -578,39 +583,39 @@ Item {
 
                         delegate: Rectangle {
                             width: wifiColumn.width
-                            height: 52
-                            radius: 13
+                            height: root.embedded ? 40 : 52
+                            radius: root.embedded ? 10 : 13
                             color: networkMouse.containsMouse || modelData.ssid === root.wifiSelectedSsid ? root.tileHover : root.tile
                             border.width: 1
                             border.color: modelData.inUse ? root.borderStrong : root.border
 
                             Text {
-                                x: 15
-                                y: 9
-                                width: parent.width - 150
+                                x: root.embedded ? 10 : 15
+                                y: root.embedded ? 6 : 9
+                                width: parent.width - (root.embedded ? 80 : 150)
                                 text: modelData.ssid
                                 color: root.textPrimary
-                                font.pixelSize: 10
+                                font.pixelSize: root.embedded ? 9 : 10
                                 font.weight: Font.DemiBold
                                 elide: Text.ElideRight
                             }
 
                             Text {
-                                x: 15
-                                y: 28
+                                x: root.embedded ? 10 : 15
+                                y: root.embedded ? 22 : 28
                                 text: (modelData.security === "--" ? "OPEN" : modelData.security) + (modelData.inUse ? "  •  CONNECTED" : "")
                                 color: root.textMuted
-                                font.pixelSize: 7
+                                font.pixelSize: root.embedded ? 6 : 7
                                 font.letterSpacing: 0.7
                             }
 
                             Text {
                                 anchors.right: parent.right
-                                anchors.rightMargin: 15
+                                anchors.rightMargin: root.embedded ? 10 : 15
                                 anchors.verticalCenter: parent.verticalCenter
                                 text: modelData.signal + "%"
                                 color: root.textSecondary
-                                font.pixelSize: 9
+                                font.pixelSize: root.embedded ? 8 : 9
                             }
 
                             MouseArea {
@@ -630,8 +635,8 @@ Item {
                 anchors.horizontalCenter: parent.horizontalCenter
                 anchors.bottom: parent.bottom
                 width: Math.min(parent.width - 30, 430)
-                height: 80
-                radius: 15
+                height: root.embedded ? 66 : 80
+                radius: root.embedded ? 12 : 15
                 color: "#FFFFFF"
                 border.width: 1
                 border.color: root.borderStrong
@@ -699,28 +704,30 @@ Item {
 
             Rectangle {
                 width: parent.width
-                height: 76
-                radius: 17
+                height: root.embedded ? 48 : 76
+                radius: root.embedded ? 12 : 17
                 color: root.tile
                 border.width: 1
                 border.color: root.border
 
                 Text {
-                    x: 18
+                    x: root.embedded ? 10 : 18
                     anchors.verticalCenter: parent.verticalCenter
-                    text: root.bluetoothState === "on" ? "BLUETOOTH ON" : root.bluetoothState === "off" ? "BLUETOOTH OFF" : "UNAVAILABLE"
+                    text: root.embedded
+                        ? (root.bluetoothState === "on" ? "Bluetooth on" : root.bluetoothState === "off" ? "Bluetooth off" : "Unavailable")
+                        : (root.bluetoothState === "on" ? "BLUETOOTH ON" : root.bluetoothState === "off" ? "BLUETOOTH OFF" : "UNAVAILABLE")
                     color: root.textPrimary
-                    font.pixelSize: 12
+                    font.pixelSize: root.embedded ? 10 : 12
                     font.weight: Font.DemiBold
                 }
 
                 Rectangle {
                     anchors.right: parent.right
-                    anchors.rightMargin: 14
+                    anchors.rightMargin: root.embedded ? 8 : 14
                     anchors.verticalCenter: parent.verticalCenter
-                    width: 86
-                    height: 34
-                    radius: 10
+                    width: root.embedded ? 58 : 86
+                    height: root.embedded ? 26 : 34
+                    radius: root.embedded ? 8 : 10
                     color: "#FFFFFF"
                     border.width: 1
                     border.color: root.borderStrong
@@ -729,9 +736,9 @@ Item {
                         anchors.centerIn: parent
                         text: root.bluetoothState === "on" ? "POWER OFF" : "POWER ON"
                         color: root.textPrimary
-                        font.pixelSize: 7
+                        font.pixelSize: root.embedded ? 6 : 7
                         font.weight: Font.DemiBold
-                        font.letterSpacing: 0.7
+                        font.letterSpacing: 0.3
                     }
 
                     MouseArea {
@@ -744,33 +751,34 @@ Item {
 
             Row {
                 anchors.top: parent.top
-                anchors.topMargin: 88
+                anchors.topMargin: root.embedded ? 54 : 88
                 width: parent.width
-                height: 32
+                height: root.embedded ? 26 : 32
 
                 Text {
                     anchors.verticalCenter: parent.verticalCenter
-                    text: "KNOWN DEVICES"
+                    width: parent.width - (root.embedded ? 66 : 84)
+                    text: root.embedded ? "DEVICES" : "KNOWN DEVICES"
                     color: root.textPrimary
-                    font.pixelSize: 9
+                    font.pixelSize: root.embedded ? 7 : 9
                     font.weight: Font.DemiBold
                     font.letterSpacing: 1.0
                 }
 
-                Item { width: parent.width - 155; height: 1 }
+                Item { width: 1; height: 1; visible: false }
 
                 Rectangle {
-                    width: 75
-                    height: 30
-                    radius: 9
+                    width: root.embedded ? 58 : 75
+                    height: root.embedded ? 24 : 30
+                    radius: root.embedded ? 8 : 9
                     color: scanMouse.containsMouse ? root.tileHover : root.tile
                     border.width: 1
                     border.color: root.border
                     Text {
                         anchors.centerIn: parent
-                        text: root.bluetoothScanning ? "SCANNING" : "SCAN"
+                        text: root.embedded ? (root.bluetoothScanning ? "…" : "↻") : (root.bluetoothScanning ? "SCANNING" : "SCAN")
                         color: root.textSecondary
-                        font.pixelSize: 7
+                        font.pixelSize: root.embedded ? 12 : 7
                         font.weight: Font.DemiBold
                     }
                     MouseArea {
@@ -789,7 +797,7 @@ Item {
 
             Flickable {
                 anchors.top: parent.top
-                anchors.topMargin: 130
+                anchors.topMargin: root.embedded ? 84 : 130
                 anchors.left: parent.left
                 anchors.right: parent.right
                 anchors.bottom: parent.bottom
@@ -805,39 +813,41 @@ Item {
                         model: root.bluetoothDevices
                         delegate: Rectangle {
                             width: bluetoothColumn.width
-                            height: 58
-                            radius: 13
+                            height: root.embedded ? 48 : 58
+                            radius: root.embedded ? 10 : 13
                             color: btMouse.containsMouse ? root.tileHover : root.tile
                             border.width: 1
                             border.color: root.border
 
                             Text {
-                                x: 15
-                                y: 10
-                                width: parent.width - 190
+                                x: root.embedded ? 10 : 15
+                                y: root.embedded ? 7 : 10
+                                width: parent.width - (root.embedded ? 120 : 190)
                                 text: modelData.name
                                 color: root.textPrimary
-                                font.pixelSize: 10
+                                font.pixelSize: root.embedded ? 9 : 10
                                 font.weight: Font.DemiBold
                                 elide: Text.ElideRight
                             }
 
                             Text {
-                                x: 15
-                                y: 31
+                                x: root.embedded ? 10 : 15
+                                y: root.embedded ? 25 : 31
+                                width: parent.width - (root.embedded ? 105 : 120)
                                 text: modelData.mac + (modelData.trusted ? "  •  TRUSTED" : "")
                                 color: root.textMuted
-                                font.pixelSize: 7
+                                font.pixelSize: root.embedded ? 6 : 7
+                                elide: Text.ElideRight
                                 font.letterSpacing: 0.4
                             }
 
                             Rectangle {
                                 anchors.right: parent.right
-                                anchors.rightMargin: modelData.connected ? 15 : 82
+                                anchors.rightMargin: modelData.connected ? (root.embedded ? 10 : 15) : (root.embedded ? 57 : 82)
                                 anchors.verticalCenter: parent.verticalCenter
-                                width: modelData.connected ? 84 : 66
-                                height: 30
-                                radius: 9
+                                width: modelData.connected ? (root.embedded ? 62 : 84) : (root.embedded ? 48 : 66)
+                                height: root.embedded ? 24 : 30
+                                radius: root.embedded ? 8 : 9
                                 color: modelData.connected ? "#111318" : "#FFFFFF"
                                 border.width: modelData.connected ? 0 : 1
                                 border.color: root.borderStrong
@@ -846,7 +856,7 @@ Item {
                                     anchors.centerIn: parent
                                     text: modelData.connected ? "DISCONNECT" : "CONNECT"
                                     color: modelData.connected ? "#FFFFFF" : root.textPrimary
-                                    font.pixelSize: 7
+                                    font.pixelSize: root.embedded ? 6 : 7
                                     font.weight: Font.DemiBold
                                 }
 
@@ -860,11 +870,11 @@ Item {
                             Rectangle {
                                 visible: !modelData.connected && !modelData.trusted
                                 anchors.right: parent.right
-                                anchors.rightMargin: 15
+                                anchors.rightMargin: root.embedded ? 10 : 15
                                 anchors.verticalCenter: parent.verticalCenter
-                                width: 58
-                                height: 30
-                                radius: 9
+                                width: root.embedded ? 44 : 58
+                                height: root.embedded ? 24 : 30
+                                radius: root.embedded ? 8 : 9
                                 color: "#FFFFFF"
                                 border.width: 1
                                 border.color: root.border
