@@ -150,8 +150,13 @@ jobs:
           grep -Fq 'workspace "studio"' niri/config.kdl
           grep -Fq 'workspace "music"' niri/config.kdl
           grep -Fq 'import qs.ui' quickshell/a16een/shell.qml
-          grep -Fq 'text: Qt.formatTime(navbarClockPanel.clockNow, "h:mm ap")' quickshell/a16een/ui/Dock.qml
+          grep -Fq 'navbarClockPanel.clockNow.getHours() % 12' quickshell/a16een/ui/Dock.qml
+          grep -Fq 'GridLayout.column:' quickshell/a16een/ui/Dock.qml
+          grep -Fq 'CONFIG_SHELL_DIR="$QS_DIR"' scripts/install.sh
+          grep -Fq 'Requested a Quickshell restart' scripts/install.sh
           grep -Fq 'UtilitiesPanel {' quickshell/a16een/shell.qml
+          grep -Fq 'import QtQuick.Layouts' quickshell/a16een/ui/Dock.qml
+          grep -Fq 'import qs.ui' quickshell/a16een/ui/UtilitiesPanel.qml
           grep -Fq 'property bool embedded: false' quickshell/a16een/ui/ControlDetailSection.qml
           grep -Fq 'qt6-imageformats' scripts/install.sh
           grep -Fq 'qt6-svg' scripts/install.sh
