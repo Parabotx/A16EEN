@@ -155,12 +155,21 @@ validate_workspace() {
 
 restart_shell() {
     local config_dir="${XDG_CONFIG_HOME:-$HOME/.config}/a16een/quickshell/a16een"
-    local found=0
+    local supervisor_pid=""
+    local session_active=0
 
     if [[ ! -d "$config_dir" ]]; then
         die "A16EEN Quickshell configuration is missing: $config_dir"
     fi
 
+    [[ -n "${NIRI_SOCKET:-}" ]] && session_active=1
+    case ":${XDG_CURRENT_DESKTOP:-}:" in
+        *:A16EEN:*) session_active=1 ;;
+    esac
+
+    # Find the A16EEN supervisor by its exact script argument. Do not depend
+    # on the Quickshell process command line: Qt may rewrite it to just
+    # /usr/bin/quickshell, dropping the original "-c <config>" arguments.
     for cmdline in /proc/[0-9]*/cmdline; do
         [[ -r "$cmdline" ]] || continue
 
@@ -168,35 +177,49 @@ restart_shell() {
         pid="${pid%/cmdline}"
         [[ "$pid" =~ ^[0-9]+$ ]] || continue
 
-        local args command_name
+        local args
         args="$(tr '\0' '\n' < "$cmdline" 2>/dev/null || true)"
-        command_name="$(printf '%s\n' "$args" | sed -n '1p')"
-        command_name="${command_name##*/}"
-
-        case "$command_name" in
-            qs|quickshell) ;;
-            *) continue ;;
-        esac
-
-        # Match the config path as a complete argv item. Substring matching
-        # the display command fails on some procfs/Quickshell command lines.
-        if ! printf '%s\n' "$args" | grep -Fxq -- "$config_dir"; then
-            continue
-        fi
-
-        if kill -TERM "$pid" 2>/dev/null; then
-            found=1
+        if printf '%s\n' "$args" | grep -Eq '(^|/)a16een-shell$'; then
+            supervisor_pid="$pid"
             break
         fi
     done
 
-    if [[ "$found" -eq 1 ]]; then
-        echo "A16EEN shell restart requested."
-    else
-        echo "A16EEN shell process was not found."
-        echo "Start/re-enter the A16EEN session to launch it."
+    if [[ -n "$supervisor_pid" ]]; then
+        local children child_pid executable command_name
+        children="$(cat "/proc/$supervisor_pid/task/$supervisor_pid/children" 2>/dev/null || true)"
+
+        for child_pid in $children; do
+            [[ -r "/proc/$child_pid/exe" ]] || continue
+            executable="$(readlink "/proc/$child_pid/exe" 2>/dev/null || true)"
+            command_name="${executable##*/}"
+
+            case "$command_name" in
+                qs|quickshell)
+                    if kill -TERM "$child_pid" 2>/dev/null; then
+                        echo "A16EEN Quickshell restart requested; the supervisor will relaunch the navbar."
+                        return 0
+                    fi
+                    ;;
+            esac
+        done
+
+        echo "A16EEN supervisor is running, but its Quickshell child was not found." >&2
+        echo "The shell may be between restart attempts; check: tail -n 60 ~/.local/state/a16een/logs/shell.log" >&2
         return 1
     fi
+
+    # If the supervisor itself is missing, recover it from the active session
+    # rather than claiming a restart succeeded or requiring a logout.
+    if [[ "$session_active" -eq 1 ]]; then
+        nohup /usr/local/bin/a16een-shell >/dev/null 2>&1 &
+        echo "A16EEN shell supervisor started."
+        return 0
+    fi
+
+    echo "A16EEN shell supervisor was not found and no active A16EEN session was detected." >&2
+    echo "Start/re-enter the A16EEN session to launch it." >&2
+    return 1
 }
 
 [[ $EUID -ne 0 ]] || die "run this command as your normal desktop user, not root."
