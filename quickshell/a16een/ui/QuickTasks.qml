@@ -69,9 +69,9 @@ PanelWindow {
 
     margins {
         // Popovers sit 12px beyond the quick-actions tray, not on top of it.
-        left: !root.horizontalNavbar && root.navbarPosition === "left" ? 114 : 12
+        left: !root.horizontalNavbar && root.navbarPosition === "left" ? 122 : 12
         right: root.horizontalNavbar ? 118
-            : (!root.horizontalNavbar && root.navbarPosition === "right" ? 116 : 12)
+            : (!root.horizontalNavbar && root.navbarPosition === "right" ? 124 : 12)
         top: root.horizontalNavbar && root.navbarPosition === "top" ? 58 : 12
         bottom: root.horizontalNavbar && root.navbarPosition === "bottom" ? 58
             : (!root.horizontalNavbar ? 72 : 12)
