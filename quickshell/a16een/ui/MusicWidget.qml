@@ -1,5 +1,4 @@
 import QtQuick
-import Qt.labs.lottieqt
 import Quickshell
 import Quickshell.Io
 import Quickshell.Wayland
@@ -135,8 +134,8 @@ PanelWindow {
                 if (!wasPlaying || previousPath !== String(root.playback.path || ""))
                     root.requestDancer()
             } else {
-                // Clearing the URL deactivates the Loader and destroys the SVG
-                // item completely; no animation keeps running while paused.
+                // Clearing the URL unloads the optional dancer component completely;
+                // no animation keeps running while paused.
                 root.dancerSource = ""
                 root.dancerOffsetX = 0
                 root.dancerOffsetY = 0
@@ -487,7 +486,11 @@ PanelWindow {
                         x: root.dancerOffsetX
                         y: root.dancerOffsetY
                         active: root.widgetEnabled && root.isPlaying && root.dancerSource.length > 0
-                        sourceComponent: dancerImageComponent
+                        source: active ? Qt.resolvedUrl("MusicDancer.qml") : ""
+                        onLoaded: {
+                            if (item)
+                                item.animationSource = root.dancerSource
+                        }
                     }
                 }
             }
@@ -730,18 +733,6 @@ PanelWindow {
                     }
                 }
             }
-        }
-    }
-
-    Component {
-        id: dancerImageComponent
-
-        LottieAnimation {
-            anchors.fill: parent
-            source: root.dancerSource
-            loops: LottieAnimation.Infinite
-            autoPlay: true
-            quality: LottieAnimation.MediumQuality
         }
     }
 
