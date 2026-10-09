@@ -463,8 +463,8 @@ PanelWindow {
             // For horizontal layouts the power control leads from the edge,
             // with the time capsule immediately after it. For vertical layouts
             // each capsule hugs the side edge and sits in the upper corner.
-            left: root.horizontalNavbar ? 30 : (root.navbarPosition === "left" ? 0 : 12)
-            right: root.navbarPosition === "right" ? 0 : 12
+            left: root.horizontalNavbar ? 30 : (root.navbarPosition === "left" ? 8 : 12)
+            right: root.navbarPosition === "right" ? 8 : 12
             top: root.navbarPosition === "top" ? 0 : (root.horizontalNavbar ? 12 : 52)
             bottom: root.navbarPosition === "bottom" ? 0 : 12
         }
@@ -684,10 +684,11 @@ PanelWindow {
         }
 
         margins {
-            // The power capsule starts the top/bottom cluster at the edge;
-            // time follows it. Vertical layouts are edge-flush as well.
-            left: root.horizontalNavbar || root.navbarPosition === "left" ? 0 : 12
-            right: root.navbarPosition === "right" ? 0 : 12
+            // Keep the power button centered with the time pill on vertical
+            // docks; both sit slightly inward from the screen edge.
+            left: root.horizontalNavbar ? 0 : (root.navbarPosition === "left" ? 14 : 12)
+            right: root.horizontalNavbar ? (root.navbarPosition === "right" ? 0 : 12)
+                : (root.navbarPosition === "right" ? 14 : 12)
             top: root.navbarPosition === "top" ? 0 : 12
             bottom: root.navbarPosition === "bottom" ? 0 : 12
         }
@@ -1135,8 +1136,8 @@ PanelWindow {
             ? Math.round((parent.width - width) / 2)
             : (root.dockVisible
                 ? (root.navbarPosition === "right"
-                    ? parent.width - width - 8
-                    : 8)
+                    ? parent.width - width
+                    : 0)
                 : (root.navbarPosition === "right" ? parent.width + 2 : -width - 2))
         y: root.horizontalNavbar
             ? (root.dockVisible
