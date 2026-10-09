@@ -17,7 +17,27 @@ PanelWindow {
     signal dockVisibilityChanged(bool visible)
 
     property bool powerMenuOpen: false
+    property bool powerMenuSurfaceVisible: false
     property string pendingPowerAction: ""
+
+    onPowerMenuOpenChanged: {
+        if (root.powerMenuOpen) {
+            powerMenuHideTimer.stop()
+            root.powerMenuSurfaceVisible = true
+        } else {
+            powerMenuHideTimer.restart()
+        }
+    }
+
+    Timer {
+        id: powerMenuHideTimer
+        interval: 190
+        repeat: false
+        onTriggered: {
+            if (!root.powerMenuOpen)
+                root.powerMenuSurfaceVisible = false
+        }
+    }
 
     // The quick-actions tray follows the dock's fullscreen edge-reveal state.
 
@@ -264,8 +284,8 @@ PanelWindow {
 
         // Stable outer surface prevents the pointer leaving the surface while
         // the pill opens/closes, which caused the repeated hover flicker.
-        width: root.horizontalNavbar ? 98 : 82
-        height: root.horizontalNavbar ? 40 : 52
+        width: root.horizontalNavbar ? 88 : 70
+        height: root.horizontalNavbar ? 36 : 44
 
         anchors {
             left: root.navbarPosition === "left"
@@ -327,10 +347,10 @@ PanelWindow {
                     ? parent.height - height
                     : Math.round((parent.height - height) / 2))
             width: root.horizontalNavbar
-                ? (batteryHoverSensor.containsMouse ? 92 : 40)
-                : (batteryHoverSensor.containsMouse ? 76 : 38)
-            height: root.horizontalNavbar ? 36 : 46
-            radius: 13
+                ? (batteryHoverSensor.containsMouse ? 82 : 36)
+                : (batteryHoverSensor.containsMouse ? 62 : 34)
+            height: root.horizontalNavbar ? 32 : 40
+            radius: 12
             color: "#FFFFFF"
             border.width: 1
             border.color: "#D9DEE5"
@@ -370,8 +390,8 @@ PanelWindow {
                 tint: batteryStatusPanel.batteryIconColor()
                 charging: UPower.displayDevice.state === UPowerDeviceState.Charging
                     || UPower.displayDevice.state === UPowerDeviceState.PendingCharge
-                width: root.horizontalNavbar ? 27 : 18
-                height: root.horizontalNavbar ? 20 : 28
+                width: root.horizontalNavbar ? 22 : 16
+                height: root.horizontalNavbar ? 16 : 24
                 x: root.horizontalNavbar
                     ? batteryPill.width - width - 6
                     : (batteryHoverSensor.containsMouse
@@ -388,13 +408,13 @@ PanelWindow {
                 visible: opacity > 0.02
                 opacity: batteryHoverSensor.containsMouse ? 1 : 0
                 x: root.horizontalNavbar
-                    ? 8
-                    : (root.navbarPosition === "right" ? 5 : 29)
+                    ? 7
+                    : (root.navbarPosition === "right" ? 4 : 24)
                 y: Math.round((batteryPill.height - height) / 2)
-                width: root.horizontalNavbar ? 43 : 41
+                width: root.horizontalNavbar ? 38 : 32
                 text: batteryStatusPanel.batteryPercent() + "%"
                 color: "#111318"
-                font.pixelSize: root.horizontalNavbar ? 12 : 11
+                font.pixelSize: root.horizontalNavbar ? 11 : 10
                 font.weight: Font.DemiBold
                 horizontalAlignment: Text.AlignLeft
                 verticalAlignment: Text.AlignVCenter
@@ -422,8 +442,8 @@ PanelWindow {
 
         // Keep the clock visually consistent with the navbar: a slim capsule
         // whose vertical width matches the workspace rail.
-        width: root.horizontalNavbar ? 72 : 44
-        height: root.horizontalNavbar ? 34 : 68
+        width: root.horizontalNavbar ? 64 : 40
+        height: root.horizontalNavbar ? 30 : 58
 
         anchors {
             left: root.horizontalNavbar || root.navbarPosition === "left"
@@ -567,9 +587,9 @@ PanelWindow {
                 text: Qt.formatTime(navbarClockPanel.clockNow, "HH:mm")
                 color: "#111318"
                 font.family: "Monospace"
-                font.pixelSize: 15
+                font.pixelSize: 13
                 font.weight: Font.DemiBold
-                font.letterSpacing: 0.25
+                font.letterSpacing: 0.2
                 horizontalAlignment: Text.AlignHCenter
                 verticalAlignment: Text.AlignVCenter
             }
@@ -584,9 +604,9 @@ PanelWindow {
                     text: Qt.formatTime(navbarClockPanel.clockNow, "HH")
                     color: "#111318"
                     font.family: "Monospace"
-                    font.pixelSize: 15
+                    font.pixelSize: 13
                     font.weight: Font.DemiBold
-                    font.letterSpacing: 0.35
+                    font.letterSpacing: 0.25
                     horizontalAlignment: Text.AlignHCenter
                 }
 
@@ -603,9 +623,9 @@ PanelWindow {
                     text: Qt.formatTime(navbarClockPanel.clockNow, "mm")
                     color: "#111318"
                     font.family: "Monospace"
-                    font.pixelSize: 15
+                    font.pixelSize: 13
                     font.weight: Font.DemiBold
-                    font.letterSpacing: 0.35
+                    font.letterSpacing: 0.25
                     horizontalAlignment: Text.AlignHCenter
                 }
             }
@@ -644,8 +664,8 @@ PanelWindow {
         aboveWindows: true
         exclusionMode: ExclusionMode.Ignore
         exclusiveZone: 0
-        width: 32
-        height: 32
+        width: 28
+        height: 28
 
         anchors {
             left: root.horizontalNavbar || root.navbarPosition === "left"
@@ -655,10 +675,10 @@ PanelWindow {
         }
 
         margins {
-            left: root.horizontalNavbar ? 20 : 16
+            left: root.horizontalNavbar ? 18 : 16
             right: root.horizontalNavbar ? 12 : 18
             top: root.navbarPosition === "top" ? 0 : 12
-            bottom: root.navbarPosition === "bottom" ? 40 : 12
+            bottom: root.navbarPosition === "bottom" ? 36 : 12
         }
 
         WlrLayershell.layer: WlrLayer.Overlay
@@ -677,11 +697,11 @@ PanelWindow {
 
             Image {
                 anchors.centerIn: parent
-                width: 17
-                height: 17
+                width: 15
+                height: 15
                 source: Qt.resolvedUrl("../assets/icons/quick-power.svg")
-                sourceSize.width: 34
-                sourceSize.height: 34
+                sourceSize.width: 30
+                sourceSize.height: 30
                 fillMode: Image.PreserveAspectFit
                 smooth: true
             }
@@ -699,30 +719,24 @@ PanelWindow {
         }
     }
 
+    // Full-screen transparent layer lets a click outside the card dismiss it.
     PanelWindow {
         id: navbarPowerMenu
         screen: root.modelData
-        visible: root.powerMenuOpen && root.dockVisible
+        visible: root.powerMenuSurfaceVisible && root.dockVisible
         color: "transparent"
         aboveWindows: true
         exclusionMode: ExclusionMode.Ignore
         exclusiveZone: 0
-        width: 208
-        height: 212
+        width: root.modelData ? root.modelData.width : 1920
+        height: root.modelData ? root.modelData.height : 1080
         focusable: visible
 
         anchors {
-            left: root.horizontalNavbar || root.navbarPosition === "left"
-            right: root.navbarPosition === "right"
-            top: root.navbarPosition !== "bottom"
-            bottom: root.navbarPosition === "bottom"
-        }
-
-        margins {
-            left: root.horizontalNavbar ? 0 : 56
-            right: root.horizontalNavbar ? 12 : 56
-            top: root.navbarPosition === "top" ? 78 : 12
-            bottom: root.navbarPosition === "bottom" ? 78 : 12
+            left: true
+            right: true
+            top: true
+            bottom: true
         }
 
         WlrLayershell.layer: WlrLayer.Overlay
@@ -731,139 +745,141 @@ PanelWindow {
             ? WlrKeyboardFocus.OnDemand
             : WlrKeyboardFocus.None
 
-        Rectangle {
+        MouseArea {
+            id: powerMenuOutsideClick
             anchors.fill: parent
-            radius: 18
-            color: "#FFFFFF"
-            border.width: 1
-            border.color: "#D9DEE5"
-            opacity: root.powerMenuOpen ? 1 : 0
-            scale: root.powerMenuOpen ? 1 : 0.97
-            transformOrigin: root.navbarPosition === "right" ? Item.TopRight
-                : (root.navbarPosition === "bottom" ? Item.BottomLeft : Item.TopLeft)
+            z: 0
+            acceptedButtons: Qt.AllButtons
+            onClicked: {
+                root.powerMenuOpen = false
+                root.pendingPowerAction = ""
+            }
+        }
 
-            Behavior on opacity {
-                NumberAnimation { duration: 140; easing.type: Easing.OutCubic }
-            }
-            Behavior on scale {
-                NumberAnimation { duration: 160; easing.type: Easing.OutCubic }
-            }
+        Item {
+            id: powerMenuCard
+            x: root.horizontalNavbar
+                ? 10
+                : (root.navbarPosition === "left"
+                    ? 56
+                    : Math.max(8, navbarPowerMenu.width - width - 56))
+            y: root.horizontalNavbar
+                ? (root.navbarPosition === "top"
+                    ? 78
+                    : Math.max(8, navbarPowerMenu.height - height - 78))
+                : 12
+            width: 188
+            height: 158
+            z: 1
 
             Rectangle {
+                id: powerMenuSurface
                 anchors.fill: parent
-                anchors.margins: -4
-                radius: 22
-                color: "#16000000"
-                z: -1
-            }
+                radius: 16
+                color: "#FFFFFF"
+                border.width: 1
+                border.color: "#D9DEE5"
+                opacity: root.powerMenuOpen ? 1 : 0
+                scale: root.powerMenuOpen ? 1 : 0.96
+                transformOrigin: root.navbarPosition === "right" ? Item.TopRight
+                    : (root.navbarPosition === "bottom" ? Item.BottomRight : Item.TopLeft)
 
-            Column {
-                anchors.fill: parent
-                anchors.margins: 11
-                spacing: 5
+                Behavior on opacity {
+                    NumberAnimation { duration: 155; easing.type: Easing.OutCubic }
+                }
+                Behavior on scale {
+                    NumberAnimation { duration: 180; easing.type: Easing.OutCubic }
+                }
 
-                Row {
-                    width: parent.width
-                    height: 28
-                    spacing: 6
+                Rectangle {
+                    anchors.fill: parent
+                    anchors.margins: -3
+                    radius: 19
+                    color: "#14000000"
+                    z: -1
+                }
 
-                    Text {
-                        width: parent.width - 31
-                        text: "POWER"
-                        color: "#818B98"
-                        font.pixelSize: 9
-                        font.weight: Font.DemiBold
-                        font.letterSpacing: 1.3
-                        verticalAlignment: Text.AlignVCenter
-                    }
+                Column {
+                    anchors.fill: parent
+                    anchors.margins: 9
+                    spacing: 4
 
-                    Rectangle {
-                        width: 27
-                        height: 27
-                        radius: 8
-                        color: closePowerHover.containsMouse ? "#EEF1F4" : "transparent"
-                        Text {
-                            anchors.centerIn: parent
-                            text: "×"
-                            color: "#596370"
-                            font.pixelSize: 18
-                        }
-                        MouseArea {
-                            id: closePowerHover
-                            anchors.fill: parent
-                            hoverEnabled: true
-                            cursorShape: Qt.PointingHandCursor
-                            onClicked: {
-                                root.powerMenuOpen = false
-                                root.pendingPowerAction = ""
+                    Repeater {
+                        model: [
+                            { id: "lock", label: "Lock screen", icon: "quick-lock.svg" },
+                            { id: "logout", label: "Log out", icon: "quick-logout.svg" },
+                            { id: "restart", label: "Restart", icon: "quick-restart.svg" },
+                            { id: "poweroff", label: "Power off", icon: "quick-power.svg" }
+                        ]
+
+                        delegate: Rectangle {
+                            id: powerActionRow
+                            required property var modelData
+                            width: parent.width
+                            height: 30
+                            radius: 9
+                            color: powerActionMouse.containsMouse
+                                ? (powerActionRow.modelData.id === "poweroff" ? "#FFF0F0" : "#F1F3F6")
+                                : (root.pendingPowerAction === powerActionRow.modelData.id ? "#FFF5E8" : "transparent")
+                            border.width: root.pendingPowerAction === powerActionRow.modelData.id ? 1 : 0
+                            border.color: "#E6B66D"
+
+                            Rectangle {
+                                anchors.left: parent.left
+                                anchors.leftMargin: 5
+                                anchors.verticalCenter: parent.verticalCenter
+                                width: 24
+                                height: 24
+                                radius: 7
+                                color: powerActionRow.modelData.id === "poweroff"
+                                    ? "#FFF0F0" : "#F6F7F9"
+
+                                Image {
+                                    anchors.centerIn: parent
+                                    width: 15
+                                    height: 15
+                                    source: Qt.resolvedUrl("../assets/icons/" + powerActionRow.modelData.icon)
+                                    sourceSize.width: 30
+                                    sourceSize.height: 30
+                                    fillMode: Image.PreserveAspectFit
+                                    smooth: true
+                                }
+                            }
+
+                            Text {
+                                anchors.left: parent.left
+                                anchors.leftMargin: 36
+                                anchors.right: parent.right
+                                anchors.rightMargin: 7
+                                anchors.verticalCenter: parent.verticalCenter
+                                text: root.pendingPowerAction === powerActionRow.modelData.id
+                                    ? "Confirm " + powerActionRow.modelData.label.toLowerCase() + "?"
+                                    : powerActionRow.modelData.label
+                                color: root.pendingPowerAction === powerActionRow.modelData.id
+                                    ? "#9A5A14"
+                                    : (powerActionRow.modelData.id === "poweroff" ? "#B83A42" : "#28313B")
+                                font.pixelSize: 11
+                                font.weight: Font.Medium
+                                elide: Text.ElideRight
+                                verticalAlignment: Text.AlignVCenter
+                            }
+
+                            MouseArea {
+                                id: powerActionMouse
+                                anchors.fill: parent
+                                hoverEnabled: true
+                                cursorShape: Qt.PointingHandCursor
+                                onClicked: root.triggerPowerAction(powerActionRow.modelData.id)
                             }
                         }
                     }
                 }
-
-                Rectangle { width: parent.width; height: 1; color: "#E9EDF1" }
-
-                Repeater {
-                    model: [
-                        { id: "lock", label: "Lock", icon: "quick-lock.svg" },
-                        { id: "logout", label: "Log out", icon: "quick-logout.svg" },
-                        { id: "restart", label: "Restart", icon: "quick-restart.svg" },
-                        { id: "poweroff", label: "Power off", icon: "quick-power.svg" }
-                    ]
-
-                    delegate: Rectangle {
-                        id: powerActionRow
-                        required property var modelData
-                        width: parent.width
-                        height: 34
-                        radius: 10
-                        color: powerActionMouse.containsMouse
-                            ? (powerActionRow.modelData.id === "poweroff" ? "#FFF0F0" : "#F2F4F7")
-                            : (root.pendingPowerAction === powerActionRow.modelData.id ? "#FFF5E8" : "transparent")
-                        border.width: root.pendingPowerAction === powerActionRow.modelData.id ? 1 : 0
-                        border.color: "#E6B66D"
-
-                        Image {
-                            anchors.left: parent.left
-                            anchors.leftMargin: 10
-                            anchors.verticalCenter: parent.verticalCenter
-                            width: 16
-                            height: 16
-                            source: Qt.resolvedUrl("../assets/icons/" + powerActionRow.modelData.icon)
-                            sourceSize.width: 32
-                            sourceSize.height: 32
-                            fillMode: Image.PreserveAspectFit
-                            smooth: true
-                        }
-
-                        Text {
-                            anchors.left: parent.left
-                            anchors.leftMargin: 34
-                            anchors.right: parent.right
-                            anchors.rightMargin: 8
-                            anchors.verticalCenter: parent.verticalCenter
-                            text: root.pendingPowerAction === powerActionRow.modelData.id
-                                ? "Confirm " + powerActionRow.modelData.label.toLowerCase() + "?"
-                                : powerActionRow.modelData.label
-                            color: root.pendingPowerAction === powerActionRow.modelData.id
-                                ? "#9A5A14"
-                                : (powerActionRow.modelData.id === "poweroff" ? "#B83A42" : "#28313B")
-                            font.pixelSize: 11
-                            font.weight: Font.Medium
-                            elide: Text.ElideRight
-                            verticalAlignment: Text.AlignVCenter
-                        }
-
-                        MouseArea {
-                            id: powerActionMouse
-                            anchors.fill: parent
-                            hoverEnabled: true
-                            cursorShape: Qt.PointingHandCursor
-                            onClicked: root.triggerPowerAction(powerActionRow.modelData.id)
-                        }
-                    }
-                }
             }
+        }
+
+        Keys.onEscapePressed: {
+            root.powerMenuOpen = false
+            root.pendingPowerAction = ""
         }
     }
 
