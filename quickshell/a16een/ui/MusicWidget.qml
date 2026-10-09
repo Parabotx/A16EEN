@@ -481,8 +481,8 @@ PanelWindow {
 
                     Loader {
                         id: dancerLoader
-                        width: 105
-                        height: 100
+                        width: 98
+                        height: 76
                         x: root.dancerOffsetX
                         y: root.dancerOffsetY
                         active: root.widgetEnabled && root.isPlaying && root.dancerSource.length > 0
@@ -563,18 +563,18 @@ PanelWindow {
                     spacing: 7
 
                     ControlButton {
-                        glyph: "⤨"
+                        iconName: "music-shuffle"
                         selected: root.shuffleEnabled
                         onClicked: root.shuffleEnabled = !root.shuffleEnabled
                     }
 
                     ControlButton {
-                        glyph: "◂"
+                        iconName: "music-skip-back"
                         onClicked: root.advanceTrack(-1)
                     }
 
                     ControlButton {
-                        glyph: root.isPlaying ? "Ⅱ" : "▶"
+                        iconName: root.isPlaying ? "music-pause" : "music-play"
                         primary: true
                         enabledControl: root.tracks.length > 0 || String(root.playback.path || "").length > 0
                         onClicked: {
@@ -586,18 +586,18 @@ PanelWindow {
                     }
 
                     ControlButton {
-                        glyph: "▸"
+                        iconName: "music-skip-forward"
                         onClicked: root.advanceTrack(1)
                     }
 
                     ControlButton {
-                        glyph: "↻"
+                        iconName: "music-repeat"
                         selected: root.playback.repeat === true
                         onClicked: root.runAction(["repeat"])
                     }
 
                     ControlButton {
-                        glyph: root.libraryOpen ? "×" : "≡"
+                        iconName: root.libraryOpen ? "music-close" : "music-list"
                         selected: root.libraryOpen
                         onClicked: root.libraryOpen = !root.libraryOpen
                     }
@@ -737,7 +737,7 @@ PanelWindow {
     }
 
     component ControlButton: Rectangle {
-        property string glyph: ""
+        property string iconName: "music-play"
         property bool primary: false
         property bool selected: false
         property bool enabledControl: true
@@ -753,13 +753,16 @@ PanelWindow {
         border.color: selected ? "#DCC2A3" : "#E9DCCB"
         opacity: enabledControl ? 1 : 0.48
 
-        Text {
+        Image {
             anchors.centerIn: parent
-            text: parent.glyph
-            color: parent.primary ? "#FFF9F0" : parent.selected ? "#855D41" : root.ink
-            font.pixelSize: parent.primary ? 13 : 12
-            font.weight: Font.DemiBold
-            y: parent.glyph === "▶" || parent.glyph === "▸" ? -1 : 0
+            width: parent.primary ? 16 : 15
+            height: parent.primary ? 16 : 15
+            source: Qt.resolvedUrl("../assets/icons/" + parent.iconName
+                + (parent.primary ? "-light.svg" : ".svg"))
+            fillMode: Image.PreserveAspectFit
+            smooth: true
+            mipmap: true
+            opacity: parent.enabledControl ? 1 : 0.45
         }
 
         MouseArea {
