@@ -20,8 +20,8 @@ PanelWindow {
     property real dragStartX: 0
     property real dragStartY: 0
     property bool dragging: false
-    property real screenOriginX: modelData ? modelData.geometry.x : 0
-    property real screenOriginY: modelData ? modelData.geometry.y : 0
+    property real screenOriginX: modelData ? modelData.x : 0
+    property real screenOriginY: modelData ? modelData.y : 0
 
     signal closeRequested()
 
