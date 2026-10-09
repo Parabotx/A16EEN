@@ -344,8 +344,7 @@ Item {
                                         anchors.centerIn: parent
                                         width: 18
                                         height: 18
-                                        iconPath: root.generatedIconPath(modelData.id)
-                                        fallbackIconPath: root.baseIconPath(modelData.id)
+                                        iconName: root.settingFor(modelData.id).icon
                                         iconColor: root.previewIconColor(modelData.id)
                                         refreshRevision: root.navbarIconRevision
                                         active: root.selectedSlot === modelData.id
@@ -424,8 +423,7 @@ Item {
                                 anchors.centerIn: parent
                                 width: 22
                                 height: 22
-                                iconPath: root.generatedIconPath(root.selectedSlot)
-                                fallbackIconPath: root.baseIconPath(root.selectedSlot)
+                                iconName: root.settingFor(root.selectedSlot).icon
                                 iconColor: root.previewIconColor(root.selectedSlot)
                                 refreshRevision: root.navbarIconRevision
                             }
@@ -530,8 +528,7 @@ Item {
                                             anchors.horizontalCenter: parent.horizontalCenter
                                             width: 20
                                             height: 20
-                                            iconPath: Qt.resolvedUrl("../assets/icons/" + modelData.id)
-                                            fallbackIconPath: root.baseIconPath(root.selectedSlot)
+                                            iconName: modelData.id
                                             iconColor: root.previewIconColor(root.selectedSlot)
                                         }
 
