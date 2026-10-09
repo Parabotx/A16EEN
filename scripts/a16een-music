@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 """A16EEN local music helper. Plays files from ~/Music through MPV's IPC socket."""
+import hashlib
 import json
 import os
 import random
@@ -18,7 +19,8 @@ MPV_BIN = "mpv"
 RUNTIME_DIR = Path(os.environ.get("XDG_RUNTIME_DIR") or (Path.home() / ".local/state/a16een"))
 SOCKET_PATH = RUNTIME_DIR / "a16een-music.sock"
 DANCER_DIR = Path.home() / ".config/a16een/quickshell/a16een/assets/music-dancers"
-COVER_NAMES = ("cover", "folder", "front", "album", "artwork")
+COVER_CACHE_DIR = Path(os.environ.get("XDG_CACHE_HOME") or (Path.home() / ".cache")) / "a16een/music-covers"
+COVER_NAMES = ("cover", "folder", "front", "album", "albumart", "albumartsmall", "artwork", ".folder", "thumb")
 
 
 def emit(payload):
@@ -29,7 +31,7 @@ def prepare_runtime():
     RUNTIME_DIR.mkdir(parents=True, exist_ok=True)
 
 
-def find_cover(path):
+def find_sidecar_cover(path):
     candidates = []
     try:
         for item in path.parent.iterdir():
@@ -43,6 +45,55 @@ def find_cover(path):
         return candidates[0].as_uri()
     except OSError:
         return ""
+
+
+def find_cover(path, embedded=False):
+    """Find a nearby cover image, optionally extracting embedded artwork once."""
+    sidecar = find_sidecar_cover(path)
+    if sidecar or not embedded:
+        return sidecar
+
+    try:
+        stat = path.stat()
+        cache_key = hashlib.sha256(
+            f"{path.resolve()}:{stat.st_size}:{stat.st_mtime_ns}".encode("utf-8")
+        ).hexdigest()
+        COVER_CACHE_DIR.mkdir(parents=True, exist_ok=True)
+        cached_cover = COVER_CACHE_DIR / f"{cache_key}.jpg"
+        missing_marker = COVER_CACHE_DIR / f"{cache_key}.missing"
+        if cached_cover.is_file() and cached_cover.stat().st_size > 0:
+            return cached_cover.as_uri()
+        if missing_marker.exists() or not shutil_which("ffmpeg"):
+            return ""
+
+        try:
+            result = subprocess.run(
+                [
+                    "ffmpeg", "-hide_banner", "-loglevel", "error", "-y",
+                    "-i", str(path), "-map", "0:v:0", "-frames:v", "1",
+                    "-q:v", "3", str(cached_cover)
+                ],
+                stdin=subprocess.DEVNULL,
+                stdout=subprocess.DEVNULL,
+                stderr=subprocess.DEVNULL,
+                timeout=8,
+                check=False
+            )
+        except (OSError, subprocess.TimeoutExpired):
+            result = None
+
+        if result is not None and result.returncode == 0 and cached_cover.is_file() and cached_cover.stat().st_size > 0:
+            return cached_cover.as_uri()
+
+        try:
+            cached_cover.unlink(missing_ok=True)
+            missing_marker.touch(exist_ok=True)
+        except OSError:
+            pass
+    except OSError:
+        return ""
+
+    return ""
 
 
 def scan_library():
@@ -226,7 +277,8 @@ def read_status():
 
     path = values.get(1) or ""
     metadata = values.get(7) if isinstance(values.get(7), dict) else {}
-    title = metadata.get("title") or values.get(2) or (Path(path).stem if path else "")
+    title = (metadata.get("title") or metadata.get("TITLE")
+             or values.get(2) or (Path(path).stem if path else ""))
     artist = (metadata.get("artist") or metadata.get("ARTIST")
               or metadata.get("album_artist") or metadata.get("ALBUM_ARTIST") or "")
     album = metadata.get("album") or metadata.get("ALBUM") or ""
@@ -244,7 +296,7 @@ def read_status():
         "title": str(title),
         "artist": str(artist),
         "album": str(album),
-        "cover": find_cover(Path(path)) if path else "",
+        "cover": find_cover(Path(path), embedded=True) if path else "",
         "duration": duration,
         "time": position,
         "paused": bool(values.get(5, True)),
