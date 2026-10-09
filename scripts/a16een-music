@@ -2,6 +2,7 @@
 """A16EEN local music helper. Plays files from ~/Music through MPV's IPC socket."""
 import json
 import os
+import random
 import socket
 import subprocess
 import sys
@@ -16,6 +17,8 @@ AUDIO_EXTENSIONS = {
 MPV_BIN = "mpv"
 RUNTIME_DIR = Path(os.environ.get("XDG_RUNTIME_DIR") or (Path.home() / ".local/state/a16een"))
 SOCKET_PATH = RUNTIME_DIR / "a16een-music.sock"
+DANCER_DIR = Path.home() / ".config/a16een/quickshell/a16een/assets/music-dancers"
+COVER_NAMES = ("cover", "folder", "front", "album", "artwork")
 
 
 def emit(payload):
@@ -24,6 +27,22 @@ def emit(payload):
 
 def prepare_runtime():
     RUNTIME_DIR.mkdir(parents=True, exist_ok=True)
+
+
+def find_cover(path):
+    candidates = []
+    try:
+        for item in path.parent.iterdir():
+            if not item.is_file() or item.suffix.lower() not in {".jpg", ".jpeg", ".png", ".webp", ".avif"}:
+                continue
+            if item.stem.casefold() in COVER_NAMES:
+                candidates.append(item)
+        if not candidates:
+            return ""
+        candidates.sort(key=lambda item: (COVER_NAMES.index(item.stem.casefold()), item.name.casefold()))
+        return str(candidates[0])
+    except OSError:
+        return ""
 
 
 def scan_library():
@@ -39,16 +58,21 @@ def scan_library():
     except OSError:
         return tracks
 
+    cover_cache = {}
     for path in files:
         try:
             relative_parent = path.parent.relative_to(MUSIC_DIR)
             folder = relative_parent.as_posix() if str(relative_parent) != "." else "Local library"
             title = path.stem.replace("_", " ").strip()
+            parent_key = str(path.parent)
+            if parent_key not in cover_cache:
+                cover_cache[parent_key] = find_cover(path)
             tracks.append({
                 "path": str(path),
                 "title": title or path.name,
                 "artist": folder,
-                "filename": path.name
+                "filename": path.name,
+                "cover": cover_cache[parent_key]
             })
         except (OSError, ValueError):
             continue
@@ -159,7 +183,9 @@ def read_status():
         2: ["get_property", "media-title"],
         3: ["get_property", "duration"],
         4: ["get_property", "time-pos"],
-        5: ["get_property", "pause"]
+        5: ["get_property", "pause"],
+        6: ["get_property", "loop-file"],
+        7: ["get_property", "metadata"]
     }
     client = open_ipc(timeout=0.25)
     if client is None:
@@ -199,7 +225,10 @@ def read_status():
         client.close()
 
     path = values.get(1) or ""
-    title = values.get(2) or (Path(path).stem if path else "")
+    metadata = values.get(7) if isinstance(values.get(7), dict) else {}
+    title = metadata.get("title") or values.get(2) or (Path(path).stem if path else "")
+    artist = metadata.get("artist") or metadata.get("album_artist") or ""
+    album = metadata.get("album") or ""
     try:
         duration = max(0.0, float(values.get(3) or 0))
     except (TypeError, ValueError):
@@ -212,9 +241,13 @@ def read_status():
         "running": True,
         "path": path,
         "title": str(title),
+        "artist": str(artist),
+        "album": str(album),
+        "cover": find_cover(Path(path)) if path else "",
         "duration": duration,
         "time": position,
         "paused": bool(values.get(5, True)),
+        "repeat": str(values.get(6) or "no") == "inf",
         "error": ""
     }
 
@@ -262,6 +295,25 @@ def main():
             return
         result = send_command(["seek", position, "absolute"], wait_for_response=True)
         emit(result if result is not None else {"ok": False, "error": "The music player is not responding."})
+        return
+
+    if action == "repeat":
+        status = read_status()
+        if not status.get("running") or not status.get("path"):
+            emit({"ok": False, "error": "Choose a track first."})
+            return
+        command = ["set_property", "loop-file", "no" if status.get("repeat") else "inf"]
+        result = send_command(command, wait_for_response=True)
+        emit(result if result is not None else {"ok": False, "error": "The music player is not responding."})
+        return
+
+    if action == "dancer":
+        dancers = []
+        for index in range(1, 6):
+            candidate = DANCER_DIR / f"dancer-{index}.svg"
+            if candidate.is_file():
+                dancers.append(str(candidate))
+        emit({"path": random.choice(dancers) if dancers else ""})
         return
 
     if action == "stop":
