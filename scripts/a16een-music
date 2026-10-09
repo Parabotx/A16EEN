@@ -169,27 +169,31 @@ def read_status():
         }
 
     values = {}
+    pending = bytearray()
     try:
         for request_id, command in requests.items():
             client.sendall((json.dumps({"command": command, "request_id": request_id}) + "\n").encode("utf-8"))
-        client.settimeout(0.15)
-        stream = client.makefile("r", encoding="utf-8", errors="replace")
+        import select
         deadline = time.monotonic() + 0.8
         while time.monotonic() < deadline and len(values) < len(requests):
-            try:
-                line = stream.readline()
-            except (OSError, socket.timeout):
-                continue
-            if not line:
+            readable, _, _ = select.select([client], [], [], max(0, deadline - time.monotonic()))
+            if not readable:
                 break
-            try:
-                response = json.loads(line)
-            except json.JSONDecodeError:
-                continue
-            request_id = response.get("request_id")
-            if request_id in requests and response.get("error") == "success":
-                values[request_id] = response.get("data")
-    except (OSError, socket.timeout):
+            chunk = client.recv(8192)
+            if not chunk:
+                break
+            pending.extend(chunk)
+            while b"\n" in pending:
+                raw_line, _, remainder = pending.partition(b"\n")
+                pending = bytearray(remainder)
+                try:
+                    response = json.loads(raw_line.decode("utf-8", errors="replace"))
+                except json.JSONDecodeError:
+                    continue
+                request_id = response.get("request_id")
+                if request_id in requests and response.get("error") == "success":
+                    values[request_id] = response.get("data")
+    except (OSError, socket.timeout, ValueError):
         pass
     finally:
         client.close()
