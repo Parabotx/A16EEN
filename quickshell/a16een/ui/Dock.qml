@@ -179,7 +179,13 @@ PanelWindow {
         onTriggered: root.edgeRevealed = false
     }
 
-    onDockVisibleChanged: root.dockVisibilityChanged(root.dockVisible)
+    onDockVisibleChanged: {
+        root.dockVisibilityChanged(root.dockVisible)
+        if (!root.dockVisible) {
+            root.powerMenuOpen = false
+            root.pendingPowerAction = ""
+        }
+    }
 
     Component.onCompleted: root.dockVisibilityChanged(root.dockVisible)
 
