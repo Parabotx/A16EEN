@@ -571,10 +571,8 @@ PanelWindow {
                     }
 
                     Text {
-                        id: remainingTime
-                        text: root.playback.duration > 0
-                            ? "−" + root.formatTime(Math.max(0, root.playback.duration - root.playback.time))
-                            : "0:00"
+                        id: totalTime
+                        text: root.formatTime(root.playback.duration)
                         color: root.muted
                         font.pixelSize: 8
                         font.family: "Inter"
