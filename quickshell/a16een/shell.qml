@@ -59,6 +59,9 @@ ShellRoot {
             splitMarker: "\n"
             onRead: data => {
                 if (String(data).trim() === "A16EEN_LOCK_READY") {
+                    // Retract the fullscreen navbar only after the locker
+                    // confirms the session is secure.
+                    root.navbarRevealed = false
                     root.lockSessionActive = true
                     root.lockLaunchQueued = false
                     console.info("A16EEN screen locker is ready.")
@@ -108,7 +111,6 @@ ShellRoot {
         root.screenshotCenterOpen = false
         root.screenshotSettingsOpen = false
         root.screenshotPreviewOpen = false
-        root.navbarRevealed = false
         root.lockLaunchQueued = true
         lockLaunchTimer.restart()
     }
@@ -176,7 +178,6 @@ ShellRoot {
         && !root.quickNotesOpen
         && !root.quickTasksOpen
         && !root.lockLaunchQueued
-        && !root.secureLockActive
         && !root.secureLockActive
 
     readonly property bool wallpaperAnimationAllowed: {
