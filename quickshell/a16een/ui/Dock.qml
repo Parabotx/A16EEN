@@ -1,4 +1,5 @@
 import QtQuick
+import QtQuick.Shapes
 import Quickshell
 import Quickshell.Io
 import Quickshell.Wayland
@@ -275,8 +276,11 @@ PanelWindow {
             if (!Number.isFinite(raw))
                 return 0
 
-            // UPower percentage is already 0..100; do not treat 1% as 100%.
-            return Math.max(0, Math.min(100, Math.round(raw)))
+            // Some Quickshell/UPower builds expose charge as a 0..1 fraction,
+            // while others expose a 0..100 percentage. Normalize both so 0.52
+            // becomes 52%, instead of the incorrect 1%.
+            const normalized = raw > 0 && raw <= 1 ? raw * 100 : raw
+            return Math.max(0, Math.min(100, Math.round(normalized)))
         }
 
         function batteryIconColor() {
@@ -344,13 +348,17 @@ PanelWindow {
                 horizontal: root.horizontalNavbar
                 percentage: batteryStatusPanel.batteryPercent()
                 tint: batteryStatusPanel.batteryIconColor()
+                charging: UPower.displayDevice.state === UPowerDeviceState.Charging
+                    || UPower.displayDevice.state === UPowerDeviceState.PendingCharge
                 width: root.horizontalNavbar ? 27 : 18
                 height: root.horizontalNavbar ? 20 : 28
                 x: root.horizontalNavbar
                     ? batteryPill.width - width - 6
-                    : (root.navbarPosition === "right"
-                        ? batteryPill.width - width - 5
-                        : 5)
+                    : (batteryHoverSensor.containsMouse
+                        ? (root.navbarPosition === "right"
+                            ? batteryPill.width - width - 5
+                            : 5)
+                        : Math.round((batteryPill.width - width) / 2))
                 y: Math.round((batteryPill.height - height) / 2)
 
             }
@@ -506,6 +514,7 @@ PanelWindow {
         property bool horizontal: true
         property real percentage: 0
         property color tint: "#111318"
+        property bool charging: false
 
         Behavior on percentage {
             NumberAnimation {
@@ -521,6 +530,20 @@ PanelWindow {
         readonly property real innerWidth: Math.max(0, bodyWidth - 4)
         readonly property real innerHeight: Math.max(0, bodyHeight - 4)
         readonly property real fillRatio: Math.max(0, Math.min(100, percentage)) / 100
+
+        // While charging, tint the empty interior lightly so the white lightning
+        // bolt remains visible even at low charge. The stronger fill below still
+        // tracks the actual percentage.
+        Rectangle {
+            x: glyphRoot.bodyX + 2
+            y: glyphRoot.bodyY + 2
+            width: glyphRoot.innerWidth
+            height: glyphRoot.innerHeight
+            visible: glyphRoot.charging
+            color: "#DDF8E5"
+            radius: 1
+            z: -1
+        }
 
         // Fill is drawn inside the battery body, proportional to actual charge.
         Rectangle {
@@ -559,6 +582,28 @@ PanelWindow {
             color: glyphRoot.tint
             radius: 1
             z: 2
+        }
+        // A contrasting lightning bolt is drawn inside the body only while
+        // charging. Its dark-green outline keeps it legible over both the pale
+        // charging interior and the stronger proportional charge fill.
+        Shape {
+            anchors.fill: parent
+            visible: glyphRoot.charging
+            z: 3
+
+            ShapePath {
+                fillColor: "#FFFFFF"
+                strokeColor: "#166534"
+                strokeWidth: 0.65
+                startX: glyphRoot.width * 0.54
+                startY: glyphRoot.height * 0.17
+                PathLine { x: glyphRoot.width * 0.34; y: glyphRoot.height * 0.52 }
+                PathLine { x: glyphRoot.width * 0.48; y: glyphRoot.height * 0.52 }
+                PathLine { x: glyphRoot.width * 0.41; y: glyphRoot.height * 0.83 }
+                PathLine { x: glyphRoot.width * 0.67; y: glyphRoot.height * 0.42 }
+                PathLine { x: glyphRoot.width * 0.53; y: glyphRoot.height * 0.42 }
+                PathLine { x: glyphRoot.width * 0.54; y: glyphRoot.height * 0.17 }
+            }
         }
     }
 
