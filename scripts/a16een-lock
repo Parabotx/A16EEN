@@ -12,7 +12,10 @@ if ! command -v swaylock >/dev/null 2>&1; then
 fi
 
 SWAYLOCK_HELP="$(swaylock --help 2>&1 || true)"
-COMMON_ARGS=(
+# swaylock-effects supports richer state colors. Keep these options
+# separate so standard swaylock never receives flags it cannot parse (which
+# would make the lock command exit immediately).
+EFFECTS_ARGS=(
     --indicator
     --indicator-radius 46
     --indicator-thickness 4
@@ -37,6 +40,21 @@ COMMON_ARGS=(
     --text-wrong-color EF858B
 )
 
+# Use only widely supported options for standard swaylock.
+FALLBACK_ARGS=(
+    --indicator
+    --indicator-radius 46
+    --indicator-thickness 4
+    --show-failed-attempts
+    --font "Inter"
+    --font-size 16
+    --inside-color 111722
+    --ring-color D7B56D
+    --key-hl-color F5F2EA
+    --bs-hl-color EF858B
+    --text-color F5F2EA
+)
+
 # swaylock-effects supports a real-time clock and captures/blur the screen
 # natively. Prefer it when installed, but keep the official swaylock fallback.
 if grep -q -- '--screenshots' <<<"$SWAYLOCK_HELP" \
@@ -51,7 +69,7 @@ if grep -q -- '--screenshots' <<<"$SWAYLOCK_HELP" \
         --effect-blur 9x5 \
         --effect-vignette 0.5:0.5 \
         --fade-in 0.25 \
-        "${COMMON_ARGS[@]}"
+        "${EFFECTS_ARGS[@]}"
 fi
 
 # Official swaylock has a smaller feature set, so prepare a tasteful blurred
