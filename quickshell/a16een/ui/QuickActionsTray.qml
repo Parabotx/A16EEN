@@ -148,10 +148,6 @@ PanelWindow {
                         anchors.fill: parent
                         hoverEnabled: true
                         cursorShape: Qt.PointingHandCursor
-                        onEntered: {
-                            if (actionButton.modelData.id === "tasks")
-                                root.tasksHoverRequested()
-                        }
                         onClicked: root.activateAction(actionButton.modelData.id)
                     }
                 }
