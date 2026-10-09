@@ -159,6 +159,10 @@ jobs:
           test -f quickshell/a16een/assets/icons/music-list.svg
           test -f quickshell/a16een/assets/icons/music-close.svg
           grep -Fq 'dancerLoader.setSource(Qt.resolvedUrl("MusicDancer.qml")' quickshell/a16een/ui/MusicWidget.qml
+          grep -Fq 'dancerLoader.item.animationSource = root.dancerSource' quickshell/a16een/ui/MusicWidget.qml
+          ! grep -Fq 'remainingTime.implicitWidth' quickshell/a16een/ui/MusicWidget.qml
+          grep -Fq 'id: elapsedTimePill' quickshell/a16een/ui/MusicWidget.qml
+          grep -Fq 'id: totalTimePill' quickshell/a16een/ui/MusicWidget.qml
           grep -Fq 'id: dancerRetryTimer' quickshell/a16een/ui/MusicWidget.qml
           grep -Fq 'root.widgetEnabled && root.isPlaying && root.dancerSource.length === 0' quickshell/a16een/ui/MusicWidget.qml
           grep -Fq 'anchors.bottom: parent.bottom' quickshell/a16een/ui/MusicWidget.qml
