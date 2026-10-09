@@ -56,25 +56,15 @@ PanelWindow {
     exclusionMode: ExclusionMode.Ignore
     exclusiveZone: 0
     focusable: root.opened
+    readonly property int popupWidth: 324
+    readonly property int popupHeight: root.creating ? 430 : 310
 
-    width: 324
-    height: root.creating ? 430 : 310
-
+    // Transparent full-screen surface for click-outside dismissal.
     anchors {
-        left: !root.horizontalNavbar && root.navbarPosition === "left"
-        right: root.horizontalNavbar || root.navbarPosition === "right"
-        top: root.navbarPosition === "top"
-        bottom: root.navbarPosition !== "top"
-    }
-
-    margins {
-        // Popovers sit 12px beyond the quick-actions tray, not on top of it.
-        left: !root.horizontalNavbar && root.navbarPosition === "left" ? 122 : 12
-        right: root.horizontalNavbar ? 118
-            : (!root.horizontalNavbar && root.navbarPosition === "right" ? 124 : 12)
-        top: root.horizontalNavbar && root.navbarPosition === "top" ? 58 : 12
-        bottom: root.horizontalNavbar && root.navbarPosition === "bottom" ? 58
-            : (!root.horizontalNavbar ? 72 : 12)
+        left: true
+        right: true
+        top: true
+        bottom: true
     }
 
     WlrLayershell.layer: WlrLayer.Overlay
@@ -176,7 +166,8 @@ PanelWindow {
                     .map(item => ({
                         id: String(item.id || Date.now()),
                         title: String(item.title || "").trim(),
-                        date: String(item.date || "")
+                        date: String(item.date || ""),
+                        completed: Boolean(item.completed)
                     }))
                 : []
         } catch (error) {
@@ -227,12 +218,20 @@ PanelWindow {
         next.unshift({
             id: String(Date.now()),
             title: title,
-            date: root.dateKey(root.selectedYear, root.selectedMonth, root.selectedDay)
+            date: root.dateKey(root.selectedYear, root.selectedMonth, root.selectedDay),
+            completed: false
         })
         root.tasks = next
         saveTimer.restart()
         taskNameField.text = ""
         root.creating = false
+    }
+
+    function toggleTask(id) {
+        root.tasks = root.tasks.map(item => String(item.id) === String(id)
+            ? { id: item.id, title: item.title, date: item.date, completed: !item.completed }
+            : item)
+        saveTimer.restart()
     }
 
     onOpenedChanged: {
@@ -252,8 +251,31 @@ PanelWindow {
         }
     }
 
-    Rectangle {
+    MouseArea {
+        id: outsideClickArea
         anchors.fill: parent
+        z: 0
+        acceptedButtons: Qt.LeftButton
+        onClicked: root.closeRequested()
+    }
+
+    Rectangle {
+        id: taskCard
+        z: 1
+        width: root.popupWidth
+        height: root.popupHeight
+        anchors {
+            left: !root.horizontalNavbar && root.navbarPosition === "left"
+            right: root.horizontalNavbar || root.navbarPosition === "right"
+            top: root.navbarPosition === "top"
+            bottom: root.navbarPosition !== "top"
+            leftMargin: !root.horizontalNavbar && root.navbarPosition === "left" ? 122 : 12
+            rightMargin: root.horizontalNavbar ? 118
+                : (!root.horizontalNavbar && root.navbarPosition === "right" ? 124 : 12)
+            topMargin: root.horizontalNavbar && root.navbarPosition === "top" ? 58 : 12
+            bottomMargin: root.horizontalNavbar && root.navbarPosition === "bottom" ? 58
+                : (!root.horizontalNavbar ? 72 : 12)
+        }
         radius: 20
         color: "#FFFFFF"
         border.width: 1
@@ -267,7 +289,15 @@ PanelWindow {
             z: -1
         }
 
+        MouseArea {
+            anchors.fill: parent
+            z: 0
+            acceptedButtons: Qt.AllButtons
+            onClicked: mouse.accepted = true
+        }
+
         Column {
+            z: 1
             anchors.fill: parent
             anchors.margins: 15
             spacing: 10
@@ -393,11 +423,41 @@ PanelWindow {
                             border.width: 1
                             border.color: "#E9EDF1"
 
-                            Column {
+                            Rectangle {
+                                id: completeButton
                                 anchors.left: parent.left
-                                anchors.right: parent.right
-                                anchors.leftMargin: 11
-                                anchors.rightMargin: 9
+                                anchors.leftMargin: 8
+                                anchors.verticalCenter: parent.verticalCenter
+                                width: 22
+                                height: 22
+                                radius: 7
+                                color: taskRow.modelData.completed ? "#20262E"
+                                    : (completeHover.containsMouse ? "#EDF1F5" : "#FFFFFF")
+                                border.width: 1
+                                border.color: taskRow.modelData.completed ? "#20262E" : "#DDE3E9"
+
+                                Text {
+                                    anchors.centerIn: parent
+                                    text: taskRow.modelData.completed ? "✓" : ""
+                                    color: "#FFFFFF"
+                                    font.pixelSize: 14
+                                    font.weight: Font.DemiBold
+                                }
+
+                                MouseArea {
+                                    id: completeHover
+                                    anchors.fill: parent
+                                    hoverEnabled: true
+                                    cursorShape: Qt.PointingHandCursor
+                                    onClicked: root.toggleTask(taskRow.modelData.id)
+                                }
+                            }
+
+                            Column {
+                                anchors.left: completeButton.right
+                                anchors.right: deleteButton.left
+                                anchors.leftMargin: 7
+                                anchors.rightMargin: 5
                                 anchors.verticalCenter: parent.verticalCenter
                                 spacing: 4
 
@@ -407,6 +467,8 @@ PanelWindow {
                                     color: "#28313C"
                                     font.pixelSize: 11
                                     font.weight: Font.Medium
+                                    font.strikeout: Boolean(taskRow.modelData.completed)
+                                    opacity: taskRow.modelData.completed ? 0.62 : 1
                                     elide: Text.ElideRight
                                 }
                                 Text {
