@@ -738,8 +738,12 @@ PanelWindow {
         aboveWindows: true
         exclusionMode: ExclusionMode.Ignore
         exclusiveZone: 0
-        width: 38
-        height: root.utilitiesExpanded ? 104 : 38
+        width: root.horizontalNavbar
+            ? (root.utilitiesExpanded ? 104 : 38)
+            : 38
+        height: root.horizontalNavbar
+            ? 38
+            : (root.utilitiesExpanded ? 104 : 38)
 
         anchors {
             left: root.horizontalNavbar || root.navbarPosition === "left"
@@ -749,7 +753,7 @@ PanelWindow {
         }
 
         margins {
-            left: root.horizontalNavbar ? 100 : (root.navbarPosition === "left" ? 8 : 12)
+            left: root.horizontalNavbar ? 114 : (root.navbarPosition === "left" ? 8 : 12)
             right: root.horizontalNavbar ? 12 : (root.navbarPosition === "right" ? 8 : 12)
             top: root.navbarPosition === "top" ? 0 : (root.horizontalNavbar ? 12 : 124)
             bottom: root.navbarPosition === "bottom" ? 12 : 0
@@ -773,10 +777,13 @@ PanelWindow {
                 z: -1
             }
 
-            Column {
+            Grid {
                 anchors.fill: parent
                 anchors.margins: 4
-                spacing: 4
+                rowSpacing: 4
+                columnSpacing: 4
+                columns: root.horizontalNavbar ? (root.utilitiesExpanded ? 3 : 1) : 1
+                rows: root.horizontalNavbar ? 1 : (root.utilitiesExpanded ? 3 : 1)
 
                 Rectangle {
                     id: utilitiesMainButton
