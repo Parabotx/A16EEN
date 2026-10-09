@@ -27,9 +27,6 @@ PanelWindow {
     property bool actionBusy: false
     property bool libraryOpen: false
     property bool shuffleEnabled: false
-    property string dancerSource: ""
-    property real dancerOffsetX: 0
-    property real dancerOffsetY: 0
 
     readonly property color ink: "#493C31"
     readonly property color secondary: "#837264"
@@ -103,87 +100,10 @@ PanelWindow {
         }
     }
 
-    function syncDancerLoader() {
-        const shouldLoad = root.widgetEnabled && root.isPlaying
-
-        if (!shouldLoad) {
-            dancerLoader.active = false
-            dancerLoader.source = ""
-            return
-        }
-
-        // Keep the dancer component alive during an empty/failed lookup too:
-        // MusicDancer shows a lightweight animated fallback until Lottie is ready.
-        // Update the existing item's property directly. Calling setSource() again
-        // with the same QML URL can leave the old item and its empty source intact.
-        if (dancerLoader.item) {
-            if (String(dancerLoader.item.animationSource || "") !== root.dancerSource)
-                dancerLoader.item.animationSource = root.dancerSource
-            return
-        }
-
-        // Set the first source before component creation to avoid a source-change race.
-        dancerLoader.active = true
-        dancerLoader.setSource(Qt.resolvedUrl("MusicDancer.qml"), {
-            "animationSource": root.dancerSource
-        })
-    }
-
-    function requestDancer() {
-        if (!root.widgetEnabled || !root.isPlaying || dancerProcess.running)
-            return
-        if (root.dancerSource.length > 0) {
-            root.dancerSource = ""
-            root.dancerOffsetX = 0
-            root.dancerOffsetY = 0
-        }
-        // Keep the animated QML fallback visible while the helper selects a Lottie file.
-        root.syncDancerLoader()
-        dancerProcess.running = true
-    }
-
-    function applyDancerOutput(raw) {
-        if (!root.widgetEnabled || !root.isPlaying)
-            return
-        try {
-            const result = JSON.parse(String(raw || "{}"))
-            root.dancerSource = String(result.path || "")
-            if (root.dancerSource.length > 0) {
-                console.info("A16EEN Music: selected dancer", result.fileName || root.dancerSource,
-                    "valid files:", result.validCount, "directory:", result.directory || "unknown")
-            } else {
-                console.warn("A16EEN Music: no dancer is available:",
-                    result.reason || "unknown reason",
-                    "directory:", result.directory || "unknown")
-            }
-        } catch (error) {
-            root.dancerSource = ""
-            console.warn("A16EEN Music: unable to parse dancer helper output", String(error))
-        }
-        root.syncDancerLoader()
-    }
-
     function applyPlaybackOutput(raw) {
         try {
             const result = JSON.parse(String(raw || "{}"))
-            const wasPlaying = root.isPlaying
-            const previousPath = String(root.playback.path || "")
             root.playback = result
-
-            if (root.isPlaying) {
-                if (!wasPlaying || previousPath !== String(root.playback.path || "")) {
-                    root.requestDancer()
-                } else if (root.widgetEnabled) {
-                    root.syncDancerLoader()
-                }
-            } else {
-                // Clearing the URL unloads the optional dancer component completely;
-                // no animation keeps running while paused.
-                root.dancerSource = ""
-                root.dancerOffsetX = 0
-                root.dancerOffsetY = 0
-                root.syncDancerLoader()
-            }
 
             if (result.error)
                 root.statusMessage = result.error
@@ -270,16 +190,6 @@ PanelWindow {
         if (root.widgetEnabled) {
             root.refreshLibrary()
             root.refreshPlayback()
-            if (root.isPlaying) {
-                root.syncDancerLoader()
-                if (root.dancerSource.length === 0)
-                    root.requestDancer()
-            }
-        } else {
-            root.dancerSource = ""
-            root.dancerOffsetX = 0
-            root.dancerOffsetY = 0
-            root.syncDancerLoader()
         }
     }
 
@@ -310,71 +220,11 @@ PanelWindow {
         }
     }
 
-    Process {
-        id: dancerProcess
-        command: ["a16een-music", "dancer"]
-        running: false
-        stdout: StdioCollector {
-            onStreamFinished: root.applyDancerOutput(this.text)
-        }
-    }
-
     Timer {
         interval: 1200
         repeat: true
         running: root.widgetEnabled
         onTriggered: root.refreshPlayback()
-    }
-
-    Timer {
-        id: dancerRetryTimer
-        interval: 4500
-        repeat: true
-        running: root.widgetEnabled && root.isPlaying && root.dancerSource.length === 0
-        onTriggered: root.requestDancer()
-    }
-
-    SequentialAnimation {
-        running: root.widgetEnabled && root.isPlaying && root.dancerSource.length > 0
-        loops: Animation.Infinite
-
-        PauseAnimation { duration: 1700 }
-
-        NumberAnimation {
-            target: root
-            property: "dancerOffsetX"
-            to: 24
-            duration: 360
-            easing.type: Easing.OutBack
-        }
-
-        NumberAnimation {
-            target: root
-            property: "dancerOffsetY"
-            to: -12
-            duration: 220
-            easing.type: Easing.OutCubic
-        }
-
-        PauseAnimation { duration: 360 }
-
-        NumberAnimation {
-            target: root
-            property: "dancerOffsetX"
-            to: 0
-            duration: 480
-            easing.type: Easing.OutBack
-        }
-
-        NumberAnimation {
-            target: root
-            property: "dancerOffsetY"
-            to: 0
-            duration: 280
-            easing.type: Easing.OutCubic
-        }
-
-        PauseAnimation { duration: 1100 }
     }
 
     // Two low-opacity layers give the compact card a soft, lifted shadow
@@ -415,6 +265,20 @@ PanelWindow {
         border.color: root.border
         clip: false
         z: 1
+
+        Rectangle {
+            width: Math.min(148, parent.width * 0.46)
+            height: 2
+            anchors.horizontalCenter: parent.horizontalCenter
+            y: 0
+            radius: 1
+            z: 3
+            gradient: Gradient {
+                GradientStop { position: 0.0; color: "#D9A66A" }
+                GradientStop { position: 0.52; color: "#D98D80" }
+                GradientStop { position: 1.0; color: "#A992CF" }
+            }
+        }
 
         Behavior on height {
             NumberAnimation { duration: 190; easing.type: Easing.OutCubic }
@@ -482,6 +346,29 @@ PanelWindow {
                         asynchronous: true
                         cache: true
                     }
+
+                    Rectangle {
+                        width: 8
+                        height: 8
+                        anchors.right: parent.right
+                        anchors.top: parent.top
+                        anchors.rightMargin: 5
+                        anchors.topMargin: 5
+                        radius: 4
+                        color: "#FFF9F0"
+                        border.width: 1
+                        border.color: "#D7B28F"
+                        visible: root.isPlaying
+                        z: 4
+
+                        Rectangle {
+                            anchors.centerIn: parent
+                            width: 4
+                            height: 4
+                            radius: 2
+                            color: "#C98765"
+                        }
+                    }
                 }
 
                 Column {
@@ -489,14 +376,39 @@ PanelWindow {
                     anchors.verticalCenter: parent.verticalCenter
                     spacing: 4
 
-                    Text {
+                    Row {
                         width: parent.width
-                        text: root.isPlaying ? "NOW PLAYING" : "A16EEN MUSIC"
-                        color: root.accent
-                        font.pixelSize: 7
-                        font.weight: Font.DemiBold
-                        font.letterSpacing: 1.15
-                        elide: Text.ElideRight
+                        height: 9
+                        spacing: 4
+
+                        Rectangle {
+                            id: playingIndicatorDot
+                            width: 4
+                            height: 4
+                            anchors.verticalCenter: parent.verticalCenter
+                            radius: 2
+                            color: root.isPlaying ? "#C98765" : "#BBA997"
+                            opacity: root.isPlaying ? 1 : 0.75
+
+                            Behavior on color { ColorAnimation { duration: 180 } }
+
+                            SequentialAnimation on opacity {
+                                running: root.widgetEnabled && root.isPlaying
+                                loops: Animation.Infinite
+                                NumberAnimation { to: 0.38; duration: 560; easing.type: Easing.InOutSine }
+                                NumberAnimation { to: 1.0; duration: 620; easing.type: Easing.InOutSine }
+                            }
+                        }
+
+                        Text {
+                            width: parent.width - 8
+                            text: root.isPlaying ? "NOW PLAYING" : "A16EEN MUSIC"
+                            color: root.accent
+                            font.pixelSize: 7
+                            font.weight: Font.DemiBold
+                            font.letterSpacing: 1.15
+                            elide: Text.ElideRight
+                        }
                     }
 
                     Text {
@@ -530,30 +442,12 @@ PanelWindow {
                     }
                 }
 
-                Item {
-                    id: dancerStage
+                MusicDecor {
                     width: 98
                     height: 76
                     anchors.verticalCenter: parent.verticalCenter
-                    clip: false
-
-                    Loader {
-                        id: dancerLoader
-                        width: 98
-                        height: 76
-                        x: root.dancerOffsetX
-                        y: root.dancerOffsetY
-                        active: false
-                        asynchronous: false
-                        onLoaded: {
-                            if (item)
-                                console.info("A16EEN Music: dancer QML component created")
-                        }
-                        onStatusChanged: {
-                            if (status === Loader.Error)
-                                console.warn("A16EEN Music: failed to instantiate MusicDancer.qml")
-                        }
-                    }
+                    animating: root.widgetEnabled
+                    playing: root.isPlaying
                 }
             }
 

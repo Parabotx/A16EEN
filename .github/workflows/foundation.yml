@@ -127,9 +127,13 @@ jobs:
           test -f quickshell/a16een/assets/icons/lucide-palette.svg
           test -f quickshell/a16een/ui/WidgetCatalog.js
           test -f quickshell/a16een/ui/MusicWidget.qml
-          test -f quickshell/a16een/ui/MusicDancer.qml
-          test -f quickshell/a16een/ui/MusicDancerLottie.qml
-          test -f quickshell/a16een/assets/music-dancers/README.md
+          test -f quickshell/a16een/ui/MusicDecor.qml
+          grep -Fq 'MusicDecor {' quickshell/a16een/ui/MusicWidget.qml
+          grep -Fq 'property bool animating: true' quickshell/a16een/ui/MusicDecor.qml
+          grep -Fq 'Diagonal rain: droplets fall toward the lower-right' quickshell/a16een/ui/MusicDecor.qml
+          grep -Fq 'property real driftX' quickshell/a16een/ui/MusicDecor.qml
+          grep -Fq 'ParallelAnimation {' quickshell/a16een/ui/MusicDecor.qml
+          ! grep -R -Fq 'Qt.labs.lottieqt' quickshell/a16een/ui
           test -f scripts/a16een-music
           grep -Fq 'id: "music"' quickshell/a16een/ui/WidgetCatalog.js
           grep -Fq 'musicWidgetEnabled' quickshell/a16een/shell.qml
@@ -138,13 +142,6 @@ jobs:
           grep -Fq 'musicWidgetEnabledRequested' quickshell/a16een/ui/CommandCenter.qml
           grep -Fq 'property bool musicEnabled: false' quickshell/a16een/ui/WidgetSection.qml
           grep -Fq 'A16EEN MUSIC' quickshell/a16een/ui/MusicWidget.qml
-          ! grep -Fq 'import Qt.labs.lottieqt' quickshell/a16een/ui/MusicWidget.qml
-          ! grep -Fq 'import Qt.labs.lottieqt' quickshell/a16een/ui/MusicDancer.qml
-          grep -Fq 'import Qt.labs.lottieqt' quickshell/a16een/ui/MusicDancerLottie.qml
-          grep -Fq 'LottieAnimation {' quickshell/a16een/ui/MusicDancerLottie.qml
-          grep -Fq 'source: root.animationSource' quickshell/a16een/ui/MusicDancerLottie.qml
-          grep -Fq 'status === LottieAnimation.Ready' quickshell/a16een/ui/MusicDancerLottie.qml
-          grep -Fq 'start()' quickshell/a16een/ui/MusicDancerLottie.qml
           grep -Fq 'iconName: "music-skip-back"' quickshell/a16een/ui/MusicWidget.qml
           grep -Fq 'iconName: "music-skip-forward"' quickshell/a16een/ui/MusicWidget.qml
           ! grep -Fq 'glyph:' quickshell/a16een/ui/MusicWidget.qml
@@ -158,57 +155,24 @@ jobs:
           test -f quickshell/a16een/assets/icons/music-repeat.svg
           test -f quickshell/a16een/assets/icons/music-list.svg
           test -f quickshell/a16een/assets/icons/music-close.svg
-          grep -Fq 'dancerLoader.setSource(Qt.resolvedUrl("MusicDancer.qml")' quickshell/a16een/ui/MusicWidget.qml
-          grep -Fq 'dancerLoader.item.animationSource = root.dancerSource' quickshell/a16een/ui/MusicWidget.qml
           ! grep -Fq 'remainingTime.implicitWidth' quickshell/a16een/ui/MusicWidget.qml
           grep -Fq 'id: elapsedTimePill' quickshell/a16een/ui/MusicWidget.qml
           grep -Fq 'id: totalTimePill' quickshell/a16een/ui/MusicWidget.qml
-          grep -Fq 'id: dancerRetryTimer' quickshell/a16een/ui/MusicWidget.qml
-          grep -Fq 'root.widgetEnabled && root.isPlaying && root.dancerSource.length === 0' quickshell/a16een/ui/MusicWidget.qml
           grep -Fq 'anchors.bottom: parent.bottom' quickshell/a16een/ui/MusicWidget.qml
           grep -Fq 'libraryOpen ? 284 : 170' quickshell/a16een/ui/MusicWidget.qml
           grep -Fq 'property bool shuffleEnabled: false' quickshell/a16een/ui/MusicWidget.qml
           grep -Fq 'root.runAction(["repeat"])' quickshell/a16een/ui/MusicWidget.qml
-          grep -Fq 'visible: !root.lottieReady' quickshell/a16een/ui/MusicDancer.qml
-          grep -Fq 'no dancer is available:' quickshell/a16een/ui/MusicWidget.qml
-          grep -Fq 'root.dancerSource = ""' quickshell/a16een/ui/MusicWidget.qml
-          grep -Fq 'action == "dancer"' scripts/a16een-music
           grep -Fq 'action == "repeat"' scripts/a16een-music
           grep -Fq 'loop-file' scripts/a16een-music
           grep -Fq 'find_cover' scripts/a16een-music
-          grep -Fq 'MUSIC_DANCER_SOURCE_DIR' scripts/install.sh
-          grep -Fq 'dancer-$dancer_index.json' scripts/install.sh
           ! grep -Fq 'qt6-lottie' scripts/install.sh
-          grep -Fq 'pacman", "-Qq", "qt6-lottie' scripts/a16een-music
-          grep -Fq 'music-dancers/dancer-' scripts/a16een-update
-          grep -Fq 'dancer-{index}.json' scripts/a16een-music
-          grep -Fq 'action in {"dancer", "dancer-status"}' scripts/a16een-music
-          grep -Fq 'def dancer_state()' scripts/a16een-music
           grep -Fq 'text: root.formatTime(root.playback.time)' quickshell/a16een/ui/MusicWidget.qml
           grep -Fq 'progressThumb' quickshell/a16een/ui/MusicWidget.qml
           grep -Fq 'text: root.formatTime(root.playback.duration)' quickshell/a16een/ui/MusicWidget.qml
-          python3 - <<'PY'
-          import json
-          from pathlib import Path
-
-          files = sorted(Path("quickshell/a16een/assets/music-dancers").glob("dancer-*.json"))
-          assert len(files) == 5, f"expected 5 dancer animations, found {len(files)}"
-          for path in files:
-              data = json.loads(path.read_text(encoding="utf-8"))
-              assert data.get("w") == 98 and data.get("h") == 76, f"{path}: unexpected canvas size"
-              assert data.get("assets", []) == [], f"{path}: precompositions/assets are unsupported"
-              assert data.get("chars", []) == [], f"{path}: text assets are unsupported"
-              assert data.get("layers"), f"{path}: no layers"
-              for layer in data["layers"]:
-                  assert layer.get("ty") == 4, f"{path}: only shape layers are supported"
-                  groups = layer.get("shapes", [])
-                  assert groups and all(group.get("ty") == "gr" for group in groups), f"{path}: shape elements must be inside groups"
-                  for group in groups:
-                      types = [item.get("ty") for item in group.get("it", [])]
-                      assert types.count("tr") == 1, f"{path}: every group needs one transform"
-                      assert "fl" in types, f"{path}: each generated shape needs a fill"
-                      assert all(kind in {"el", "rc", "fl", "tr"} for kind in types), f"{path}: unsupported shape element"
-          PY
+          grep -Fq 'id: elapsedTimePill' quickshell/a16een/ui/MusicWidget.qml
+          grep -Fq 'id: totalTimePill' quickshell/a16een/ui/MusicWidget.qml
+          grep -Fq 'Removing obsolete music dancer assets' scripts/install.sh
+          ! grep -Fq 'MUSIC_DANCER_SOURCE_DIR' scripts/install.sh
           grep -Fq 'mpv' scripts/install.sh
           test -f quickshell/a16een/ui/WallpaperPicker.qml
           test -f quickshell/a16een/ui/NotificationToast.qml

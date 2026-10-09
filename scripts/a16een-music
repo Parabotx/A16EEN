@@ -3,7 +3,6 @@
 import hashlib
 import json
 import os
-import random
 import socket
 import subprocess
 import sys
@@ -18,7 +17,6 @@ AUDIO_EXTENSIONS = {
 MPV_BIN = "mpv"
 RUNTIME_DIR = Path(os.environ.get("XDG_RUNTIME_DIR") or (Path.home() / ".local/state/a16een"))
 SOCKET_PATH = RUNTIME_DIR / "a16een-music.sock"
-DANCER_DIR = Path.home() / ".config/a16een/quickshell/a16een/assets/music-dancers"
 COVER_CACHE_DIR = Path(os.environ.get("XDG_CACHE_HOME") or (Path.home() / ".cache")) / "a16een/music-covers"
 COVER_NAMES = ("cover", "folder", "front", "album", "albumart", "albumartsmall", "artwork", ".folder", "thumb")
 
@@ -305,68 +303,6 @@ def read_status():
     }
 
 
-def dancer_state():
-    """Return only JSON animations compatible with Qt's shape-layer Lottie player."""
-    module_installed = False
-    if shutil_which("pacman"):
-        try:
-            module_installed = subprocess.run(
-                ["pacman", "-Qq", "qt6-lottie"],
-                stdin=subprocess.DEVNULL,
-                stdout=subprocess.DEVNULL,
-                stderr=subprocess.DEVNULL,
-                check=False
-            ).returncode == 0
-        except OSError:
-            pass
-
-    candidates = []
-    problems = []
-    for index in range(1, 6):
-        candidate = DANCER_DIR / f"dancer-{index}.json"
-        if not candidate.is_file():
-            continue
-        try:
-            data = json.loads(candidate.read_text(encoding="utf-8"))
-            layers = data.get("layers")
-            if not isinstance(layers, list) or not layers:
-                raise ValueError("missing shape layers")
-            if any(layer.get("ty") != 4 for layer in layers):
-                raise ValueError("contains a non-shape layer")
-            for layer in layers:
-                shapes = layer.get("shapes", [])
-                if not shapes or any(shape.get("ty") != "gr" for shape in shapes):
-                    raise ValueError("shapes must use standard shape groups")
-                for group in shapes:
-                    if not all(item.get("ty") in {"el", "rc", "fl", "tr"} for item in group.get("it", [])):
-                        raise ValueError("contains an unsupported shape element")
-            candidates.append(candidate)
-        except (OSError, UnicodeError, json.JSONDecodeError, AttributeError, TypeError, ValueError) as error:
-            problems.append(f"{candidate.name}: {error}")
-
-    reason = ""
-    if not module_installed:
-        reason = "qt6-lottie is not installed"
-    elif not DANCER_DIR.is_dir():
-        reason = "the installed music-dancers directory is missing"
-    elif not candidates:
-        reason = "no valid Qt-compatible dancer JSON files were found"
-        if problems:
-            reason += " (" + "; ".join(problems) + ")"
-
-    choice = random.choice(candidates) if module_installed and candidates else None
-    return {
-        "path": choice.as_uri() if choice else "",
-        "fileName": choice.name if choice else "",
-        "reason": reason,
-        "directory": str(DANCER_DIR),
-        "qtLottieInstalled": module_installed,
-        "validCount": len(candidates),
-        "validFiles": [item.name for item in candidates],
-        "problems": problems
-    }
-
-
 def main():
     args = sys.argv[1:]
     action = args[0] if args else "status"
@@ -420,17 +356,6 @@ def main():
         command = ["set_property", "loop-file", "no" if status.get("repeat") else "inf"]
         result = send_command(command, wait_for_response=True)
         emit(result if result is not None else {"ok": False, "error": "The music player is not responding."})
-        return
-
-    if action in {"dancer", "dancer-status"}:
-        result = dancer_state()
-        if action == "dancer" and result["path"]:
-            # Keep the selected dancer's path while preserving reason and file diagnostics.
-            pass
-        elif action == "dancer-status":
-            result["path"] = ""
-            result["fileName"] = ""
-        emit(result)
         return
 
     if action == "stop":

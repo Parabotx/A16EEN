@@ -285,22 +285,14 @@ else
     trap - EXIT INT TERM
 fi
 
-# Deploy the optional animated Lottie dancers that are committed to GitHub.
-# This runs even when the code revision is unchanged so newly added assets ship
-# on the next update. Remove obsolete SVG variants from older revisions.
-echo "==> Syncing bundled Lottie music dancers"
-MUSIC_DANCER_SOURCE_DIR="$ROOT_DIR/quickshell/a16een/assets/music-dancers"
-MUSIC_DANCER_TARGET_DIR="$QS_DIR/assets/music-dancers"
-mkdir -p "$MUSIC_DANCER_TARGET_DIR"
+# The music card now uses a native QML rain-particle design; no Lottie runtime
+# or downloaded animation assets are needed. Remove files left by older versions.
+echo "==> Removing obsolete music dancer assets"
+rm -f "$QS_DIR/ui/MusicDancer.qml" "$QS_DIR/ui/MusicDancerLottie.qml"
 for dancer_index in 1 2 3 4 5; do
-    dancer_name="dancer-$dancer_index.json"
-    if [ -f "$MUSIC_DANCER_SOURCE_DIR/$dancer_name" ]; then
-        install -m644 "$MUSIC_DANCER_SOURCE_DIR/$dancer_name" "$MUSIC_DANCER_TARGET_DIR/$dancer_name"
-    else
-        rm -f "$MUSIC_DANCER_TARGET_DIR/$dancer_name"
-    fi
-    rm -f "$MUSIC_DANCER_TARGET_DIR/dancer-$dancer_index.svg"
+    rm -f "$QS_DIR/assets/music-dancers/dancer-$dancer_index.json"
 done
+rmdir "$QS_DIR/assets/music-dancers" >/dev/null 2>&1 || true
 
 # Keep the lock-screen theme deployed even when the desktop config itself is
 # already at the installed commit. This updates the GTKLock input and visual
