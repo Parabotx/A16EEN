@@ -30,11 +30,24 @@ PanelWindow {
     aboveWindows: true
     exclusionMode: ExclusionMode.Ignore
     exclusiveZone: 0
-    focusable: false
+    focusable: root.opened
+    WlrLayershell.keyboardFocus: root.opened
+        ? WlrKeyboardFocus.OnDemand
+        : WlrKeyboardFocus.None
     readonly property real screenWidth: root.modelData ? root.modelData.width : 1920
     readonly property real screenHeight: root.modelData ? root.modelData.height : 1080
     readonly property int popupWidth: root.sidebarVisible ? 360 : 280
     readonly property int popupHeight: 320
+    readonly property real popupX: root.horizontalNavbar
+        ? root.screenWidth - root.popupWidth - 102
+        : (root.navbarPosition === "left"
+            ? 66
+            : root.screenWidth - root.popupWidth - 68)
+    readonly property real popupY: root.horizontalNavbar
+        ? (root.navbarPosition === "top"
+            ? 40
+            : root.screenHeight - root.popupHeight - 40)
+        : root.screenHeight - root.popupHeight - 72
 
     // Explicit output dimensions are important: this overlay must retain a
     // screen-sized input surface, or its card coordinates can collapse to (0, 0).
@@ -51,7 +64,6 @@ PanelWindow {
 
     WlrLayershell.layer: WlrLayer.Overlay
     WlrLayershell.namespace: "a16een-quick-notes"
-    WlrLayershell.keyboardFocus: WlrKeyboardFocus.None
 
     FileView {
         id: notesStorage
@@ -225,43 +237,14 @@ PanelWindow {
         onClicked: root.closeRequested()
     }
 
-    PanelWindow {
+    Item {
         id: notePopup
-        screen: root.modelData
         visible: root.opened && root.dockVisible && root.modelData !== null
-        color: "transparent"
-        aboveWindows: true
-        exclusionMode: ExclusionMode.Ignore
-        exclusiveZone: 0
-        focusable: root.opened
+        x: root.popupX
+        y: root.popupY
         width: root.popupWidth
         height: root.popupHeight
-
-        anchors {
-            left: !root.horizontalNavbar && root.navbarPosition === "left"
-            right: root.horizontalNavbar || root.navbarPosition === "right"
-            top: root.horizontalNavbar && root.navbarPosition === "top"
-            bottom: root.horizontalNavbar
-                ? root.navbarPosition === "bottom"
-                : true
-        }
-
-        margins {
-            left: !root.horizontalNavbar && root.navbarPosition === "left" ? 66 : 0
-            right: root.horizontalNavbar
-                ? 102
-                : (root.navbarPosition === "right" ? 68 : 0)
-            top: root.horizontalNavbar && root.navbarPosition === "top" ? 40 : 0
-            bottom: root.horizontalNavbar
-                ? (root.navbarPosition === "bottom" ? 40 : 0)
-                : 72
-        }
-
-        WlrLayershell.layer: WlrLayer.Overlay
-        WlrLayershell.namespace: "a16een-quick-notes-popup"
-        WlrLayershell.keyboardFocus: root.opened
-            ? WlrKeyboardFocus.OnDemand
-            : WlrKeyboardFocus.None
+        z: 1
 
         Rectangle {
             id: noteCard
