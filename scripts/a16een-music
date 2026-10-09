@@ -1,0 +1,277 @@
+#!/usr/bin/env python3
+"""A16EEN local music helper. Plays files from ~/Music through MPV's IPC socket."""
+import json
+import os
+import socket
+import subprocess
+import sys
+import time
+from pathlib import Path
+
+MUSIC_DIR = (Path.home() / "Music").resolve()
+AUDIO_EXTENSIONS = {
+    ".mp3", ".flac", ".ogg", ".opus", ".m4a", ".wav", ".aac",
+    ".wma", ".aiff", ".aif", ".ape", ".mpc", ".mka", ".webm"
+}
+MPV_BIN = "mpv"
+RUNTIME_DIR = Path(os.environ.get("XDG_RUNTIME_DIR") or (Path.home() / ".local/state/a16een"))
+SOCKET_PATH = RUNTIME_DIR / "a16een-music.sock"
+
+
+def emit(payload):
+    print(json.dumps(payload, ensure_ascii=False))
+
+
+def prepare_runtime():
+    RUNTIME_DIR.mkdir(parents=True, exist_ok=True)
+
+
+def scan_library():
+    tracks = []
+    if not MUSIC_DIR.is_dir():
+        return tracks
+    try:
+        files = sorted(
+            (p for p in MUSIC_DIR.rglob("*")
+             if p.is_file() and p.suffix.lower() in AUDIO_EXTENSIONS),
+            key=lambda p: str(p.relative_to(MUSIC_DIR)).casefold()
+        )
+    except OSError:
+        return tracks
+
+    for path in files:
+        try:
+            relative_parent = path.parent.relative_to(MUSIC_DIR)
+            folder = relative_parent.as_posix() if str(relative_parent) != "." else "Local library"
+            title = path.stem.replace("_", " ").strip()
+            tracks.append({
+                "path": str(path),
+                "title": title or path.name,
+                "artist": folder,
+                "filename": path.name
+            })
+        except (OSError, ValueError):
+            continue
+    return tracks
+
+
+def open_ipc(timeout=0.45):
+    prepare_runtime()
+    client = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
+    client.settimeout(timeout)
+    try:
+        client.connect(str(SOCKET_PATH))
+        return client
+    except (OSError, socket.timeout):
+        client.close()
+        return None
+
+
+def send_command(command, wait_for_response=False, timeout=0.65):
+    client = open_ipc(timeout=timeout)
+    if client is None:
+        return None
+    try:
+        message = {"command": command, "request_id": 1}
+        client.sendall((json.dumps(message) + "\n").encode("utf-8"))
+        if not wait_for_response:
+            return {"ok": True}
+        stream = client.makefile("r", encoding="utf-8", errors="replace")
+        deadline = time.monotonic() + timeout
+        while time.monotonic() < deadline:
+            try:
+                line = stream.readline()
+            except (OSError, socket.timeout):
+                break
+            if not line:
+                break
+            try:
+                response = json.loads(line)
+            except json.JSONDecodeError:
+                continue
+            if response.get("request_id") == 1:
+                return {
+                    "ok": response.get("error") == "success",
+                    "error": response.get("error", "")
+                }
+        return {"ok": True}
+    except (OSError, socket.timeout):
+        return None
+    finally:
+        client.close()
+
+
+def play_path(raw_path):
+    candidate = Path(raw_path).expanduser().resolve()
+    try:
+        candidate.relative_to(MUSIC_DIR)
+    except ValueError:
+        return {"ok": False, "error": "Choose a song from your Music folder."}
+    if not candidate.is_file() or candidate.suffix.lower() not in AUDIO_EXTENSIONS:
+        return {"ok": False, "error": "That audio file is no longer available."}
+
+    result = send_command(["loadfile", str(candidate), "replace"], wait_for_response=True)
+    if result is not None:
+        if result.get("ok"):
+            return {"ok": True}
+        return {"ok": False, "error": "MPV could not open that track."}
+
+    if not shutil_which(MPV_BIN):
+        return {"ok": False, "error": "MPV is missing. Update A16EEN to install it."}
+
+    prepare_runtime()
+    try:
+        SOCKET_PATH.unlink(missing_ok=True)
+    except OSError:
+        pass
+    try:
+        subprocess.Popen(
+            [
+                MPV_BIN, "--no-video", "--force-window=no", "--idle=yes",
+                "--input-ipc-server=" + str(SOCKET_PATH), "--", str(candidate)
+            ],
+            stdin=subprocess.DEVNULL,
+            stdout=subprocess.DEVNULL,
+            stderr=subprocess.DEVNULL,
+            start_new_session=True,
+            close_fds=True
+        )
+    except OSError:
+        return {"ok": False, "error": "MPV could not be started."}
+
+    deadline = time.monotonic() + 2.0
+    while time.monotonic() < deadline:
+        result = send_command(["get_property", "path"], wait_for_response=True, timeout=0.25)
+        if result is not None:
+            return {"ok": True}
+        time.sleep(0.08)
+    return {"ok": True, "message": "Starting player…"}
+
+
+def shutil_which(name):
+    from shutil import which
+    return which(name)
+
+
+def read_status():
+    requests = {
+        1: ["get_property", "path"],
+        2: ["get_property", "media-title"],
+        3: ["get_property", "duration"],
+        4: ["get_property", "time-pos"],
+        5: ["get_property", "pause"]
+    }
+    client = open_ipc(timeout=0.25)
+    if client is None:
+        return {
+            "running": False, "path": "", "title": "", "duration": 0,
+            "time": 0, "paused": True, "error": ""
+        }
+
+    values = {}
+    try:
+        for request_id, command in requests.items():
+            client.sendall((json.dumps({"command": command, "request_id": request_id}) + "\n").encode("utf-8"))
+        client.settimeout(0.15)
+        stream = client.makefile("r", encoding="utf-8", errors="replace")
+        deadline = time.monotonic() + 0.8
+        while time.monotonic() < deadline and len(values) < len(requests):
+            try:
+                line = stream.readline()
+            except (OSError, socket.timeout):
+                continue
+            if not line:
+                break
+            try:
+                response = json.loads(line)
+            except json.JSONDecodeError:
+                continue
+            request_id = response.get("request_id")
+            if request_id in requests and response.get("error") == "success":
+                values[request_id] = response.get("data")
+    except (OSError, socket.timeout):
+        pass
+    finally:
+        client.close()
+
+    path = values.get(1) or ""
+    title = values.get(2) or (Path(path).stem if path else "")
+    try:
+        duration = max(0.0, float(values.get(3) or 0))
+    except (TypeError, ValueError):
+        duration = 0.0
+    try:
+        position = max(0.0, float(values.get(4) or 0))
+    except (TypeError, ValueError):
+        position = 0.0
+    return {
+        "running": True,
+        "path": path,
+        "title": str(title),
+        "duration": duration,
+        "time": position,
+        "paused": bool(values.get(5, True)),
+        "error": ""
+    }
+
+
+def main():
+    args = sys.argv[1:]
+    action = args[0] if args else "status"
+
+    if action == "list":
+        emit({
+            "tracks": scan_library(),
+            "directory": str(MUSIC_DIR),
+            "directoryExists": MUSIC_DIR.is_dir()
+        })
+        return
+
+    if action == "status":
+        emit(read_status())
+        return
+
+    if action == "play":
+        if len(args) < 2:
+            emit({"ok": False, "error": "Choose a track first."})
+            return
+        emit(play_path(args[1]))
+        return
+
+    if action == "toggle":
+        status = read_status()
+        if not status.get("running") or not status.get("path"):
+            emit({"ok": False, "error": "Choose a track to start playback."})
+            return
+        result = send_command(["set_property", "pause", not status.get("paused", True)], wait_for_response=True)
+        emit(result if result is not None else {"ok": False, "error": "The music player is not responding."})
+        return
+
+    if action == "seek":
+        if len(args) < 2:
+            emit({"ok": False, "error": "A seek position is required."})
+            return
+        try:
+            position = max(0.0, float(args[1]))
+        except ValueError:
+            emit({"ok": False, "error": "Invalid seek position."})
+            return
+        result = send_command(["seek", position, "absolute"], wait_for_response=True)
+        emit(result if result is not None else {"ok": False, "error": "The music player is not responding."})
+        return
+
+    if action == "stop":
+        result = send_command(["quit"], wait_for_response=False)
+        emit({"ok": result is not None})
+        return
+
+    emit({"ok": False, "error": "Unknown music action."})
+    sys.exit(2)
+
+
+if __name__ == "__main__":
+    try:
+        main()
+    except (OSError, RuntimeError) as error:
+        emit({"ok": False, "error": str(error)})
+        sys.exit(1)
