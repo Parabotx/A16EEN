@@ -109,9 +109,17 @@ Item {
             bluetoothReader.running = true
     }
 
+    function refreshVisibleMode() {
+        root.loadDetails()
+        if (root.mode === "wifi") {
+            root.run(["wifi", "rescan"])
+            wifiScanRefresh.restart()
+        }
+    }
+
     onActiveChanged: {
         if (root.active)
-            Qt.callLater(() => root.loadDetails())
+            Qt.callLater(() => root.refreshVisibleMode())
     }
 
     onModeChanged: {
@@ -119,7 +127,7 @@ Item {
         root.wifiSelectedSecurity = ""
         root.wifiPassword = ""
         if (root.active)
-            Qt.callLater(() => root.loadDetails())
+            Qt.callLater(() => root.refreshVisibleMode())
     }
 
     function parseKeyValue(text, key) {
@@ -548,6 +556,19 @@ Item {
                     id: wifiColumn
                     width: parent.width
                     spacing: 7
+
+                    Text {
+                        width: parent.width
+                        height: root.wifiNetworks.length === 0 ? 42 : 0
+                        visible: root.wifiNetworks.length === 0
+                        text: root.statusMessage === "READING SYSTEM"
+                            ? "Finding nearby networks…"
+                            : "No networks found. Refresh to scan again."
+                        color: root.textMuted
+                        font.pixelSize: 9
+                        horizontalAlignment: Text.AlignHCenter
+                        verticalAlignment: Text.AlignVCenter
+                    }
 
                     Repeater {
                         model: root.wifiNetworks
