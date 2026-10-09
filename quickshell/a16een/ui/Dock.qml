@@ -256,7 +256,7 @@ PanelWindow {
         // Stable outer surface prevents the pointer leaving the surface while
         // the pill opens/closes, which caused the repeated hover flicker.
         width: root.horizontalNavbar ? 98 : 82
-        height: root.horizontalNavbar ? 46 : 52
+        height: root.horizontalNavbar ? 40 : 52
 
         anchors {
             left: root.navbarPosition === "left"
@@ -266,10 +266,12 @@ PanelWindow {
         }
 
         margins {
-            left: 12
+            // Horizontal capsules sit on the screen edge like the navbar.
+            // In portrait orientation, align the capsule with the 44px rail.
+            left: 10
             right: 12
-            top: 12
-            bottom: 12
+            top: root.navbarPosition === "top" ? 0 : 12
+            bottom: root.navbarPosition === "bottom" ? 0 : 12
         }
 
         WlrLayershell.layer: WlrLayer.Overlay
@@ -316,7 +318,7 @@ PanelWindow {
             width: root.horizontalNavbar
                 ? (batteryHoverSensor.containsMouse ? 92 : 40)
                 : (batteryHoverSensor.containsMouse ? 76 : 38)
-            height: root.horizontalNavbar ? 40 : 46
+            height: root.horizontalNavbar ? 36 : 46
             radius: 13
             color: "#FFFFFF"
             border.width: 1
@@ -409,8 +411,8 @@ PanelWindow {
 
         // Keep the clock visually consistent with the navbar: a slim capsule
         // whose vertical width matches the workspace rail.
-        width: root.horizontalNavbar ? 76 : 44
-        height: root.horizontalNavbar ? 36 : 68
+        width: root.horizontalNavbar ? 72 : 44
+        height: root.horizontalNavbar ? 34 : 68
 
         anchors {
             left: root.horizontalNavbar || root.navbarPosition === "left"
@@ -420,10 +422,10 @@ PanelWindow {
         }
 
         margins {
-            left: 12
+            left: root.horizontalNavbar ? 0 : 10
             right: 12
-            top: 12
-            bottom: 12
+            top: root.navbarPosition === "top" ? 0 : 12
+            bottom: root.navbarPosition === "bottom" ? 0 : 12
         }
 
         WlrLayershell.layer: WlrLayer.Overlay
