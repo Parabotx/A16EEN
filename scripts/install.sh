@@ -37,6 +37,7 @@ xdg-desktop-portal-gtk
 xdg-utils
 qt6-imageformats
 qt6-svg
+qt6-multimedia
 hicolor-icon-theme
 adwaita-icon-theme
 power-profiles-daemon
