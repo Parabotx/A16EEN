@@ -182,7 +182,7 @@ jobs:
           grep -Fq 'def dancer_state()' scripts/a16een-music
           grep -Fq 'text: root.formatTime(root.playback.time)' quickshell/a16een/ui/MusicWidget.qml
           grep -Fq 'progressThumb' quickshell/a16een/ui/MusicWidget.qml
-          grep -Fq 'root.playback.duration - root.playback.time' quickshell/a16een/ui/MusicWidget.qml
+          grep -Fq 'text: root.formatTime(root.playback.duration)' quickshell/a16een/ui/MusicWidget.qml
           python3 - <<'PY'
           import json
           from pathlib import Path
