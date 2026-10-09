@@ -749,8 +749,13 @@ PanelWindow {
             id: powerMenuOutsideClick
             anchors.fill: parent
             z: 0
+            focus: true
             acceptedButtons: Qt.AllButtons
             onClicked: {
+                root.powerMenuOpen = false
+                root.pendingPowerAction = ""
+            }
+            Keys.onEscapePressed: {
                 root.powerMenuOpen = false
                 root.pendingPowerAction = ""
             }
@@ -877,10 +882,6 @@ PanelWindow {
             }
         }
 
-        Keys.onEscapePressed: {
-            root.powerMenuOpen = false
-            root.pendingPowerAction = ""
-        }
     }
 
     function triggerPowerAction(actionId) {
