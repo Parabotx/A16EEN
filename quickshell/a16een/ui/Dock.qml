@@ -675,8 +675,12 @@ PanelWindow {
             right: root.horizontalNavbar
                 ? navbarClockPanel.calendarFromQuickActions
                 : root.navbarPosition === "right"
-            top: root.navbarPosition !== "bottom"
-            bottom: root.navbarPosition === "bottom"
+            top: root.horizontalNavbar
+                ? root.navbarPosition !== "bottom"
+                : !navbarClockPanel.calendarFromQuickActions
+            bottom: root.horizontalNavbar
+                ? root.navbarPosition === "bottom"
+                : navbarClockPanel.calendarFromQuickActions
         }
 
         // A quick-tray calendar click opens beside that tray; a clock hover
