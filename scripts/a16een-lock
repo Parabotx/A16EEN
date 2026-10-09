@@ -2,147 +2,145 @@
 set -Eeuo pipefail
 umask 077
 
-# A16EEN lockscreen
-# Always use a real Wayland screen locker. This script never substitutes an
-# unlocked Quickshell overlay for authentication.
+STATE_DIR="${XDG_STATE_HOME:-$HOME/.local/state}/a16een"
+LOG_DIR="$STATE_DIR/logs"
+LOCK_LOG="$LOG_DIR/lock.log"
+mkdir -p "$LOG_DIR" 2>/dev/null || true
+log() { printf '[%s] %s\n' "$(date '+%Y-%m-%d %H:%M:%S')" "$*" >>"$LOCK_LOG" 2>/dev/null || true; }
 
 if ! command -v swaylock >/dev/null 2>&1; then
+    log "ERROR: swaylock is not installed."
     printf '%s\n' "A16EEN: swaylock is not installed. Run a16een-update to repair dependencies." >&2
     exit 127
 fi
 
 SWAYLOCK_HELP="$(swaylock --help 2>&1 || true)"
-# swaylock-effects supports richer state colors. Keep these options
-# separate so standard swaylock never receives flags it cannot parse (which
-# would make the lock command exit immediately).
-EFFECTS_ARGS=(
-    --indicator
-    --indicator-radius 46
-    --indicator-thickness 4
-    --show-failed-attempts
-    --font "Inter"
-    --font-size 16
-    --line-color 00000000
-    --separator-color 00000000
-    --inside-color 111722D8
-    --inside-clear-color 21303EE8
-    --inside-ver-color 22394BE8
-    --inside-wrong-color 48242BE8
-    --ring-color D7B56D
-    --ring-clear-color F5F2EA
-    --ring-ver-color 86C8F5
-    --ring-wrong-color EF858B
-    --key-hl-color F5F2EA
-    --bs-hl-color EF858B
-    --text-color F5F2EA
-    --text-clear-color F5F2EA
-    --text-ver-color 86C8F5
-    --text-wrong-color EF858B
-)
+READY_FD_SUPPORTED=0
+grep -q -- '--ready-fd' <<<"$SWAYLOCK_HELP" && READY_FD_SUPPORTED=1
 
-# Use only widely supported options for standard swaylock.
-FALLBACK_ARGS=(
-    --indicator
-    --indicator-radius 46
-    --indicator-thickness 4
-    --show-failed-attempts
-    --font "Inter"
-    --font-size 16
-    --inside-color 111722
-    --ring-color D7B56D
-    --key-hl-color F5F2EA
-    --bs-hl-color EF858B
-    --text-color F5F2EA
-)
+RUNTIME_ROOT="${XDG_RUNTIME_DIR:-${TMPDIR:-/tmp}}"
+LOCK_DIR="$(mktemp -d "$RUNTIME_ROOT/a16een-lock.XXXXXX")"
+READY_FILE="$LOCK_DIR/ready"
+RAW_IMAGE="$LOCK_DIR/desktop.png"
+LOCK_IMAGE="$LOCK_DIR/lockscreen.png"
+trap 'rm -rf -- "$LOCK_DIR"' EXIT
+trap 'exit 129' HUP
+trap 'exit 130' INT
+trap 'exit 143' TERM
 
-# swaylock-effects supports a real-time clock and captures/blur the screen
-# natively. Prefer it when installed, but keep the official swaylock fallback.
+# Emit a marker only when swaylock confirms the session is secure. The shell
+# keeps its UI visible while optional image preparation or a failed command runs.
+run_locker() {
+    : >"$READY_FILE"
+    local pid=0 tries=0 status=0 ready_sent=0
+
+    if (( READY_FD_SUPPORTED )); then
+        "$@" --ready-fd 3 3>"$READY_FILE" &
+    else
+        "$@" &
+    fi
+    pid=$!
+
+    while (( tries < 200 )); do
+        if (( READY_FD_SUPPORTED )) && [[ -s "$READY_FILE" ]]; then
+            printf '%s\n' "A16EEN_LOCK_READY"
+            log "Locker signaled ready."
+            ready_sent=1
+            break
+        fi
+        if (( ! READY_FD_SUPPORTED && tries >= 5 )) && kill -0 "$pid" 2>/dev/null; then
+            printf '%s\n' "A16EEN_LOCK_READY"
+            log "Locker passed legacy startup check."
+            ready_sent=1
+            break
+        fi
+        kill -0 "$pid" 2>/dev/null || break
+        sleep 0.05
+        tries=$((tries + 1))
+    done
+
+    if wait "$pid"; then status=0; else status=$?; fi
+    if (( status != 0 )); then log "Locker failed (status $status): $*"; fi
+    if (( ! ready_sent && status == 0 )); then log "Locker exited before ready marker."; fi
+    return "$status"
+}
+
+# Optional swaylock-effects profile. A rejected flag falls through to the
+# standard profile instead of ending the lock request.
 if grep -q -- '--screenshots' <<<"$SWAYLOCK_HELP" \
     && grep -q -- '--effect-blur' <<<"$SWAYLOCK_HELP" \
     && grep -q -- '--clock' <<<"$SWAYLOCK_HELP"; then
-    exec swaylock \
-        --screenshots \
-        --clock \
-        --timestr '%H:%M' \
-        --datestr '%A, %d %B %Y' \
-        --indicator-idle-visible \
-        --effect-blur 9x5 \
-        --effect-vignette 0.5:0.5 \
-        --fade-in 0.25 \
-        "${EFFECTS_ARGS[@]}"
+    log "Trying swaylock-effects profile."
+    if run_locker swaylock \
+        --screenshots --clock --timestr '%H:%M' --datestr '%A, %d %B %Y' \
+        --indicator-idle-visible --effect-blur 9x5 --effect-vignette 0.5:0.5 --fade-in 0.25 \
+        --indicator --indicator-radius 46 --indicator-thickness 4 --show-failed-attempts \
+        --font "Inter" --font-size 16 --line-color 00000000 --separator-color 00000000 \
+        --inside-color 111722D8 --inside-clear-color 21303EE8 --inside-ver-color 22394BE8 \
+        --inside-wrong-color 48242BE8 --ring-color D7B56D --ring-clear-color F5F2EA \
+        --ring-ver-color 86C8F5 --ring-wrong-color EF858B --key-hl-color F5F2EA \
+        --bs-hl-color EF858B --text-color F5F2EA --text-clear-color F5F2EA \
+        --text-ver-color 86C8F5 --text-wrong-color EF858B; then
+        exit 0
+    fi
+    log "Effects profile failed; trying standard swaylock."
 fi
 
-# Official swaylock has a smaller feature set, so prepare a tasteful blurred
-# screenshot with a clock/date baked into the background before locking.
-# The temporary directory is user-owned, private, and removed after unlock.
-RUNTIME_ROOT="${XDG_RUNTIME_DIR:-${TMPDIR:-/tmp}}"
-LOCK_DIR="$(mktemp -d "$RUNTIME_ROOT/a16een-lock.XXXXXX")"
-trap 'rm -rf -- "$LOCK_DIR"' EXIT HUP INT TERM
-
-RAW_IMAGE="$LOCK_DIR/desktop.png"
-LOCK_IMAGE="$LOCK_DIR/lockscreen.png"
-
+# Generate a themed image when available. Every step is best-effort, never a
+# reason to abort before attempting a real screen lock.
 if command -v grim >/dev/null 2>&1; then
     grim "$RAW_IMAGE" >/dev/null 2>&1 || rm -f -- "$RAW_IMAGE"
 fi
-
 if command -v magick >/dev/null 2>&1; then
     if [[ ! -s "$RAW_IMAGE" ]]; then
-        magick -size 1920x1080 gradient:'#101720-#29364A' "$RAW_IMAGE"
+        magick -size 1920x1080 gradient:'#101720-#29364A' "$RAW_IMAGE" >/dev/null 2>&1 || rm -f -- "$RAW_IMAGE"
     fi
-
-    DIMENSIONS="$(magick identify -format '%w %h' "$RAW_IMAGE")"
-    read -r IMG_WIDTH IMG_HEIGHT <<< "$DIMENSIONS"
-    [[ "$IMG_WIDTH" =~ ^[0-9]+$ && "$IMG_HEIGHT" =~ ^[0-9]+$ ]] || {
-        IMG_WIDTH=1920
-        IMG_HEIGHT=1080
-    }
-
-    CLOCK_SIZE=$((IMG_HEIGHT / 10))
-    DATE_SIZE=$((IMG_HEIGHT / 48))
-    LABEL_SIZE=$((IMG_HEIGHT / 90))
-    (( CLOCK_SIZE < 54 )) && CLOCK_SIZE=54
-    (( CLOCK_SIZE > 126 )) && CLOCK_SIZE=126
-    (( DATE_SIZE < 17 )) && DATE_SIZE=17
-    (( LABEL_SIZE < 11 )) && LABEL_SIZE=11
-
-    CLOCK_Y=$((IMG_HEIGHT * 20 / 100))
-    DATE_Y=$((IMG_HEIGHT * 33 / 100))
-    LABEL_Y=$((IMG_HEIGHT * 77 / 100))
-
-    FONT_FILE="$(fc-match -f '%{file}' 'Inter:style=SemiBold' 2>/dev/null || true)"
-    [[ -r "$FONT_FILE" ]] || FONT_FILE="$(fc-match -f '%{file}' 'sans-serif' 2>/dev/null || true)"
-    FONT_ARGS=()
-    if [[ -r "$FONT_FILE" ]]; then
-        FONT_ARGS=(-font "$FONT_FILE")
-    fi
-
-    CURRENT_TIME="$(date '+%H:%M')"
-    CURRENT_DATE="$(date '+%A  ·  %d %B %Y')"
-
-    magick "$RAW_IMAGE" \
-        -resize "${IMG_WIDTH}x${IMG_HEIGHT}^" \
-        -gravity center -extent "${IMG_WIDTH}x${IMG_HEIGHT}" \
-        -blur 0x18 \
-        -fill '#0B101A' -colorize 38 \
-        -gravity north \
-        "${FONT_ARGS[@]}" \
-        -pointsize "$CLOCK_SIZE" -fill '#F5F2EA' \
-        -annotate "+0+$CLOCK_Y" "$CURRENT_TIME" \
-        -pointsize "$DATE_SIZE" -fill '#D7B56D' \
-        -annotate "+0+$DATE_Y" "$CURRENT_DATE" \
-        -pointsize "$LABEL_SIZE" -fill '#C0C8D3' \
-        -annotate "+0+$LABEL_Y" 'A16EEN  /  YOUR SESSION IS SECURE' \
-        "$LOCK_IMAGE"
-else
-    # Degrade gracefully if ImageMagick was removed after installation.
     if [[ -s "$RAW_IMAGE" ]]; then
-        LOCK_IMAGE="$RAW_IMAGE"
+        IMG_WIDTH=1920 IMG_HEIGHT=1080
+        DIMENSIONS="$(magick identify -format '%w %h' "$RAW_IMAGE" 2>/dev/null || true)"
+        if [[ "$DIMENSIONS" =~ ^([0-9]+)[[:space:]]+([0-9]+)$ ]]; then
+            IMG_WIDTH="${BASH_REMATCH[1]}" IMG_HEIGHT="${BASH_REMATCH[2]}"
+        fi
+        CLOCK_SIZE=$((IMG_HEIGHT / 10)); DATE_SIZE=$((IMG_HEIGHT / 48)); LABEL_SIZE=$((IMG_HEIGHT / 90))
+        (( CLOCK_SIZE < 54 )) && CLOCK_SIZE=54
+        (( CLOCK_SIZE > 126 )) && CLOCK_SIZE=126
+        (( DATE_SIZE < 17 )) && DATE_SIZE=17
+        (( LABEL_SIZE < 11 )) && LABEL_SIZE=11
+        FONT_FILE="$(fc-match -f '%{file}' 'Inter:style=SemiBold' 2>/dev/null || true)"
+        [[ -r "$FONT_FILE" ]] || FONT_FILE="$(fc-match -f '%{file}' 'sans-serif' 2>/dev/null || true)"
+        FONT_ARGS=()
+        if [[ -r "$FONT_FILE" ]]; then FONT_ARGS=(-font "$FONT_FILE"); fi
+
+        if magick "$RAW_IMAGE" -resize "${IMG_WIDTH}x${IMG_HEIGHT}^" \
+            -gravity center -extent "${IMG_WIDTH}x${IMG_HEIGHT}" -blur 0x18 \
+            -fill '#0B101A' -colorize 38 -gravity north "${FONT_ARGS[@]}" \
+            -pointsize "$CLOCK_SIZE" -fill '#F5F2EA' -annotate "+0+$((IMG_HEIGHT * 20 / 100))" "$(date '+%H:%M')" \
+            -pointsize "$DATE_SIZE" -fill '#D7B56D' -annotate "+0+$((IMG_HEIGHT * 33 / 100))" "$(date '+%A  ·  %d %B %Y')" \
+            -pointsize "$LABEL_SIZE" -fill '#C0C8D3' -annotate "+0+$((IMG_HEIGHT * 77 / 100))" 'A16EEN  /  YOUR SESSION IS SECURE' \
+            "$LOCK_IMAGE" >/dev/null 2>&1; then
+            log "Prepared themed lock image."
+        else
+            rm -f -- "$LOCK_IMAGE"
+            log "Image preparation failed; using solid-color fallback."
+        fi
     fi
 fi
 
 if [[ -s "$LOCK_IMAGE" ]]; then
-    swaylock --image "$LOCK_IMAGE" --scaling fill "${FALLBACK_ARGS[@]}"
-else
-    swaylock --color 101720 "${FALLBACK_ARGS[@]}"
+    if run_locker swaylock --image "$LOCK_IMAGE" --scaling fill \
+        --indicator --indicator-radius 46 --indicator-thickness 4 --show-failed-attempts \
+        --font "Inter" --font-size 16 --inside-color 111722 --ring-color D7B56D \
+        --key-hl-color F5F2EA --bs-hl-color EF858B --text-color F5F2EA; then
+        exit 0
+    fi
+    log "Themed standard lock failed; trying plain swaylock."
 fi
+
+# Minimal fallback relies only on swaylock's core color option. This still
+# locks securely even if image tools, fonts, or decorative flags are broken.
+log "Starting minimal secure swaylock fallback."
+if run_locker swaylock --color 101720; then exit 0; fi
+
+log "ERROR: every swaylock launch attempt failed."
+printf '%s\n' "A16EEN: swaylock could not start. See $LOCK_LOG" >&2
+exit 1
