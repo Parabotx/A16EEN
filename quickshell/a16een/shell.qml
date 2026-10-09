@@ -161,6 +161,7 @@ ShellRoot {
     property bool pulseWidgetEnabled: false
     property bool workspaceWidgetEnabled: false
     property bool tasksWidgetEnabled: false
+    property bool musicWidgetEnabled: false
     property bool timeUse24Hour: true
     property bool timeShowSeconds: false
 
@@ -777,6 +778,15 @@ ShellRoot {
     Variants {
         model: Quickshell.screens
 
+        MusicWidget {
+            modelData: modelData
+            widgetEnabled: root.musicWidgetEnabled && !root.secureLockActive
+        }
+    }
+
+    Variants {
+        model: Quickshell.screens
+
         Dock {
             modelData: modelData
             workspaces: root.workspaces
@@ -936,6 +946,7 @@ ShellRoot {
         pulseWidgetEnabled: root.pulseWidgetEnabled
         workspaceWidgetEnabled: root.workspaceWidgetEnabled
         tasksWidgetEnabled: root.tasksWidgetEnabled
+        musicWidgetEnabled: root.musicWidgetEnabled
         timeUse24Hour: root.timeUse24Hour
         timeShowSeconds: root.timeShowSeconds
         doNotDisturb: root.doNotDisturb
@@ -1012,6 +1023,7 @@ ShellRoot {
         onPulseWidgetEnabledRequested: root.pulseWidgetEnabled = enabled
         onWorkspaceWidgetEnabledRequested: root.workspaceWidgetEnabled = enabled
         onTasksWidgetEnabledRequested: root.tasksWidgetEnabled = enabled
+        onMusicWidgetEnabledRequested: root.musicWidgetEnabled = enabled
         onTimeUse24HourRequested: root.timeUse24Hour = enabled
         onTimeShowSecondsRequested: root.timeShowSeconds = enabled
 
