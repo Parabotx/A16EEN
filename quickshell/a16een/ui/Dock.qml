@@ -738,12 +738,8 @@ PanelWindow {
         aboveWindows: true
         exclusionMode: ExclusionMode.Ignore
         exclusiveZone: 0
-        width: root.horizontalNavbar
-            ? (root.utilitiesExpanded ? 104 : 38)
-            : 38
-        height: root.horizontalNavbar
-            ? 38
-            : (root.utilitiesExpanded ? 104 : 38)
+        width: root.utilitiesExpanded ? 104 : 38
+        height: 38
 
         anchors {
             left: root.horizontalNavbar || root.navbarPosition === "left"
@@ -782,11 +778,14 @@ PanelWindow {
                 anchors.margins: 4
                 rowSpacing: 4
                 columnSpacing: 4
-                columns: root.horizontalNavbar ? (root.utilitiesExpanded ? 3 : 1) : 1
-                rows: root.horizontalNavbar ? 1 : (root.utilitiesExpanded ? 3 : 1)
+                columns: root.utilitiesExpanded ? 3 : 1
+                rows: 1
 
                 Rectangle {
                     id: utilitiesMainButton
+                    Grid.column: !root.horizontalNavbar
+                        && root.navbarPosition === "right"
+                        && root.utilitiesExpanded ? 2 : 0
                     width: 28
                     height: 28
                     radius: 9
@@ -823,6 +822,9 @@ PanelWindow {
                     delegate: Rectangle {
                         id: utilityShortcut
                         required property var modelData
+                        Grid.column: !root.horizontalNavbar && root.navbarPosition === "right"
+                            ? (utilityShortcut.modelData.mode === "wifi" ? 0 : 1)
+                            : (utilityShortcut.modelData.mode === "wifi" ? 1 : 2)
                         width: 28
                         height: 28
                         radius: 9
