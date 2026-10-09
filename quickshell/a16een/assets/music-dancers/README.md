@@ -20,8 +20,6 @@ The installer copies these committed files to each user's `~/.config/a16een/quic
 
 ## Lottie compatibility
 
-These must be **Lottie animation JSON exports**, not arbitrary JSON. Qt's Lottie player supports a subset of Lottie; shape-layer animations are the safest choice. Avoid expressions and external image/font assets where possible. Keep animations lightweight because they are software-rendered.
+The five bundled dancer files are generated as lightweight **shape-layer-only** animations sized for the 98×76 music-card stage. They intentionally avoid pre-compositions, image/text assets, expressions, masks, and unsupported layer types because Qt's `LottieAnimation` renderer does not implement the full Lottie specification.
 
-The Lottie renderer is **optional**. The music controls and the rest of A16EEN work without it; when `qt6-lottie` is absent, A16EEN skips loading the dancer component entirely.
-
-To enable the dancers, install `qt6-lottie` as part of a normal Arch Linux full system upgrade (for example, `sudo pacman -Syu qt6-lottie`). Arch is rolling-release, so avoid installing it with a partial-upgrade workflow.
+When replacing a dancer, keep it shape-only, keep the canvas close to 98×76, and check that it contains no `assets`, no `chars`, and only `ty: 4` shape layers. A valid JSON file is not automatically compatible with Qt's Lottie renderer.
