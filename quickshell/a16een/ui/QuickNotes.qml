@@ -73,10 +73,15 @@ PanelWindow {
     }
 
     onOpenedChanged: {
-        if (opened)
+        if (opened && root.storageReady)
             Qt.callLater(() => notesEditor.forceActiveFocus())
-        else
+        else if (!opened)
             root.saveNow()
+    }
+
+    onStorageReadyChanged: {
+        if (storageReady && opened)
+            Qt.callLater(() => notesEditor.forceActiveFocus())
     }
 
     Item {
@@ -125,7 +130,7 @@ PanelWindow {
 
                     Column {
                         anchors.verticalCenter: parent.verticalCenter
-                        width: parent.width - 114
+                        width: parent.width - 164
                         spacing: 3
 
                         Text {
@@ -240,6 +245,7 @@ PanelWindow {
                         persistentSelection: true
                         clip: true
                         activeFocusOnPress: true
+                        enabled: root.storageReady
                         verticalAlignment: TextEdit.AlignTop
 
                         onTextChanged: {
@@ -278,7 +284,7 @@ PanelWindow {
                         font.letterSpacing: 0.8
                     }
 
-                    Item { width: 1; height: 1; Layout.fillWidth: true }
+                    Item { width: Math.max(1, parent.width - 230); height: 1 }
 
                     Text {
                         text: root.noteText.length + " characters"
