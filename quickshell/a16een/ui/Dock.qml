@@ -1,5 +1,4 @@
 import QtQuick
-import QtQuick.Effects
 import Quickshell
 import Quickshell.Io
 import Quickshell.Wayland
@@ -232,10 +231,8 @@ PanelWindow {
         }
     }
 
-    // Compact battery capsule. Horizontal docks use a short horizontal
-    // capsule; vertical docks use a narrow vertical capsule at the matching
-    // bottom corner. The percentage is normalized for Quickshell versions
-    // that expose the device ratio as 0..1 instead of 0..100.
+    // Compact, hover-expandable battery capsule. For top/bottom navbars it
+    // uses a horizontal battery; left/right navbars use an upright battery.
     PanelWindow {
         id: batteryStatusPanel
         screen: root.modelData
@@ -246,8 +243,15 @@ PanelWindow {
         aboveWindows: true
         exclusionMode: ExclusionMode.Ignore
         exclusiveZone: 0
-        width: root.horizontalNavbar ? 82 : 48
-        height: root.horizontalNavbar ? 38 : 62
+
+        // The capsule grows away from its anchored screen corner. The battery
+        // stays pinned to the screen-facing end while the percentage appears.
+        width: root.horizontalNavbar
+            ? (batteryHover.containsMouse ? 82 : 32)
+            : (batteryHover.containsMouse ? 74 : 32)
+        height: root.horizontalNavbar
+            ? 32
+            : (batteryHover.containsMouse ? 42 : 38)
 
         anchors {
             left: root.navbarPosition !== "right"
@@ -274,20 +278,22 @@ PanelWindow {
             if (!Number.isFinite(raw))
                 return 0
 
-            const percent = raw <= 1 ? raw * 100 : raw
+            // Quickshell reports the percentage on a 0..100 scale. Keep
+            // compatibility with builds/devices exposing a 0..1 fraction.
+            const percent = raw > 0 && raw <= 1 ? raw * 100 : raw
             return Math.max(0, Math.min(100, Math.round(percent)))
         }
 
         function batteryIconColor() {
             const state = UPower.displayDevice.state
 
-            // Charging takes priority so the icon goes green when power is
-            // flowing into the battery, even when the charge is low.
             if (state === UPowerDeviceState.Charging
                 || state === UPowerDeviceState.PendingCharge)
                 return "#16A34A"
 
-            if (batteryStatusPanel.batteryPercent() < 20 && UPower.onBattery)
+            if (state !== UPowerDeviceState.FullyCharged
+                && batteryStatusPanel.batteryPercent() < 20
+                && UPower.onBattery)
                 return "#E5484D"
 
             return "#111318"
@@ -295,7 +301,7 @@ PanelWindow {
 
         Rectangle {
             anchors.fill: parent
-            radius: 13
+            radius: 12
             color: "#FFFFFF"
             border.width: 1
             border.color: "#D9DEE5"
@@ -303,72 +309,49 @@ PanelWindow {
             Rectangle {
                 anchors.fill: parent
                 anchors.margins: -3
-                radius: 16
+                radius: 15
                 color: "#10000000"
                 z: -1
             }
 
-            Row {
-                anchors.centerIn: parent
-                spacing: 6
-                visible: root.horizontalNavbar
-
-                Image {
-                    width: 18
-                    height: 18
-                    anchors.verticalCenter: parent.verticalCenter
-                    source: Qt.resolvedUrl("../assets/icons/lucide-battery-dark.svg")
-                    fillMode: Image.PreserveAspectFit
-                    sourceSize.width: 18
-                    sourceSize.height: 18
-                    smooth: true
-                    asynchronous: true
-                    layer.enabled: true
-                    layer.effect: MultiEffect {
-                        colorization: 1
-                        colorizationColor: batteryStatusPanel.batteryIconColor()
-                    }
-                }
-
-                Text {
-                    anchors.verticalCenter: parent.verticalCenter
-                    text: batteryStatusPanel.batteryPercent() + "%"
-                    color: "#111318"
-                    font.pixelSize: 13
-                    font.weight: Font.DemiBold
-                }
+            BatteryGlyph {
+                id: batteryGlyph
+                horizontal: root.horizontalNavbar
+                percentage: batteryStatusPanel.batteryPercent()
+                tint: batteryStatusPanel.batteryIconColor()
+                width: root.horizontalNavbar ? 25 : 18
+                height: root.horizontalNavbar ? 16 : 27
+                x: root.horizontalNavbar
+                    ? 5
+                    : (batteryHover.containsMouse
+                        ? (root.navbarPosition === "right" ? parent.width - width - 5 : 5)
+                        : Math.round((parent.width - width) / 2))
+                y: Math.round((parent.height - height) / 2)
             }
 
-            Column {
-                anchors.centerIn: parent
-                spacing: 3
-                visible: !root.horizontalNavbar
+            Text {
+                visible: batteryHover.containsMouse
+                x: root.horizontalNavbar
+                    ? 35
+                    : (root.navbarPosition === "right" ? 5 : 28)
+                y: Math.round((parent.height - height) / 2)
+                width: root.horizontalNavbar ? 42 : 40
+                text: batteryStatusPanel.batteryPercent() + "%"
+                color: "#111318"
+                font.pixelSize: root.horizontalNavbar ? 12 : 11
+                font.weight: Font.DemiBold
+                horizontalAlignment: root.navbarPosition === "right" && !root.horizontalNavbar
+                    ? Text.AlignLeft : Text.AlignLeft
+                verticalAlignment: Text.AlignVCenter
+            }
 
-                Image {
-                    width: 21
-                    height: 21
-                    anchors.horizontalCenter: parent.horizontalCenter
-                    source: Qt.resolvedUrl("../assets/icons/lucide-battery-dark.svg")
-                    fillMode: Image.PreserveAspectFit
-                    sourceSize.width: 21
-                    sourceSize.height: 21
-                    smooth: true
-                    asynchronous: true
-                    layer.enabled: true
-                    layer.effect: MultiEffect {
-                        colorization: 1
-                        colorizationColor: batteryStatusPanel.batteryIconColor()
-                    }
-                }
-
-                Text {
-                    width: batteryStatusPanel.width - 6
-                    horizontalAlignment: Text.AlignHCenter
-                    text: batteryStatusPanel.batteryPercent() + "%"
-                    color: "#111318"
-                    font.pixelSize: 12
-                    font.weight: Font.DemiBold
-                }
+            MouseArea {
+                id: batteryHover
+                anchors.fill: parent
+                hoverEnabled: true
+                acceptedButtons: Qt.NoButton
+                cursorShape: Qt.ArrowCursor
+                z: 10
             }
         }
     }
@@ -489,6 +472,61 @@ PanelWindow {
                     }
                 }
             }
+        }
+    }
+
+    component BatteryGlyph: Item {
+        id: glyphRoot
+
+        property bool horizontal: true
+        property real percentage: 0
+        property color tint: "#111318"
+
+        readonly property real bodyX: horizontal ? 0 : 3
+        readonly property real bodyY: horizontal ? 2 : 4
+        readonly property real bodyWidth: horizontal ? width - 4 : width - 6
+        readonly property real bodyHeight: horizontal ? height - 4 : height - 6
+        readonly property real innerWidth: Math.max(0, bodyWidth - 4)
+        readonly property real innerHeight: Math.max(0, bodyHeight - 4)
+        readonly property real fillRatio: Math.max(0, Math.min(100, percentage)) / 100
+
+        // Fill is drawn inside the battery body, proportional to actual charge.
+        Rectangle {
+            x: glyphRoot.bodyX + 2
+            y: glyphRoot.horizontal
+                ? glyphRoot.bodyY + 2
+                : glyphRoot.bodyY + 2 + glyphRoot.innerHeight * (1 - glyphRoot.fillRatio)
+            width: glyphRoot.horizontal
+                ? glyphRoot.innerWidth * glyphRoot.fillRatio
+                : glyphRoot.innerWidth
+            height: glyphRoot.horizontal
+                ? glyphRoot.innerHeight
+                : glyphRoot.innerHeight * glyphRoot.fillRatio
+            color: glyphRoot.tint
+            radius: 1
+            z: 0
+        }
+
+        Rectangle {
+            x: glyphRoot.bodyX
+            y: glyphRoot.bodyY
+            width: glyphRoot.bodyWidth
+            height: glyphRoot.bodyHeight
+            color: "transparent"
+            border.width: 1.5
+            border.color: glyphRoot.tint
+            radius: 2.5
+            z: 1
+        }
+
+        Rectangle {
+            x: glyphRoot.horizontal ? width - 3 : Math.round((glyphRoot.width - width) / 2)
+            y: glyphRoot.horizontal ? Math.round((glyphRoot.height - height) / 2) : 1
+            width: glyphRoot.horizontal ? 3 : 4
+            height: glyphRoot.horizontal ? 4 : 3
+            color: glyphRoot.tint
+            radius: 1
+            z: 2
         }
     }
 
