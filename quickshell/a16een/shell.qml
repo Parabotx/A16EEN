@@ -729,7 +729,6 @@ ShellRoot {
         }
 
         onTasksRequested: root.openQuickTasks()
-        onTasksHoverRequested: root.openQuickTasks()
 
         onPresetsRequested: {
             root.quickNotesOpen = false
