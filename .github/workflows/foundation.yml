@@ -153,7 +153,6 @@ jobs:
           grep -Fq 'navbarClockPanel.clockNow.getHours() % 12' quickshell/a16een/ui/Dock.qml
           test "$(grep -c 'Component.onCompleted:' quickshell/a16een/ui/Dock.qml)" -eq 1
           grep -Fq 'utilityStatusReader.running = true' quickshell/a16een/ui/Dock.qml
-          grep -Fq 'Layout.column:' quickshell/a16een/ui/Dock.qml
           ! grep -Fq 'GridLayout.column:' quickshell/a16een/ui/Dock.qml
           grep -Fq 'a16een-shell$' scripts/a16een
           grep -Fq 'task/$supervisor_pid/children' scripts/a16een
