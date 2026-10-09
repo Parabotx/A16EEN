@@ -18,6 +18,10 @@ PanelWindow {
     property bool syncingEditor: false
     property var notes: []
     property string selectedNoteId: ""
+    property string noteMenuNoteId: ""
+    property bool noteMenuOpen: false
+    property real noteMenuX: 0
+    property real noteMenuY: 0
 
     // The passcode is hashed before it is written to disk. This is a local
     // interface lock, not encryption of the note file itself.
@@ -46,6 +50,13 @@ PanelWindow {
         root.navbarPosition === "top" || root.navbarPosition === "bottom"
     readonly property var selectedNote:
         root.notes.find(note => String(note.id) === root.selectedNoteId) || null
+    readonly property var noteMenuNote:
+        root.notes.find(note => String(note.id) === root.noteMenuNoteId) || null
+    readonly property var orderedNotes: {
+        const copy = root.notes.slice()
+        copy.sort((a, b) => Number(Boolean(b.pinned)) - Number(Boolean(a.pinned)))
+        return copy
+    }
     readonly property real screenWidth: root.modelData ? root.modelData.width : 1920
     readonly property real screenHeight: root.modelData ? root.modelData.height : 1080
     readonly property int popupWidth: root.sidebarVisible ? 372 : 294
@@ -247,7 +258,8 @@ PanelWindow {
             title: "Quick note",
             body: "",
             alignment: "left",
-            attachments: []
+            attachments: [],
+            pinned: false
         }
         root.notes = [note]
         root.selectedNoteId = note.id
@@ -283,9 +295,12 @@ PanelWindow {
                                     id: String(item.id || Date.now()),
                                     type: item.type === "audio" ? "audio" : "image",
                                     path: String(item.path),
-                                    title: String(item.title || "")
+                                    title: String(item.title || ""),
+                                    inline: Boolean(item.inline),
+                                    position: Number.isFinite(Number(item.position)) ? Number(item.position) : -1
                                 }))
-                            : []
+                            : [],
+                        pinned: Boolean(note.pinned)
                     }))
                 root.selectedNoteId = String(parsed.selectedNoteId || "")
                 root.passcodeHash = String(parsed.passcodeHash || "")
@@ -301,7 +316,8 @@ PanelWindow {
                     title: "Quick note",
                     body: root.escapeHtml(raw).replace(/\n/g, "<br>"),
                     alignment: "left",
-                    attachments: []
+                    attachments: [],
+                    pinned: false
                 }]
                 : []
             root.selectedNoteId = root.notes.length ? root.notes[0].id : ""
@@ -313,7 +329,8 @@ PanelWindow {
                 title: "Quick note",
                 body: "",
                 alignment: "left",
-                attachments: []
+                attachments: [],
+                pinned: false
             }
             root.notes = [note]
             root.selectedNoteId = note.id
@@ -433,9 +450,50 @@ PanelWindow {
     }
 
     function selectNote(id) {
+        root.noteMenuOpen = false
         root.selectedNoteId = String(id)
         root.queueSave()
         Qt.callLater(root.syncEditor)
+    }
+
+    function openNoteMenu(id, row) {
+        root.noteMenuNoteId = String(id)
+        const point = row.mapToItem(notePopup, Math.max(0, row.width - 118), row.height + 3)
+        root.noteMenuX = Math.max(8, Math.min(root.screenWidth - 124, root.popupX + point.x))
+        root.noteMenuY = Math.max(8, Math.min(root.screenHeight - 82, root.popupY + point.y))
+        root.noteMenuOpen = true
+    }
+
+    function togglePinnedNote() {
+        const id = root.noteMenuNoteId
+        root.notes = root.notes.map(note => {
+            if (String(note.id) !== id)
+                return note
+            return {
+                id: note.id,
+                title: note.title,
+                body: note.body,
+                alignment: note.alignment || "left",
+                attachments: note.attachments || [],
+                pinned: !Boolean(note.pinned)
+            }
+        })
+        root.noteMenuOpen = false
+        root.queueSave()
+    }
+
+    function deleteMenuNote() {
+        const id = root.noteMenuNoteId
+        root.notes = root.notes.filter(note => String(note.id) !== id)
+        if (String(root.selectedNoteId) === id) {
+            root.selectedNoteId = root.notes.length ? String(root.notes[0].id) : ""
+            if (root.notes.length === 0)
+                root.addNote()
+            else
+                Qt.callLater(root.syncEditor)
+        }
+        root.noteMenuOpen = false
+        root.queueSave()
     }
 
     function addNote() {
@@ -465,7 +523,8 @@ PanelWindow {
                 title: note.title,
                 body: note.body,
                 alignment: note.alignment || "left",
-                attachments: note.attachments || []
+                attachments: note.attachments || [],
+                pinned: Boolean(note.pinned)
             }
             next[fieldName] = fieldName === "body"
                 ? root.cleanRichHtml(value)
@@ -513,7 +572,8 @@ PanelWindow {
                 title: note.title,
                 body: nextBody,
                 alignment: note.alignment || "left",
-                attachments: [...(note.attachments || []), item]
+                attachments: [...(note.attachments || []), item],
+                pinned: Boolean(note.pinned)
             }
         })
 
@@ -541,7 +601,8 @@ PanelWindow {
                 title: note.title,
                 body: note.body,
                 alignment: note.alignment || "left",
-                attachments: (note.attachments || []).filter(item => String(item.id) !== String(id))
+                attachments: (note.attachments || []).filter(item => String(item.id) !== String(id)),
+                pinned: Boolean(note.pinned)
             }
         })
         root.queueSave()
@@ -1027,7 +1088,7 @@ PanelWindow {
                                 height: parent.height - 31
                                 clip: true
                                 spacing: 4
-                                model: root.notes
+                                model: root.orderedNotes
                                 delegate: Rectangle {
                                     id: noteRow
                                     required property var modelData
@@ -1044,7 +1105,8 @@ PanelWindow {
                                         spacing: 3
                                         Text {
                                             width: parent.width
-                                            text: noteRow.modelData.title || "Untitled note"
+                                            text: (noteRow.modelData.pinned ? "★ " : "")
+                                                + (noteRow.modelData.title || "Untitled note")
                                             color: "#252C35"
                                             font.pixelSize: 10
                                             font.weight: Font.Medium
@@ -1063,7 +1125,14 @@ PanelWindow {
                                         anchors.fill: parent
                                         hoverEnabled: true
                                         cursorShape: Qt.PointingHandCursor
-                                        onClicked: root.selectNote(noteRow.modelData.id)
+                                        onClicked: {
+                                            root.noteMenuOpen = false
+                                            root.selectNote(noteRow.modelData.id)
+                                        }
+                                        onDoubleClicked: {
+                                            root.selectNote(noteRow.modelData.id)
+                                            root.openNoteMenu(noteRow.modelData.id, noteRow)
+                                        }
                                     }
                                 }
                             }
@@ -1492,4 +1561,104 @@ PanelWindow {
             }
         }
     }
+
+    // Pin/delete menu for a sidebar note, opened by double-clicking its row.
+    Item {
+        id: noteContextMenu
+        x: root.noteMenuX
+        y: root.noteMenuY
+        width: 116
+        height: 78
+        z: 10
+        visible: root.noteMenuOpen && root.opened && root.accessGranted && root.noteMenuNote !== null
+
+        Rectangle {
+            anchors.fill: parent
+            radius: 12
+            color: "#FFFFFF"
+            border.width: 1
+            border.color: "#D9DEE5"
+
+            Rectangle {
+                anchors.fill: parent
+                anchors.margins: -3
+                radius: 15
+                color: "#16000000"
+                z: -1
+            }
+
+            Column {
+                anchors.fill: parent
+                anchors.margins: 5
+                spacing: 3
+
+                Rectangle {
+                    width: parent.width
+                    height: 30
+                    radius: 8
+                    color: pinNoteHover.containsMouse ? "#F0F3F6" : "transparent"
+
+                    Row {
+                        anchors.fill: parent
+                        anchors.leftMargin: 8
+                        spacing: 7
+                        Text {
+                            anchors.verticalCenter: parent.verticalCenter
+                            text: root.noteMenuNote && root.noteMenuNote.pinned ? "★" : "☆"
+                            color: "#4B5968"
+                            font.pixelSize: 14
+                        }
+                        Text {
+                            anchors.verticalCenter: parent.verticalCenter
+                            text: root.noteMenuNote && root.noteMenuNote.pinned ? "Unpin" : "Pin"
+                            color: "#303A46"
+                            font.pixelSize: 11
+                            font.weight: Font.Medium
+                        }
+                    }
+                    MouseArea {
+                        id: pinNoteHover
+                        anchors.fill: parent
+                        hoverEnabled: true
+                        cursorShape: Qt.PointingHandCursor
+                        onClicked: root.togglePinnedNote()
+                    }
+                }
+
+                Rectangle {
+                    width: parent.width
+                    height: 30
+                    radius: 8
+                    color: deleteNoteHover.containsMouse ? "#FBEDEE" : "transparent"
+
+                    Row {
+                        anchors.fill: parent
+                        anchors.leftMargin: 8
+                        spacing: 7
+                        Text {
+                            anchors.verticalCenter: parent.verticalCenter
+                            text: "×"
+                            color: "#B9444A"
+                            font.pixelSize: 16
+                        }
+                        Text {
+                            anchors.verticalCenter: parent.verticalCenter
+                            text: "Delete"
+                            color: "#B9444A"
+                            font.pixelSize: 11
+                            font.weight: Font.Medium
+                        }
+                    }
+                    MouseArea {
+                        id: deleteNoteHover
+                        anchors.fill: parent
+                        hoverEnabled: true
+                        cursorShape: Qt.PointingHandCursor
+                        onClicked: root.deleteMenuNote()
+                    }
+                }
+            }
+        }
+    }
+
 }
