@@ -166,7 +166,7 @@ PanelWindow {
                                     anchors.centerIn: parent
                                     width: 17
                                     height: 17
-                                    source: Qt.resolvedUrl("../assets/icons/lucide-wifi.svg")
+                                    source: Qt.resolvedUrl("../assets/icons/lucide-wifi-dark.svg")
                                     sourceSize.width: 34
                                     sourceSize.height: 34
                                     smooth: true
@@ -241,7 +241,7 @@ PanelWindow {
                                     anchors.centerIn: parent
                                     width: 17
                                     height: 17
-                                    source: Qt.resolvedUrl("../assets/icons/lucide-bluetooth.svg")
+                                    source: Qt.resolvedUrl("../assets/icons/lucide-bluetooth-dark.svg")
                                     sourceSize.width: 34
                                     sourceSize.height: 34
                                     smooth: true
