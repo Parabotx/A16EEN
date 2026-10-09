@@ -142,7 +142,7 @@ else
 fi
 
 if [[ -s "$LOCK_IMAGE" ]]; then
-    swaylock --image "$LOCK_IMAGE" --scaling fill "${COMMON_ARGS[@]}"
+    swaylock --image "$LOCK_IMAGE" --scaling fill "${FALLBACK_ARGS[@]}"
 else
-    swaylock --color 101720 "${COMMON_ARGS[@]}"
+    swaylock --color 101720 "${FALLBACK_ARGS[@]}"
 fi
