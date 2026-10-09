@@ -200,9 +200,13 @@ PanelWindow {
 
         let nextIndex = root.activeIndex
         if (root.shuffleEnabled && amount > 0 && count > 1) {
-            nextIndex = Math.floor(Math.random() * (count - 1))
-            if (nextIndex >= root.activeIndex)
-                nextIndex++
+            if (root.activeIndex < 0) {
+                nextIndex = Math.floor(Math.random() * count)
+            } else {
+                nextIndex = Math.floor(Math.random() * (count - 1))
+                if (nextIndex >= root.activeIndex)
+                    nextIndex++
+            }
         } else {
             if (nextIndex < 0)
                 nextIndex = amount > 0 ? -1 : 0
@@ -545,11 +549,14 @@ PanelWindow {
                 }
             }
 
-            Row {
-                id: controls
-                anchors.horizontalCenter: parent.horizontalCenter
+            Item {
+                width: parent.width
                 height: 31
-                spacing: 7
+
+                Row {
+                    id: controls
+                    anchors.centerIn: parent
+                    spacing: 7
 
                 ControlButton {
                     glyph: "⤨"
@@ -585,10 +592,11 @@ PanelWindow {
                     onClicked: root.runAction(["repeat"])
                 }
 
-                ControlButton {
-                    glyph: root.libraryOpen ? "×" : "≡"
-                    selected: root.libraryOpen
-                    onClicked: root.libraryOpen = !root.libraryOpen
+                    ControlButton {
+                        glyph: root.libraryOpen ? "×" : "≡"
+                        selected: root.libraryOpen
+                        onClicked: root.libraryOpen = !root.libraryOpen
+                    }
                 }
             }
 
@@ -620,13 +628,25 @@ PanelWindow {
                     }
                 }
 
-                ListView {
-                    id: trackList
+                Item {
                     width: parent.width
                     height: 88
-                    model: root.tracks
                     clip: true
-                    spacing: 2
+
+                    ListView {
+                        id: trackList
+                        anchors.fill: parent
+                        model: root.tracks
+                        clip: true
+                        spacing: 2
+                        boundsBehavior: Flickable.StopAtBounds
+                        currentIndex: root.activeIndex
+
+                        onCurrentIndexChanged: {
+                            if (currentIndex >= 0)
+                                positionViewAtIndex(currentIndex, ListView.Contain)
+                        }
+
                     boundsBehavior: Flickable.StopAtBounds
                     currentIndex: root.activeIndex
 
@@ -693,6 +713,8 @@ PanelWindow {
                             cursorShape: Qt.PointingHandCursor
                             onClicked: root.playTrack(index)
                         }
+                    }
+
                     }
 
                     Column {
