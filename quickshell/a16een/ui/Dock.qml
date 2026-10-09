@@ -347,7 +347,7 @@ PanelWindow {
             id: batteryPill
             x: root.horizontalNavbar
                 ? parent.width - width
-                : (root.navbarPosition === "right" ? parent.width - width - 2 : 2)
+                : (root.navbarPosition === "right" ? parent.width - width - 5 : 5)
             y: root.navbarPosition === "top"
                 ? 0
                 : (root.navbarPosition === "bottom"
