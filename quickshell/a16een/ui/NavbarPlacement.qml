@@ -24,9 +24,9 @@ Item {
     readonly property color border: "#D9DEE5"
     readonly property color borderStrong: "#B8C1CC"
     readonly property color text: "#111318"
-    readonly property color muted: "#7B8592"
-    readonly property color hover: "#EEF2F6"
-    readonly property color selected: "#DDE3EA"
+    readonly property color muted: "#66707C"
+    readonly property color hover: "#F0F4F8"
+    readonly property color selected: "#E3EAF2"
 
     function loadPosition(raw) {
         try {
@@ -86,17 +86,17 @@ Item {
         Row {
             anchors.fill: parent
             anchors.margins: 7
-            spacing: 7
+            spacing: 6
 
             Text {
-                width: 88
+                width: 125
                 height: parent.height
                 verticalAlignment: Text.AlignVCenter
                 text: "NAVBAR POSITION"
                 color: root.muted
-                font.pixelSize: 7
+                font.pixelSize: 9
                 font.weight: Font.DemiBold
-                font.letterSpacing: 1
+                font.letterSpacing: 0.7
             }
 
             Repeater {
@@ -108,14 +108,14 @@ Item {
                 ]
 
                 delegate: Rectangle {
-                    width: Math.max(82, (parent.width - 181) / 4)
-                    height: 32
+                    width: (parent.width - 199) / 4
+                    height: 36
                     radius: 9
                     color: root.position === modelData.id ? root.selected
                         : (placementMouse.containsMouse ? root.hover : "#FFFFFF")
                     border.width: 1
                     border.color: root.position === modelData.id
-                        ? root.text : root.border
+                        ? "#8B97A5" : "#B8C1CC"
 
                     Row {
                         anchors.centerIn: parent
@@ -124,14 +124,14 @@ Item {
                         Text {
                             text: modelData.glyph
                             color: root.position === modelData.id ? "#111318" : root.text
-                            font.pixelSize: 14
+                            font.pixelSize: 16
                             font.weight: Font.DemiBold
                         }
 
                         Text {
                             text: modelData.name
                             color: root.position === modelData.id ? "#1A1E23" : root.text
-                            font.pixelSize: 7
+                            font.pixelSize: 9
                             font.weight: Font.DemiBold
                         }
                     }
@@ -147,13 +147,13 @@ Item {
             }
 
             Text {
-                width: 58
+                width: 50
                 height: parent.height
                 verticalAlignment: Text.AlignVCenter
                 horizontalAlignment: Text.AlignRight
                 text: root.statusText
                 color: root.text
-                font.pixelSize: 7
+                font.pixelSize: 8
                 font.weight: Font.DemiBold
             }
         }
