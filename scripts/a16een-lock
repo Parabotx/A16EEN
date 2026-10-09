@@ -81,9 +81,9 @@ else
 fi
 
 # GTKLock provides a real password entry rather than swaylock's circular
-# indicator. It uses the Wayland session-lock protocol and keeps the mouse
-# cursor visible. The XML and CSS customize appearance only; authentication
-# remains GTKLock/PAM's responsibility.
+# indicator. Use GTKLock's documented --lock-command hook to signal readiness
+# only after its session lock has been acquired. GTKLock does not itself send
+# the USR2 signal that older versions of this wrapper waited for.
 if command -v gtklock >/dev/null 2>&1; then
     GTKLOCK_ARGS=(
         --time-format '%H:%M'
@@ -99,23 +99,43 @@ if command -v gtklock >/dev/null 2>&1; then
         GTKLOCK_ARGS+=(--layout "$LOCK_LAYOUT")
     fi
 
-    log "Starting GTKLock with the A16EEN password-field theme."
+    GTKLOCK_HELP="$(gtklock --help 2>&1 || true)"
+    if grep -q -- '--lock-command' <<<"$GTKLOCK_HELP"; then
+        GTKLOCK_READY_FILE="$LOCK_DIR/gtklock-ready"
+        GTKLOCK_ARGS+=(--lock-command "touch $GTKLOCK_READY_FILE")
+        log "Starting GTKLock with the A16EEN password-field theme."
+        gtklock "${GTKLOCK_ARGS[@]}" &
+        GTKLOCK_PID=$!
+        GTKLOCK_READY_SENT=0
 
-    # GTKLock signals its parent only after the Wayland session is securely locked.
-    gtklock_locked() {
-        printf '%s\n' "A16EEN_LOCK_READY"
-        log "GTKLock signaled that the session is securely locked."
-    }
-    trap gtklock_locked USR2
+        # Wait for GTKLock's post-lock hook. Do not hide the desktop until the
+        # session lock protocol is actually active.
+        while [[ ! -e "$GTKLOCK_READY_FILE" ]]; do
+            GTKLOCK_STATE="$(ps -o stat= -p "$GTKLOCK_PID" 2>/dev/null || true)"
+            if [[ -z "$GTKLOCK_STATE" || "$GTKLOCK_STATE" == Z* ]]; then
+                break
+            fi
+            sleep 0.05
+        done
 
-    if gtklock "${GTKLOCK_ARGS[@]}"; then
-        trap - USR2
-        log "GTKLock exited after the session was unlocked."
-        exit 0
+        if [[ -e "$GTKLOCK_READY_FILE" ]]; then
+            printf '%s\\n' "A16EEN_LOCK_READY"
+            log "GTKLock confirmed that the session is securely locked."
+            GTKLOCK_READY_SENT=1
+        fi
+
+        if wait "$GTKLOCK_PID"; then
+            if (( GTKLOCK_READY_SENT )); then
+                log "GTKLock exited after the session was unlocked."
+                exit 0
+            fi
+            log "GTKLock exited before confirming a secure lock; trying swaylock fallback."
+        else
+            status=$?
+            log "GTKLock failed (status $status); trying secure swaylock fallback."
+        fi
     else
-        status=$?
-        trap - USR2
-        log "GTKLock failed to start or exited unexpectedly (status $status); trying secure swaylock fallback."
+        log "GTKLock does not support --lock-command; using secure swaylock fallback."
     fi
 fi
 
