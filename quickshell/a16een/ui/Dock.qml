@@ -301,9 +301,10 @@ PanelWindow {
             // Keep TOP/BOTTOM anchored as-is. In vertical layouts, pull the
             // power capsule inward by six pixels so its center aligns with
             // the wider clock capsule below it.
-            left: root.horizontalNavbar ? (root.navbarPosition === "top" ? 0 : 12)
+            left: root.horizontalNavbar ? 0
                 : (root.navbarPosition === "left" ? 6 : 12)
-            right: root.horizontalNavbar ? 0
+            right: root.horizontalNavbar
+                ? (root.navbarPosition === "right" ? 0 : 12)
                 : (root.navbarPosition === "right" ? 6 : 12)
             top: root.navbarPosition === "top" ? 0 : 12
             bottom: root.navbarPosition === "bottom" ? 0 : 12
