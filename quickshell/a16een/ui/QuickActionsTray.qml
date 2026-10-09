@@ -31,8 +31,8 @@ PanelWindow {
     exclusiveZone: 0
 
     // Size the shell surface to the three compact buttons, with minimal padding.
-    width: root.horizontalNavbar ? 100 : 36
-    height: root.horizontalNavbar ? 40 : 96
+    width: root.horizontalNavbar ? 92 : 44
+    height: root.horizontalNavbar ? 36 : 92
 
     anchors {
         left: !root.horizontalNavbar && root.navbarPosition === "left"
@@ -47,10 +47,12 @@ PanelWindow {
     margins {
         // Vertical trays sit just outside the navbar's visible 44px rail.
         // Horizontal trays share the battery capsule's 12px edge alignment.
-        left: root.horizontalNavbar ? 12 : 58
-        right: root.horizontalNavbar ? 118 : 58
-        top: root.horizontalNavbar ? 14 : 12
-        bottom: root.horizontalNavbar ? 16 : 72
+        // Align the vertical tray exactly with the visible 44px navbar rail.
+        // Horizontally it sits directly beside the battery capsule.
+        left: root.horizontalNavbar ? 0 : 10
+        right: root.horizontalNavbar ? 102 : 12
+        top: root.horizontalNavbar ? 0 : 12
+        bottom: root.horizontalNavbar ? 0 : 72
     }
 
     WlrLayershell.layer: WlrLayer.Overlay
@@ -58,7 +60,7 @@ PanelWindow {
 
     Rectangle {
         anchors.fill: parent
-        radius: 14
+        radius: 13
         color: "#FFFFFF"
         border.width: 1
         border.color: "#D9DEE5"
@@ -66,7 +68,7 @@ PanelWindow {
         Rectangle {
             anchors.fill: parent
             anchors.margins: -3
-            radius: 17
+            radius: 16
             color: "#10000000"
             z: -1
         }
