@@ -236,7 +236,8 @@ def read_status():
         4: ["get_property", "time-pos"],
         5: ["get_property", "pause"],
         6: ["get_property", "loop-file"],
-        7: ["get_property", "metadata"]
+        7: ["get_property", "metadata"],
+        8: ["get_property", "loop-playlist"]
     }
     client = open_ipc(timeout=0.25)
     if client is None:
@@ -301,16 +302,18 @@ def read_status():
         "time": position,
         "paused": bool(values.get(5, True)),
         "repeat": str(values.get(6) or "no") == "inf",
+        "loopPlaylist": str(values.get(8) or "no"),
         "error": ""
     }
 
 
 def visualizer_state():
-    """Sample a tiny window from the playing track and detect relative loud accents."""
+    """Read short PCM windows from the current track and build 21 spectral bars."""
     inactive = {
         "active": False,
         "level": 0.0,
         "rmsDb": -96.0,
+        "bandLevels": [0.0] * 21,
         "hardBeat": False
     }
     status = read_status()
@@ -320,7 +323,8 @@ def visualizer_state():
 
     try:
         audio_path = Path(raw_path).expanduser().resolve()
-    except (OSError, RuntimeError, ValueError):
+        position = max(0.0, float(status.get("time") or 0.0))
+    except (OSError, RuntimeError, ValueError, TypeError):
         return inactive
     if not audio_path.is_file():
         return inactive
@@ -329,15 +333,12 @@ def visualizer_state():
     if not ffmpeg:
         return {**inactive, "reason": "ffmpeg is not available"}
 
-    try:
-        position = max(0.0, float(status.get("time") or 0.0))
-    except (TypeError, ValueError):
-        position = 0.0
-
+    # Sample a little over 200 ms. Each update is analysed into separate
+    # frequency bands, rather than animating a synthetic sine-wave pattern.
     command = [
         ffmpeg, "-hide_banner", "-loglevel", "error",
         "-ss", f"{position:.3f}", "-i", str(audio_path),
-        "-t", "0.10", "-vn", "-ac", "1", "-ar", "8000",
+        "-t", "0.22", "-vn", "-ac", "1", "-ar", "8000",
         "-f", "s16le", "pipe:1"
     ]
     try:
@@ -346,7 +347,7 @@ def visualizer_state():
             stdin=subprocess.DEVNULL,
             stdout=subprocess.PIPE,
             stderr=subprocess.DEVNULL,
-            timeout=1.4,
+            timeout=1.2,
             check=False
         )
     except (OSError, subprocess.TimeoutExpired):
@@ -354,7 +355,7 @@ def visualizer_state():
 
     pcm = sample.stdout
     usable_bytes = len(pcm) - (len(pcm) % 2)
-    if sample.returncode != 0 or usable_bytes < 32:
+    if sample.returncode != 0 or usable_bytes < 256:
         return {**inactive, "reason": "audio sample is unavailable"}
 
     count = usable_bytes // 2
@@ -368,32 +369,92 @@ def visualizer_state():
     peak = max(abs(value) for value in samples) / 32768.0
     rms_db = 20.0 * math.log10(max(rms, 0.000001))
     peak_db = 20.0 * math.log10(max(peak, 0.000001))
-    level = max(0.0, min(1.0, (rms_db + 42.0) / 30.0))
+    level = max(0.0, min(1.0, (rms_db + 45.0) / 38.0))
 
-    # Compare against the same track's slowly moving energy floor. A sudden
-    # 3.5 dB rise, or a very strong transient, indicates a punchy passage.
+    # Hann-windowed Goertzel probes estimate local energy at three nearby
+    # frequencies per bar. It is small enough to run without NumPy or a GPU.
+    sample_rate = 8000.0
+    windowed = []
+    window_sum = 0.0
+    denominator = max(1, count - 1)
+    for index, value in enumerate(samples):
+        window = 0.5 - 0.5 * math.cos((2.0 * math.pi * index) / denominator)
+        windowed.append(value * window)
+        window_sum += window
+
+    def tone_amplitude(frequency):
+        frequency = max(35.0, min(3700.0, frequency))
+        coefficient = 2.0 * math.cos((2.0 * math.pi * frequency) / sample_rate)
+        q1 = 0.0
+        q2 = 0.0
+        for value in windowed:
+            q0 = value + coefficient * q1 - q2
+            q2 = q1
+            q1 = q0
+        power = max(0.0, q1 * q1 + q2 * q2 - coefficient * q1 * q2)
+        return (2.0 * math.sqrt(power)) / max(1.0, window_sum * 32768.0)
+
+    band_amplitudes = []
+    band_levels = []
+    for index in range(21):
+        centre = 48.0 * ((3300.0 / 48.0) ** (index / 20.0))
+        adjacent = [
+            tone_amplitude(centre * 0.91),
+            tone_amplitude(centre),
+            tone_amplitude(centre * 1.10)
+        ]
+        amplitude = math.sqrt(sum(value * value for value in adjacent) / len(adjacent))
+        band_amplitudes.append(amplitude)
+        amplitude_db = 20.0 * math.log10(max(amplitude, 0.000001))
+        band_levels.append(max(0.0, min(1.0, (amplitude_db + 52.0) / 34.0)))
+
+    bass_amplitude = math.sqrt(
+        sum(value * value for value in band_amplitudes[:5]) / 5.0
+    )
+    bass_db = 20.0 * math.log10(max(bass_amplitude, 0.000001))
+
     meter_state = COVER_CACHE_DIR.parent / "music-meter-state.json"
     baseline_db = None
+    baseline_bass_db = None
     try:
         previous = json.loads(meter_state.read_text(encoding="utf-8"))
         if previous.get("path") == str(audio_path):
             value = previous.get("baselineDb")
+            bass_value = previous.get("baselineBassDb")
             if isinstance(value, (float, int)):
                 baseline_db = float(value)
+            if isinstance(bass_value, (float, int)):
+                baseline_bass_db = float(bass_value)
     except (OSError, UnicodeError, json.JSONDecodeError, AttributeError, TypeError, ValueError):
-        baseline_db = None
+        pass
 
-    hard_beat = (
-        rms_db >= -8.5
-        or (baseline_db is not None and rms_db >= -28.0 and rms_db - baseline_db >= 3.5)
-        or (rms_db >= -24.0 and peak_db - rms_db >= 12.0)
+    # A beat is a real transient: a sudden bass or broadband rise relative to
+    # the same track's recent energy floor. The peak/RMS fallback catches sharp
+    # kick/snare hits even when the track is heavily compressed.
+    bass_rise = (
+        baseline_bass_db is not None
+        and bass_db >= -38.0
+        and bass_db - baseline_bass_db >= 1.8
     )
-    updated_baseline = rms_db if baseline_db is None else (0.84 * baseline_db + 0.16 * rms_db)
+    rms_rise = (
+        baseline_db is not None
+        and rms_db >= -34.0
+        and rms_db - baseline_db >= 3.0
+    )
+    sharp_transient = rms_db >= -35.0 and peak_db - rms_db >= 10.0
+    hard_beat = rms_db >= -9.5 or bass_rise or rms_rise or sharp_transient
+
+    updated_baseline = rms_db if baseline_db is None else (0.90 * baseline_db + 0.10 * rms_db)
+    updated_bass_baseline = (
+        bass_db if baseline_bass_db is None
+        else 0.88 * baseline_bass_db + 0.12 * bass_db
+    )
     try:
         meter_state.parent.mkdir(parents=True, exist_ok=True)
         meter_state.write_text(json.dumps({
             "path": str(audio_path),
-            "baselineDb": updated_baseline
+            "baselineDb": updated_baseline,
+            "baselineBassDb": updated_bass_baseline
         }), encoding="utf-8")
     except OSError:
         pass
@@ -402,9 +463,9 @@ def visualizer_state():
         "active": True,
         "level": round(level, 3),
         "rmsDb": round(rms_db, 2),
+        "bandLevels": [round(value, 3) for value in band_levels],
         "hardBeat": bool(hard_beat)
     }
-
 
 def main():
     args = sys.argv[1:]
@@ -456,13 +517,29 @@ def main():
         return
 
     if action == "repeat":
-        status = read_status()
-        if not status.get("running") or not status.get("path"):
-            emit({"ok": False, "error": "Choose a track first."})
+        # 0 = off, 1 = repeat current song, 2 = repeat its folder (handled by
+        # the widget when MPV reaches the end of a track).
+        try:
+            mode = int(args[1]) if len(args) > 1 else (0 if read_status().get("repeat") else 1)
+        except (TypeError, ValueError):
+            emit({"ok": False, "error": "Invalid repeat mode."})
             return
-        command = ["set_property", "loop-file", "no" if status.get("repeat") else "inf"]
-        result = send_command(command, wait_for_response=True)
-        emit(result if result is not None else {"ok": False, "error": "The music player is not responding."})
+        if mode not in (0, 1, 2):
+            emit({"ok": False, "error": "Invalid repeat mode."})
+            return
+        status = read_status()
+        if not status.get("running"):
+            emit({"ok": False, "error": "The music player is not running yet."})
+            return
+        file_loop = "inf" if mode == 1 else "no"
+        first = send_command(["set_property", "loop-file", file_loop], wait_for_response=True)
+        second = send_command(["set_property", "loop-playlist", "no"], wait_for_response=True)
+        if first is None or second is None:
+            emit({"ok": False, "error": "The music player is not responding."})
+        elif not first.get("ok") or not second.get("ok"):
+            emit({"ok": False, "error": "MPV could not change the repeat mode."})
+        else:
+            emit({"ok": True, "repeatMode": mode})
         return
 
     if action == "stop":

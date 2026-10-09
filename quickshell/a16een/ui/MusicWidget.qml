@@ -27,8 +27,12 @@ PanelWindow {
     property bool actionBusy: false
     property bool libraryOpen: false
     property real audioLevel: 0
+    property var bandLevels: []
     property bool hardBeat: false
     property bool shuffleEnabled: false
+    property int repeatMode: 0
+    property bool seekDragging: false
+    property real seekFraction: 0
 
     readonly property color ink: "#493C31"
     readonly property color secondary: "#837264"
@@ -52,6 +56,8 @@ PanelWindow {
     readonly property real progress: root.playback.duration > 0
         ? Math.max(0, Math.min(1, root.playback.time / root.playback.duration))
         : 0
+    readonly property real displayedProgress: root.seekDragging
+        ? root.seekFraction : root.progress
 
     screen: modelData
     visible: root.widgetEnabled
@@ -102,10 +108,45 @@ PanelWindow {
         }
     }
 
+    function nextRepeatFolderIndex(path) {
+        const currentPath = String(path || "")
+        const folder = currentPath.split("/").slice(0, -1).join("/")
+        if (!folder)
+            return -1
+
+        const matching = []
+        for (let i = 0; i < root.tracks.length; i++) {
+            const candidate = String(root.tracks[i].path || "")
+            if (candidate.split("/").slice(0, -1).join("/") === folder)
+                matching.push(i)
+        }
+        if (!matching.length)
+            return -1
+
+        const currentIndex = root.indexForPath(currentPath)
+        const folderPosition = matching.indexOf(currentIndex)
+        return folderPosition < 0 ? matching[0] : matching[(folderPosition + 1) % matching.length]
+    }
+
     function applyPlaybackOutput(raw) {
         try {
             const result = JSON.parse(String(raw || "{}"))
+            const previous = root.playback
+            const reachedEnd = root.repeatMode === 2
+                && previous.running
+                && String(previous.path || "").length > 0
+                && !previous.paused
+                && !String(result.path || "").length
+                && Number(previous.duration) > 0
+                && Number(previous.time) >= Math.max(0, Number(previous.duration) - 2.5)
+
             root.playback = result
+
+            if (reachedEnd) {
+                const nextIndex = root.nextRepeatFolderIndex(previous.path)
+                if (nextIndex >= 0)
+                    Qt.callLater(() => root.playTrack(nextIndex))
+            }
 
             if (result.error)
                 root.statusMessage = result.error
@@ -117,9 +158,13 @@ PanelWindow {
     }
 
     function applyActionOutput(raw) {
+        const wasPlayAction = actionProcess.command.length > 1
+            && actionProcess.command[1] === "play"
         root.actionBusy = false
+        let actionSucceeded = false
         try {
             const result = JSON.parse(String(raw || "{}"))
+            actionSucceeded = result.ok === true
             if (result.error)
                 root.statusMessage = result.error
             else if (result.message)
@@ -130,6 +175,8 @@ PanelWindow {
             root.statusMessage = "Music action failed"
         }
         root.refreshPlayback()
+        if (wasPlayAction && actionSucceeded)
+            Qt.callLater(() => root.runAction(["repeat", String(root.repeatMode)]))
     }
 
     function refreshLibrary() {
@@ -153,13 +200,27 @@ PanelWindow {
     function applyAudioLevelOutput(raw) {
         try {
             const result = JSON.parse(String(raw || "{}"))
-            root.audioLevel = root.widgetEnabled && root.isPlaying && result.active
+            const active = root.widgetEnabled && root.isPlaying && result.active === true
+            root.audioLevel = active
                 ? Math.max(0, Math.min(1, Number(result.level) || 0)) : 0
-            if (root.widgetEnabled && root.isPlaying && result.hardBeat === true)
+            root.bandLevels = active && Array.isArray(result.bandLevels)
+                ? result.bandLevels.map(value => Math.max(0, Math.min(1, Number(value) || 0)))
+                : []
+            // Previous code restarted the timer without ever turning red on.
+            if (active && result.hardBeat === true) {
+                root.hardBeat = true
                 beatHoldTimer.restart()
+            }
         } catch (error) {
             root.audioLevel = 0
+            root.bandLevels = []
         }
+    }
+
+    function setRepeatMode(mode) {
+        const normalized = ((Number(mode) || 0) + 3) % 3
+        root.repeatMode = normalized
+        root.runAction(["repeat", String(normalized)])
     }
 
     function runAction(argumentsList) {
@@ -212,6 +273,7 @@ PanelWindow {
             root.refreshPlayback()
         } else {
             root.audioLevel = 0
+            root.bandLevels = []
             root.hardBeat = false
             beatHoldTimer.stop()
         }
@@ -220,6 +282,7 @@ PanelWindow {
     onIsPlayingChanged: {
         if (!root.isPlaying) {
             root.audioLevel = 0
+            root.bandLevels = []
             root.hardBeat = false
             beatHoldTimer.stop()
         }
@@ -269,7 +332,7 @@ PanelWindow {
     }
 
     Timer {
-        interval: 470
+        interval: 220
         repeat: true
         running: root.widgetEnabled && root.isPlaying
         onTriggered: root.refreshAudioLevel()
@@ -277,7 +340,7 @@ PanelWindow {
 
     Timer {
         id: beatHoldTimer
-        interval: 310
+        interval: 360
         repeat: false
         onTriggered: root.hardBeat = false
     }
@@ -504,6 +567,7 @@ PanelWindow {
                     animating: root.widgetEnabled
                     playing: root.isPlaying
                     audioLevel: root.audioLevel
+                    bandLevels: root.bandLevels
                     hotBeat: root.hardBeat
                 }
             }
@@ -529,7 +593,9 @@ PanelWindow {
                         Text {
                             id: elapsedTime
                             anchors.centerIn: parent
-                            text: root.formatTime(root.playback.time)
+                            text: root.formatTime(root.seekDragging
+                                ? root.seekFraction * root.playback.duration
+                                : root.playback.time)
                             color: "#6F4E3C"
                             font.pixelSize: 8
                             font.family: "Inter"
@@ -569,12 +635,12 @@ PanelWindow {
                 Item {
                     id: progressTrack
                     width: parent.width
-                    height: 8
+                    height: 16
 
                     Rectangle {
                         id: progressRail
                         x: 1
-                        y: 2
+                        y: 6
                         width: Math.max(0, parent.width - 2)
                         height: 4
                         radius: 2
@@ -583,7 +649,7 @@ PanelWindow {
                         clip: true
 
                         Rectangle {
-                            width: Math.max(0, progressRail.width * root.progress)
+                            width: Math.max(0, progressRail.width * root.displayedProgress)
                             height: progressRail.height
                             radius: 2
                             gradient: Gradient {
@@ -605,8 +671,8 @@ PanelWindow {
                         width: 8
                         height: 8
                         x: Math.max(0, Math.min(parent.width - width,
-                            1 + (parent.width - 2) * root.progress - width / 2))
-                        y: 0
+                            1 + (parent.width - 2) * root.displayedProgress - width / 2))
+                        y: 4
                         radius: 5
                         color: "#FFFCF7"
                         border.width: 1
@@ -628,14 +694,32 @@ PanelWindow {
                     }
 
                     MouseArea {
+                        id: seekArea
                         anchors.fill: parent
                         cursorShape: root.playback.duration > 0 ? Qt.PointingHandCursor : Qt.ArrowCursor
-                        onClicked: function(mouse) {
-                            if (root.playback.duration > 0) {
-                                const fraction = Math.max(0, Math.min(1, mouse.x / width))
-                                root.runAction(["seek", String(root.playback.duration * fraction)])
-                            }
+                        onPressed: function(mouse) {
+                            if (root.playback.duration <= 0)
+                                return
+                            root.seekDragging = true
+                            root.seekFraction = Math.max(0, Math.min(1, mouse.x / width))
                         }
+                        onPositionChanged: function(mouse) {
+                            if (!pressed || root.playback.duration <= 0)
+                                return
+                            root.seekFraction = Math.max(0, Math.min(1, mouse.x / width))
+                        }
+                        onReleased: {
+                            if (!root.seekDragging || root.playback.duration <= 0) {
+                                root.seekDragging = false
+                                return
+                            }
+                            const targetTime = Math.max(0, Math.min(root.playback.duration,
+                                root.playback.duration * root.seekFraction))
+                            root.playback = Object.assign({}, root.playback, { time: targetTime })
+                            root.seekDragging = false
+                            root.runAction(["seek", String(targetTime)])
+                        }
+                        onCanceled: root.seekDragging = false
                     }
                 }
             }
@@ -680,8 +764,8 @@ PanelWindow {
 
                     ControlButton {
                         iconName: "music-repeat"
-                        selected: root.playback.repeat === true
-                        onClicked: root.runAction(["repeat"])
+                        selected: root.repeatMode !== 0
+                        onClicked: root.setRepeatMode((root.repeatMode + 1) % 3)
                     }
 
                     ControlButton {
@@ -851,6 +935,29 @@ PanelWindow {
             smooth: true
             mipmap: true
             opacity: parent.enabledControl ? 1 : 0.45
+        }
+
+        Rectangle {
+            visible: parent.iconName === "music-repeat" && root.repeatMode !== 0
+            anchors.right: parent.right
+            anchors.bottom: parent.bottom
+            anchors.rightMargin: 1
+            anchors.bottomMargin: 1
+            width: 10
+            height: 10
+            radius: 5
+            color: "#FFFFFF"
+            border.width: 1
+            border.color: "#D9C8B4"
+            z: 2
+
+            Text {
+                anchors.centerIn: parent
+                text: root.repeatMode === 1 ? "1" : "∞"
+                color: "#57483B"
+                font.pixelSize: 7
+                font.weight: Font.Bold
+            }
         }
 
         MouseArea {

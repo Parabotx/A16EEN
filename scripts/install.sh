@@ -341,6 +341,7 @@ sudo install -Dm755 "$ROOT_DIR/scripts/a16een-screenshot" /usr/local/bin/a16een-
 sudo install -Dm755 "$ROOT_DIR/scripts/a16een-lock" /usr/local/bin/a16een-lock
 sudo install -Dm755 "$ROOT_DIR/scripts/a16een-control" /usr/local/bin/a16een-control
 sudo install -Dm755 "$ROOT_DIR/scripts/a16een-music" /usr/local/bin/a16een-music
+sudo install -Dm755 "$ROOT_DIR/scripts/a16een-widget-settings" /usr/local/bin/a16een-widget-settings
 sudo install -Dm755 "$ROOT_DIR/scripts/a16een-icon-theme" /usr/local/bin/a16een-icon-theme
 sudo install -Dm755 "$ROOT_DIR/scripts/a16een-navbar" /usr/local/bin/a16een-navbar
 sudo install -Dm755 "$ROOT_DIR/scripts/a16een-navbar-layout" /usr/local/bin/a16een-navbar-layout

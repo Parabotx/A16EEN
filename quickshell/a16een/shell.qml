@@ -164,6 +164,94 @@ ShellRoot {
     property bool musicWidgetEnabled: false
     property bool timeUse24Hour: true
     property bool timeShowSeconds: false
+    property bool widgetSettingsLoaded: false
+    property bool restoringWidgetSettings: false
+
+    function widgetSettingsPayload() {
+        return {
+            editorialTimeWidgetEnabled: root.editorialTimeWidgetEnabled,
+            calendarWidgetEnabled: root.calendarWidgetEnabled,
+            pulseWidgetEnabled: root.pulseWidgetEnabled,
+            workspaceWidgetEnabled: root.workspaceWidgetEnabled,
+            tasksWidgetEnabled: root.tasksWidgetEnabled,
+            musicWidgetEnabled: root.musicWidgetEnabled,
+            timeUse24Hour: root.timeUse24Hour,
+            timeShowSeconds: root.timeShowSeconds
+        }
+    }
+
+    function requestWidgetSettingsSave() {
+        if (!root.widgetSettingsLoaded || root.restoringWidgetSettings)
+            return
+        widgetSettingsSaveTimer.restart()
+    }
+
+    onEditorialTimeWidgetEnabledChanged: root.requestWidgetSettingsSave()
+    onCalendarWidgetEnabledChanged: root.requestWidgetSettingsSave()
+    onPulseWidgetEnabledChanged: root.requestWidgetSettingsSave()
+    onWorkspaceWidgetEnabledChanged: root.requestWidgetSettingsSave()
+    onTasksWidgetEnabledChanged: root.requestWidgetSettingsSave()
+    onMusicWidgetEnabledChanged: root.requestWidgetSettingsSave()
+    onTimeUse24HourChanged: root.requestWidgetSettingsSave()
+    onTimeShowSecondsChanged: root.requestWidgetSettingsSave()
+
+    Process {
+        id: widgetSettingsLoadProcess
+        command: ["a16een-widget-settings", "load"]
+        running: true
+        stdout: StdioCollector {
+            onStreamFinished: {
+                root.restoringWidgetSettings = true
+                try {
+                    const saved = JSON.parse(String(this.text || "{}"))
+                    const keys = [
+                        "editorialTimeWidgetEnabled", "calendarWidgetEnabled",
+                        "pulseWidgetEnabled", "workspaceWidgetEnabled",
+                        "tasksWidgetEnabled", "musicWidgetEnabled",
+                        "timeUse24Hour", "timeShowSeconds"
+                    ]
+                    for (let i = 0; i < keys.length; i++) {
+                        const key = keys[i]
+                        if (saved && typeof saved[key] === "boolean")
+                            root[key] = saved[key]
+                    }
+                } catch (error) {
+                    console.warn("A16EEN could not load saved widget preferences:", error)
+                }
+                root.restoringWidgetSettings = false
+                root.widgetSettingsLoaded = true
+            }
+        }
+    }
+
+    Process {
+        id: widgetSettingsSaveProcess
+        command: ["a16een-widget-settings", "save", "{}"]
+        running: false
+        onExited: (exitCode, exitStatus) => {
+            if (exitCode !== 0)
+                console.warn("A16EEN could not save widget preferences.")
+        }
+    }
+
+    Timer {
+        id: widgetSettingsSaveTimer
+        interval: 300
+        repeat: false
+        onTriggered: {
+            if (!root.widgetSettingsLoaded || root.restoringWidgetSettings)
+                return
+            if (widgetSettingsSaveProcess.running) {
+                widgetSettingsSaveTimer.restart()
+                return
+            }
+            widgetSettingsSaveProcess.command = [
+                "a16een-widget-settings", "save",
+                JSON.stringify(root.widgetSettingsPayload())
+            ]
+            widgetSettingsSaveProcess.running = true
+        }
+    }
 
     property var workspaces: []
     property var windows: []
@@ -1015,18 +1103,38 @@ ShellRoot {
             root.editorialTimeWidgetEnabled = enabled
             if (enabled)
                 root.calendarWidgetEnabled = false
+            root.requestWidgetSettingsSave()
         }
         onCalendarWidgetEnabledRequested: {
             root.calendarWidgetEnabled = enabled
             if (enabled)
                 root.editorialTimeWidgetEnabled = false
+            root.requestWidgetSettingsSave()
         }
-        onPulseWidgetEnabledRequested: root.pulseWidgetEnabled = enabled
-        onWorkspaceWidgetEnabledRequested: root.workspaceWidgetEnabled = enabled
-        onTasksWidgetEnabledRequested: root.tasksWidgetEnabled = enabled
-        onMusicWidgetEnabledRequested: root.musicWidgetEnabled = enabled
-        onTimeUse24HourRequested: root.timeUse24Hour = enabled
-        onTimeShowSecondsRequested: root.timeShowSeconds = enabled
+        onPulseWidgetEnabledRequested: {
+            root.pulseWidgetEnabled = enabled
+            root.requestWidgetSettingsSave()
+        }
+        onWorkspaceWidgetEnabledRequested: {
+            root.workspaceWidgetEnabled = enabled
+            root.requestWidgetSettingsSave()
+        }
+        onTasksWidgetEnabledRequested: {
+            root.tasksWidgetEnabled = enabled
+            root.requestWidgetSettingsSave()
+        }
+        onMusicWidgetEnabledRequested: {
+            root.musicWidgetEnabled = enabled
+            root.requestWidgetSettingsSave()
+        }
+        onTimeUse24HourRequested: {
+            root.timeUse24Hour = enabled
+            root.requestWidgetSettingsSave()
+        }
+        onTimeShowSecondsRequested: {
+            root.timeShowSeconds = enabled
+            root.requestWidgetSettingsSave()
+        }
 
         onDoNotDisturbRequested: root.setDoNotDisturb(enabled)
         onIconThemeChanged: root.iconThemeRevision++
