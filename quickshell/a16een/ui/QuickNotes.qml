@@ -438,6 +438,45 @@ PanelWindow {
         root.queueSave()
     }
 
+    // Map a visible TextEdit selection index back into an HTML source string.
+    // This keeps repeated formatting operations stable when text already has
+    // <b>, <i> or <u> markup around earlier selections.
+    function htmlOffsetForVisibleIndex(source, targetIndex) {
+        const raw = String(source)
+        let visibleIndex = 0
+        let i = 0
+        while (i < raw.length) {
+            if (raw[i] === "<") {
+                const end = raw.indexOf(">", i + 1)
+                if (end >= 0) {
+                    const tag = raw.slice(i, end + 1)
+                    if (/^<br\\s*\\/?\\s*>$/i.test(tag)) {
+                        if (visibleIndex === targetIndex)
+                            return i
+                        visibleIndex++
+                    }
+                    i = end + 1
+                    continue
+                }
+            }
+            if (raw[i] === "&") {
+                const end = raw.indexOf(";", i + 1)
+                if (end > i && end - i < 12) {
+                    if (visibleIndex === targetIndex)
+                        return i
+                    visibleIndex++
+                    i = end + 1
+                    continue
+                }
+            }
+            if (visibleIndex === targetIndex)
+                return i
+            visibleIndex++
+            i++
+        }
+        return raw.length
+    }
+
     function formatSelection(tag) {
         const start = noteEditor.selectionStart
         const end = noteEditor.selectionEnd
@@ -446,13 +485,15 @@ PanelWindow {
 
         const current = String(noteEditor.text)
         const selected = String(noteEditor.selectedText)
+        const sourceStart = root.htmlOffsetForVisibleIndex(current, start)
+        const sourceEnd = root.htmlOffsetForVisibleIndex(current, end)
         const marked = "<" + tag + ">" + root.escapeHtml(selected) + "</" + tag + ">"
-        const updated = current.slice(0, start) + marked + current.slice(end)
+        const updated = current.slice(0, sourceStart) + marked + current.slice(sourceEnd)
         root.syncingEditor = true
         noteEditor.text = updated
         root.syncingEditor = false
         root.updateSelectedField("body", updated)
-        noteEditor.cursorPosition = start + marked.length
+        noteEditor.cursorPosition = start + selected.length
         noteEditor.deselect()
     }
 
