@@ -7,6 +7,8 @@ Item {
 
     required property string mode
     property bool active: false
+    // When embedded in another card, the parent owns navigation/header layout.
+    property bool embedded: false
     property bool doNotDisturb: false
 
     signal backRequested()
@@ -96,10 +98,27 @@ Item {
         if (!root.active || detailReader.running)
             return
         detailReader.running = true
-        if (root.mode === "wifi")
-            wifiReader.running = true
-        if (root.mode === "bluetooth")
+        if (root.mode === "wifi") {
+            if (!wifiReader.running)
+                wifiReader.running = true
+            if (!wifiNetworksReader.running)
+                wifiNetworksReader.running = true
+        }
+        if (root.mode === "bluetooth" && !bluetoothReader.running)
             bluetoothReader.running = true
+    }
+
+    onActiveChanged: {
+        if (root.active)
+            Qt.callLater(() => root.loadDetails())
+    }
+
+    onModeChanged: {
+        root.wifiSelectedSsid = ""
+        root.wifiSelectedSecurity = ""
+        root.wifiPassword = ""
+        if (root.active)
+            Qt.callLater(() => root.loadDetails())
     }
 
     function parseKeyValue(text, key) {
@@ -330,12 +349,13 @@ Item {
 
     Item {
         anchors.fill: parent
-        anchors.margins: 26
+        anchors.margins: root.embedded ? 12 : 26
 
         Row {
             id: header
             width: parent.width
-            height: 54
+            height: root.embedded ? 0 : 54
+            visible: !root.embedded
             spacing: 14
 
             Rectangle {
@@ -387,8 +407,8 @@ Item {
 
         Item {
             id: wifiView
-            anchors.top: header.bottom
-            anchors.topMargin: 12
+            anchors.top: root.embedded ? parent.top : header.bottom
+            anchors.topMargin: root.embedded ? 0 : 12
             anchors.left: parent.left
             anchors.right: parent.right
             anchors.bottom: parent.bottom
@@ -642,8 +662,8 @@ Item {
 
         Item {
             id: bluetoothView
-            anchors.top: header.bottom
-            anchors.topMargin: 12
+            anchors.top: root.embedded ? parent.top : header.bottom
+            anchors.topMargin: root.embedded ? 0 : 12
             anchors.left: parent.left
             anchors.right: parent.right
             anchors.bottom: parent.bottom
