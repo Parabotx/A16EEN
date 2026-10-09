@@ -140,6 +140,21 @@ jobs:
           grep -Fq 'import Qt.labs.lottieqt' quickshell/a16een/ui/MusicDancer.qml
           grep -Fq 'LottieAnimation {' quickshell/a16een/ui/MusicDancer.qml
           grep -Fq 'source: root.animationSource' quickshell/a16een/ui/MusicDancer.qml
+          grep -Fq 'status === LottieAnimation.Ready' quickshell/a16een/ui/MusicDancer.qml
+          grep -Fq 'start()' quickshell/a16een/ui/MusicDancer.qml
+          grep -Fq 'iconName: "music-skip-back"' quickshell/a16een/ui/MusicWidget.qml
+          grep -Fq 'iconName: "music-skip-forward"' quickshell/a16een/ui/MusicWidget.qml
+          ! grep -Fq 'glyph:' quickshell/a16een/ui/MusicWidget.qml
+          test -f quickshell/a16een/assets/icons/music-shuffle.svg
+          test -f quickshell/a16een/assets/icons/music-skip-back.svg
+          test -f quickshell/a16een/assets/icons/music-skip-forward.svg
+          test -f quickshell/a16een/assets/icons/music-play.svg
+          test -f quickshell/a16een/assets/icons/music-play-light.svg
+          test -f quickshell/a16een/assets/icons/music-pause.svg
+          test -f quickshell/a16een/assets/icons/music-pause-light.svg
+          test -f quickshell/a16een/assets/icons/music-repeat.svg
+          test -f quickshell/a16een/assets/icons/music-list.svg
+          test -f quickshell/a16een/assets/icons/music-close.svg
           grep -Fq 'source: active ? Qt.resolvedUrl("MusicDancer.qml") : ""' quickshell/a16een/ui/MusicWidget.qml
           grep -Fq 'anchors.bottom: parent.bottom' quickshell/a16een/ui/MusicWidget.qml
           grep -Fq 'libraryOpen ? 284 : 170' quickshell/a16een/ui/MusicWidget.qml
@@ -157,6 +172,20 @@ jobs:
           grep -Fq 'pacman", "-Qq", "qt6-lottie' scripts/a16een-music
           grep -Fq 'music-dancers/dancer-' scripts/a16een-update
           grep -Fq 'dancer-{index}.json' scripts/a16een-music
+          python3 - <<'PY'
+          import json
+          from pathlib import Path
+
+          files = sorted(Path("quickshell/a16een/assets/music-dancers").glob("dancer-*.json"))
+          assert len(files) == 5, f"expected 5 dancer animations, found {len(files)}"
+          for path in files:
+              data = json.loads(path.read_text(encoding="utf-8"))
+              assert data.get("w") == 98 and data.get("h") == 76, f"{path}: unexpected canvas size"
+              assert data.get("assets", []) == [], f"{path}: precompositions/assets are unsupported"
+              assert data.get("chars", []) == [], f"{path}: text assets are unsupported"
+              assert data.get("layers"), f"{path}: no layers"
+              assert all(layer.get("ty") == 4 for layer in data["layers"]), f"{path}: only shape layers are supported"
+          PY
           grep -Fq 'mpv' scripts/install.sh
           test -f quickshell/a16een/ui/WallpaperPicker.qml
           test -f quickshell/a16een/ui/NotificationToast.qml
