@@ -32,7 +32,7 @@ PanelWindow {
     exclusiveZone: 0
 
     width: root.horizontalNavbar ? 176 : 50
-    height: root.horizontalNavbar ? 46 : 146
+    height: root.horizontalNavbar ? 46 : 124
 
     anchors {
         left: !root.horizontalNavbar && root.navbarPosition === "left"
@@ -122,8 +122,8 @@ PanelWindow {
                     id: actionButton
                     required property var modelData
 
-                    width: 28
-                    height: 28
+                    width: 26
+                    height: 26
                     radius: 9
                     color: actionHover.containsMouse ? "#F1F3F6" : "transparent"
                     border.width: actionHover.containsMouse ? 1 : 0
@@ -131,8 +131,8 @@ PanelWindow {
 
                     Image {
                         anchors.centerIn: parent
-                        width: 16
-                        height: 16
+                        width: 15
+                        height: 15
                         source: Qt.resolvedUrl("../assets/icons/" + actionButton.modelData.icon)
                         sourceSize.width: 32
                         sourceSize.height: 32
