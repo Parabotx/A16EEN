@@ -198,6 +198,18 @@ fi
 echo
 echo "10. Lock / logout / reboot / power"
 check_cmd swaylock
+if command -v gtklock >/dev/null 2>&1; then
+    ok "gtklock -> $(command -v gtklock)"
+else
+    warn "gtklock is missing; A16EEN uses swaylock fallback without the custom clock/date/card/corner badge"
+fi
+if [[ -r "$HOME/.config/a16een/lockscreen/gtklock.css" \
+   && -r "$HOME/.config/a16een/lockscreen/gtklock.ui" \
+   && -r "$HOME/.config/a16een/lockscreen/gtklock.ini" ]]; then
+    ok "A16EEN GTKLock theme files are deployed"
+else
+    warn "One or more A16EEN GTKLock theme files are missing"
+fi
 check_cmd loginctl
 check_cmd systemctl
 if command -v niri >/dev/null 2>&1; then
