@@ -34,6 +34,7 @@ PanelWindow {
     property bool recordingDraftReady: false
     property bool stopRequested: false
     property int recordingSeconds: 0
+    property int recordingAnchorPosition: 0
     property string mediaError: ""
     property string playingAudioPath: ""
     readonly property bool isRecording:
@@ -141,7 +142,7 @@ PanelWindow {
         title: "Attach an image"
         fileMode: FileDialog.OpenFile
         nameFilters: ["Images (*.png *.jpg *.jpeg *.webp *.gif *.bmp)"]
-        onAccepted: root.addAttachment("image", String(selectedFile))
+        onAccepted: root.addAttachment("image", String(selectedFile), noteEditor.cursorPosition)
     }
 
     function hashPasscode(code, salt) {
@@ -164,6 +165,78 @@ PanelWindow {
             .replace(/>/g, "&gt;")
             .replace(/"/g, "&quot;")
             .replace(/'/g, "&#39;")
+    }
+
+    // Qt's rich-text editor can return a complete HTML document with its
+    // own stylesheet. Persist and format only the body fragment.
+    function cleanRichHtml(value) {
+        let html = String(value || "")
+        const bodyMatch = html.match(/<body\b[^>]*>([\s\S]*?)<\/body\s*>/i)
+        if (bodyMatch) {
+            html = bodyMatch[1]
+        } else {
+            html = html
+                .replace(/<head\b[^>]*>[\s\S]*?<\/head\s*>/gi, "")
+                .replace(/<style\b[^>]*>[\s\S]*?<\/style\s*>/gi, "")
+        }
+
+        html = html
+            .replace(/<style\b[^>]*>[\s\S]*?<\/style\s*>/gi, "")
+            .replace(/<!doctype[^>]*>/gi, "")
+            .replace(/<meta\b[^>]*>/gi, "")
+            .replace(/<\/?(?:html|head|body)\b[^>]*>/gi, "")
+            // Remove CSS that an older selection mapper accidentally copied
+            // into note content.
+            .replace(/p\s*,\s*li\s*\{[\s\S]*?li\.checked::marker\s*\{[^}]*\}\s*/gi, "")
+            .replace(/white-space:\s*pre-wrap;\s*\}\s*hr\s*\{[\s\S]*?li\.checked::marker\s*\{[^}]*\}\s*/gi, "")
+            .replace(/pace:\s*pre-wrap;\s*\}\s*hr\s*\{[\s\S]*?li\.checked::marker\s*\{[^}]*\}\s*/gi, "")
+            .replace(/<script\b[^>]*>[\s\S]*?<\/script\s*>/gi, "")
+            .trim()
+
+        // Repair basic legacy Markdown markers from the earlier formatter.
+        html = html.replace(/\*\*([^*\n]+)\*\*/g, "<b>$1</b>")
+            .replace(/\*([^*\n]+)\*/g, "<i>$1</i>")
+        return html
+    }
+
+    function previewText(value) {
+        return root.cleanRichHtml(value)
+            .replace(/<a\b[^>]*href=["']a16een-audio:[^"']*["'][^>]*>([\s\S]*?)<\/a>/gi, "[Voice note]")
+            .replace(/<img\b[^>]*>/gi, "[Image]")
+            .replace(/<br\s*\/?\s*>/gi, " ")
+            .replace(/<\/(?:p|div|li|h[1-6]|blockquote|pre)\s*>/gi, " ")
+            .replace(/<[^>]*>/g, " ")
+            .replace(/&nbsp;|&#160;/gi, " ")
+            .replace(/&amp;/gi, "&")
+            .replace(/&lt;/gi, "<")
+            .replace(/&gt;/gi, ">")
+            .replace(/&quot;/gi, '"')
+            .replace(/&#39;/g, "'")
+            .replace(/\s+/g, " ")
+            .trim()
+    }
+
+    function insertMarkupAtVisibleIndex(source, position, markup) {
+        const html = root.cleanRichHtml(source)
+        const offset = root.htmlOffsetForVisibleIndex(html, Math.max(0, Number(position) || 0))
+        return html.slice(0, offset) + markup + html.slice(offset)
+    }
+
+    function playInlineAttachment(link) {
+        const match = String(link || "").match(/^a16een-audio:(.+)$/)
+        if (!match || !root.selectedNote)
+            return
+        const item = (root.selectedNote.attachments || []).find(entry =>
+            String(entry.id) === match[1] && entry.type === "audio")
+        if (!item)
+            return
+        if (root.playingAudioPath === item.path && audioPlayer.playing) {
+            audioPlayer.pause()
+        } else {
+            root.mediaError = ""
+            root.playingAudioPath = item.path
+            audioPlayer.play()
+        }
     }
 
     function initializeNotes() {
@@ -200,9 +273,9 @@ PanelWindow {
                         id: String(note.id),
                         title: String(note.title || "Untitled note"),
                         body: Number(parsed.version || 0) >= 3
-                            ? String(note.body || "")
-                            : root.escapeHtml(String(note.body || "")).replace(/\n/g, "<br>"),
-                        alignment: ["left", "center", "right"].includes(note.alignment)
+                        ? root.cleanRichHtml(String(note.body || ""))
+                        : root.escapeHtml(String(note.body || "")).replace(/\n/g, "<br>"),
+                    alignment: ["left", "center", "right"].includes(note.alignment)
                             ? note.alignment : "left",
                         attachments: Array.isArray(note.attachments)
                             ? note.attachments.filter(item => item && item.path)
@@ -262,7 +335,7 @@ PanelWindow {
         if (!root.storageReady)
             return
         notesStorage.setText(JSON.stringify({
-            version: 3,
+            version: 4,
             selectedNoteId: root.selectedNoteId,
             notes: root.notes,
             passcodeHash: root.passcodeHash,
@@ -351,7 +424,7 @@ PanelWindow {
             return
         root.syncingEditor = true
         titleField.text = root.selectedNote.title
-        noteEditor.text = root.selectedNote.body
+        noteEditor.text = root.cleanRichHtml(root.selectedNote.body)
         noteEditor.horizontalAlignment = root.selectedNote.alignment === "center"
             ? TextEdit.AlignHCenter
             : (root.selectedNote.alignment === "right"
@@ -394,32 +467,65 @@ PanelWindow {
                 alignment: note.alignment || "left",
                 attachments: note.attachments || []
             }
-            next[fieldName] = String(value)
+            next[fieldName] = fieldName === "body"
+                ? root.cleanRichHtml(value)
+                : String(value)
             return next
         })
         root.queueSave()
     }
 
-    function addAttachment(type, path) {
+    function addAttachment(type, path, insertAt) {
         if (!root.selectedNote || !path)
             return
+
+        const attachmentType = type === "audio" ? "audio" : "image"
+        const hasInlinePosition = insertAt !== undefined && Number.isFinite(Number(insertAt))
         const item = {
             id: String(Date.now()),
-            type: type === "audio" ? "audio" : "image",
+            type: attachmentType,
             path: String(path),
-            title: type === "audio" ? "Voice note" : "Image"
+            title: attachmentType === "audio" ? "Voice note" : "Image",
+            inline: hasInlinePosition,
+            position: hasInlinePosition ? Math.max(0, Number(insertAt) || 0) : -1
         }
+
+        let nextBody = root.cleanRichHtml(root.selectedNote.body)
+        if (hasInlinePosition) {
+            let markup = ""
+            if (attachmentType === "audio") {
+                markup = ' &nbsp;<a href="a16een-audio:' + item.id
+                    + '" style="color:#4B6D94; text-decoration:none;">▶ Voice note</a>&nbsp; '
+            } else {
+                markup = ' &nbsp;<img src="' + root.escapeHtml(String(path))
+                    + '" width="144" />&nbsp; '
+            }
+            nextBody = root.insertMarkupAtVisibleIndex(nextBody, item.position, markup)
+        }
+
         root.notes = root.notes.map(note => {
             if (String(note.id) !== root.selectedNoteId)
                 return note
             return {
                 id: note.id,
                 title: note.title,
-                body: note.body,
+                body: nextBody,
                 alignment: note.alignment || "left",
                 attachments: [...(note.attachments || []), item]
             }
         })
+
+        if (hasInlinePosition) {
+            root.syncingEditor = true
+            noteEditor.text = nextBody
+            root.syncingEditor = false
+            Qt.callLater(() => {
+                noteEditor.cursorPosition = Math.min(
+                    noteEditor.length,
+                    item.position + (attachmentType === "audio" ? 13 : 1)
+                )
+            })
+        }
         root.queueSave()
     }
 
@@ -450,7 +556,10 @@ PanelWindow {
                 const end = raw.indexOf(">", i + 1)
                 if (end >= 0) {
                     const tag = raw.slice(i, end + 1)
-                    if (/^<br\s*\/?\s*>$/i.test(tag)) {
+                    const isVisibleBreak =
+                        /^<br\s*\/?\s*>$/i.test(tag)
+                        || /^<\/(?:p|div|li|h[1-6]|blockquote|pre)\s*>$/i.test(tag)
+                    if (isVisibleBreak) {
                         if (visibleIndex === targetIndex)
                             return i
                         visibleIndex++
@@ -483,7 +592,7 @@ PanelWindow {
         if (start < 0 || end <= start)
             return
 
-        const current = String(noteEditor.text)
+        const current = root.cleanRichHtml(noteEditor.text)
         const selected = String(noteEditor.selectedText)
         const sourceStart = root.htmlOffsetForVisibleIndex(current, start)
         const sourceEnd = root.htmlOffsetForVisibleIndex(current, end)
@@ -507,6 +616,7 @@ PanelWindow {
     function startRecording() {
         if (voiceRecorder.recorderState === MediaRecorder.RecordingState)
             return
+        root.recordingAnchorPosition = noteEditor.cursorPosition
         root.mediaError = ""
         root.recordingDraftReady = false
         root.recordingDraftPath = ""
@@ -532,7 +642,7 @@ PanelWindow {
     function saveRecordingDraft() {
         if (!root.recordingDraftReady)
             return
-        root.addAttachment("audio", root.recordingDraftPath)
+        root.addAttachment("audio", root.recordingDraftPath, root.recordingAnchorPosition)
         root.recordingDraftPath = ""
         root.recordingDraftReady = false
         root.recordingSeconds = 0
@@ -757,7 +867,7 @@ PanelWindow {
                             anchors.centerIn: parent
                             width: 15
                             height: 15
-                            source: Qt.resolvedUrl("../assets/icons/lucide-folder-open.svg")
+                            source: Qt.resolvedUrl("../assets/icons/quick-menu.svg")
                             sourceSize.width: 30
                             sourceSize.height: 30
                         }
@@ -939,7 +1049,7 @@ PanelWindow {
                                         }
                                         Text {
                                             width: parent.width
-                                            text: String(noteRow.modelData.body || "").replace(/<[^>]*>/g, "").replace(/\s+/g, " ").trim()
+                                            text: root.previewText(noteRow.modelData.body)
                                             color: "#8C96A2"
                                             font.pixelSize: 9
                                             elide: Text.ElideRight
@@ -1160,8 +1270,9 @@ PanelWindow {
                                 verticalAlignment: TextEdit.AlignTop
                                 onTextChanged: {
                                     if (!root.syncingEditor)
-                                        root.updateSelectedField("body", text)
+                                        root.updateSelectedField("body", root.cleanRichHtml(text))
                                 }
+                                onLinkActivated: link => root.playInlineAttachment(link)
                                 Keys.onEscapePressed: root.closeRequested()
                             }
 
@@ -1273,7 +1384,9 @@ PanelWindow {
                             orientation: ListView.Horizontal
                             spacing: 6
                             clip: true
-                            model: root.selectedNote ? root.selectedNote.attachments : []
+                            model: root.selectedNote
+                                ? root.selectedNote.attachments.filter(item => !item.inline)
+                                : []
 
                             delegate: Rectangle {
                                 id: attachmentCard
