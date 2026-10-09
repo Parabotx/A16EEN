@@ -1,0 +1,129 @@
+#!/usr/bin/env bash
+set -Eeuo pipefail
+umask 077
+
+# A16EEN lockscreen
+# Always use a real Wayland screen locker. This script never substitutes an
+# unlocked Quickshell overlay for authentication.
+
+if ! command -v swaylock >/dev/null 2>&1; then
+    printf '%s\n' "A16EEN: swaylock is not installed. Run a16een-update to repair dependencies." >&2
+    exit 127
+fi
+
+SWAYLOCK_HELP="$(swaylock --help 2>&1 || true)"
+COMMON_ARGS=(
+    --indicator
+    --indicator-radius 46
+    --indicator-thickness 4
+    --show-failed-attempts
+    --font "Inter"
+    --font-size 16
+    --line-color 00000000
+    --separator-color 00000000
+    --inside-color 111722D8
+    --inside-clear-color 21303EE8
+    --inside-ver-color 22394BE8
+    --inside-wrong-color 48242BE8
+    --ring-color D7B56D
+    --ring-clear-color F5F2EA
+    --ring-ver-color 86C8F5
+    --ring-wrong-color EF858B
+    --key-hl-color F5F2EA
+    --bs-hl-color EF858B
+    --text-color F5F2EA
+    --text-clear-color F5F2EA
+    --text-ver-color 86C8F5
+    --text-wrong-color EF858B
+)
+
+# swaylock-effects supports a real-time clock and captures/blur the screen
+# natively. Prefer it when installed, but keep the official swaylock fallback.
+if grep -q -- '--screenshots' <<<"$SWAYLOCK_HELP" \
+    && grep -q -- '--effect-blur' <<<"$SWAYLOCK_HELP" \
+    && grep -q -- '--clock' <<<"$SWAYLOCK_HELP"; then
+    exec swaylock \
+        --screenshots \
+        --clock \
+        --timestr '%H:%M' \
+        --datestr '%A, %d %B %Y' \
+        --indicator-idle-visible \
+        --effect-blur 9x5 \
+        --effect-vignette 0.5:0.5 \
+        --fade-in 0.25 \
+        "${COMMON_ARGS[@]}"
+fi
+
+# Official swaylock has a smaller feature set, so prepare a tasteful blurred
+# screenshot with a clock/date baked into the background before locking.
+# The temporary directory is user-owned, private, and removed after unlock.
+RUNTIME_ROOT="${XDG_RUNTIME_DIR:-${TMPDIR:-/tmp}}"
+LOCK_DIR="$(mktemp -d "$RUNTIME_ROOT/a16een-lock.XXXXXX")"
+trap 'rm -rf -- "$LOCK_DIR"' EXIT HUP INT TERM
+
+RAW_IMAGE="$LOCK_DIR/desktop.png"
+LOCK_IMAGE="$LOCK_DIR/lockscreen.png"
+
+if command -v grim >/dev/null 2>&1; then
+    grim "$RAW_IMAGE" >/dev/null 2>&1 || rm -f -- "$RAW_IMAGE"
+fi
+
+if command -v magick >/dev/null 2>&1; then
+    if [[ ! -s "$RAW_IMAGE" ]]; then
+        magick -size 1920x1080 gradient:'#101720-#29364A' "$RAW_IMAGE"
+    fi
+
+    read -r IMG_WIDTH IMG_HEIGHT < <(magick identify -format '%w %h' "$RAW_IMAGE")
+    [[ "$IMG_WIDTH" =~ ^[0-9]+$ && "$IMG_HEIGHT" =~ ^[0-9]+$ ]] || {
+        IMG_WIDTH=1920
+        IMG_HEIGHT=1080
+    }
+
+    CLOCK_SIZE=$((IMG_HEIGHT / 10))
+    DATE_SIZE=$((IMG_HEIGHT / 48))
+    LABEL_SIZE=$((IMG_HEIGHT / 90))
+    (( CLOCK_SIZE < 54 )) && CLOCK_SIZE=54
+    (( CLOCK_SIZE > 126 )) && CLOCK_SIZE=126
+    (( DATE_SIZE < 17 )) && DATE_SIZE=17
+    (( LABEL_SIZE < 11 )) && LABEL_SIZE=11
+
+    CLOCK_Y=$((IMG_HEIGHT * 20 / 100))
+    DATE_Y=$((IMG_HEIGHT * 33 / 100))
+    LABEL_Y=$((IMG_HEIGHT * 77 / 100))
+
+    FONT_FILE="$(fc-match -f '%{file}' 'Inter:style=SemiBold' 2>/dev/null || true)"
+    [[ -r "$FONT_FILE" ]] || FONT_FILE="$(fc-match -f '%{file}' 'sans-serif' 2>/dev/null || true)"
+    FONT_ARGS=()
+    if [[ -r "$FONT_FILE" ]]; then
+        FONT_ARGS=(-font "$FONT_FILE")
+    fi
+
+    CURRENT_TIME="$(date '+%H:%M')"
+    CURRENT_DATE="$(date '+%A  ·  %d %B %Y')"
+
+    magick "$RAW_IMAGE" \
+        -resize "${IMG_WIDTH}x${IMG_HEIGHT}^" \
+        -gravity center -extent "${IMG_WIDTH}x${IMG_HEIGHT}" \
+        -blur 0x18 \
+        -fill '#0B101A' -colorize 38 \
+        -gravity north \
+        "${FONT_ARGS[@]}" \
+        -pointsize "$CLOCK_SIZE" -fill '#F5F2EA' \
+        -annotate "+0+$CLOCK_Y" "$CURRENT_TIME" \
+        -pointsize "$DATE_SIZE" -fill '#D7B56D' \
+        -annotate "+0+$DATE_Y" "$CURRENT_DATE" \
+        -pointsize "$LABEL_SIZE" -fill '#C0C8D3' \
+        -annotate "+0+$LABEL_Y" 'A16EEN  /  YOUR SESSION IS SECURE' \
+        "$LOCK_IMAGE"
+else
+    # Degrade gracefully if ImageMagick was removed after installation.
+    if [[ -s "$RAW_IMAGE" ]]; then
+        LOCK_IMAGE="$RAW_IMAGE"
+    fi
+fi
+
+if [[ -s "$LOCK_IMAGE" ]]; then
+    swaylock --image "$LOCK_IMAGE" --scaling fill "${COMMON_ARGS[@]}"
+else
+    swaylock --color 101720 "${COMMON_ARGS[@]}"
+fi
