@@ -31,17 +31,29 @@ window {
     margin-bottom: 7px;
 }
 
-#clock-label {
+#clock-label,
+#lock-card #clock-label,
+window.hidden #lock-card #clock-label {
     color: #FFFFFF;
     font-family: Inter, sans-serif;
     font-size: 62pt;
     font-weight: 600;
+    opacity: 1;
 }
 
-#date-label {
-    color: rgba(246, 248, 251, 0.78);
+#date-label,
+#lock-card #date-label,
+window.hidden #lock-card #date-label {
+    color: rgba(246, 248, 251, 0.90);
     font-family: Inter, sans-serif;
     font-size: 13pt;
+    opacity: 1;
+}
+
+window.hidden #lock-card,
+window.hidden #security-row,
+#security-row {
+    opacity: 1;
 }
 
 #lock-header {
