@@ -747,7 +747,9 @@ ShellRoot {
     QuickNotes {
         modelData: root.primaryScreen
         navbarPosition: root.navbarPosition
-        dockVisible: !root.focusedWindowFullscreen || root.navbarRevealed
+        // Once opened, keep the small popup available even if fullscreen
+        // auto-hide retracts the navbar underneath it.
+        dockVisible: true
         opened: root.quickNotesOpen
         onCloseRequested: root.quickNotesOpen = false
     }
@@ -755,7 +757,8 @@ ShellRoot {
     QuickTasks {
         modelData: root.primaryScreen
         navbarPosition: root.navbarPosition
-        dockVisible: !root.focusedWindowFullscreen || root.navbarRevealed
+        // The popup survives navbar auto-hide until the user closes it.
+        dockVisible: true
         opened: root.quickTasksOpen
         onCloseRequested: root.quickTasksOpen = false
     }
