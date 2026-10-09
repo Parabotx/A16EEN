@@ -6,6 +6,7 @@ CONFIG_DIR="$HOME/.config/a16een"
 STATE_DIR="$HOME/.local/state/a16een"
 NIRI_DIR="$CONFIG_DIR/niri"
 QS_DIR="$CONFIG_DIR/quickshell/a16een"
+LOCKSCREEN_DIR="$CONFIG_DIR/lockscreen"
 BACKUP_ROOT="$STATE_DIR/backups"
 USER_WALLPAPER_DIR="$HOME/Pictures/a16een"
 WALLPAPER_STATE="$STATE_DIR/wallpaper"
@@ -21,6 +22,8 @@ pipewire
 wireplumber
 upower
 swaylock
+gtklock
+ffmpeg
 xwayland-satellite
 xdg-desktop-portal-gtk
 networkmanager
@@ -274,6 +277,13 @@ else
     trap - EXIT INT TERM
 fi
 
+# Keep the lock-screen theme deployed even when the desktop config itself is
+# already at the installed commit. This updates the GTKLock input and visual
+# styling independently from the Quickshell UI deployment.
+echo "==> Deploying A16EEN lock-screen theme"
+mkdir -p "$LOCKSCREEN_DIR"
+install -m644 "$ROOT_DIR/lockscreen/gtklock.css" "$LOCKSCREEN_DIR/gtklock.css"
+install -m644 "$ROOT_DIR/lockscreen/gtklock.ui" "$LOCKSCREEN_DIR/gtklock.ui"
 
 # Restore the persistent A16EEN workspace registry after every deployment.
 # Workspace creation/removal is handled live through Niri IPC; the source
