@@ -89,6 +89,19 @@ while true; do
         exit 0
     fi
 
+    # a16een restart-shell and the installer deliberately send SIGTERM to
+    # this child. Bash reports that as 128 + 15 = 143. Restart immediately
+    # without consuming the crash retry budget, otherwise a handful of normal
+    # reloads can permanently stop the shell (and therefore its wallpaper).
+    if [[ $status -eq 143 ]]; then
+        printf '[%s] Quickshell received the intentional restart signal; relaunching.\n' \
+            "$timestamp" >>"$LOG_FILE"
+        attempt=0
+        backoff=1
+        sleep 0.2
+        continue
+    fi
+
     attempt=$((attempt + 1))
 
     # Protect the machine from a broken QML/config revision turning into a
