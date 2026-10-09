@@ -1,16 +1,34 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <interface>
-    <!-- GTKLock attaches this full-output overlay to its session-lock surface. -->
-    <object class="GtkOverlay" id="window-box">
+    <!-- GTKLock expects window-box to be the main vertical content container. -->
+    <object class="GtkBox" id="window-box">
         <property name="name">window-box</property>
+        <property name="orientation">vertical</property>
+        <property name="spacing">0</property>
         <property name="halign">fill</property>
         <property name="valign">fill</property>
         <property name="hexpand">True</property>
         <property name="vexpand">True</property>
-
-        <!-- Centered glass card: live time, date, and password controls. -->
         <child>
-            <object class="GtkBox" id="lock-card">
+            <object class="GtkOverlay" id="screen-overlay">
+                <property name="name">screen-overlay</property>
+                <property name="halign">fill</property>
+                <property name="valign">fill</property>
+                <property name="hexpand">True</property>
+                <property name="vexpand">True</property>
+
+                <!-- Centered glass card: live time, date, and password controls. -->
+                <child>
+                    <object class="GtkAlignment" id="card-alignment">
+                        <property name="name">card-alignment</property>
+                        <property name="xalign">0.5</property>
+                        <property name="yalign">0.5</property>
+                        <property name="xscale">0</property>
+                        <property name="yscale">0</property>
+                        <property name="hexpand">True</property>
+                        <property name="vexpand">True</property>
+                        <child>
+                            <object class="GtkBox" id="lock-card">
                 <property name="name">lock-card</property>
                 <property name="halign">center</property>
                 <property name="valign">center</property>
@@ -175,11 +193,13 @@
                         </child>
                     </object>
                 </child>
-            </object>
-        </child>
+                            </object>
+                        </child>
+                    </object>
+                </child>
 
-        <!-- Floating badge at the real screen corner, not inside the card. -->
-        <child type="overlay">
+                <!-- Floating badge at the real screen corner, not inside the card. -->
+                <child type="overlay">
             <object class="GtkBox" id="security-row">
                 <property name="name">security-row</property>
                 <property name="halign">end</property>
@@ -203,6 +223,8 @@
                         <property name="label">LOCKED</property>
                         <property name="valign">center</property>
                     </object>
+                </child>
+            </object>
                 </child>
             </object>
         </child>
