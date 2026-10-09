@@ -5,32 +5,124 @@ umask 077
 STATE_DIR="${XDG_STATE_HOME:-$HOME/.local/state}/a16een"
 LOG_DIR="$STATE_DIR/logs"
 LOCK_LOG="$LOG_DIR/lock.log"
+CONFIG_DIR="${A16EEN_CONFIG_DIR:-$HOME/.config/a16een}"
+LOCK_THEME_DIR="$CONFIG_DIR/lockscreen"
+LOCK_STYLE="$LOCK_THEME_DIR/gtklock.css"
+LOCK_LAYOUT="$LOCK_THEME_DIR/gtklock.ui"
+DEFAULT_WALLPAPER="$CONFIG_DIR/quickshell/a16een/assets/wallpapers/default.png"
 mkdir -p "$LOG_DIR" 2>/dev/null || true
 log() { printf '[%s] %s\n' "$(date '+%Y-%m-%d %H:%M:%S')" "$*" >>"$LOCK_LOG" 2>/dev/null || true; }
 
-if ! command -v swaylock >/dev/null 2>&1; then
-    log "ERROR: swaylock is not installed."
-    printf '%s\n' "A16EEN: swaylock is not installed. Run a16een-update to repair dependencies." >&2
+if ! command -v gtklock >/dev/null 2>&1 && ! command -v swaylock >/dev/null 2>&1; then
+    log "ERROR: neither gtklock nor swaylock is installed."
+    printf '%s\n' "A16EEN: no supported lock screen was found. Run a16een-update to repair dependencies." >&2
     exit 127
 fi
-
-SWAYLOCK_HELP="$(swaylock --help 2>&1 || true)"
-READY_FD_SUPPORTED=0
-grep -q -- '--ready-fd' <<<"$SWAYLOCK_HELP" && READY_FD_SUPPORTED=1
 
 RUNTIME_ROOT="${XDG_RUNTIME_DIR:-${TMPDIR:-/tmp}}"
 LOCK_DIR="$(mktemp -d "$RUNTIME_ROOT/a16een-lock.XXXXXX")"
 READY_FILE="$LOCK_DIR/ready"
-RAW_IMAGE="$LOCK_DIR/desktop.png"
 LOCK_IMAGE="$LOCK_DIR/lockscreen.png"
 trap 'rm -rf -- "$LOCK_DIR"' EXIT
 trap 'exit 129' HUP
 trap 'exit 130' INT
 trap 'exit 143' TERM
 
-# Emit a marker only when swaylock confirms the session is secure. The shell
-# keeps its UI visible while optional image preparation or a failed command runs.
-run_locker() {
+# The lock uses one static frame from the current wallpaper. For video wallpapers,
+# ffmpeg extracts a frame before GTKLock starts; this prevents the old solid
+# blue-gray fallback from appearing just because the desktop wallpaper is animated.
+ACTIVE_WALLPAPER=""
+if command -v a16een-wallpaper >/dev/null 2>&1; then
+    ACTIVE_WALLPAPER="$(a16een-wallpaper current-path 2>/dev/null || true)"
+fi
+if [[ ! -r "$ACTIVE_WALLPAPER" ]]; then
+    ACTIVE_WALLPAPER="$DEFAULT_WALLPAPER"
+fi
+
+prepare_static_image() {
+    local source="$1"
+    [[ -r "$source" ]] || return 1
+    if command -v magick >/dev/null 2>&1; then
+        magick "$source" -auto-orient -strip "$LOCK_IMAGE" >/dev/null 2>&1             && [[ -s "$LOCK_IMAGE" ]]
+    else
+        cp -- "$source" "$LOCK_IMAGE" && [[ -s "$LOCK_IMAGE" ]]
+    fi
+}
+
+case "${ACTIVE_WALLPAPER,,}" in
+    *.gif)
+        if command -v magick >/dev/null 2>&1; then
+            magick "${ACTIVE_WALLPAPER}[0]" -auto-orient -strip "$LOCK_IMAGE" >/dev/null 2>&1 || true
+        elif command -v ffmpeg >/dev/null 2>&1; then
+            ffmpeg -loglevel error -y -i "$ACTIVE_WALLPAPER" -frames:v 1 -f image2 "$LOCK_IMAGE" >/dev/null 2>&1 || true
+        fi
+        ;;
+    *.mp4|*.webm|*.mov|*.m4v|*.mkv)
+        if command -v ffmpeg >/dev/null 2>&1; then
+            ffmpeg -loglevel error -y -ss 0.25 -i "$ACTIVE_WALLPAPER" -frames:v 1 -f image2 "$LOCK_IMAGE" >/dev/null 2>&1 || true
+        elif command -v magick >/dev/null 2>&1; then
+            magick "${ACTIVE_WALLPAPER}[0]" -auto-orient -strip "$LOCK_IMAGE" >/dev/null 2>&1 || true
+        fi
+        ;;
+    *)
+        prepare_static_image "$ACTIVE_WALLPAPER" || true
+        ;;
+esac
+
+if [[ ! -s "$LOCK_IMAGE" && -r "$DEFAULT_WALLPAPER" && "$ACTIVE_WALLPAPER" != "$DEFAULT_WALLPAPER" ]]; then
+    log "Could not decode selected wallpaper; preparing A16EEN default wallpaper."
+    prepare_static_image "$DEFAULT_WALLPAPER" || true
+fi
+
+if [[ -s "$LOCK_IMAGE" ]]; then
+    log "Prepared sharp lock background from: $ACTIVE_WALLPAPER"
+else
+    log "No usable wallpaper frame found; the lock theme will use its neutral charcoal fallback."
+fi
+
+# GTKLock provides a real password entry rather than swaylock's circular
+# indicator. It uses the Wayland session-lock protocol and keeps the mouse
+# cursor visible. The XML and CSS customize appearance only; authentication
+# remains GTKLock/PAM's responsibility.
+if command -v gtklock >/dev/null 2>&1; then
+    GTKLOCK_ARGS=(
+        --time-format '%H:%M'
+        --date-format '%A, %d %B %Y'
+    )
+    if [[ -s "$LOCK_IMAGE" ]]; then
+        GTKLOCK_ARGS+=(--background "$LOCK_IMAGE")
+    fi
+    if [[ -r "$LOCK_STYLE" ]]; then
+        GTKLOCK_ARGS+=(--style "$LOCK_STYLE")
+    fi
+    if [[ -r "$LOCK_LAYOUT" ]]; then
+        GTKLOCK_ARGS+=(--layout "$LOCK_LAYOUT")
+    fi
+
+    log "Starting GTKLock with the A16EEN password-field theme."
+    if gtklock "${GTKLOCK_ARGS[@]}"; then
+        log "GTKLock exited after the session was unlocked."
+        exit 0
+    else
+        status=$?
+        log "GTKLock failed to start or exited unexpectedly (status $status); trying secure swaylock fallback."
+    fi
+fi
+
+# Secure fallback for machines where GTKLock is unavailable or fails. Keep the
+# pointer visible and retain the same wallpaper and restrained gold/charcoal
+# colors rather than hiding the cursor or reverting to a flat blue-gray look.
+if ! command -v swaylock >/dev/null 2>&1; then
+    log "ERROR: GTKLock failed and swaylock is unavailable."
+    printf '%s\n' "A16EEN: GTKLock failed and swaylock is unavailable. See $LOCK_LOG" >&2
+    exit 1
+fi
+
+SWAYLOCK_HELP="$(swaylock --help 2>&1 || true)"
+READY_FD_SUPPORTED=0
+grep -q -- '--ready-fd' <<<"$SWAYLOCK_HELP" && READY_FD_SUPPORTED=1
+
+run_swaylock() {
     : >"$READY_FILE"
     local pid=0 tries=0 status=0 ready_sent=0
 
@@ -44,13 +136,13 @@ run_locker() {
     while (( tries < 200 )); do
         if (( READY_FD_SUPPORTED )) && [[ -s "$READY_FILE" ]]; then
             printf '%s\n' "A16EEN_LOCK_READY"
-            log "Locker signaled ready."
+            log "swaylock signaled ready."
             ready_sent=1
             break
         fi
         if (( ! READY_FD_SUPPORTED && tries >= 5 )) && kill -0 "$pid" 2>/dev/null; then
             printf '%s\n' "A16EEN_LOCK_READY"
-            log "Locker passed legacy startup check."
+            log "swaylock passed legacy startup check."
             ready_sent=1
             break
         fi
@@ -61,99 +153,30 @@ run_locker() {
 
     if wait "$pid"; then status=0; else status=$?; fi
     if (( status != 0 )); then
-        log "Locker failed (status $status): $*"
+        log "swaylock failed (status $status): $*"
     elif (( ! ready_sent )); then
-        log "Locker exited before ready marker; treating it as a failed start."
+        log "swaylock exited before its ready marker; treating it as a failed start."
         status=75
     fi
     return "$status"
 }
 
-# Use the same wallpaper the desktop currently displays. Do not capture the
-# desktop here: screenshots can include UI overlays and the old blur-first path
-# made the lock screen look like a flat gray-blue surface.
-ACTIVE_WALLPAPER=""
-if command -v a16een-wallpaper >/dev/null 2>&1; then
-    ACTIVE_WALLPAPER="$(a16een-wallpaper current-path 2>/dev/null || true)"
-fi
-
-if [[ ! -r "$ACTIVE_WALLPAPER" ]]; then
-    ACTIVE_WALLPAPER="$HOME/.config/a16een/quickshell/a16een/assets/wallpapers/default.png"
-fi
-
-# Animated wallpaper formats are converted to a representative still frame.
-# If a video decoder is available, take the first frame; otherwise use the
-# bundled default image instead of falling back to a plain-color screen.
-IMAGE_INPUT="$ACTIVE_WALLPAPER"
-case "${ACTIVE_WALLPAPER,,}" in
-    *.gif)
-        IMAGE_INPUT="${ACTIVE_WALLPAPER}[0]"
-        ;;
-    *.mp4|*.webm|*.mov|*.m4v|*.mkv)
-        if command -v ffmpeg >/dev/null 2>&1; then
-            if ffmpeg -loglevel error -y -i "$ACTIVE_WALLPAPER" -frames:v 1 "$RAW_IMAGE" >/dev/null 2>&1 && [[ -s "$RAW_IMAGE" ]]; then
-                IMAGE_INPUT="$RAW_IMAGE"
-            else
-                IMAGE_INPUT="$HOME/.config/a16een/quickshell/a16een/assets/wallpapers/default.png"
-            fi
-        else
-            IMAGE_INPUT="$HOME/.config/a16een/quickshell/a16een/assets/wallpapers/default.png"
-        fi
-        ;;
-esac
-
-# Preserve the actual colors and detail of the wallpaper. The light navy tint
-# is deliberately subtle: it improves white text and the password ring without
-# blurring or flattening the wallpaper.
-if command -v magick >/dev/null 2>&1 && [[ -r "$IMAGE_INPUT" ]]; then
-    if magick "$IMAGE_INPUT" -auto-orient -strip -fill '#07111E' -colorize 12 "$LOCK_IMAGE" >/dev/null 2>&1 && [[ -s "$LOCK_IMAGE" ]]; then
-        log "Prepared sharp lock image from wallpaper: $ACTIVE_WALLPAPER"
-    else
-        rm -f -- "$LOCK_IMAGE"
-        log "Wallpaper processing failed; will try the original wallpaper directly."
-    fi
-fi
-
-if [[ ! -s "$LOCK_IMAGE" && -r "$ACTIVE_WALLPAPER" ]]; then
-    case "${ACTIVE_WALLPAPER,,}" in
-        *.png|*.jpg|*.jpeg|*.webp|*.bmp|*.tif|*.tiff|*.tga|*.ppm|*.pgm|*.pbm|*.xpm|*.xbm|*.svg)
-            LOCK_IMAGE="$ACTIVE_WALLPAPER"
-            log "Using original wallpaper without processing."
-            ;;
-    esac
-fi
-
-# Use optional swaylock-effects features only after preparing the wallpaper.
-# No screenshot mode and no blur: the selected wallpaper remains recognizable.
 LOCKER_ARGS=()
 if [[ -s "$LOCK_IMAGE" ]]; then
     LOCKER_ARGS+=(--image "$LOCK_IMAGE" --scaling fill)
 else
-    log "No usable wallpaper found; trying the built-in default image."
-    DEFAULT_WALLPAPER="$HOME/.config/a16een/quickshell/a16een/assets/wallpapers/default.png"
-    if [[ -r "$DEFAULT_WALLPAPER" ]]; then
-        LOCKER_ARGS+=(--image "$DEFAULT_WALLPAPER" --scaling fill)
-    else
-        LOCKER_ARGS+=(--color 101720)
-    fi
+    LOCKER_ARGS+=(--color 0B0E13)
 fi
 
-# Cursor hiding is optional, since not every swaylock build exposes it.
-HIDE_CURSOR_SUPPORTED=0
-if grep -q -- '--hide-cursor' <<<"$SWAYLOCK_HELP"; then
-    HIDE_CURSOR_SUPPORTED=1
-fi
-
-# Keep BASE_ARGS limited to options supported by standard swaylock builds.
 BASE_ARGS=(
     "${LOCKER_ARGS[@]}"
     --indicator
-    --indicator-radius 58
-    --indicator-thickness 5
+    --indicator-radius 54
+    --indicator-thickness 4
     --show-failed-attempts
     --font "Inter"
-    --font-size 18
-    --inside-color 101923D8
+    --font-size 16
+    --inside-color 121820D8
     --ring-color D7B56D
     --key-hl-color F5F2EA
     --bs-hl-color EF858B
@@ -161,57 +184,16 @@ BASE_ARGS=(
     --separator-color 00000000
     --text-color F8FAFC
 )
-if (( HIDE_CURSOR_SUPPORTED )); then
-    BASE_ARGS+=(--hide-cursor)
-fi
 
 if grep -q -- '--clock' <<<"$SWAYLOCK_HELP" \
-    && grep -q -- '--effect-vignette' <<<"$SWAYLOCK_HELP" \
-    && grep -q -- '--fade-in' <<<"$SWAYLOCK_HELP" \
-    && grep -q -- '--indicator-idle-visible' <<<"$SWAYLOCK_HELP"; then
-    EFFECT_ARGS=(
-        --inside-clear-color 17392BE8
-        --inside-ver-color 17392BE8
-        --inside-wrong-color 48242BE8
-        --ring-clear-color F5F2EA
-        --ring-ver-color 9ED6B3
-        --ring-wrong-color EF858B
-        --text-clear-color F8FAFC
-        --text-ver-color 9ED6B3
-        --text-wrong-color EF858B
-    )
-    log "Trying wallpaper-first swaylock-effects profile."
-    if run_locker swaylock "${BASE_ARGS[@]}" "${EFFECT_ARGS[@]}" \
-        --clock --timestr '%H:%M' --datestr '%A, %d %B %Y' \
-        --indicator-idle-visible --effect-vignette 0.22:0.16 --fade-in 0.22; then
-        exit 0
-    fi
-    log "Effects profile failed; trying standard swaylock with the same wallpaper."
+    && grep -q -- '--timestr' <<<"$SWAYLOCK_HELP" \
+    && grep -q -- '--datestr' <<<"$SWAYLOCK_HELP"; then
+    BASE_ARGS+=(--clock --timestr '%H:%M' --datestr '%A, %d %B %Y')
 fi
 
-# Standard swaylock fallback keeps the same image, clear ring, and visible
-# password feedback without relying on swaylock-effects-specific options.
-log "Starting standard wallpaper lock profile."
-if run_locker swaylock "${BASE_ARGS[@]}"; then exit 0; fi
+log "Starting secure swaylock fallback with the same wallpaper."
+if run_swaylock swaylock "${BASE_ARGS[@]}"; then exit 0; fi
 
-# Final secure fallback is intentionally minimal, but use the wallpaper if it
-# was available rather than replacing it with a solid gray-blue screen.
-if [[ -s "$LOCK_IMAGE" ]]; then
-    log "Trying wallpaper-only secure fallback."
-    if (( HIDE_CURSOR_SUPPORTED )); then
-        if run_locker swaylock --image "$LOCK_IMAGE" --scaling fill --hide-cursor; then exit 0; fi
-    else
-        if run_locker swaylock --image "$LOCK_IMAGE" --scaling fill; then exit 0; fi
-    fi
-fi
-
-log "Starting minimal secure swaylock fallback."
-if (( HIDE_CURSOR_SUPPORTED )); then
-    if run_locker swaylock --color 101720 --hide-cursor; then exit 0; fi
-else
-    if run_locker swaylock --color 101720; then exit 0; fi
-fi
-
-log "ERROR: every swaylock launch attempt failed."
-printf '%s\n' "A16EEN: swaylock could not start. See $LOCK_LOG" >&2
+log "ERROR: all lock-screen launch attempts failed."
+printf '%s\n' "A16EEN: the lock screen could not start. See $LOCK_LOG" >&2
 exit 1
