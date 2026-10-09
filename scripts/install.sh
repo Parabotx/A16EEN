@@ -25,6 +25,7 @@ xwayland-satellite
 xdg-desktop-portal-gtk
 networkmanager
 grim
+imagemagick
 wl-clipboard
 jq
 bluez
@@ -309,6 +310,7 @@ sudo install -Dm755 "$ROOT_DIR/scripts/a16een-shell" /usr/local/bin/a16een-shell
 sudo install -Dm755 "$ROOT_DIR/scripts/a16een" /usr/local/bin/a16een
 sudo install -Dm755 "$ROOT_DIR/scripts/a16een-wallpaper" /usr/local/bin/a16een-wallpaper
 sudo install -Dm755 "$ROOT_DIR/scripts/a16een-screenshot" /usr/local/bin/a16een-screenshot
+sudo install -Dm755 "$ROOT_DIR/scripts/a16een-lock" /usr/local/bin/a16een-lock
 sudo install -Dm755 "$ROOT_DIR/scripts/a16een-control" /usr/local/bin/a16een-control
 sudo install -Dm755 "$ROOT_DIR/scripts/a16een-icon-theme" /usr/local/bin/a16een-icon-theme
 sudo install -Dm755 "$ROOT_DIR/scripts/a16een-navbar" /usr/local/bin/a16een-navbar
