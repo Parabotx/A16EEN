@@ -155,7 +155,7 @@ binds {
     XF86MonBrightnessDown allow-when-locked=true {
         spawn "a16een" "brightness" "down"; }
 
-    Super+Alt+L repeat=false { spawn "swaylock" "-f" "-c" "08090C"; }
+    Super+Alt+L repeat=false hotkey-overlay-title="A16EEN Lock Screen" { spawn "a16een-lock"; }
 
     Print { screenshot; }
     Ctrl+Print { screenshot-screen; }
