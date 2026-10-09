@@ -269,7 +269,7 @@ PanelWindow {
             // Horizontal capsules sit on the screen edge like the navbar.
             // In portrait orientation, align the capsule with the 44px rail.
             left: 10
-            right: 12
+            right: root.horizontalNavbar ? 0 : 12
             top: root.navbarPosition === "top" ? 0 : 12
             bottom: root.navbarPosition === "bottom" ? 0 : 12
         }
