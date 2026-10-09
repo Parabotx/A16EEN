@@ -146,7 +146,7 @@ jobs:
           grep -Fq 'tone_amplitude(frequency)' scripts/a16een-music
           grep -Fq '"bandLevels": [round(value, 3) for value in band_levels]' scripts/a16een-music
           grep -Fq 'action == "visualizer"' scripts/a16een-music
-          grep -Fq '"hardBeat": bool(hard_beat)' scripts/a16een-music
+          ! grep -Fq '"hardBeat"' scripts/a16een-music
           ! grep -R -Fq 'Qt.labs.lottieqt' quickshell/a16een/ui
           test -f scripts/a16een-music
           test -f scripts/a16een-widget-settings

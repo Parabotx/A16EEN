@@ -774,128 +774,128 @@ PanelWindow {
             anchors.margins: 12
             spacing: 4
 
-                    Row {
-                        width: parent.width
-                        height: 12
+                Row {
+                    width: parent.width
+                    height: 12
 
-                        Text {
-                            text: "YOUR MUSIC"
-                            color: root.ink
-                            font.pixelSize: 7
-                            font.weight: Font.DemiBold
-                            font.letterSpacing: 0.9
-                        }
-
-                        Item { width: Math.max(1, parent.width - 94); height: 1 }
-
-                        Text {
-                            text: String(root.tracks.length) + (root.tracks.length === 1 ? " SONG" : " SONGS")
-                            color: root.muted
-                            font.pixelSize: 6
-                            font.weight: Font.DemiBold
-                        }
+                    Text {
+                        text: "YOUR MUSIC"
+                        color: root.ink
+                        font.pixelSize: 7
+                        font.weight: Font.DemiBold
+                        font.letterSpacing: 0.9
                     }
 
-                    Item {
-                        width: parent.width
-                        height: 88
+                    Item { width: Math.max(1, parent.width - 94); height: 1 }
+
+                    Text {
+                        text: String(root.tracks.length) + (root.tracks.length === 1 ? " SONG" : " SONGS")
+                        color: root.muted
+                        font.pixelSize: 6
+                        font.weight: Font.DemiBold
+                    }
+                }
+
+                Item {
+                    width: parent.width
+                    height: 88
+                    clip: true
+
+                    ListView {
+                        id: trackList
+                        anchors.fill: parent
+                        model: root.tracks
                         clip: true
+                        spacing: 2
+                        boundsBehavior: Flickable.StopAtBounds
+                        currentIndex: root.activeIndex
 
-                        ListView {
-                            id: trackList
-                            anchors.fill: parent
-                            model: root.tracks
-                            clip: true
-                            spacing: 2
-                            boundsBehavior: Flickable.StopAtBounds
-                            currentIndex: root.activeIndex
+                        onCurrentIndexChanged: {
+                            if (currentIndex >= 0)
+                                positionViewAtIndex(currentIndex, ListView.Contain)
+                        }
 
-                            onCurrentIndexChanged: {
-                                if (currentIndex >= 0)
-                                    positionViewAtIndex(currentIndex, ListView.Contain)
-                            }
+                        delegate: Rectangle {
+                            required property var modelData
+                            required property int index
 
-                            delegate: Rectangle {
-                                required property var modelData
-                                required property int index
+                            readonly property bool currentTrack: modelData.path === root.playback.path
 
-                                readonly property bool currentTrack: modelData.path === root.playback.path
+                            width: trackList.width
+                            height: 26
+                            radius: 8
+                            color: currentTrack ? "#F0E2CE" : trackHover.containsMouse ? "#F7EBDD" : "transparent"
+                            border.width: currentTrack ? 1 : 0
+                            border.color: "#E4CEB1"
 
-                                width: trackList.width
-                                height: 26
-                                radius: 8
-                                color: currentTrack ? "#F0E2CE" : trackHover.containsMouse ? "#F7EBDD" : "transparent"
-                                border.width: currentTrack ? 1 : 0
-                                border.color: "#E4CEB1"
+                            Row {
+                                anchors.fill: parent
+                                anchors.leftMargin: 8
+                                anchors.rightMargin: 8
+                                spacing: 8
 
-                                Row {
-                                    anchors.fill: parent
-                                    anchors.leftMargin: 8
-                                    anchors.rightMargin: 8
-                                    spacing: 8
+                                Text {
+                                    width: 16
+                                    anchors.verticalCenter: parent.verticalCenter
+                                    text: parent.parent.currentTrack && root.isPlaying ? "♫" : String(index + 1).padStart(2, "0")
+                                    color: parent.parent.currentTrack ? root.accent : root.muted
+                                    font.pixelSize: 7
+                                    font.weight: Font.DemiBold
+                                }
+
+                                Column {
+                                    width: parent.width - 48
+                                    anchors.verticalCenter: parent.verticalCenter
+                                    spacing: 1
 
                                     Text {
-                                        width: 16
-                                        anchors.verticalCenter: parent.verticalCenter
-                                        text: parent.parent.currentTrack && root.isPlaying ? "♫" : String(index + 1).padStart(2, "0")
-                                        color: parent.parent.currentTrack ? root.accent : root.muted
+                                        width: parent.width
+                                        text: modelData.title
+                                        color: parent.parent.parent.currentTrack ? root.ink : root.secondary
                                         font.pixelSize: 7
-                                        font.weight: Font.DemiBold
+                                        font.weight: parent.parent.parent.currentTrack ? Font.DemiBold : Font.Medium
+                                        elide: Text.ElideRight
                                     }
 
-                                    Column {
-                                        width: parent.width - 48
-                                        anchors.verticalCenter: parent.verticalCenter
-                                        spacing: 1
-
-                                        Text {
-                                            width: parent.width
-                                            text: modelData.title
-                                            color: parent.parent.parent.currentTrack ? root.ink : root.secondary
-                                            font.pixelSize: 7
-                                            font.weight: parent.parent.parent.currentTrack ? Font.DemiBold : Font.Medium
-                                            elide: Text.ElideRight
-                                        }
-
-                                        Text {
-                                            width: parent.width
-                                            text: modelData.artist
-                                            color: root.muted
-                                            font.pixelSize: 6
-                                            elide: Text.ElideRight
-                                        }
+                                    Text {
+                                        width: parent.width
+                                        text: modelData.artist
+                                        color: root.muted
+                                        font.pixelSize: 6
+                                        elide: Text.ElideRight
                                     }
                                 }
-
-                                MouseArea {
-                                    id: trackHover
-                                    anchors.fill: parent
-                                    cursorShape: Qt.PointingHandCursor
-                                    onClicked: root.playTrack(index)
-                                }
-                            }
-                        }
-
-                        Column {
-                            anchors.centerIn: parent
-                            visible: root.tracks.length === 0
-                            spacing: 2
-
-                            Text {
-                                anchors.horizontalCenter: parent.horizontalCenter
-                                text: root.statusMessage.length ? root.statusMessage : "No songs yet"
-                                color: root.secondary
-                                font.pixelSize: 8
                             }
 
-                            Text {
-                                anchors.horizontalCenter: parent.horizontalCenter
-                                text: "Add tracks to ~/Music"
-                                color: root.muted
-                                font.pixelSize: 6
+                            MouseArea {
+                                id: trackHover
+                                anchors.fill: parent
+                                cursorShape: Qt.PointingHandCursor
+                                onClicked: root.playTrack(index)
                             }
                         }
                     }
+
+                    Column {
+                        anchors.centerIn: parent
+                        visible: root.tracks.length === 0
+                        spacing: 2
+
+                        Text {
+                            anchors.horizontalCenter: parent.horizontalCenter
+                            text: root.statusMessage.length ? root.statusMessage : "No songs yet"
+                            color: root.secondary
+                            font.pixelSize: 8
+                        }
+
+                        Text {
+                            anchors.horizontalCenter: parent.horizontalCenter
+                            text: "Add tracks to ~/Music"
+                            color: root.muted
+                            font.pixelSize: 6
+                        }
+                    }
+                }
 
         }
     }
