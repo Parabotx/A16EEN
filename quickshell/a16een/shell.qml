@@ -697,6 +697,18 @@ ShellRoot {
         }
     }
 
+    function openQuickTasks() {
+        root.quickTasksOpen = true
+        root.quickNotesOpen = false
+        root.commandCenterOpen = false
+        root.launcherOpen = false
+        root.dashboardOpen = false
+        root.wallpaperPickerOpen = false
+        root.widgetsCenterOpen = false
+        root.screenshotCenterOpen = false
+        root.screenshotSettingsOpen = false
+    }
+
     QuickActionsTray {
         modelData: root.primaryScreen
         navbarPosition: root.navbarPosition
@@ -714,20 +726,8 @@ ShellRoot {
             root.screenshotSettingsOpen = false
         }
 
-        onTasksRequested: {
-            const shouldOpen = !root.quickTasksOpen
-            root.quickTasksOpen = shouldOpen
-            if (shouldOpen) {
-                root.quickNotesOpen = false
-                root.commandCenterOpen = false
-                root.launcherOpen = false
-                root.dashboardOpen = false
-                root.wallpaperPickerOpen = false
-                root.widgetsCenterOpen = false
-                root.screenshotCenterOpen = false
-                root.screenshotSettingsOpen = false
-            }
-        }
+        onTasksRequested: root.openQuickTasks()
+        onTasksHoverRequested: root.openQuickTasks()
 
         onPresetsRequested: {
             root.quickNotesOpen = false
