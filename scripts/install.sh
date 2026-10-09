@@ -454,9 +454,9 @@ else
     echo "==> A16EEN navbar icons already generated; skipping rebuild."
 fi
 
-# Restart the running Quickshell after deploying component changes. Do not rely
-# only on XDG_CURRENT_DESKTOP: terminal sessions can omit it or include several
-# desktop identifiers, which previously left old QML running after install.
+# Restart the running Quickshell after deploying component changes. Match
+# the config directory as an exact argv item so this works whether argv[0]
+# is named "qs" or "quickshell", and avoid touching unrelated Quickshell sessions.
 CONFIG_SHELL_DIR="$QS_DIR"
 RESTARTED_SHELL=0
 
@@ -468,16 +468,23 @@ for cmdline in /proc/[0-9]*/cmdline; do
         ''|*[!0-9]*) continue ;;
     esac
 
-    ARGS="$(tr '\0' ' ' < "$cmdline" 2>/dev/null || true)"
-    case "$ARGS" in
-        *"qs -c $CONFIG_SHELL_DIR"*)
-            if kill -TERM "$PID" 2>/dev/null; then
-                RESTARTED_SHELL=1
-                echo "==> Requested a Quickshell restart so the deployed navbar and Utilities UI load."
-            fi
-            break
-            ;;
+    ARGS="$(tr '\0' '\n' < "$cmdline" 2>/dev/null || true)"
+    COMMAND="$(printf '%s\n' "$ARGS" | sed -n '1p')"
+    COMMAND_NAME="${COMMAND##*/}"
+    case "$COMMAND_NAME" in
+        qs|quickshell) ;;
+        *) continue ;;
     esac
+
+    if ! printf '%s\n' "$ARGS" | grep -Fxq -- "$CONFIG_SHELL_DIR"; then
+        continue
+    fi
+
+    if kill -TERM "$PID" 2>/dev/null; then
+        RESTARTED_SHELL=1
+        echo "==> Requested a Quickshell restart so the deployed navbar and Utilities UI load."
+    fi
+    break
 done
 
 # The supervisor normally restarts Quickshell after its process exits. If it is
