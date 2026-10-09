@@ -1,4 +1,5 @@
 import QtQuick
+import Qt.labs.lottieqt
 import Quickshell
 import Quickshell.Io
 import Quickshell.Wayland
@@ -735,13 +736,12 @@ PanelWindow {
     Component {
         id: dancerImageComponent
 
-        Image {
+        LottieAnimation {
             anchors.fill: parent
             source: root.dancerSource
-            fillMode: Image.PreserveAspectFit
-            asynchronous: true
-            cache: false
-            smooth: true
+            loops: LottieAnimation.Infinite
+            autoPlay: true
+            quality: LottieAnimation.MediumQuality
         }
     }
 
