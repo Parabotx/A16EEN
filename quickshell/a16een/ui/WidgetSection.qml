@@ -9,6 +9,7 @@ Item {
     property bool pulseEnabled: false
     property bool workspaceEnabled: false
     property bool tasksEnabled: false
+    property bool musicEnabled: false
     property bool timeUse24Hour: true
     property bool timeShowSeconds: false
 
@@ -27,6 +28,7 @@ Item {
     signal pulseWidgetEnabledRequested(bool enabled)
     signal workspaceWidgetEnabledRequested(bool enabled)
     signal tasksWidgetEnabledRequested(bool enabled)
+    signal musicWidgetEnabledRequested(bool enabled)
     signal timeUse24HourRequested(bool enabled)
     signal timeShowSecondsRequested(bool enabled)
 
@@ -36,6 +38,7 @@ Item {
         if (id === "pulse") return root.pulseEnabled
         if (id === "workspaces") return root.workspaceEnabled
         if (id === "tasks") return root.tasksEnabled
+        if (id === "music") return root.musicEnabled
         return false
     }
 
@@ -45,6 +48,7 @@ Item {
         + (root.pulseEnabled ? 1 : 0)
         + (root.workspaceEnabled ? 1 : 0)
         + (root.tasksEnabled ? 1 : 0)
+        + (root.musicEnabled ? 1 : 0)
 
     function toggleWidget(id) {
         const next = !root.widgetEnabled(id)
@@ -59,6 +63,8 @@ Item {
             root.workspaceWidgetEnabledRequested(next)
         else if (id === "tasks")
             root.tasksWidgetEnabledRequested(next)
+        else if (id === "music")
+            root.musicWidgetEnabledRequested(next)
     }
 
     focus: visible
@@ -203,7 +209,7 @@ Item {
                             required property var modelData
 
                             width: registryList.width
-                            height: Math.min(70, Math.max(58, (registryPanel.height - 190) / 5))
+                            height: Math.min(70, Math.max(58, (registryPanel.height - 190) / 6))
                             radius: 13
                             color: root.widgetEnabled(modelData.id) ? "#F0F5FB" : "#FFFFFF"
                             border.width: 1
@@ -234,7 +240,9 @@ Item {
                                                     ? "P"
                                                     : modelData.id === "tasks"
                                                         ? "✓"
-                                                        : "W"
+                                                        : modelData.id === "music"
+                                                            ? "♫"
+                                                            : "W"
                                         color: root.widgetEnabled(modelData.id) ? root.accent : root.mutedText
                                         font.pixelSize: 10
                                         font.weight: Font.DemiBold
