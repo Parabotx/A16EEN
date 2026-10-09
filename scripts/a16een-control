@@ -163,6 +163,7 @@ wifi_detail() {
         awk -F: -v d="$device" '$1==d {print $2; exit}')
 
     printf 'state=%s\n' "${state:-disconnected}"
+    printf 'radio=%s\n' "$(cmd_wifi_status)"
     printf 'connection=%s\n' "${connection:-Not connected}"
     printf 'device=%s\n' "$device"
 }
