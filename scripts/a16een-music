@@ -363,7 +363,7 @@ def main():
     if action == "dancer":
         dancers = []
         for index in range(1, 6):
-            candidate = DANCER_DIR / f"dancer-{index}.svg"
+            candidate = DANCER_DIR / f"dancer-{index}.json"
             if candidate.is_file():
                 dancers.append(candidate.as_uri())
         emit({"path": random.choice(dancers) if dancers else ""})
