@@ -563,7 +563,7 @@ Item {
                                 color: "#FFFFFF"
                                 border.width: root.colorHexFromStyle(root.settingFor(root.selectedSlot).color) === modelData.id.toUpperCase()
                                     ? 1.5 : 1
-                                border.color: root.settingFor(root.selectedSlot).color.toUpperCase() === modelData.id.toUpperCase()
+                                border.color: root.colorHexFromStyle(root.settingFor(root.selectedSlot).color) === modelData.id.toUpperCase()
                                     ? root.accent : root.border
 
                                 Rectangle {
