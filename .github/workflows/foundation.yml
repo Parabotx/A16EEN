@@ -273,7 +273,7 @@ jobs:
           grep -Fq 'width: 44' quickshell/a16een/ui/Dock.qml
           grep -Fq 'height: 260' quickshell/a16een/ui/Dock.qml
           ! grep -Fq 'D7B56D' quickshell/a16een/ui/Dock.qml
-          ! grep -Fq 'Repeater' quickshell/a16een/ui/Dock.qml
+          grep -Fq 'id: ethiopianMonthGrid' quickshell/a16een/ui/Dock.qml
           ! grep -Fq '⚙' quickshell/a16een/ui/Dock.qml
           ! grep -Fq 'text: "A"' quickshell/a16een/ui/Dock.qml
           ! grep -Fq 'TopBar {' quickshell/a16een/shell.qml
