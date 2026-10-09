@@ -12,7 +12,6 @@ PanelWindow {
     signal notesRequested()
     signal tasksRequested()
     signal presetsRequested()
-    signal calendarRequested()
 
     readonly property bool horizontalNavbar:
         root.navbarPosition === "top" || root.navbarPosition === "bottom"
@@ -20,8 +19,7 @@ PanelWindow {
     readonly property var actions: [
         { id: "notes", icon: "quick-notes.svg", label: "Notes" },
         { id: "tasks", icon: "quick-tasks.svg", label: "Tasks" },
-        { id: "presets", icon: "quick-presets.svg", label: "Presets" },
-        { id: "calendar", icon: "quick-calendar.svg", label: "Ethiopian calendar" }
+        { id: "presets", icon: "quick-presets.svg", label: "Presets" }
     ]
 
     screen: root.modelData
@@ -31,8 +29,9 @@ PanelWindow {
     exclusionMode: ExclusionMode.Ignore
     exclusiveZone: 0
 
-    width: root.horizontalNavbar ? 176 : 50
-    height: root.horizontalNavbar ? 46 : 124
+    // Size the shell surface to the three compact buttons, with minimal padding.
+    width: root.horizontalNavbar ? 100 : 36
+    height: root.horizontalNavbar ? 36 : 96
 
     anchors {
         left: !root.horizontalNavbar && root.navbarPosition === "left"
@@ -45,10 +44,10 @@ PanelWindow {
     // just eight pixels above the battery panel. Horizontally, it sits just
     // before the battery capsule, away from the centered workspace navbar.
     margins {
-        left: root.horizontalNavbar ? 12 : 28
-        right: root.horizontalNavbar ? 118 : 28
-        top: 12
-        bottom: root.horizontalNavbar ? 12 : 72
+        left: root.horizontalNavbar ? 12 : 78
+        right: root.horizontalNavbar ? 118 : 78
+        top: root.horizontalNavbar ? 4 : 12
+        bottom: root.horizontalNavbar ? 4 : 72
     }
 
     WlrLayershell.layer: WlrLayer.Overlay
@@ -56,7 +55,7 @@ PanelWindow {
 
     Rectangle {
         anchors.fill: parent
-        radius: root.horizontalNavbar ? 17 : 17
+        radius: 14
         color: "#FFFFFF"
         border.width: 1
         border.color: "#D9DEE5"
@@ -64,7 +63,7 @@ PanelWindow {
         Rectangle {
             anchors.fill: parent
             anchors.margins: -3
-            radius: 20
+            radius: 17
             color: "#10000000"
             z: -1
         }
@@ -81,17 +80,17 @@ PanelWindow {
                     id: actionButton
                     required property var modelData
 
-                    width: 32
-                    height: 32
-                    radius: 10
+                    width: 26
+                    height: 26
+                    radius: 9
                     color: actionHover.containsMouse ? "#F1F3F6" : "transparent"
                     border.width: actionHover.containsMouse ? 1 : 0
                     border.color: "#E2E6EB"
 
                     Image {
                         anchors.centerIn: parent
-                        width: 17
-                        height: 17
+                        width: 15
+                        height: 15
                         source: Qt.resolvedUrl("../assets/icons/" + actionButton.modelData.icon)
                         sourceSize.width: 34
                         sourceSize.height: 34
@@ -162,9 +161,6 @@ PanelWindow {
             break
         case "presets":
             root.presetsRequested()
-            break
-        case "calendar":
-            root.calendarRequested()
             break
         }
     }
