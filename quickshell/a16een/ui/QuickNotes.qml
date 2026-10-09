@@ -225,18 +225,18 @@ PanelWindow {
         z: 1
         width: root.popupWidth
         height: root.popupHeight
-        anchors {
-            left: !root.horizontalNavbar && root.navbarPosition === "left"
-            right: root.horizontalNavbar || root.navbarPosition === "right"
-            top: root.navbarPosition === "top"
-            bottom: root.navbarPosition !== "top"
-            leftMargin: !root.horizontalNavbar && root.navbarPosition === "left" ? 122 : 12
-            rightMargin: root.horizontalNavbar ? 118
-                : (!root.horizontalNavbar && root.navbarPosition === "right" ? 124 : 12)
-            topMargin: root.horizontalNavbar && root.navbarPosition === "top" ? 58 : 12
-            bottomMargin: root.horizontalNavbar && root.navbarPosition === "bottom" ? 58
-                : (!root.horizontalNavbar ? 72 : 12)
-        }
+        // Explicit screen coordinates avoid Qt anchor-state leftovers when
+        // rotating the navbar between left/right/top/bottom.
+        x: root.horizontalNavbar
+            ? Math.max(8, root.width - width - 102)
+            : (root.navbarPosition === "left"
+                ? 66
+                : Math.max(8, root.width - width - 68))
+        y: root.horizontalNavbar
+            ? (root.navbarPosition === "top"
+                ? 42
+                : Math.max(8, root.height - height - 42))
+            : Math.max(8, root.height - height - 72)
         radius: 19
         color: "#FFFFFF"
         border.width: 1
