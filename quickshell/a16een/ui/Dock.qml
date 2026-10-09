@@ -2,6 +2,7 @@ import QtQuick
 import Quickshell
 import Quickshell.Io
 import Quickshell.Wayland
+import Quickshell.Services.UPower
 
 PanelWindow {
     id: root
@@ -227,6 +228,141 @@ PanelWindow {
             acceptedButtons: Qt.NoButton
             onEntered: root.revealDock()
             onExited: root.scheduleHide()
+        }
+    }
+
+    // Independent battery capsule. It occupies a corner beside the navbar
+    // without changing the workspace dock's size or centering.
+    PanelWindow {
+        id: batteryStatusPanel
+        screen: root.modelData
+        visible: root.dockVisible
+            && UPower.displayDevice.ready
+            && UPower.displayDevice.isPresent
+        color: "transparent"
+        aboveWindows: true
+        exclusionMode: ExclusionMode.Ignore
+        exclusiveZone: 0
+        width: 112
+        height: 48
+
+        anchors {
+            left: root.navbarPosition !== "right"
+            right: root.navbarPosition === "right"
+            top: root.navbarPosition === "top"
+            bottom: root.navbarPosition !== "top"
+        }
+
+        margins {
+            left: 12
+            right: 12
+            top: 12
+            bottom: 12
+        }
+
+        WlrLayershell.layer: WlrLayer.Overlay
+        WlrLayershell.namespace: "a16een-battery-status"
+
+        function batteryPercent() {
+            if (!UPower.displayDevice.ready || !UPower.displayDevice.isPresent)
+                return 0
+            return Math.max(0, Math.min(100, Math.round(UPower.displayDevice.percentage)))
+        }
+
+        function batteryStatusText() {
+            const state = UPower.displayDevice.state
+            if (state === UPowerDeviceState.Charging
+                || state === UPowerDeviceState.PendingCharge)
+                return "CHARGING"
+            if (state === UPowerDeviceState.FullyCharged)
+                return "FULL"
+            if (UPower.onBattery
+                || state === UPowerDeviceState.Discharging
+                || state === UPowerDeviceState.PendingDischarge)
+                return "ON BATTERY"
+            return "POWERED"
+        }
+
+        function batteryAccentColor() {
+            if (batteryStatusPanel.batteryPercent() <= 20 && UPower.onBattery)
+                return "#E5484D"
+            const state = UPower.displayDevice.state
+            if (state === UPowerDeviceState.Charging
+                || state === UPowerDeviceState.PendingCharge
+                || state === UPowerDeviceState.FullyCharged)
+                return "#16A34A"
+            return "#111318"
+        }
+
+        Rectangle {
+            anchors.fill: parent
+            radius: 14
+            color: "#FFFFFF"
+            border.width: 1
+            border.color: "#D9DEE5"
+
+            Rectangle {
+                anchors.fill: parent
+                anchors.margins: -3
+                radius: 17
+                color: "#10000000"
+                z: -1
+            }
+
+            Image {
+                x: 10
+                y: 10
+                width: 20
+                height: 20
+                source: Qt.resolvedUrl("../assets/icons/lucide-battery-dark.svg")
+                fillMode: Image.PreserveAspectFit
+                sourceSize.width: 20
+                sourceSize.height: 20
+                smooth: true
+                asynchronous: true
+            }
+
+            Column {
+                x: 37
+                y: 6
+                width: 64
+                spacing: 1
+
+                Text {
+                    width: parent.width
+                    text: batteryStatusPanel.batteryPercent() + "%"
+                    color: "#111318"
+                    font.pixelSize: 14
+                    font.weight: Font.DemiBold
+                    elide: Text.ElideRight
+                }
+
+                Text {
+                    width: parent.width
+                    text: batteryStatusPanel.batteryStatusText()
+                    color: batteryStatusPanel.batteryAccentColor()
+                    font.pixelSize: 7
+                    font.weight: Font.DemiBold
+                    font.letterSpacing: 0.45
+                    elide: Text.ElideRight
+                }
+            }
+
+            Rectangle {
+                x: 10
+                y: 38
+                width: 92
+                height: 3
+                radius: 2
+                color: "#E7EBF0"
+
+                Rectangle {
+                    width: Math.max(2, parent.width * batteryStatusPanel.batteryPercent() / 100)
+                    height: parent.height
+                    radius: parent.radius
+                    color: batteryStatusPanel.batteryAccentColor()
+                }
+            }
         }
     }
 
