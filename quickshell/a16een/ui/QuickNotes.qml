@@ -36,6 +36,8 @@ PanelWindow {
     property int recordingSeconds: 0
     property string mediaError: ""
     property string playingAudioPath: ""
+    readonly property bool isRecording:
+        voiceRecorder.recorderState === MediaRecorder.RecordingState
 
     signal closeRequested()
 
@@ -1262,13 +1264,11 @@ PanelWindow {
                                         color: "#FFFFFF"
                                         border.width: 1
                                         border.color: "#E1E6EC"
-                                        Image {
+                                        Text {
                                             anchors.centerIn: parent
-                                            width: 12
-                                            height: 12
-                                            source: Qt.resolvedUrl("../assets/icons/lucide-app-window.svg")
-                                            sourceSize.width: 24
-                                            sourceSize.height: 24
+                                            text: audioPlayer.source.toString() === attachmentCard.modelData.path && audioPlayer.playing ? "Ⅱ" : "▶"
+                                            color: "#3F4A56"
+                                            font.pixelSize: 11
                                         }
                                         MouseArea {
                                             anchors.fill: parent
