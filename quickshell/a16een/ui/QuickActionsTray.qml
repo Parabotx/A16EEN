@@ -31,8 +31,8 @@ PanelWindow {
     exclusiveZone: 0
 
     // Size the shell surface to the three compact buttons, with minimal padding.
-    width: root.horizontalNavbar ? 92 : 44
-    height: root.horizontalNavbar ? 36 : 92
+    width: root.horizontalNavbar ? 84 : 42
+    height: root.horizontalNavbar ? 32 : 84
 
     anchors {
         left: !root.horizontalNavbar && root.navbarPosition === "left"
@@ -49,9 +49,9 @@ PanelWindow {
         // Horizontal trays share the battery capsule's 12px edge alignment.
         // Align the vertical tray exactly with the visible 44px navbar rail.
         // Horizontally it sits directly beside the battery capsule.
-        left: root.horizontalNavbar ? 0 : 10
+        left: root.horizontalNavbar ? 0 : 12
         right: root.horizontalNavbar ? 102 : 12
-        top: root.horizontalNavbar ? 0 : 12
+        top: 0
         bottom: root.horizontalNavbar ? 0 : 72
     }
 
@@ -60,7 +60,7 @@ PanelWindow {
 
     Rectangle {
         anchors.fill: parent
-        radius: 13
+        radius: 12
         color: "#FFFFFF"
         border.width: 1
         border.color: "#D9DEE5"
@@ -68,7 +68,7 @@ PanelWindow {
         Rectangle {
             anchors.fill: parent
             anchors.margins: -3
-            radius: 16
+            radius: 15
             color: "#10000000"
             z: -1
         }
@@ -76,7 +76,7 @@ PanelWindow {
         Row {
             visible: root.horizontalNavbar
             anchors.centerIn: parent
-            spacing: 4
+            spacing: 3
 
             Repeater {
                 model: root.actions
@@ -85,17 +85,17 @@ PanelWindow {
                     id: actionButton
                     required property var modelData
 
-                    width: 26
-                    height: 26
-                    radius: 9
+                    width: 24
+                    height: 24
+                    radius: 8
                     color: actionHover.containsMouse ? "#F1F3F6" : "transparent"
                     border.width: actionHover.containsMouse ? 1 : 0
                     border.color: "#E2E6EB"
 
                     Image {
                         anchors.centerIn: parent
-                        width: 15
-                        height: 15
+                        width: 14
+                        height: 14
                         source: Qt.resolvedUrl("../assets/icons/" + actionButton.modelData.icon)
                         sourceSize.width: 34
                         sourceSize.height: 34
@@ -121,7 +121,7 @@ PanelWindow {
         Column {
             visible: !root.horizontalNavbar
             anchors.centerIn: parent
-            spacing: 4
+            spacing: 3
 
             Repeater {
                 model: root.actions
@@ -130,17 +130,17 @@ PanelWindow {
                     id: actionButton
                     required property var modelData
 
-                    width: 26
-                    height: 26
-                    radius: 9
+                    width: 24
+                    height: 24
+                    radius: 8
                     color: actionHover.containsMouse ? "#F1F3F6" : "transparent"
                     border.width: actionHover.containsMouse ? 1 : 0
                     border.color: "#E2E6EB"
 
                     Image {
                         anchors.centerIn: parent
-                        width: 15
-                        height: 15
+                        width: 14
+                        height: 14
                         source: Qt.resolvedUrl("../assets/icons/" + actionButton.modelData.icon)
                         sourceSize.width: 32
                         sourceSize.height: 32
