@@ -56,8 +56,15 @@ PanelWindow {
     exclusionMode: ExclusionMode.Ignore
     exclusiveZone: 0
     focusable: root.opened
-    readonly property int popupWidth: 324
-    readonly property int popupHeight: root.creating ? 430 : 310
+    readonly property real screenWidth: root.modelData ? root.modelData.width : 1920
+    readonly property real screenHeight: root.modelData ? root.modelData.height : 1080
+    readonly property int popupWidth: 304
+    readonly property int popupHeight: root.creating ? 410 : 292
+
+    // Keep this overlay explicitly screen-sized so popup coordinates are
+    // stable when the navbar is moved to the left or right edge.
+    width: root.screenWidth
+    height: root.screenHeight
 
     // Transparent full-screen surface for click-outside dismissal.
     anchors {
@@ -267,15 +274,15 @@ PanelWindow {
         // Explicit coordinates keep this card attached to the tray on
         // both vertical sides and just below/above the horizontal tray.
         x: root.horizontalNavbar
-            ? Math.max(8, root.width - width - 102)
+            ? Math.max(8, root.screenWidth - width - 102)
             : (root.navbarPosition === "left"
-                ? 66
-                : Math.max(8, root.width - width - 68))
+                ? Math.min(66, Math.max(8, root.screenWidth - width - 8))
+                : Math.max(8, root.screenWidth - width - 68))
         y: root.horizontalNavbar
             ? (root.navbarPosition === "top"
-                ? 42
-                : Math.max(8, root.height - height - 42))
-            : Math.max(8, root.height - height - 72)
+                ? 40
+                : Math.max(8, root.screenHeight - height - 40))
+            : Math.max(8, root.screenHeight - height - 72)
         radius: 20
         color: "#FFFFFF"
         border.width: 1
