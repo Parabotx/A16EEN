@@ -166,6 +166,11 @@ restart_shell() {
     case ":${XDG_CURRENT_DESKTOP:-}:" in
         *:A16EEN:*) session_active=1 ;;
     esac
+    # Environment variables can be missing from terminals started indirectly.
+    # A running Niri owned by this user is a reliable session recovery signal.
+    if pgrep -u "$(id -u)" -x niri >/dev/null 2>&1; then
+        session_active=1
+    fi
 
     # Find the A16EEN supervisor by its exact script argument. Do not depend
     # on the Quickshell process command line: Qt may rewrite it to just
