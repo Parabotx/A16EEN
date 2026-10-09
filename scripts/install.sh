@@ -285,6 +285,22 @@ else
     trap - EXIT INT TERM
 fi
 
+# Sync optional animated music dancers on every update, including when the
+# source commit is unchanged and the user has just added their five local SVGs.
+# Only the named assets are touched; other files in the folder are preserved.
+echo "==> Syncing optional music dancer assets"
+MUSIC_DANCER_SOURCE_DIR="$ROOT_DIR/quickshell/a16een/assets/music-dancers"
+MUSIC_DANCER_TARGET_DIR="$QS_DIR/assets/music-dancers"
+mkdir -p "$MUSIC_DANCER_TARGET_DIR"
+for dancer_index in 1 2 3 4 5; do
+    dancer_name="dancer-$dancer_index.svg"
+    if [ -f "$MUSIC_DANCER_SOURCE_DIR/$dancer_name" ]; then
+        install -m644 "$MUSIC_DANCER_SOURCE_DIR/$dancer_name" "$MUSIC_DANCER_TARGET_DIR/$dancer_name"
+    else
+        rm -f "$MUSIC_DANCER_TARGET_DIR/$dancer_name"
+    fi
+done
+
 # Keep the lock-screen theme deployed even when the desktop config itself is
 # already at the installed commit. This updates the GTKLock input and visual
 # styling independently from the Quickshell UI deployment.
