@@ -199,7 +199,9 @@ PanelWindow {
                     .map(note => ({
                         id: String(note.id),
                         title: String(note.title || "Untitled note"),
-                        body: String(note.body || ""),
+                        body: Number(parsed.version || 0) >= 3
+                            ? String(note.body || "")
+                            : root.escapeHtml(String(note.body || "")).replace(/\n/g, "<br>"),
                         alignment: ["left", "center", "right"].includes(note.alignment)
                             ? note.alignment : "left",
                         attachments: Array.isArray(note.attachments)
