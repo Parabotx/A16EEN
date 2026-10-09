@@ -453,6 +453,7 @@ Item {
                     spacing: root.embedded ? 3 : 4
 
                     Text {
+                        width: parent.width
                         text: root.wifiName
                         color: root.textPrimary
                         font.pixelSize: root.embedded ? 10 : 15
