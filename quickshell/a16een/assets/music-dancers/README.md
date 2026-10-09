@@ -1,25 +1,25 @@
-# A16EEN Music Dancer SVGs
+# A16EEN Music Player — Lottie dancers
 
-Drop your five animated SVGs in this folder using these exact filenames:
+These five optional Lottie animations are bundled with A16EEN for every user. Upload your animation JSON files **to this GitHub folder**, not into a local-only folder:
 
-- `dancer-1.svg`
-- `dancer-2.svg`
-- `dancer-3.svg`
-- `dancer-4.svg`
-- `dancer-5.svg`
+`quickshell/a16een/assets/music-dancers/`
 
-On Arch, the local checkout path is:
+Use exactly these filenames:
 
-`~/.local/share/a16een/source/quickshell/a16een/assets/music-dancers/`
+- `dancer-1.json`
+- `dancer-2.json`
+- `dancer-3.json`
+- `dancer-4.json`
+- `dancer-5.json`
 
-The music widget chooses a random available dancer when a track starts or resumes. It unloads the SVG completely when playback pauses or the widget is disabled. Missing files are okay; if only two or three are present, it randomly chooses from those that exist.
+## Add the files on GitHub
 
-For best compatibility, use self-contained SVGs that animate with CSS keyframes or supported SVG SMIL transform/color animations. Avoid JavaScript-driven animation or externally linked assets; those are not supported by Qt's SVG renderer.
+Open the repository's `quickshell/a16een/assets/music-dancers/` folder, choose **Add file → Upload files**, upload the five JSON files using the names above, then commit the changes to `main`.
 
-After copying the files, run:
+The installer copies these committed files to each user's `~/.config/a16een/quickshell/a16een/assets/music-dancers/` directory. The music widget randomly chooses from the files that exist while playback is running. If playback pauses or the widget is disabled, the Lottie player is destroyed so it stops animating.
 
-```bash
-a16een-update
-```
+## Lottie compatibility
 
-The updater permits only these five named SVGs as local untracked assets and will deploy them into `~/.config/a16een/quickshell/a16een/assets/music-dancers/`.
+These must be **Lottie animation JSON exports**, not arbitrary JSON. Qt's Lottie player supports a subset of Lottie; shape-layer animations are the safest choice. Avoid expressions and external image/font assets where possible. Keep animations lightweight because they are software-rendered.
+
+The installer includes Arch Linux's `qt6-lottie` package, which provides the `Qt.labs.lottieqt` QML module used by A16EEN.
