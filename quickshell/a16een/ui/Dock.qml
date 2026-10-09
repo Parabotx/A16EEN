@@ -14,8 +14,10 @@ PanelWindow {
     required property bool fullscreenActive
 
     signal launcherRequested()
+    signal lockRequested()
     signal dockVisibilityChanged(bool visible)
 
+    property bool lockInProgress: false
     property bool powerMenuOpen: false
     property bool powerMenuSurfaceVisible: false
     property string pendingPowerAction: ""
@@ -96,7 +98,8 @@ PanelWindow {
         )
         : 44
 
-    readonly property bool dockVisible: !root.fullscreenActive || root.edgeRevealed
+    readonly property bool dockVisible:
+        (!root.fullscreenActive || root.edgeRevealed) && !root.lockInProgress
 
     readonly property int surfaceWidth:
         root.horizontalNavbar
@@ -295,10 +298,9 @@ PanelWindow {
         }
 
         margins {
-            // Horizontal capsules sit on the screen edge like the navbar.
-            // In portrait orientation, align the capsule with the 44px rail.
-            left: 10
-            right: root.horizontalNavbar ? 0 : 12
+            // Attach the active side to the screen edge in every orientation.
+            left: root.navbarPosition === "left" ? 0 : 10
+            right: root.navbarPosition === "right" || root.horizontalNavbar ? 0 : 12
             top: root.navbarPosition === "top" ? 0 : 12
             bottom: root.navbarPosition === "bottom" ? 0 : 12
         }
@@ -453,10 +455,12 @@ PanelWindow {
         }
 
         margins {
-            left: root.horizontalNavbar ? 0 : 10
-            right: 12
-            // Reserve the small slot immediately before the time capsule.
-            top: root.navbarPosition === "top" ? 40 : (root.horizontalNavbar ? 12 : 52)
+            // For horizontal layouts the power control leads from the edge,
+            // with the time capsule immediately after it. For vertical layouts
+            // each capsule hugs the side edge and sits in the upper corner.
+            left: root.horizontalNavbar ? 30 : (root.navbarPosition === "left" ? 0 : 12)
+            right: root.navbarPosition === "right" ? 0 : 12
+            top: root.navbarPosition === "top" ? 0 : (root.horizontalNavbar ? 12 : 52)
             bottom: root.navbarPosition === "bottom" ? 0 : 12
         }
 
@@ -675,16 +679,12 @@ PanelWindow {
         }
 
         margins {
-            // For top/bottom navbars, place power immediately right of the
-            // clock on the same baseline. Vertical navbars keep their corner slot.
-            left: root.horizontalNavbar ? 68 : 16
-            right: root.horizontalNavbar ? 12 : 18
-            top: root.navbarPosition === "top"
-                ? (root.horizontalNavbar ? 40 : 0)
-                : 12
-            bottom: root.navbarPosition === "bottom"
-                ? (root.horizontalNavbar ? 0 : 36)
-                : 12
+            // The power capsule starts the top/bottom cluster at the edge;
+            // time follows it. Vertical layouts are edge-flush as well.
+            left: root.horizontalNavbar || root.navbarPosition === "left" ? 0 : 12
+            right: root.navbarPosition === "right" ? 0 : 12
+            top: root.navbarPosition === "top" ? 0 : 12
+            bottom: root.navbarPosition === "bottom" ? 0 : 12
         }
 
         WlrLayershell.layer: WlrLayer.Overlay
@@ -919,10 +919,9 @@ PanelWindow {
         root.pendingPowerAction = ""
         switch (actionId) {
         case "lock":
-            // Launch the real A16EEN Wayland locker directly. A loginctl
-            // lock request needs a separate session-lock listener, which is
-            // not running in this setup, so it silently did nothing.
-            Quickshell.execDetached(["a16een-lock"])
+            // ShellRoot closes every overlay before starting swaylock.
+            // This avoids A16EEN overlay surfaces sitting over the lock UI.
+            root.lockRequested()
             break
         case "logout":
             Quickshell.execDetached(["niri", "msg", "action", "quit"])
