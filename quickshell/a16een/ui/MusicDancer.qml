@@ -16,9 +16,11 @@ LottieAnimation {
         if (status === LottieAnimation.Ready) {
             // Start only after Qt has parsed the compatible shape-only animation.
             start()
-            console.info("A16EEN Music: dancer animation loaded", root.source)
+            console.info("A16EEN Music: dancer animation loaded", root.source,
+                "frames:", startFrame, "to", endFrame, "size:", width, "x", height)
         } else if (status === LottieAnimation.Error) {
-            console.warn("A16EEN Music: failed to load dancer animation", root.source)
+            console.warn("A16EEN Music: failed to load dancer animation", root.source,
+                "status:", status)
         }
     }
 }
