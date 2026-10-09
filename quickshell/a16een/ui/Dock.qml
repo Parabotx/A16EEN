@@ -109,7 +109,6 @@ PanelWindow {
         }
     }
 
-    Component.onCompleted: utilityStatusReader.running = true
 
     readonly property bool utilityWifiConnected:
         root.utilityWifiState === "on"
@@ -264,7 +263,10 @@ PanelWindow {
         }
     }
 
-    Component.onCompleted: root.dockVisibilityChanged(root.dockVisible)
+    Component.onCompleted: {
+        utilityStatusReader.running = true
+        root.dockVisibilityChanged(root.dockVisible)
+    }
 
     onFullscreenActiveChanged: {
         root.edgeRevealed = false
