@@ -1131,7 +1131,11 @@ PanelWindow {
 
                         Rectangle {
                             width: parent.width
-                            height: Math.max(96, parent.height - 120 - (noteEditor.selectedText.length > 0 ? 24 : 0))
+                            height: Math.max(86, parent.height - 58
+                                - (noteEditor.selectedText.length > 0 ? 26 : 0)
+                                - (root.recordingDraftReady || root.isRecording ? 42 : 0)
+                                - (root.selectedNote && root.selectedNote.attachments.length > 0 ? 58 : 0)
+                                - (root.mediaError.length > 0 ? 24 : 0))
                             radius: 11
                             color: "#FAFBFC"
                             border.width: 1
