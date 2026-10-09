@@ -14,6 +14,12 @@ PanelWindow {
     required property bool fullscreenActive
 
     signal launcherRequested()
+    signal dockVisibilityChanged(bool visible)
+
+    // The tray lives on the primary display and follows the dock's fullscreen
+    // edge-reveal state. A one-shot pulse opens the same Ethiopian calendar.
+    property bool isPrimaryScreen: true
+    property bool calendarQuickOpenPulse: false
 
     readonly property color dockBackground: "#FFFFFF"
     readonly property color dockBorder: "#E5E7EB"
@@ -172,6 +178,18 @@ PanelWindow {
         repeat: false
         onTriggered: root.edgeRevealed = false
     }
+
+    onDockVisibleChanged: root.dockVisibilityChanged(root.dockVisible)
+
+    onCalendarQuickOpenPulseChanged: {
+        if (root.isPrimaryScreen && root.calendarQuickOpenPulse) {
+            navbarClockPanel.calendarFromQuickActions = true
+            calendarHideTimer.stop()
+            navbarClockPanel.calendarOpen = true
+        }
+    }
+
+    Component.onCompleted: root.dockVisibilityChanged(root.dockVisible)
 
     onFullscreenActiveChanged: {
         root.edgeRevealed = false
@@ -425,6 +443,7 @@ PanelWindow {
         property date clockNow: new Date()
         property bool calendarOpen: false
         property bool calendarWindowVisible: false
+        property bool calendarFromQuickActions: false
 
         onCalendarOpenChanged: {
             if (calendarOpen) {
@@ -598,6 +617,7 @@ PanelWindow {
                 z: 10
                 onEntered: {
                     calendarHideTimer.stop()
+                    navbarClockPanel.calendarFromQuickActions = false
                     navbarClockPanel.calendarOpen = true
                 }
                 onExited: calendarHideTimer.restart()
@@ -649,24 +669,31 @@ PanelWindow {
         height: 326
 
         anchors {
-            left: root.navbarPosition !== "right"
-            right: root.navbarPosition === "right"
+            left: root.horizontalNavbar
+                ? !navbarClockPanel.calendarFromQuickActions
+                : root.navbarPosition !== "right"
+            right: root.horizontalNavbar
+                ? navbarClockPanel.calendarFromQuickActions
+                : root.navbarPosition === "right"
             top: root.navbarPosition !== "bottom"
             bottom: root.navbarPosition === "bottom"
         }
 
-        // For a vertical navbar, place the calendar outside the rail and beside
-        // the clock, rather than over the navbar. Horizontal docks keep the
-        // popup below/above the clock to avoid covering workspace icons.
+        // A quick-tray calendar click opens beside that tray; a clock hover
+        // keeps the original position near the clock. Vertical layouts stay
+        // outside the rail, never covering the navbar itself.
         margins {
             left: !root.horizontalNavbar && root.navbarPosition === "left"
                 ? root.surfaceWidth + 12 : 12
             right: !root.horizontalNavbar && root.navbarPosition === "right"
                 ? root.surfaceWidth + 12 : 12
             top: root.navbarPosition === "bottom"
-                ? 12 : (root.horizontalNavbar ? 56 : 12)
+                ? 12 : (root.horizontalNavbar
+                    ? (navbarClockPanel.calendarFromQuickActions ? 62 : 56)
+                    : 12)
             bottom: root.navbarPosition === "bottom"
-                ? 56 : 12
+                ? (navbarClockPanel.calendarFromQuickActions ? 62 : 56)
+                : (navbarClockPanel.calendarFromQuickActions && !root.horizontalNavbar ? 72 : 12)
         }
 
         WlrLayershell.layer: WlrLayer.Overlay
