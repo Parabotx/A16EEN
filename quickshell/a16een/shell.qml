@@ -781,6 +781,7 @@ ShellRoot {
         MusicWidget {
             modelData: modelData
             widgetEnabled: root.musicWidgetEnabled && !root.secureLockActive
+            navbarPosition: root.navbarPosition
         }
     }
 
