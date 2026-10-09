@@ -28,6 +28,9 @@ ShellRoot {
     property bool quickNotesOpen: false
     property bool quickTasksOpen: false
     property bool quickPresetsOpen: false
+    property bool quickUtilitiesOpen: false
+    property bool utilitiesExpanded: false
+    property string utilitiesMode: "wifi"
     property bool navbarRevealed: false
     property bool lockLaunchQueued: false
     property bool lockProcessRunning: false
@@ -103,6 +106,8 @@ ShellRoot {
         root.quickNotesOpen = false
         root.quickTasksOpen = false
         root.quickPresetsOpen = false
+        root.quickUtilitiesOpen = false
+        root.utilitiesExpanded = false
         root.commandCenterOpen = false
         root.launcherOpen = false
         root.dashboardOpen = false
@@ -177,6 +182,7 @@ ShellRoot {
         && !root.screenshotCenterOpen
         && !root.quickNotesOpen
         && !root.quickTasksOpen
+        && !root.quickUtilitiesOpen
         && !root.lockLaunchQueued
         && !root.secureLockActive
 
@@ -777,6 +783,8 @@ ShellRoot {
             focusedWorkspaceId: root.focusedWorkspaceId
             fullscreenActive: root.focusedWindowFullscreen
             navbarPosition: root.navbarPosition
+            utilitiesExpanded: root.utilitiesExpanded
+            selectedUtility: root.utilitiesMode
             lockInProgress: root.secureLockActive
             onDockVisibilityChanged: {
                 if (modelData === root.primaryScreen)
@@ -792,12 +800,38 @@ ShellRoot {
             }
 
             onLockRequested: root.requestLockScreen()
+            onUtilitiesRequested: root.handleUtilitiesRequest(mode)
         }
+    }
+
+    function handleUtilitiesRequest(mode) {
+        if (mode === "toggle" && root.quickUtilitiesOpen) {
+            root.quickUtilitiesOpen = false
+            root.utilitiesExpanded = false
+            return
+        }
+
+        root.quickNotesOpen = false
+        root.quickTasksOpen = false
+        root.quickPresetsOpen = false
+        root.commandCenterOpen = false
+        root.launcherOpen = false
+        root.dashboardOpen = false
+        root.wallpaperPickerOpen = false
+        root.widgetsCenterOpen = false
+        root.screenshotCenterOpen = false
+        root.screenshotSettingsOpen = false
+
+        root.quickUtilitiesOpen = true
+        root.utilitiesExpanded = true
+        root.utilitiesMode = mode === "bluetooth" ? "bluetooth" : "wifi"
     }
 
     function openQuickTasks() {
         root.quickTasksOpen = true
         root.quickPresetsOpen = false
+        root.quickUtilitiesOpen = false
+        root.utilitiesExpanded = false
         // The navbar's lightweight task list is independent of the old desktop widget.
         root.tasksWidgetEnabled = false
         root.quickNotesOpen = false
@@ -812,6 +846,8 @@ ShellRoot {
 
     function openQuickPresets() {
         root.quickPresetsOpen = true
+        root.quickUtilitiesOpen = false
+        root.utilitiesExpanded = false
         root.quickNotesOpen = false
         root.quickTasksOpen = false
         root.tasksWidgetEnabled = false
@@ -831,6 +867,8 @@ ShellRoot {
 
         onNotesRequested: {
             root.quickNotesOpen = true
+            root.quickUtilitiesOpen = false
+            root.utilitiesExpanded = false
             root.quickTasksOpen = false
             root.quickPresetsOpen = false
             root.commandCenterOpen = false
@@ -865,6 +903,19 @@ ShellRoot {
         dockVisible: !root.secureLockActive
         opened: root.quickTasksOpen
         onCloseRequested: root.quickTasksOpen = false
+    }
+
+    UtilitiesPanel {
+        modelData: root.primaryScreen
+        navbarPosition: root.navbarPosition
+        dockVisible: !root.secureLockActive
+        opened: root.quickUtilitiesOpen
+        selectedMode: root.utilitiesMode
+        onModeRequested: root.handleUtilitiesRequest(mode)
+        onCloseRequested: {
+            root.quickUtilitiesOpen = false
+            root.utilitiesExpanded = false
+        }
     }
 
     QuickPresets {
