@@ -51,7 +51,7 @@ jobs:
           ! grep -Fq 'tela-circle-icon-theme-standard' scripts/install.sh
           ! grep -Fq 'tela-circle-icon-theme-blue' scripts/install.sh
           ! grep -Fq 'tela-circle-icon-theme-dracula' scripts/install.sh
-          grep -Fq 'split("\\n")' quickshell/a16een/ui/ControlDetailSection.qml
+          grep -Fq 'split("\n")' quickshell/a16een/ui/ControlDetailSection.qml
           grep -Fq 'split("\n")' quickshell/a16een/ui/IconThemeSection.qml
           grep -Fq 'property int iconThemeRevision' quickshell/a16een/ui/Launcher.qml
           grep -Fq 'property string iconThemeName' quickshell/a16een/ui/Launcher.qml
@@ -87,6 +87,7 @@ jobs:
           test -f quickshell/a16een/ui/ScreenshotPreview.qml
           test -f quickshell/a16een/ui/ControlCenterSection.qml
           test -f quickshell/a16een/ui/ControlDetailSection.qml
+          test -f quickshell/a16een/ui/UtilitiesPanel.qml
           test -f quickshell/a16een/ui/IconThemeSection.qml
           test -f quickshell/a16een/ui/WorkspacePresetsSection.qml
           grep -Fq 'readonly property bool canSave' quickshell/a16een/ui/WorkspacePresetsSection.qml
@@ -149,6 +150,9 @@ jobs:
           grep -Fq 'workspace "studio"' niri/config.kdl
           grep -Fq 'workspace "music"' niri/config.kdl
           grep -Fq 'import qs.ui' quickshell/a16een/shell.qml
+          grep -Fq 'text: Qt.formatTime(navbarClockPanel.clockNow, "h:mm ap")' quickshell/a16een/ui/Dock.qml
+          grep -Fq 'UtilitiesPanel {' quickshell/a16een/shell.qml
+          grep -Fq 'property bool embedded: false' quickshell/a16een/ui/ControlDetailSection.qml
           grep -Fq 'qt6-imageformats' scripts/install.sh
           grep -Fq 'qt6-svg' scripts/install.sh
           grep -Fq 'grim' scripts/install.sh
