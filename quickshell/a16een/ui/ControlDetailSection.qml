@@ -118,8 +118,11 @@ Item {
     }
 
     onActiveChanged: {
-        if (root.active)
-            Qt.callLater(() => root.refreshVisibleMode())
+        if (!root.active)
+            return
+
+        root.statusMessage = "READING SYSTEM"
+        Qt.callLater(() => root.refreshVisibleMode())
     }
 
     onModeChanged: {
@@ -1186,17 +1189,6 @@ Item {
                     }
                 }
             }
-        }
-    }
-
-    onActiveChanged: {
-        if (active) {
-            root.statusMessage = "READING SYSTEM"
-            root.loadDetails()
-            if (root.mode === "wifi")
-                wifiNetworksReader.running = true
-            if (root.mode === "bluetooth")
-                bluetoothReader.running = true
         }
     }
 
