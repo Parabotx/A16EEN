@@ -155,7 +155,7 @@ fi
 # safe fallback on systems where GTKLock is not installed.
 if ! command -v gtklock >/dev/null 2>&1; then
     log "GTKLock is not installed; using swaylock fallback (custom clock and corner badge require GTKLock)."
-    printf '%s\\n' "A16EEN: GTKLock is missing; using the secure swaylock fallback without the custom clock/card/badge." >&2
+    printf '%s\n' "A16EEN: GTKLock is missing; using the secure swaylock fallback without the custom clock/card/badge." >&2
     printf '%s\\n' "See $LOCK_LOG. Install gtklock to enable the full lock-screen design." >&2
 fi
 
