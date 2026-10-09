@@ -298,17 +298,24 @@ ShellRoot {
         }
     }
 
+    // Preserve the existing IPC target, but send it to the compact presets
+    // popover instead of opening the legacy Command Center preset page.
     IpcHandler {
         target: "workspace-presets"
 
         function open(): void {
-            root.commandCenterOpen = true
-            root.launcherOpen = false
-            root.dashboardOpen = false
-            root.wallpaperPickerOpen = false
-            root.widgetsCenterOpen = false
-            root.screenshotCenterOpen = false
-            root.screenshotSettingsOpen = false
+            root.openQuickPresets()
+        }
+
+        function toggle(): void {
+            if (root.quickPresetsOpen)
+                root.quickPresetsOpen = false
+            else
+                root.openQuickPresets()
+        }
+
+        function close(): void {
+            root.quickPresetsOpen = false
         }
     }
 
@@ -793,6 +800,7 @@ ShellRoot {
         doNotDisturb: root.doNotDisturb
 
         onCloseRequested: root.commandCenterOpen = false
+        onPresetsRequested: root.openQuickPresets()
 
         onNavbarPositionChanged: {
             if (["left", "right", "top", "bottom"].includes(position))
