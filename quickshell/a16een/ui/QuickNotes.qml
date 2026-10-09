@@ -502,7 +502,8 @@ PanelWindow {
             title: "Untitled note",
             body: "",
             alignment: "left",
-            attachments: []
+            attachments: [],
+            pinned: false
         }
         root.notes = [note, ...root.notes]
         root.selectedNoteId = note.id
@@ -1570,7 +1571,7 @@ PanelWindow {
         width: 116
         height: 78
         z: 10
-        visible: root.noteMenuOpen && root.opened && root.accessGranted && root.noteMenuNote !== null
+        visible: root.noteMenuOpen && root.opened && root.accessGranted && !!root.noteMenuNote
 
         Rectangle {
             anchors.fill: parent
