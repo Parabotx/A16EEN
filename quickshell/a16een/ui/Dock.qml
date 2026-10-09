@@ -788,7 +788,7 @@ PanelWindow {
 
                 Rectangle {
                     id: utilitiesMainButton
-                    GridLayout.column: !root.horizontalNavbar
+                    Layout.column: !root.horizontalNavbar
                         && root.navbarPosition === "right"
                         && root.utilitiesExpanded ? 2 : 0
                     width: 28
@@ -827,7 +827,7 @@ PanelWindow {
                     delegate: Rectangle {
                         id: utilityShortcut
                         required property var modelData
-                        GridLayout.column: !root.horizontalNavbar && root.navbarPosition === "right"
+                        Layout.column: !root.horizontalNavbar && root.navbarPosition === "right"
                             ? (utilityShortcut.modelData.mode === "wifi" ? 0 : 1)
                             : (utilityShortcut.modelData.mode === "wifi" ? 1 : 2)
                         width: 28
