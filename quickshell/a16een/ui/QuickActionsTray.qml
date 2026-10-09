@@ -44,8 +44,8 @@ PanelWindow {
     // just eight pixels above the battery panel. Horizontally, it sits just
     // before the battery capsule, away from the centered workspace navbar.
     margins {
-        left: root.horizontalNavbar ? 12 : 78
-        right: root.horizontalNavbar ? 118 : 78
+        left: root.horizontalNavbar ? 12 : 66
+        right: root.horizontalNavbar ? 118 : 68
         top: root.horizontalNavbar ? 4 : 12
         bottom: root.horizontalNavbar ? 4 : 72
     }
