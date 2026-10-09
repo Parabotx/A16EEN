@@ -454,41 +454,44 @@ else
     echo "==> A16EEN navbar icons already generated; skipping rebuild."
 fi
 
-# If A16EEN is already running, restart only its Quickshell process after
-# deployment. This is especially important when a revision adds or removes QML
-# component files, which a live hot-reload may not register reliably.
-if [ "${XDG_CURRENT_DESKTOP:-}" = "A16EEN" ]; then
-    CONFIG_SHELL_DIR="${XDG_CONFIG_HOME:-$HOME/.config}/a16een/quickshell/a16een"
-    RESTARTED_SHELL=0
+# Restart the running Quickshell after deploying component changes. Do not rely
+# only on XDG_CURRENT_DESKTOP: terminal sessions can omit it or include several
+# desktop identifiers, which previously left old QML running after install.
+CONFIG_SHELL_DIR="$QS_DIR"
+RESTARTED_SHELL=0
 
-    for cmdline in /proc/[0-9]*/cmdline; do
-        [ -r "$cmdline" ] || continue
-        PID="${cmdline#/proc/}"
-        PID="${PID%/cmdline}"
-        case "$PID" in
-            ''|*[!0-9]*) continue ;;
-        esac
+for cmdline in /proc/[0-9]*/cmdline; do
+    [ -r "$cmdline" ] || continue
+    PID="${cmdline#/proc/}"
+    PID="${PID%/cmdline}"
+    case "$PID" in
+        ''|*[!0-9]*) continue ;;
+    esac
 
-        ARGS="$(tr '\0' ' ' < "$cmdline" 2>/dev/null || true)"
-        case "$ARGS" in
-            *"qs -c $CONFIG_SHELL_DIR"*)
-                if kill -TERM "$PID" 2>/dev/null; then
-                    RESTARTED_SHELL=1
-                fi
-                ;;
-        esac
-    done
+    ARGS="$(tr '\0' ' ' < "$cmdline" 2>/dev/null || true)"
+    case "$ARGS" in
+        *"qs -c $CONFIG_SHELL_DIR"*)
+            if kill -TERM "$PID" 2>/dev/null; then
+                RESTARTED_SHELL=1
+                echo "==> Requested a Quickshell restart so the deployed navbar and Utilities UI load."
+            fi
+            break
+            ;;
+    esac
+done
 
-    if [ "$RESTARTED_SHELL" -eq 1 ]; then
-        echo "==> Restarted the A16EEN Quickshell shell."
-    fi
+# The supervisor normally restarts Quickshell after its process exits. If it is
+# no longer running, bring it back only from an active A16EEN/Niri session.
+SESSION_ACTIVE=0
+[ -n "${NIRI_SOCKET:-}" ] && SESSION_ACTIVE=1
+case ":${XDG_CURRENT_DESKTOP:-}:" in
+    *:A16EEN:*) SESSION_ACTIVE=1 ;;
+esac
 
-    # If the supervisor itself exited after repeated QML failures, recover it
-    # without requiring the user to leave the desktop session.
-    if ! pgrep -f '[a]16een-shell' >/dev/null 2>&1; then
-        nohup /usr/local/bin/a16een-shell >/dev/null 2>&1 &
-        echo "==> Started the A16EEN shell supervisor."
-    fi
+if { [ "$RESTARTED_SHELL" -eq 1 ] || [ "$SESSION_ACTIVE" -eq 1 ]; } &&
+   ! pgrep -f '[a]16een-shell' >/dev/null 2>&1; then
+    nohup /usr/local/bin/a16een-shell >/dev/null 2>&1 &
+    echo "==> Started the A16EEN shell supervisor."
 fi
 
 echo
