@@ -134,7 +134,7 @@ jobs:
           grep -Fq 'MusicWidget {' quickshell/a16een/shell.qml
           grep -Fq 'musicWidgetEnabledRequested' quickshell/a16een/ui/CommandCenter.qml
           grep -Fq 'property bool musicEnabled: false' quickshell/a16een/ui/WidgetSection.qml
-          grep -Fq 'MUSIC PLAYER' quickshell/a16een/ui/MusicWidget.qml
+          grep -Fq 'A16EEN MUSIC' quickshell/a16een/ui/MusicWidget.qml
           grep -Fq 'anchors.bottom: parent.bottom' quickshell/a16een/ui/MusicWidget.qml
           grep -Fq 'libraryOpen ? 284 : 170' quickshell/a16een/ui/MusicWidget.qml
           grep -Fq 'property bool shuffleEnabled: false' quickshell/a16een/ui/MusicWidget.qml
