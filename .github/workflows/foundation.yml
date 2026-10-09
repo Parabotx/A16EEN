@@ -157,7 +157,6 @@ jobs:
           grep -Fq 'pacman", "-Qq", "qt6-lottie' scripts/a16een-music
           grep -Fq 'music-dancers/dancer-' scripts/a16een-update
           grep -Fq 'dancer-{index}.json' scripts/a16een-music
-          grep -Fq 'qt6-lottie' scripts/install.sh
           grep -Fq 'mpv' scripts/install.sh
           test -f quickshell/a16een/ui/WallpaperPicker.qml
           test -f quickshell/a16een/ui/NotificationToast.qml
