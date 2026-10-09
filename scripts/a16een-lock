@@ -54,12 +54,12 @@ case "${ACTIVE_WALLPAPER,,}" in
         if command -v magick >/dev/null 2>&1; then
             magick "${ACTIVE_WALLPAPER}[0]" -auto-orient -strip "$LOCK_IMAGE" >/dev/null 2>&1 || true
         elif command -v ffmpeg >/dev/null 2>&1; then
-            ffmpeg -loglevel error -y -i "$ACTIVE_WALLPAPER" -frames:v 1 -f image2 "$LOCK_IMAGE" >/dev/null 2>&1 || true
+            ffmpeg -loglevel error -y -i "$ACTIVE_WALLPAPER" -frames:v 1 -f image2 -update 1 "$LOCK_IMAGE" >/dev/null 2>&1 || true
         fi
         ;;
     *.mp4|*.webm|*.mov|*.m4v|*.mkv)
         if command -v ffmpeg >/dev/null 2>&1; then
-            ffmpeg -loglevel error -y -ss 0.25 -i "$ACTIVE_WALLPAPER" -frames:v 1 -f image2 "$LOCK_IMAGE" >/dev/null 2>&1 || true
+            ffmpeg -loglevel error -y -ss 0.25 -i "$ACTIVE_WALLPAPER" -frames:v 1 -f image2 -update 1 "$LOCK_IMAGE" >/dev/null 2>&1 || true
         elif command -v magick >/dev/null 2>&1; then
             magick "${ACTIVE_WALLPAPER}[0]" -auto-orient -strip "$LOCK_IMAGE" >/dev/null 2>&1 || true
         fi
