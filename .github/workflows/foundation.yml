@@ -183,7 +183,7 @@ jobs:
           grep -Fq 'repeatMode === 1 ? "1" : "∞"' quickshell/a16een/ui/MusicWidget.qml
           grep -Fq 'find_cover' scripts/a16een-music
           ! grep -Fq 'qt6-lottie' scripts/install.sh
-          grep -Fq 'text: root.formatTime(root.playback.time)' quickshell/a16een/ui/MusicWidget.qml
+          grep -Fq 'text: root.formatTime(root.seekDragging' quickshell/a16een/ui/MusicWidget.qml
           grep -Fq 'progressThumb' quickshell/a16een/ui/MusicWidget.qml
           grep -Fq 'text: root.formatTime(root.playback.duration)' quickshell/a16een/ui/MusicWidget.qml
           grep -Fq 'id: elapsedTimePill' quickshell/a16een/ui/MusicWidget.qml
