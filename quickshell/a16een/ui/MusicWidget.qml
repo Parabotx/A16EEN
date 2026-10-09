@@ -103,12 +103,28 @@ PanelWindow {
         }
     }
 
+    function syncDancerLoader() {
+        const shouldLoad = root.widgetEnabled
+            && root.isPlaying
+            && root.dancerSource.length > 0
+
+        if (!shouldLoad) {
+            dancerLoader.active = false
+            dancerLoader.source = ""
+            return
+        }
+
+        // Supply animationSource before component creation. This avoids a race
+        // where Lottie first loads with an empty URL and never begins painting.
+        dancerLoader.active = true
+        dancerLoader.setSource(Qt.resolvedUrl("MusicDancer.qml"), {
+            "animationSource": root.dancerSource
+        })
+    }
+
     function requestDancer() {
         if (!root.widgetEnabled || !root.isPlaying || dancerProcess.running)
             return
-        root.dancerSource = ""
-        root.dancerOffsetX = 0
-        root.dancerOffsetY = 0
         dancerProcess.running = true
     }
 
@@ -118,9 +134,18 @@ PanelWindow {
         try {
             const result = JSON.parse(String(raw || "{}"))
             root.dancerSource = String(result.path || "")
+            if (root.dancerSource.length > 0) {
+                console.info("A16EEN Music: selected dancer", result.fileName || root.dancerSource)
+            } else {
+                console.warn("A16EEN Music: no dancer is available:",
+                    result.reason || "unknown reason",
+                    "directory:", result.directory || "unknown")
+            }
         } catch (error) {
             root.dancerSource = ""
+            console.warn("A16EEN Music: unable to parse dancer helper output", String(error))
         }
+        root.syncDancerLoader()
     }
 
     function applyPlaybackOutput(raw) {
@@ -139,6 +164,7 @@ PanelWindow {
                 root.dancerSource = ""
                 root.dancerOffsetX = 0
                 root.dancerOffsetY = 0
+                root.syncDancerLoader()
             }
 
             if (result.error)
@@ -230,6 +256,7 @@ PanelWindow {
             root.dancerSource = ""
             root.dancerOffsetX = 0
             root.dancerOffsetY = 0
+            root.syncDancerLoader()
         }
     }
 
@@ -274,6 +301,14 @@ PanelWindow {
         repeat: true
         running: root.widgetEnabled
         onTriggered: root.refreshPlayback()
+    }
+
+    Timer {
+        id: dancerRetryTimer
+        interval: 4500
+        repeat: true
+        running: root.widgetEnabled && root.isPlaying && root.dancerSource.length === 0
+        onTriggered: root.requestDancer()
     }
 
     SequentialAnimation {
@@ -485,11 +520,15 @@ PanelWindow {
                         height: 76
                         x: root.dancerOffsetX
                         y: root.dancerOffsetY
-                        active: root.widgetEnabled && root.isPlaying && root.dancerSource.length > 0
-                        source: active ? Qt.resolvedUrl("MusicDancer.qml") : ""
+                        active: false
+                        asynchronous: false
                         onLoaded: {
                             if (item)
-                                item.animationSource = root.dancerSource
+                                console.info("A16EEN Music: dancer QML component created")
+                        }
+                        onStatusChanged: {
+                            if (status === Loader.Error)
+                                console.warn("A16EEN Music: failed to instantiate MusicDancer.qml")
                         }
                     }
                 }
@@ -500,44 +539,86 @@ PanelWindow {
                 spacing: 4
 
                 Row {
+                    id: timelineLabels
                     width: parent.width
-                    height: 11
+                    height: 15
 
                     Text {
+                        id: elapsedTime
                         text: root.formatTime(root.playback.time)
-                        color: root.secondary
-                        font.pixelSize: 7
+                        color: "#6F4E3C"
+                        font.pixelSize: 8
                         font.family: "Inter"
+                        font.weight: Font.DemiBold
+                        verticalAlignment: Text.AlignVCenter
+                        renderType: Text.NativeRendering
                     }
 
-                    Item { width: Math.max(1, parent.width - 76); height: 1 }
+                    Item {
+                        width: Math.max(1, timelineLabels.width
+                            - elapsedTime.implicitWidth - remainingTime.implicitWidth - 2)
+                        height: 1
+                    }
 
                     Text {
-                        text: root.formatTime(root.playback.duration)
-                        color: root.secondary
-                        font.pixelSize: 7
+                        id: remainingTime
+                        text: root.playback.duration > 0
+                            ? "−" + root.formatTime(Math.max(0, root.playback.duration - root.playback.time))
+                            : "0:00"
+                        color: root.muted
+                        font.pixelSize: 8
                         font.family: "Inter"
+                        font.weight: Font.Medium
+                        verticalAlignment: Text.AlignVCenter
+                        horizontalAlignment: Text.AlignRight
+                        renderType: Text.NativeRendering
                     }
                 }
 
-                Rectangle {
+                Item {
                     id: progressTrack
                     width: parent.width
-                    height: 4
-                    radius: 2
-                    color: "#E9DCC9"
+                    height: 12
 
                     Rectangle {
-                        width: parent.width * root.progress
-                        height: parent.height
+                        x: 1
+                        y: 4
+                        width: Math.max(0, parent.width - 2)
+                        height: 4
                         radius: 2
-                        gradient: Gradient {
-                            GradientStop { position: 0.0; color: "#E5B276" }
-                            GradientStop { position: 0.52; color: "#D78F83" }
-                            GradientStop { position: 1.0; color: "#B9A2D4" }
-                        }
+                        color: "#E9DCC9"
 
-                        Behavior on width {
+                        Rectangle {
+                            width: Math.max(0, parent.width * root.progress)
+                            height: parent.height
+                            radius: 2
+                            gradient: Gradient {
+                                GradientStop { position: 0.0; color: "#D9A66A" }
+                                GradientStop { position: 0.48; color: "#D98D80" }
+                                GradientStop { position: 1.0; color: "#A992CF" }
+                            }
+
+                            Behavior on width {
+                                NumberAnimation { duration: 180; easing.type: Easing.OutCubic }
+                            }
+                        }
+                    }
+
+                    Rectangle {
+                        id: progressThumb
+                        width: 8
+                        height: 8
+                        x: Math.max(0, Math.min(parent.width - width,
+                            1 + (parent.width - 2) * root.progress - width / 2))
+                        y: 2
+                        radius: 4
+                        color: "#FFFCF7"
+                        border.width: 1
+                        border.color: "#BE8D78"
+                        visible: root.playback.duration > 0
+                        z: 2
+
+                        Behavior on x {
                             NumberAnimation { duration: 180; easing.type: Easing.OutCubic }
                         }
                     }
@@ -546,12 +627,15 @@ PanelWindow {
                         anchors.fill: parent
                         cursorShape: root.playback.duration > 0 ? Qt.PointingHandCursor : Qt.ArrowCursor
                         onClicked: function(mouse) {
-                            if (root.playback.duration > 0)
-                                root.runAction(["seek", String(root.playback.duration * mouse.x / width)])
+                            if (root.playback.duration > 0) {
+                                const fraction = Math.max(0, Math.min(1, mouse.x / width))
+                                root.runAction(["seek", String(root.playback.duration * fraction)])
+                            }
                         }
                     }
                 }
             }
+
 
             Item {
                 width: parent.width
