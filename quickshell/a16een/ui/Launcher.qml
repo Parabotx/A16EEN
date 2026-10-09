@@ -51,7 +51,7 @@ PanelWindow {
     function parseIconTheme(output) {
         root.iconThemeName = String(output || "").trim() || "system"
         root.resolvedIconPaths = ({})
-        root.iconResolver.running = true
+        iconResolver.running = true
     }
 
     function parseIconPaths(output) {
@@ -73,8 +73,8 @@ PanelWindow {
     }
 
     function refreshIconTheme() {
-        if (!root.iconThemeReader.running && !root.iconResolver.running)
-            root.iconThemeReader.running = true
+        if (!iconThemeReader.running && !iconResolver.running)
+            iconThemeReader.running = true
     }
 
     function iconSource(iconName) {
