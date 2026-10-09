@@ -188,9 +188,46 @@ PanelWindow {
         height: root.horizontalNavbar ? 8 : parent.height
         hoverEnabled: true
         acceptedButtons: Qt.NoButton
+        // In fullscreen horizontal mode a separate full-width sensor must
+        // own edge detection. The dock surface itself resizes when revealed.
+        enabled: !(root.fullscreenActive && root.horizontalNavbar)
         z: 10
         onEntered: root.revealDock()
         onExited: root.scheduleHide()
+    }
+
+    // Keep the fullscreen TOP/BOTTOM trigger stable while the visual dock
+    // changes from a full-width 8px hidden surface to a compact centered dock.
+    // Otherwise resizing the dock surface moves it out from under a cursor
+    // parked away from the center, immediately firing MouseArea.onExited.
+    PanelWindow {
+        id: horizontalEdgeSensor
+        screen: root.modelData
+        visible: root.fullscreenActive && root.horizontalNavbar
+        color: "transparent"
+        aboveWindows: true
+        exclusionMode: ExclusionMode.Ignore
+        exclusiveZone: 0
+        width: root.modelData.width
+        height: 8
+
+        anchors {
+            left: true
+            right: true
+            top: root.navbarPosition === "top"
+            bottom: root.navbarPosition === "bottom"
+        }
+
+        WlrLayershell.layer: WlrLayer.Top
+        WlrLayershell.namespace: "a16een-dock-edge-sensor"
+
+        MouseArea {
+            anchors.fill: parent
+            hoverEnabled: true
+            acceptedButtons: Qt.NoButton
+            onEntered: root.revealDock()
+            onExited: root.scheduleHide()
+        }
     }
 
     Rectangle {
