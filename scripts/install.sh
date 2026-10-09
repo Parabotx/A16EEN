@@ -284,6 +284,7 @@ echo "==> Deploying A16EEN lock-screen theme"
 mkdir -p "$LOCKSCREEN_DIR"
 install -m644 "$ROOT_DIR/lockscreen/gtklock.css" "$LOCKSCREEN_DIR/gtklock.css"
 install -m644 "$ROOT_DIR/lockscreen/gtklock.ui" "$LOCKSCREEN_DIR/gtklock.ui"
+install -m644 "$ROOT_DIR/lockscreen/gtklock.ini" "$LOCKSCREEN_DIR/gtklock.ini"
 
 # Restore the persistent A16EEN workspace registry after every deployment.
 # Workspace creation/removal is handled live through Niri IPC; the source
