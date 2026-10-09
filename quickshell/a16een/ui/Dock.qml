@@ -298,9 +298,13 @@ PanelWindow {
         }
 
         margins {
-            // Attach the active side to the screen edge in every orientation.
-            left: root.navbarPosition === "left" ? 0 : 10
-            right: root.navbarPosition === "right" || root.horizontalNavbar ? 0 : 12
+            // Keep TOP/BOTTOM anchored as-is. In vertical layouts, pull the
+            // power capsule inward by six pixels so its center aligns with
+            // the wider clock capsule below it.
+            left: root.horizontalNavbar ? (root.navbarPosition === "top" ? 0 : 12)
+                : (root.navbarPosition === "left" ? 6 : 12)
+            right: root.horizontalNavbar ? 0
+                : (root.navbarPosition === "right" ? 6 : 12)
             top: root.navbarPosition === "top" ? 0 : 12
             bottom: root.navbarPosition === "bottom" ? 0 : 12
         }
@@ -1129,7 +1133,9 @@ PanelWindow {
         x: root.horizontalNavbar
             ? Math.round((parent.width - width) / 2)
             : (root.dockVisible
-                ? (root.navbarPosition === "right" ? parent.width - width : 0)
+                ? (root.navbarPosition === "right"
+                    ? parent.width - width - 8
+                    : 8)
                 : (root.navbarPosition === "right" ? parent.width + 2 : -width - 2))
         y: root.horizontalNavbar
             ? (root.dockVisible
