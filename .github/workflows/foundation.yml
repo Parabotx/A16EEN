@@ -126,6 +126,7 @@ jobs:
           test -f quickshell/a16een/assets/icons/lucide-palette.svg
           test -f quickshell/a16een/ui/WidgetCatalog.js
           test -f quickshell/a16een/ui/MusicWidget.qml
+          test -f quickshell/a16een/ui/MusicDancer.qml
           test -f quickshell/a16een/assets/music-dancers/README.md
           test -f scripts/a16een-music
           grep -Fq 'id: "music"' quickshell/a16een/ui/WidgetCatalog.js
@@ -135,9 +136,11 @@ jobs:
           grep -Fq 'musicWidgetEnabledRequested' quickshell/a16een/ui/CommandCenter.qml
           grep -Fq 'property bool musicEnabled: false' quickshell/a16een/ui/WidgetSection.qml
           grep -Fq 'A16EEN MUSIC' quickshell/a16een/ui/MusicWidget.qml
-          grep -Fq 'import Qt.labs.lottieqt' quickshell/a16een/ui/MusicWidget.qml
-          grep -Fq 'LottieAnimation {' quickshell/a16een/ui/MusicWidget.qml
-          grep -Fq 'source: root.dancerSource' quickshell/a16een/ui/MusicWidget.qml
+          ! grep -Fq 'import Qt.labs.lottieqt' quickshell/a16een/ui/MusicWidget.qml
+          grep -Fq 'import Qt.labs.lottieqt' quickshell/a16een/ui/MusicDancer.qml
+          grep -Fq 'LottieAnimation {' quickshell/a16een/ui/MusicDancer.qml
+          grep -Fq 'source: root.animationSource' quickshell/a16een/ui/MusicDancer.qml
+          grep -Fq 'source: active ? Qt.resolvedUrl("MusicDancer.qml") : ""' quickshell/a16een/ui/MusicWidget.qml
           grep -Fq 'anchors.bottom: parent.bottom' quickshell/a16een/ui/MusicWidget.qml
           grep -Fq 'libraryOpen ? 284 : 170' quickshell/a16een/ui/MusicWidget.qml
           grep -Fq 'property bool shuffleEnabled: false' quickshell/a16een/ui/MusicWidget.qml
@@ -150,7 +153,8 @@ jobs:
           grep -Fq 'find_cover' scripts/a16een-music
           grep -Fq 'MUSIC_DANCER_SOURCE_DIR' scripts/install.sh
           grep -Fq 'dancer-$dancer_index.json' scripts/install.sh
-          grep -Fq 'qt6-lottie' scripts/install.sh
+          ! grep -Fq 'qt6-lottie' scripts/install.sh
+          grep -Fq 'pacman", "-Qq", "qt6-lottie' scripts/a16een-music
           grep -Fq 'music-dancers/dancer-' scripts/a16een-update
           grep -Fq 'dancer-{index}.json' scripts/a16een-music
           grep -Fq 'qt6-lottie' scripts/install.sh
