@@ -73,7 +73,8 @@ if command -v magick >/dev/null 2>&1; then
         magick -size 1920x1080 gradient:'#101720-#29364A' "$RAW_IMAGE"
     fi
 
-    read -r IMG_WIDTH IMG_HEIGHT < <(magick identify -format '%w %h\\n' "$RAW_IMAGE")
+    DIMENSIONS="$(magick identify -format '%w %h' "$RAW_IMAGE")"
+    read -r IMG_WIDTH IMG_HEIGHT <<< "$DIMENSIONS"
     [[ "$IMG_WIDTH" =~ ^[0-9]+$ && "$IMG_HEIGHT" =~ ^[0-9]+$ ]] || {
         IMG_WIDTH=1920
         IMG_HEIGHT=1080
