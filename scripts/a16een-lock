@@ -228,7 +228,7 @@ if grep -q -- '--clock' <<<"$SWAYLOCK_HELP" \
 fi
 
 log "Starting secure swaylock fallback with the same wallpaper."
-if run_swaylock swaylock "${BASE_ARGS[@]}"; then exit 0; fi
+if run_swaylock env "XCURSOR_THEME=${XCURSOR_THEME:-Adwaita}" "XCURSOR_SIZE=${XCURSOR_SIZE:-24}" swaylock "${BASE_ARGS[@]}"; then exit 0; fi
 
 log "ERROR: all lock-screen launch attempts failed."
 printf '%s\n' "A16EEN: the lock screen could not start. See $LOCK_LOG" >&2
