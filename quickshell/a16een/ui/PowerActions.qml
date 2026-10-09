@@ -8,6 +8,8 @@ Rectangle {
     property bool open: false
     property string confirmAction: ""
 
+    signal lockRequested()
+
     implicitHeight: open ? 78 : 44
     radius: 14
     color: "#FFFFFF07"
@@ -115,6 +117,10 @@ Rectangle {
                 }
 
                 root.confirmAction = ""
+                if (label === "LOCK") {
+                    root.lockRequested()
+                    return
+                }
                 Quickshell.execDetached(action)
             }
         }
