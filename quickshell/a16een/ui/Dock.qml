@@ -262,18 +262,27 @@ PanelWindow {
                         ? root.hoverBackground
                         : "transparent"
 
+                    // Keep the active marker on the physical edge of the screen.
+                    // Explicit x/y geometry avoids stale conditional anchors when the
+                    // dock changes between vertical and horizontal orientations.
                     Rectangle {
+                        id: activeWorkspaceMarker
                         visible: workspaceButton.active
                         width: root.horizontalNavbar ? 16 : 3
                         height: root.horizontalNavbar ? 3 : 16
                         radius: 2
-                        anchors.right: root.horizontalNavbar ? undefined : parent.right
-                        anchors.bottom: root.horizontalNavbar ? parent.bottom : undefined
-                        anchors.rightMargin: root.horizontalNavbar ? 0 : 2
-                        anchors.bottomMargin: root.horizontalNavbar ? 2 : 0
-                        anchors.verticalCenter: root.horizontalNavbar ? undefined : parent.verticalCenter
-                        anchors.horizontalCenter: root.horizontalNavbar ? parent.horizontalCenter : undefined
+                        x: root.horizontalNavbar
+                            ? Math.round((workspaceButton.width - width) / 2)
+                            : (root.navbarPosition === "left"
+                                ? 2
+                                : workspaceButton.width - width - 2)
+                        y: root.horizontalNavbar
+                            ? (root.navbarPosition === "top"
+                                ? 2
+                                : workspaceButton.height - height - 2)
+                            : Math.round((workspaceButton.height - height) / 2)
                         color: root.iconColor
+                        z: 0
                     }
 
                     NavbarImage {
@@ -286,6 +295,7 @@ PanelWindow {
                         refreshRevision: root.navbarRevision
                         active: workspaceButton.active
                         hovered: workspaceMouse.containsMouse
+                        z: 1
                     }
 
                     MouseArea {
