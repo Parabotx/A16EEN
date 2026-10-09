@@ -248,15 +248,15 @@ jobs:
           grep -Fq 'ToplevelManager.activeToplevel' quickshell/a16een/shell.qml
           ! grep -Fq 'focusedWindowProcess' quickshell/a16een/shell.qml
           ! grep -Fq 'is_fullscreen' quickshell/a16een/shell.qml
-          grep -Fq 'x: root.dockVisible' quickshell/a16een/ui/Dock.qml
+          grep -Fq 'root.dockVisible' quickshell/a16een/ui/Dock.qml
           grep -Fq 'verticalAlignment: Text.AlignVCenter' quickshell/a16een/ui/Launcher.qml
           ! grep -q 'Mod+A .*launcher toggle' niri/config.kdl
           grep -Fq 'focusedWindowFullscreen' quickshell/a16een/shell.qml
           grep -Fq 'fullscreenActive: root.focusedWindowFullscreen' quickshell/a16een/shell.qml
           grep -Fq 'property bool edgeRevealed' quickshell/a16een/ui/Dock.qml
-          grep -Fq 'width: 8' quickshell/a16een/ui/Dock.qml
-          grep -Fq 'height: 240' quickshell/a16een/ui/Dock.qml
-          grep -Fq 'x: root.dockVisible' quickshell/a16een/ui/Dock.qml
+          grep -Fq 'width: root.horizontalNavbar ? parent.width : 8' quickshell/a16een/ui/Dock.qml
+          grep -Fq 'height: root.horizontalNavbar ? 8 : parent.height' quickshell/a16een/ui/Dock.qml
+          grep -Fq 'root.dockVisible' quickshell/a16een/ui/Dock.qml
           grep -Fq 'Mod+X repeat=false { close-window; }' niri/config.kdl
           grep -Fq 'Mod+F { fullscreen-window; }' niri/config.kdl
           grep -Fq 'Mod+T repeat=false { spawn-sh "qs -c \"$HOME/.config/a16een/quickshell/a16een\" ipc call fullscreen exit"; }' niri/config.kdl
@@ -267,11 +267,11 @@ jobs:
           grep -Fq 'Mod+Shift+6 { move-column-to-workspace "music"; }' niri/config.kdl
           grep -Fq 'Dock {' quickshell/a16een/shell.qml
           grep -Fq 'right: true' quickshell/a16een/ui/Dock.qml
-          grep -Fq 'mask: Region {' quickshell/a16een/ui/Dock.qml
-          grep -Fq 'intersection: Intersection.Combine' quickshell/a16een/ui/Dock.qml
-          grep -Fq 'Only the visible dock and the 8px reveal strip' quickshell/a16een/ui/Dock.qml
-          grep -Fq 'width: 44' quickshell/a16een/ui/Dock.qml
-          grep -Fq 'height: 260' quickshell/a16een/ui/Dock.qml
+          grep -Fq 'readonly property int surfaceWidth:' quickshell/a16een/ui/Dock.qml
+          grep -Fq 'readonly property int surfaceHeight:' quickshell/a16een/ui/Dock.qml
+          grep -Fq 'The actual Wayland surface is only the navbar-sized area' quickshell/a16een/ui/Dock.qml
+          grep -Fq 'width: root.horizontalNavbar ? root.dockWidth : 44' quickshell/a16een/ui/Dock.qml
+          grep -Fq 'Math.max(' quickshell/a16een/ui/Dock.qml
           ! grep -Fq 'D7B56D' quickshell/a16een/ui/Dock.qml
           grep -Fq 'id: ethiopianMonthGrid' quickshell/a16een/ui/Dock.qml
           ! grep -Fq '⚙' quickshell/a16een/ui/Dock.qml
@@ -283,7 +283,7 @@ jobs:
           ! grep -Fq 'root.opened = false' quickshell/a16een/ui/Launcher.qml
           grep -Fq 'current.id === root.focusedWorkspaceId' quickshell/a16een/ui/Dock.qml
           grep -Fq 'function focusWorkspace(name)' quickshell/a16een/ui/Dock.qml
-          grep -Fq 'root.focusWorkspace("music")' quickshell/a16een/ui/Dock.qml
+          grep -Fq 'root.focusWorkspace(modelData.id)' quickshell/a16een/ui/Dock.qml
           grep -Fq 'workspace.is_focused === true' quickshell/a16een/shell.qml
 
 
