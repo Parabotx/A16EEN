@@ -52,12 +52,8 @@ if [[ "$CURRENT_BRANCH" != "main" ]]; then
 fi
 
 local_changes="$(git -C "$SOURCE_DIR" status --porcelain --untracked-files=all)"
-unexpected_changes="$(printf '%s\n' "$local_changes" | grep -Ev '^\?\? quickshell/a16een/assets/music-dancers/dancer-[1-5]\.svg$' | sed '/^$/d' || true)"
-if [[ -n "$unexpected_changes" ]]; then
-    echo "A16EEN source contains local changes; refusing to overwrite them."
-    printf '%s\n' "$unexpected_changes"
-    exit 1
-fi
+unexpected_changes="$(printf '%s\n' "$local_changes" | grep -Ev '^\?\? quickshell/a16een/assets/music-dancers/dancer-[1-5]\.svg
+
 current_source="$(git -C "$SOURCE_DIR" rev-parse HEAD)"
 installed=""
 if [[ -f "$STATE_DIR/installed-commit" ]]; then
