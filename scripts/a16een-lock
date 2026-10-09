@@ -69,81 +69,138 @@ run_locker() {
     return "$status"
 }
 
-# Optional swaylock-effects profile. A rejected flag falls through to the
-# standard profile instead of ending the lock request.
-if grep -q -- '--screenshots' <<<"$SWAYLOCK_HELP" \
-    && grep -q -- '--effect-blur' <<<"$SWAYLOCK_HELP" \
-    && grep -q -- '--clock' <<<"$SWAYLOCK_HELP"; then
-    log "Trying swaylock-effects profile."
-    if run_locker swaylock \
-        --screenshots --clock --timestr '%H:%M' --datestr '%A, %d %B %Y' \
-        --indicator-idle-visible --effect-blur 9x5 --effect-vignette 0.5:0.5 --fade-in 0.25 \
-        --indicator --indicator-radius 46 --indicator-thickness 4 --show-failed-attempts \
-        --font "Inter" --font-size 16 --line-color 00000000 --separator-color 00000000 \
-        --inside-color 111722D8 --inside-clear-color 21303EE8 --inside-ver-color 22394BE8 \
-        --inside-wrong-color 48242BE8 --ring-color D7B56D --ring-clear-color F5F2EA \
-        --ring-ver-color 86C8F5 --ring-wrong-color EF858B --key-hl-color F5F2EA \
-        --bs-hl-color EF858B --text-color F5F2EA --text-clear-color F5F2EA \
-        --text-ver-color 86C8F5 --text-wrong-color EF858B; then
-        exit 0
-    fi
-    log "Effects profile failed; trying standard swaylock."
+# Use the same wallpaper the desktop currently displays. Do not capture the
+# desktop here: screenshots can include UI overlays and the old blur-first path
+# made the lock screen look like a flat gray-blue surface.
+ACTIVE_WALLPAPER=""
+if command -v a16een-wallpaper >/dev/null 2>&1; then
+    ACTIVE_WALLPAPER="$(a16een-wallpaper current-path 2>/dev/null || true)"
 fi
 
-# Generate a themed image when available. Every step is best-effort, never a
-# reason to abort before attempting a real screen lock.
-if command -v grim >/dev/null 2>&1; then
-    grim "$RAW_IMAGE" >/dev/null 2>&1 || rm -f -- "$RAW_IMAGE"
+if [[ ! -r "$ACTIVE_WALLPAPER" ]]; then
+    ACTIVE_WALLPAPER="$HOME/.config/a16een/quickshell/a16een/assets/wallpapers/default.png"
 fi
-if command -v magick >/dev/null 2>&1; then
-    if [[ ! -s "$RAW_IMAGE" ]]; then
-        magick -size 1920x1080 gradient:'#101720-#29364A' "$RAW_IMAGE" >/dev/null 2>&1 || rm -f -- "$RAW_IMAGE"
-    fi
-    if [[ -s "$RAW_IMAGE" ]]; then
-        IMG_WIDTH=1920 IMG_HEIGHT=1080
-        DIMENSIONS="$(magick identify -format '%w %h' "$RAW_IMAGE" 2>/dev/null || true)"
-        if [[ "$DIMENSIONS" =~ ^([0-9]+)[[:space:]]+([0-9]+)$ ]]; then
-            IMG_WIDTH="${BASH_REMATCH[1]}" IMG_HEIGHT="${BASH_REMATCH[2]}"
-        fi
-        CLOCK_SIZE=$((IMG_HEIGHT / 10)); DATE_SIZE=$((IMG_HEIGHT / 48)); LABEL_SIZE=$((IMG_HEIGHT / 90))
-        (( CLOCK_SIZE < 54 )) && CLOCK_SIZE=54
-        (( CLOCK_SIZE > 126 )) && CLOCK_SIZE=126
-        (( DATE_SIZE < 17 )) && DATE_SIZE=17
-        (( LABEL_SIZE < 11 )) && LABEL_SIZE=11
-        FONT_FILE="$(fc-match -f '%{file}' 'Inter:style=SemiBold' 2>/dev/null || true)"
-        [[ -r "$FONT_FILE" ]] || FONT_FILE="$(fc-match -f '%{file}' 'sans-serif' 2>/dev/null || true)"
-        FONT_ARGS=()
-        if [[ -r "$FONT_FILE" ]]; then FONT_ARGS=(-font "$FONT_FILE"); fi
 
-        if magick "$RAW_IMAGE" -resize "${IMG_WIDTH}x${IMG_HEIGHT}^" \
-            -gravity center -extent "${IMG_WIDTH}x${IMG_HEIGHT}" -blur 0x18 \
-            -fill '#0B101A' -colorize 38 -gravity north "${FONT_ARGS[@]}" \
-            -pointsize "$CLOCK_SIZE" -fill '#F5F2EA' -annotate "+0+$((IMG_HEIGHT * 20 / 100))" "$(date '+%H:%M')" \
-            -pointsize "$DATE_SIZE" -fill '#D7B56D' -annotate "+0+$((IMG_HEIGHT * 33 / 100))" "$(date '+%A  ·  %d %B %Y')" \
-            -pointsize "$LABEL_SIZE" -fill '#C0C8D3' -annotate "+0+$((IMG_HEIGHT * 77 / 100))" 'A16EEN  /  YOUR SESSION IS SECURE' \
-            "$LOCK_IMAGE" >/dev/null 2>&1; then
-            log "Prepared themed lock image."
+# Animated wallpaper formats are converted to a representative still frame.
+# If a video decoder is available, take the first frame; otherwise use the
+# bundled default image instead of falling back to a plain-color screen.
+IMAGE_INPUT="$ACTIVE_WALLPAPER"
+case "${ACTIVE_WALLPAPER,,}" in
+    *.gif)
+        IMAGE_INPUT="${ACTIVE_WALLPAPER}[0]"
+        ;;
+    *.mp4|*.webm|*.mov|*.m4v|*.mkv)
+        if command -v ffmpeg >/dev/null 2>&1; then
+            if ffmpeg -loglevel error -y -i "$ACTIVE_WALLPAPER" -frames:v 1 "$RAW_IMAGE" >/dev/null 2>&1 && [[ -s "$RAW_IMAGE" ]]; then
+                IMAGE_INPUT="$RAW_IMAGE"
+            else
+                IMAGE_INPUT="$HOME/.config/a16een/quickshell/a16een/assets/wallpapers/default.png"
+            fi
         else
-            rm -f -- "$LOCK_IMAGE"
-            log "Image preparation failed; using solid-color fallback."
+            IMAGE_INPUT="$HOME/.config/a16een/quickshell/a16een/assets/wallpapers/default.png"
         fi
+        ;;
+esac
+
+# Preserve the actual colors and detail of the wallpaper. The light navy tint
+# is deliberately subtle: it improves white text and the password ring without
+# blurring or flattening the wallpaper.
+if command -v magick >/dev/null 2>&1 && [[ -r "$IMAGE_INPUT" ]]; then
+    if magick "$IMAGE_INPUT" -auto-orient -strip -fill '#07111E' -colorize 12 "$LOCK_IMAGE" >/dev/null 2>&1 && [[ -s "$LOCK_IMAGE" ]]; then
+        log "Prepared sharp lock image from wallpaper: $ACTIVE_WALLPAPER"
+    else
+        rm -f -- "$LOCK_IMAGE"
+        log "Wallpaper processing failed; will try the original wallpaper directly."
     fi
 fi
 
+if [[ ! -s "$LOCK_IMAGE" && -r "$ACTIVE_WALLPAPER" ]]; then
+    case "${ACTIVE_WALLPAPER,,}" in
+        *.png|*.jpg|*.jpeg|*.webp|*.bmp|*.tif|*.tiff|*.tga|*.ppm|*.pgm|*.pbm|*.xpm|*.xbm|*.svg)
+            LOCK_IMAGE="$ACTIVE_WALLPAPER"
+            log "Using original wallpaper without processing."
+            ;;
+    esac
+fi
+
+# Use optional swaylock-effects features only after preparing the wallpaper.
+# No screenshot mode and no blur: the selected wallpaper remains recognizable.
+LOCKER_ARGS=()
 if [[ -s "$LOCK_IMAGE" ]]; then
-    if run_locker swaylock --image "$LOCK_IMAGE" --scaling fill \
-        --indicator --indicator-radius 46 --indicator-thickness 4 --show-failed-attempts \
-        --font "Inter" --font-size 16 --inside-color 111722 --ring-color D7B56D \
-        --key-hl-color F5F2EA --bs-hl-color EF858B --text-color F5F2EA; then
+    LOCKER_ARGS+=(--image "$LOCK_IMAGE" --scaling fill)
+else
+    log "No usable wallpaper found; trying the built-in default image."
+    DEFAULT_WALLPAPER="$HOME/.config/a16een/quickshell/a16een/assets/wallpapers/default.png"
+    if [[ -r "$DEFAULT_WALLPAPER" ]]; then
+        LOCKER_ARGS+=(--image "$DEFAULT_WALLPAPER" --scaling fill)
+    else
+        LOCKER_ARGS+=(--color 101720)
+    fi
+fi
+
+# Cursor hiding is optional, since not every swaylock build exposes it.
+HIDE_CURSOR_ARGS=()
+if grep -q -- '--hide-cursor' <<<"$SWAYLOCK_HELP"; then
+    HIDE_CURSOR_ARGS+=(--hide-cursor)
+fi
+
+# Keep BASE_ARGS limited to options supported by standard swaylock builds.
+BASE_ARGS=(
+    "${LOCKER_ARGS[@]}"
+    --indicator
+    --indicator-radius 58
+    --indicator-thickness 5
+    --show-failed-attempts
+    --font "Inter"
+    --font-size 18
+    --inside-color 101923D8
+    --ring-color D7B56D
+    --key-hl-color F5F2EA
+    --bs-hl-color EF858B
+    --line-color 00000000
+    --separator-color 00000000
+    --text-color F8FAFC
+    "${HIDE_CURSOR_ARGS[@]}"
+)
+
+if grep -q -- '--clock' <<<"$SWAYLOCK_HELP" \
+    && grep -q -- '--effect-vignette' <<<"$SWAYLOCK_HELP" \
+    && grep -q -- '--fade-in' <<<"$SWAYLOCK_HELP" \
+    && grep -q -- '--indicator-idle-visible' <<<"$SWAYLOCK_HELP"; then
+    EFFECT_ARGS=(
+        --inside-clear-color 17392BE8
+        --inside-ver-color 17392BE8
+        --inside-wrong-color 48242BE8
+        --ring-clear-color F5F2EA
+        --ring-ver-color 9ED6B3
+        --ring-wrong-color EF858B
+        --text-clear-color F8FAFC
+        --text-ver-color 9ED6B3
+        --text-wrong-color EF858B
+    )
+    log "Trying wallpaper-first swaylock-effects profile."
+    if run_locker swaylock "${BASE_ARGS[@]}" "${EFFECT_ARGS[@]}" \
+        --clock --timestr '%H:%M' --datestr '%A, %d %B %Y' \
+        --indicator-idle-visible --effect-vignette 0.22:0.16 --fade-in 0.22; then
         exit 0
     fi
-    log "Themed standard lock failed; trying plain swaylock."
+    log "Effects profile failed; trying standard swaylock with the same wallpaper."
 fi
 
-# Minimal fallback relies only on swaylock's core color option. This still
-# locks securely even if image tools, fonts, or decorative flags are broken.
+# Standard swaylock fallback keeps the same image, clear ring, and visible
+# password feedback without relying on swaylock-effects-specific options.
+log "Starting standard wallpaper lock profile."
+if run_locker swaylock "${BASE_ARGS[@]}"; then exit 0; fi
+
+# Final secure fallback is intentionally minimal, but use the wallpaper if it
+# was available rather than replacing it with a solid gray-blue screen.
+if [[ -s "$LOCK_IMAGE" ]]; then
+    log "Trying wallpaper-only secure fallback."
+    if run_locker swaylock --image "$LOCK_IMAGE" --scaling fill "${HIDE_CURSOR_ARGS[@]}"; then exit 0; fi
+fi
+
 log "Starting minimal secure swaylock fallback."
-if run_locker swaylock --color 101720; then exit 0; fi
+if run_locker swaylock --color 101720 "${HIDE_CURSOR_ARGS[@]}"; then exit 0; fi
 
 log "ERROR: every swaylock launch attempt failed."
 printf '%s\n' "A16EEN: swaylock could not start. See $LOCK_LOG" >&2
