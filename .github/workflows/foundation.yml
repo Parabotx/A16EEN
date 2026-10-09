@@ -157,10 +157,428 @@ jobs:
           ! grep -Fq 'GridLayout.column:' quickshell/a16een/ui/Dock.qml
           grep -Fq 'CONFIG_SHELL_DIR="$QS_DIR"' scripts/install.sh
           grep -Fq 'Requested a Quickshell restart' scripts/install.sh
-          grep -Fq 'grep -Fxq -- "$config_dir"' scripts/a16een
-          ! grep -Fq '*"qs -c $config_dir"*' scripts/a16een
-          grep -Fq 'grep -Fxq -- "$CONFIG_SHELL_DIR"' scripts/install.sh
+          grep -Fq 'a16een-shell
+          grep -Fq 'UtilitiesPanel {' quickshell/a16een/shell.qml
+          grep -Fq 'import QtQuick.Layouts' quickshell/a16een/ui/Dock.qml
+          grep -Fq 'import qs.ui' quickshell/a16een/ui/UtilitiesPanel.qml
+          grep -Fq 'property bool embedded: false' quickshell/a16een/ui/ControlDetailSection.qml
+          grep -Fq 'qt6-imageformats' scripts/install.sh
+          grep -Fq 'qt6-svg' scripts/install.sh
+          grep -Fq 'grim' scripts/install.sh
+          grep -Fq 'wl-clipboard' scripts/install.sh
+          grep -Fq 'jq' scripts/install.sh
+          grep -Fq 'wlsunset' scripts/install.sh
+          grep -Fq 'a16een-control' scripts/install.sh
+          grep -Fq 'a16een-screenshot' scripts/install.sh
+          grep -Fq 'USER_WALLPAPER_DIR="$HOME/Pictures/a16een"' scripts/install.sh
+          grep -Fq 'property bool wallpaperPickerOpen' quickshell/a16een/shell.qml
+          grep -Fq 'WallpaperPicker {' quickshell/a16een/shell.qml
+          grep -Fq 'cp "$ROOT_DIR/quickshell/a16een/ui/"*.qml "$TMP_DEPLOY/ui/"' scripts/install.sh
+          grep -Fq 'cp "$ROOT_DIR/quickshell/a16een/ui/"*.js "$TMP_DEPLOY/ui/"' scripts/install.sh
+          grep -Fq 'dockBackground: "#FFFFFF"' quickshell/a16een/ui/Dock.qml
+          grep -Fq 'iconColor: "#111111"' quickshell/a16een/ui/Dock.qml
+          ! grep -Fq '#2F6FED' quickshell/a16een/ui/Dock.qml
+          ! grep -Fq 'width: 20' quickshell/a16een/ui/Dock.qml
+          grep -Fq 'Super+S allow-inhibiting=false repeat=false hotkey-overlay-title="A16EEN Screenshot Center"' niri/config.kdl
+          grep -Fq 'Super+Space repeat=false hotkey-overlay-title="A16EEN Application Launcher"' niri/config.kdl
+          grep -Fq 'Super+Slash repeat=false hotkey-overlay-title="A16EEN Command Center"' niri/config.kdl
+          grep -Fq 'Print { screenshot; }' niri/config.kdl
+          grep -Fq 'screenshot-screen' niri/config.kdl
+          grep -Fq 'screenshot-window' niri/config.kdl
+          grep -Fq 'target: "command-center"' quickshell/a16een/shell.qml
+          grep -Fq 'property bool commandCenterOpen' quickshell/a16een/shell.qml
+          grep -Fq 'property bool screenshotCenterOpen' quickshell/a16een/shell.qml
+          grep -Fq 'property bool doNotDisturb' quickshell/a16een/shell.qml
+          grep -Fq 'id: dndReader' quickshell/a16een/shell.qml
+          grep -Fq 'function setDoNotDisturb(enabled)' quickshell/a16een/shell.qml
+          grep -Fq 'target: "screenshot"' quickshell/a16een/shell.qml
+          grep -Fq 'ScreenshotCenter {' quickshell/a16een/shell.qml
+          grep -Fq 'visible: root.opened' quickshell/a16een/ui/CommandCenter.qml
+          grep -Fq '"a16een-screenshot"' quickshell/a16een/ui/ScreenshotCenter.qml
+          grep -Fq 'lucide-monitor.svg' quickshell/a16een/ui/ScreenshotCenter.qml
+          grep -Fq 'lucide-crop.svg' quickshell/a16een/ui/ScreenshotCenter.qml
+          grep -Fq 'lucide-app-window.svg' quickshell/a16een/ui/ScreenshotCenter.qml
+          grep -Fq 'MultiEffect' quickshell/a16een/ui/ScreenshotCenter.qml
+          grep -Fq 'finishAreaSelection' quickshell/a16een/ui/ScreenshotCenter.qml
+          grep -Fq 'a16een-screenshot' quickshell/a16een/ui/ScreenshotSettings.qml
+          grep -Fq 'SAVE TO DISK' quickshell/a16een/ui/ScreenshotSettings.qml
+          grep -Fq 'SAVE LOCATION' quickshell/a16een/ui/ScreenshotSettings.qml
+          grep -Fq 'COPY TO CLIPBOARD' quickshell/a16een/ui/ScreenshotSettings.qml
+          grep -Fq 'interval: 2000' quickshell/a16een/ui/ScreenshotPreview.qml
+          grep -Fq 'xdg-open' quickshell/a16een/ui/ScreenshotPreview.qml
+          grep -Fq 'onDoNotDisturbRequested: root.setDoNotDisturb(enabled)' quickshell/a16een/shell.qml
+          grep -Fq 'wifi_connect()' scripts/a16een-control
+          grep -Fq 'wifi_disconnect()' scripts/a16een-control
+          grep -Fq 'bluetooth_pair()' scripts/a16een-control
+          grep -Fq 'bluetooth_scan()' scripts/a16een-control
+          grep -Fq 'ipc call screenshot preview' scripts/a16een-screenshot
+          grep -Fq 'grim -g' scripts/a16een-screenshot
+          grep -Fq 'niri msg action screenshot-screen' scripts/a16een-screenshot
+          grep -Fq 'niri msg action screenshot-window' scripts/a16een-screenshot
+          grep -Fq 'signal screenshotRequested()' quickshell/a16een/ui/CommandCenter.qml
+          grep -Fq 'signal doNotDisturbRequested(bool enabled)' quickshell/a16een/ui/CommandCenter.qml
+          grep -Fq 'onControlRequested: root.openControlDetail(key)' quickshell/a16een/ui/CommandCenter.qml
+          grep -Fq 'id: "controls"' quickshell/a16een/ui/CommandCenter.qml
+          grep -Fq 'id: "icons"' quickshell/a16een/ui/CommandCenter.qml
+          grep -Fq 'IconThemeSection {' quickshell/a16een/ui/CommandCenter.qml
+          grep -Fq 'ControlCenterSection {' quickshell/a16een/ui/CommandCenter.qml
+          grep -Fq 'ControlDetailSection {' quickshell/a16een/ui/CommandCenter.qml
+          grep -Fq 'id: "wifi"' quickshell/a16een/ui/CommandCenter.qml
+          grep -Fq 'id: "bluetooth"' quickshell/a16een/ui/CommandCenter.qml
+          grep -Fq 'id: "audio"' quickshell/a16een/ui/CommandCenter.qml
+          grep -Fq 'id: "brightness"' quickshell/a16een/ui/CommandCenter.qml
+          grep -Fq 'id: "night-light"' quickshell/a16een/ui/CommandCenter.qml
+          grep -Fq 'id: "battery"' quickshell/a16een/ui/CommandCenter.qml
+          grep -Fq 'id: "dnd"' quickshell/a16een/ui/CommandCenter.qml
+          grep -Fq 'lucide-sliders-horizontal.svg' quickshell/a16een/ui/CommandCenter.qml
+          grep -Fq 'id: "screenshot"' quickshell/a16een/ui/CommandCenter.qml
+          grep -Fq 'text: "/"' quickshell/a16een/ui/CommandCenter.qml
+          grep -Fq 'text: "search commands"' quickshell/a16een/ui/CommandCenter.qml
+          grep -Fq 'signal wallpaperRequested()' quickshell/a16een/ui/CommandCenter.qml
+          grep -Fq 'readonly property var commands' quickshell/a16een/ui/CommandCenter.qml
+          grep -Fq 'function executeCommand(command)' quickshell/a16een/ui/CommandCenter.qml
+          grep -Fq 'onWallpaperRequested: {' quickshell/a16een/shell.qml
+          grep -Fq 'root.wallpaperPickerOpen = true' quickshell/a16een/shell.qml
+          grep -Fq 'a16een-wallpaper", "catalog' quickshell/a16een/ui/WallpaperPicker.qml
+          grep -Fq 'modelData.path' quickshell/a16een/ui/WallpaperPicker.qml
+          grep -Fq 'staticPreview.status !== Image.Ready' quickshell/a16een/ui/WallpaperPicker.qml
+          grep -Fq 'staticPreview.status === Image.Error' quickshell/a16een/ui/WallpaperPicker.qml
+          grep -Fq 'sourceSize.width: root.tileWidth * 2' quickshell/a16een/ui/WallpaperPicker.qml
+          grep -Fq 'SequentialAnimation on opacity' quickshell/a16een/ui/WallpaperPicker.qml
+          grep -Fq 'function apply(path: string): void' quickshell/a16een/shell.qml
+          grep -Fq 'wallpaperPath: ""' quickshell/a16een/shell.qml
+          grep -Fq 'currentWallpaperPath: root.wallpaperPath' quickshell/a16een/shell.qml
+          ! grep -Fq 'wallpaperPathProcess' quickshell/a16een/ui/Wallpaper.qml
+          grep -Fq 'retainWhileLoading: true' quickshell/a16een/ui/Wallpaper.qml
+          grep -Fq 'modelData.displayName' quickshell/a16een/ui/WallpaperPicker.qml
+          grep -Fq 'find "$dir" -maxdepth 1 -type f -print0' scripts/a16een-wallpaper
+          grep -Fq 'notify_shell()' scripts/a16een-wallpaper
+          grep -Fq 'ipc call wallpaper apply' scripts/a16een-wallpaper
+          ! grep -Fq 'restart_shell' scripts/a16een-wallpaper
+          grep -Fq 'notify_shell "$path"' scripts/a16een-wallpaper
+          ! grep -Fq 'sh", "-c"' quickshell/a16een/ui/CommandCenter.qml
+          grep -Fq 'anchors.verticalCenterOffset: root.powerViewOpen || root.controlViewOpen || root.iconThemeViewOpen || root.workspacePresetViewOpen || root.navbarViewOpen ? 0 : 185' quickshell/a16een/ui/CommandCenter.qml
+          grep -Fq 'ToplevelManager.activeToplevel' quickshell/a16een/shell.qml
+          ! grep -Fq 'focusedWindowProcess' quickshell/a16een/shell.qml
+          ! grep -Fq 'is_fullscreen' quickshell/a16een/shell.qml
+          grep -Fq 'root.dockVisible' quickshell/a16een/ui/Dock.qml
+          grep -Fq 'verticalAlignment: Text.AlignVCenter' quickshell/a16een/ui/Launcher.qml
+          ! grep -q 'Mod+A .*launcher toggle' niri/config.kdl
+          grep -Fq 'focusedWindowFullscreen' quickshell/a16een/shell.qml
+          grep -Fq 'fullscreenActive: root.focusedWindowFullscreen' quickshell/a16een/shell.qml
+          grep -Fq 'property bool edgeRevealed' quickshell/a16een/ui/Dock.qml
+          grep -Fq 'width: root.horizontalNavbar ? parent.width : 8' quickshell/a16een/ui/Dock.qml
+          grep -Fq 'height: root.horizontalNavbar ? 8 : parent.height' quickshell/a16een/ui/Dock.qml
+          grep -Fq 'root.dockVisible' quickshell/a16een/ui/Dock.qml
+          grep -Fq 'Mod+X repeat=false { close-window; }' niri/config.kdl
+          grep -Fq 'Mod+F { fullscreen-window; }' niri/config.kdl
+          grep -Fq 'Mod+T repeat=false { spawn-sh "qs -c \"$HOME/.config/a16een/quickshell/a16een\" ipc call fullscreen exit"; }' niri/config.kdl
+          ! grep -q 'Mod+Slash.*launcher toggle' niri/config.kdl
+          ! grep -Fq 'Mod+F { maximize-column; }' niri/config.kdl
+          grep -Fq 'Mod+M { maximize-column; }' niri/config.kdl
+          grep -Fq 'Mod+6 { focus-workspace "music"; }' niri/config.kdl
+          grep -Fq 'Mod+Shift+6 { move-column-to-workspace "music"; }' niri/config.kdl
+          grep -Fq 'Dock {' quickshell/a16een/shell.qml
+          grep -Fq 'right: true' quickshell/a16een/ui/Dock.qml
+          grep -Fq 'readonly property int surfaceWidth:' quickshell/a16een/ui/Dock.qml
+          grep -Fq 'readonly property int surfaceHeight:' quickshell/a16een/ui/Dock.qml
+          grep -Fq 'The actual Wayland surface is only the navbar-sized area' quickshell/a16een/ui/Dock.qml
+          grep -Fq 'width: root.horizontalNavbar ? root.dockWidth : 44' quickshell/a16een/ui/Dock.qml
+          grep -Fq 'Math.max(' quickshell/a16een/ui/Dock.qml
+          ! grep -Fq 'D7B56D' quickshell/a16een/ui/Dock.qml
+          grep -Fq 'id: ethiopianMonthGrid' quickshell/a16een/ui/Dock.qml
+          ! grep -Fq '⚙' quickshell/a16een/ui/Dock.qml
+          ! grep -Fq 'text: "A"' quickshell/a16een/ui/Dock.qml
+          ! grep -Fq 'TopBar {' quickshell/a16een/shell.qml
+          grep -Fq 'workspaces: root.workspaces' quickshell/a16een/shell.qml
+          grep -Fq 'focusedWorkspaceId: root.focusedWorkspaceId' quickshell/a16een/shell.qml
+          grep -Fq 'signal closeRequested' quickshell/a16een/ui/Launcher.qml
+          ! grep -Fq 'root.opened = false' quickshell/a16een/ui/Launcher.qml
+          grep -Fq 'current.id === root.focusedWorkspaceId' quickshell/a16een/ui/Dock.qml
+          grep -Fq 'function focusWorkspace(name)' quickshell/a16een/ui/Dock.qml
+          grep -Fq 'root.focusWorkspace(modelData.id)' quickshell/a16een/ui/Dock.qml
+          grep -Fq 'workspace.is_focused === true' quickshell/a16een/shell.qml
+
+
+
+
+
+
+
+          ! grep -Fq 'activeBackground' quickshell/a16een/ui/Dock.qml
+          grep -Fq 'rightMargin: 66' quickshell/a16een/ui/Launcher.qml
+          ! grep -Fq 'text: "Applications"' quickshell/a16een/ui/Dock.qml
+          ! grep -Fq 'launcherMouse.containsMouse ? root.hoverBackground' quickshell/a16een/ui/Dock.qml
+          grep -Fq 'GridView {' quickshell/a16een/ui/Launcher.qml
+          grep -Fq 'cellWidth: 88' quickshell/a16een/ui/Launcher.qml
+          grep -Fq 'cellHeight: 72' quickshell/a16een/ui/Launcher.qml
+          grep -Fq 'text: appTile.entry.name' quickshell/a16een/ui/Launcher.qml
+          ! grep -Fq 'QUICK LAUNCH' quickshell/a16een/ui/Launcher.qml
+          grep -Fq 'width: Math.min(480, parent.width - 64)' quickshell/a16een/ui/Launcher.qml
+          grep -Fq 'height: Math.min(360, parent.height - 80)' quickshell/a16een/ui/Launcher.qml
+          grep -Fq 'text: appTile.entry.name' quickshell/a16een/ui/Launcher.qml
+          grep -Fq 'acceptedButtons: Qt.NoButton' quickshell/a16een/ui/Launcher.qml
+          grep -Fq 'TextInput {' quickshell/a16een/ui/Launcher.qml
+          grep -Fq 'Quickshell.iconPath' quickshell/a16een/ui/Launcher.qml
+          ! grep -Fq 'QUICK LAUNCH' quickshell/a16een/ui/Launcher.qml
+          ! grep -Fq 'appGrid.columns' quickshell/a16een/ui/Launcher.qml
+          ! grep -Fq 'search.svg' quickshell/a16een/ui/Launcher.qml
+          grep -Fq 'Layout.preferredWidth: 300' quickshell/a16een/ui/Launcher.qml
+          grep -Fq 'height: 36' quickshell/a16een/ui/Launcher.qml
+          grep -Fq 'xwayland-satellite' niri/config.kdl
+          grep -Fq 'Mod+Return { spawn "foot"; }' niri/config.kdl
+          grep -Fq 'XF86AudioPlay allow-when-locked=true { spawn "playerctl" "play-pause"; }' niri/config.kdl
+          grep -Fq 'XF86AudioMute allow-when-locked=true {' niri/config.kdl
+          grep -Fq 'spawn "wpctl" "set-mute" "@DEFAULT_AUDIO_SINK@" "toggle";' niri/config.kdl
+          grep -Fq 'xdg-desktop-portal' scripts/install.sh
+          grep -Fq 'bash "$ROOT_DIR/scripts/a16een-icons"' scripts/install.sh
+          grep -Fq 'niri msg action load-config-file' scripts/install.sh
+          grep -Fq 'a16een-shell' scripts/install.sh
+          grep -Fq 'QS_ICON_THEME' scripts/a16een-shell
+          grep -Fq 'a16een-icon-theme' scripts/install.sh
+          grep -Fq 'inter-font' scripts/install.sh
+          grep -Fq 'ttf-lato' scripts/install.sh
+          grep -Fq 'adobe-source-sans-fonts' scripts/install.sh
+          grep -Fq 'ttf-roboto' scripts/install.sh
+          grep -Fq 'ttf-roboto-mono' scripts/install.sh
+          grep -Fq 'USER_WALLPAPER_DIR' scripts/install.sh
+          grep -Fq 'a16een-wallpaper' scripts/install.sh
+          test -f quickshell/a16een/assets/wallpapers/README.md
+          grep -Fq 'quickshell/a16een/assets/wallpapers/' quickshell/a16een/assets/wallpapers/README.md
+          grep -Fq 'wallpaper)' scripts/a16een
+          grep -Fq 'current-path)' scripts/a16een-wallpaper
+          grep -Fq 'catalog)' scripts/a16een-wallpaper
+          grep -Fq '*.webp' scripts/a16een-wallpaper
+          grep -Fq '*.tiff' scripts/a16een-wallpaper
+          grep -Fq '*.tga' scripts/a16een-wallpaper
+          grep -Fq 'USER_WALLPAPER_DIR="$HOME/Pictures/a16een"' scripts/a16een-wallpaper
+          grep -Fq 'a16een-update' README.md
+          # Launcher shortcut is already validated earlier in this block.
+
+      - name: Validate no legacy wallpaper reference
+        run: |
+          set -euo pipefail
+          if grep -RIn --exclude-dir=.git --exclude='foundation.yml' 'default\.webp' .; then
+            echo "Legacy default.webp reference found." >&2
+            exit 1
+          fi
+
+
+ scripts/a16een
+          grep -Fq 'task/$supervisor_pid/children' scripts/a16een
+          grep -Fq 'a16een-shell
+          grep -Fq 'UtilitiesPanel {' quickshell/a16een/shell.qml
+          grep -Fq 'import QtQuick.Layouts' quickshell/a16een/ui/Dock.qml
+          grep -Fq 'import qs.ui' quickshell/a16een/ui/UtilitiesPanel.qml
+          grep -Fq 'property bool embedded: false' quickshell/a16een/ui/ControlDetailSection.qml
+          grep -Fq 'qt6-imageformats' scripts/install.sh
+          grep -Fq 'qt6-svg' scripts/install.sh
+          grep -Fq 'grim' scripts/install.sh
+          grep -Fq 'wl-clipboard' scripts/install.sh
+          grep -Fq 'jq' scripts/install.sh
+          grep -Fq 'wlsunset' scripts/install.sh
+          grep -Fq 'a16een-control' scripts/install.sh
+          grep -Fq 'a16een-screenshot' scripts/install.sh
+          grep -Fq 'USER_WALLPAPER_DIR="$HOME/Pictures/a16een"' scripts/install.sh
+          grep -Fq 'property bool wallpaperPickerOpen' quickshell/a16een/shell.qml
+          grep -Fq 'WallpaperPicker {' quickshell/a16een/shell.qml
+          grep -Fq 'cp "$ROOT_DIR/quickshell/a16een/ui/"*.qml "$TMP_DEPLOY/ui/"' scripts/install.sh
+          grep -Fq 'cp "$ROOT_DIR/quickshell/a16een/ui/"*.js "$TMP_DEPLOY/ui/"' scripts/install.sh
+          grep -Fq 'dockBackground: "#FFFFFF"' quickshell/a16een/ui/Dock.qml
+          grep -Fq 'iconColor: "#111111"' quickshell/a16een/ui/Dock.qml
+          ! grep -Fq '#2F6FED' quickshell/a16een/ui/Dock.qml
+          ! grep -Fq 'width: 20' quickshell/a16een/ui/Dock.qml
+          grep -Fq 'Super+S allow-inhibiting=false repeat=false hotkey-overlay-title="A16EEN Screenshot Center"' niri/config.kdl
+          grep -Fq 'Super+Space repeat=false hotkey-overlay-title="A16EEN Application Launcher"' niri/config.kdl
+          grep -Fq 'Super+Slash repeat=false hotkey-overlay-title="A16EEN Command Center"' niri/config.kdl
+          grep -Fq 'Print { screenshot; }' niri/config.kdl
+          grep -Fq 'screenshot-screen' niri/config.kdl
+          grep -Fq 'screenshot-window' niri/config.kdl
+          grep -Fq 'target: "command-center"' quickshell/a16een/shell.qml
+          grep -Fq 'property bool commandCenterOpen' quickshell/a16een/shell.qml
+          grep -Fq 'property bool screenshotCenterOpen' quickshell/a16een/shell.qml
+          grep -Fq 'property bool doNotDisturb' quickshell/a16een/shell.qml
+          grep -Fq 'id: dndReader' quickshell/a16een/shell.qml
+          grep -Fq 'function setDoNotDisturb(enabled)' quickshell/a16een/shell.qml
+          grep -Fq 'target: "screenshot"' quickshell/a16een/shell.qml
+          grep -Fq 'ScreenshotCenter {' quickshell/a16een/shell.qml
+          grep -Fq 'visible: root.opened' quickshell/a16een/ui/CommandCenter.qml
+          grep -Fq '"a16een-screenshot"' quickshell/a16een/ui/ScreenshotCenter.qml
+          grep -Fq 'lucide-monitor.svg' quickshell/a16een/ui/ScreenshotCenter.qml
+          grep -Fq 'lucide-crop.svg' quickshell/a16een/ui/ScreenshotCenter.qml
+          grep -Fq 'lucide-app-window.svg' quickshell/a16een/ui/ScreenshotCenter.qml
+          grep -Fq 'MultiEffect' quickshell/a16een/ui/ScreenshotCenter.qml
+          grep -Fq 'finishAreaSelection' quickshell/a16een/ui/ScreenshotCenter.qml
+          grep -Fq 'a16een-screenshot' quickshell/a16een/ui/ScreenshotSettings.qml
+          grep -Fq 'SAVE TO DISK' quickshell/a16een/ui/ScreenshotSettings.qml
+          grep -Fq 'SAVE LOCATION' quickshell/a16een/ui/ScreenshotSettings.qml
+          grep -Fq 'COPY TO CLIPBOARD' quickshell/a16een/ui/ScreenshotSettings.qml
+          grep -Fq 'interval: 2000' quickshell/a16een/ui/ScreenshotPreview.qml
+          grep -Fq 'xdg-open' quickshell/a16een/ui/ScreenshotPreview.qml
+          grep -Fq 'onDoNotDisturbRequested: root.setDoNotDisturb(enabled)' quickshell/a16een/shell.qml
+          grep -Fq 'wifi_connect()' scripts/a16een-control
+          grep -Fq 'wifi_disconnect()' scripts/a16een-control
+          grep -Fq 'bluetooth_pair()' scripts/a16een-control
+          grep -Fq 'bluetooth_scan()' scripts/a16een-control
+          grep -Fq 'ipc call screenshot preview' scripts/a16een-screenshot
+          grep -Fq 'grim -g' scripts/a16een-screenshot
+          grep -Fq 'niri msg action screenshot-screen' scripts/a16een-screenshot
+          grep -Fq 'niri msg action screenshot-window' scripts/a16een-screenshot
+          grep -Fq 'signal screenshotRequested()' quickshell/a16een/ui/CommandCenter.qml
+          grep -Fq 'signal doNotDisturbRequested(bool enabled)' quickshell/a16een/ui/CommandCenter.qml
+          grep -Fq 'onControlRequested: root.openControlDetail(key)' quickshell/a16een/ui/CommandCenter.qml
+          grep -Fq 'id: "controls"' quickshell/a16een/ui/CommandCenter.qml
+          grep -Fq 'id: "icons"' quickshell/a16een/ui/CommandCenter.qml
+          grep -Fq 'IconThemeSection {' quickshell/a16een/ui/CommandCenter.qml
+          grep -Fq 'ControlCenterSection {' quickshell/a16een/ui/CommandCenter.qml
+          grep -Fq 'ControlDetailSection {' quickshell/a16een/ui/CommandCenter.qml
+          grep -Fq 'id: "wifi"' quickshell/a16een/ui/CommandCenter.qml
+          grep -Fq 'id: "bluetooth"' quickshell/a16een/ui/CommandCenter.qml
+          grep -Fq 'id: "audio"' quickshell/a16een/ui/CommandCenter.qml
+          grep -Fq 'id: "brightness"' quickshell/a16een/ui/CommandCenter.qml
+          grep -Fq 'id: "night-light"' quickshell/a16een/ui/CommandCenter.qml
+          grep -Fq 'id: "battery"' quickshell/a16een/ui/CommandCenter.qml
+          grep -Fq 'id: "dnd"' quickshell/a16een/ui/CommandCenter.qml
+          grep -Fq 'lucide-sliders-horizontal.svg' quickshell/a16een/ui/CommandCenter.qml
+          grep -Fq 'id: "screenshot"' quickshell/a16een/ui/CommandCenter.qml
+          grep -Fq 'text: "/"' quickshell/a16een/ui/CommandCenter.qml
+          grep -Fq 'text: "search commands"' quickshell/a16een/ui/CommandCenter.qml
+          grep -Fq 'signal wallpaperRequested()' quickshell/a16een/ui/CommandCenter.qml
+          grep -Fq 'readonly property var commands' quickshell/a16een/ui/CommandCenter.qml
+          grep -Fq 'function executeCommand(command)' quickshell/a16een/ui/CommandCenter.qml
+          grep -Fq 'onWallpaperRequested: {' quickshell/a16een/shell.qml
+          grep -Fq 'root.wallpaperPickerOpen = true' quickshell/a16een/shell.qml
+          grep -Fq 'a16een-wallpaper", "catalog' quickshell/a16een/ui/WallpaperPicker.qml
+          grep -Fq 'modelData.path' quickshell/a16een/ui/WallpaperPicker.qml
+          grep -Fq 'staticPreview.status !== Image.Ready' quickshell/a16een/ui/WallpaperPicker.qml
+          grep -Fq 'staticPreview.status === Image.Error' quickshell/a16een/ui/WallpaperPicker.qml
+          grep -Fq 'sourceSize.width: root.tileWidth * 2' quickshell/a16een/ui/WallpaperPicker.qml
+          grep -Fq 'SequentialAnimation on opacity' quickshell/a16een/ui/WallpaperPicker.qml
+          grep -Fq 'function apply(path: string): void' quickshell/a16een/shell.qml
+          grep -Fq 'wallpaperPath: ""' quickshell/a16een/shell.qml
+          grep -Fq 'currentWallpaperPath: root.wallpaperPath' quickshell/a16een/shell.qml
+          ! grep -Fq 'wallpaperPathProcess' quickshell/a16een/ui/Wallpaper.qml
+          grep -Fq 'retainWhileLoading: true' quickshell/a16een/ui/Wallpaper.qml
+          grep -Fq 'modelData.displayName' quickshell/a16een/ui/WallpaperPicker.qml
+          grep -Fq 'find "$dir" -maxdepth 1 -type f -print0' scripts/a16een-wallpaper
+          grep -Fq 'notify_shell()' scripts/a16een-wallpaper
+          grep -Fq 'ipc call wallpaper apply' scripts/a16een-wallpaper
+          ! grep -Fq 'restart_shell' scripts/a16een-wallpaper
+          grep -Fq 'notify_shell "$path"' scripts/a16een-wallpaper
+          ! grep -Fq 'sh", "-c"' quickshell/a16een/ui/CommandCenter.qml
+          grep -Fq 'anchors.verticalCenterOffset: root.powerViewOpen || root.controlViewOpen || root.iconThemeViewOpen || root.workspacePresetViewOpen || root.navbarViewOpen ? 0 : 185' quickshell/a16een/ui/CommandCenter.qml
+          grep -Fq 'ToplevelManager.activeToplevel' quickshell/a16een/shell.qml
+          ! grep -Fq 'focusedWindowProcess' quickshell/a16een/shell.qml
+          ! grep -Fq 'is_fullscreen' quickshell/a16een/shell.qml
+          grep -Fq 'root.dockVisible' quickshell/a16een/ui/Dock.qml
+          grep -Fq 'verticalAlignment: Text.AlignVCenter' quickshell/a16een/ui/Launcher.qml
+          ! grep -q 'Mod+A .*launcher toggle' niri/config.kdl
+          grep -Fq 'focusedWindowFullscreen' quickshell/a16een/shell.qml
+          grep -Fq 'fullscreenActive: root.focusedWindowFullscreen' quickshell/a16een/shell.qml
+          grep -Fq 'property bool edgeRevealed' quickshell/a16een/ui/Dock.qml
+          grep -Fq 'width: root.horizontalNavbar ? parent.width : 8' quickshell/a16een/ui/Dock.qml
+          grep -Fq 'height: root.horizontalNavbar ? 8 : parent.height' quickshell/a16een/ui/Dock.qml
+          grep -Fq 'root.dockVisible' quickshell/a16een/ui/Dock.qml
+          grep -Fq 'Mod+X repeat=false { close-window; }' niri/config.kdl
+          grep -Fq 'Mod+F { fullscreen-window; }' niri/config.kdl
+          grep -Fq 'Mod+T repeat=false { spawn-sh "qs -c \"$HOME/.config/a16een/quickshell/a16een\" ipc call fullscreen exit"; }' niri/config.kdl
+          ! grep -q 'Mod+Slash.*launcher toggle' niri/config.kdl
+          ! grep -Fq 'Mod+F { maximize-column; }' niri/config.kdl
+          grep -Fq 'Mod+M { maximize-column; }' niri/config.kdl
+          grep -Fq 'Mod+6 { focus-workspace "music"; }' niri/config.kdl
+          grep -Fq 'Mod+Shift+6 { move-column-to-workspace "music"; }' niri/config.kdl
+          grep -Fq 'Dock {' quickshell/a16een/shell.qml
+          grep -Fq 'right: true' quickshell/a16een/ui/Dock.qml
+          grep -Fq 'readonly property int surfaceWidth:' quickshell/a16een/ui/Dock.qml
+          grep -Fq 'readonly property int surfaceHeight:' quickshell/a16een/ui/Dock.qml
+          grep -Fq 'The actual Wayland surface is only the navbar-sized area' quickshell/a16een/ui/Dock.qml
+          grep -Fq 'width: root.horizontalNavbar ? root.dockWidth : 44' quickshell/a16een/ui/Dock.qml
+          grep -Fq 'Math.max(' quickshell/a16een/ui/Dock.qml
+          ! grep -Fq 'D7B56D' quickshell/a16een/ui/Dock.qml
+          grep -Fq 'id: ethiopianMonthGrid' quickshell/a16een/ui/Dock.qml
+          ! grep -Fq '⚙' quickshell/a16een/ui/Dock.qml
+          ! grep -Fq 'text: "A"' quickshell/a16een/ui/Dock.qml
+          ! grep -Fq 'TopBar {' quickshell/a16een/shell.qml
+          grep -Fq 'workspaces: root.workspaces' quickshell/a16een/shell.qml
+          grep -Fq 'focusedWorkspaceId: root.focusedWorkspaceId' quickshell/a16een/shell.qml
+          grep -Fq 'signal closeRequested' quickshell/a16een/ui/Launcher.qml
+          ! grep -Fq 'root.opened = false' quickshell/a16een/ui/Launcher.qml
+          grep -Fq 'current.id === root.focusedWorkspaceId' quickshell/a16een/ui/Dock.qml
+          grep -Fq 'function focusWorkspace(name)' quickshell/a16een/ui/Dock.qml
+          grep -Fq 'root.focusWorkspace(modelData.id)' quickshell/a16een/ui/Dock.qml
+          grep -Fq 'workspace.is_focused === true' quickshell/a16een/shell.qml
+
+
+
+
+
+
+
+          ! grep -Fq 'activeBackground' quickshell/a16een/ui/Dock.qml
+          grep -Fq 'rightMargin: 66' quickshell/a16een/ui/Launcher.qml
+          ! grep -Fq 'text: "Applications"' quickshell/a16een/ui/Dock.qml
+          ! grep -Fq 'launcherMouse.containsMouse ? root.hoverBackground' quickshell/a16een/ui/Dock.qml
+          grep -Fq 'GridView {' quickshell/a16een/ui/Launcher.qml
+          grep -Fq 'cellWidth: 88' quickshell/a16een/ui/Launcher.qml
+          grep -Fq 'cellHeight: 72' quickshell/a16een/ui/Launcher.qml
+          grep -Fq 'text: appTile.entry.name' quickshell/a16een/ui/Launcher.qml
+          ! grep -Fq 'QUICK LAUNCH' quickshell/a16een/ui/Launcher.qml
+          grep -Fq 'width: Math.min(480, parent.width - 64)' quickshell/a16een/ui/Launcher.qml
+          grep -Fq 'height: Math.min(360, parent.height - 80)' quickshell/a16een/ui/Launcher.qml
+          grep -Fq 'text: appTile.entry.name' quickshell/a16een/ui/Launcher.qml
+          grep -Fq 'acceptedButtons: Qt.NoButton' quickshell/a16een/ui/Launcher.qml
+          grep -Fq 'TextInput {' quickshell/a16een/ui/Launcher.qml
+          grep -Fq 'Quickshell.iconPath' quickshell/a16een/ui/Launcher.qml
+          ! grep -Fq 'QUICK LAUNCH' quickshell/a16een/ui/Launcher.qml
+          ! grep -Fq 'appGrid.columns' quickshell/a16een/ui/Launcher.qml
+          ! grep -Fq 'search.svg' quickshell/a16een/ui/Launcher.qml
+          grep -Fq 'Layout.preferredWidth: 300' quickshell/a16een/ui/Launcher.qml
+          grep -Fq 'height: 36' quickshell/a16een/ui/Launcher.qml
+          grep -Fq 'xwayland-satellite' niri/config.kdl
+          grep -Fq 'Mod+Return { spawn "foot"; }' niri/config.kdl
+          grep -Fq 'XF86AudioPlay allow-when-locked=true { spawn "playerctl" "play-pause"; }' niri/config.kdl
+          grep -Fq 'XF86AudioMute allow-when-locked=true {' niri/config.kdl
+          grep -Fq 'spawn "wpctl" "set-mute" "@DEFAULT_AUDIO_SINK@" "toggle";' niri/config.kdl
+          grep -Fq 'xdg-desktop-portal' scripts/install.sh
+          grep -Fq 'bash "$ROOT_DIR/scripts/a16een-icons"' scripts/install.sh
+          grep -Fq 'niri msg action load-config-file' scripts/install.sh
+          grep -Fq 'a16een-shell' scripts/install.sh
+          grep -Fq 'QS_ICON_THEME' scripts/a16een-shell
+          grep -Fq 'a16een-icon-theme' scripts/install.sh
+          grep -Fq 'inter-font' scripts/install.sh
+          grep -Fq 'ttf-lato' scripts/install.sh
+          grep -Fq 'adobe-source-sans-fonts' scripts/install.sh
+          grep -Fq 'ttf-roboto' scripts/install.sh
+          grep -Fq 'ttf-roboto-mono' scripts/install.sh
+          grep -Fq 'USER_WALLPAPER_DIR' scripts/install.sh
+          grep -Fq 'a16een-wallpaper' scripts/install.sh
+          test -f quickshell/a16een/assets/wallpapers/README.md
+          grep -Fq 'quickshell/a16een/assets/wallpapers/' quickshell/a16een/assets/wallpapers/README.md
+          grep -Fq 'wallpaper)' scripts/a16een
+          grep -Fq 'current-path)' scripts/a16een-wallpaper
+          grep -Fq 'catalog)' scripts/a16een-wallpaper
+          grep -Fq '*.webp' scripts/a16een-wallpaper
+          grep -Fq '*.tiff' scripts/a16een-wallpaper
+          grep -Fq '*.tga' scripts/a16een-wallpaper
+          grep -Fq 'USER_WALLPAPER_DIR="$HOME/Pictures/a16een"' scripts/a16een-wallpaper
+          grep -Fq 'a16een-update' README.md
+          # Launcher shortcut is already validated earlier in this block.
+
+      - name: Validate no legacy wallpaper reference
+        run: |
+          set -euo pipefail
+          if grep -RIn --exclude-dir=.git --exclude='foundation.yml' 'default\.webp' .; then
+            echo "Legacy default.webp reference found." >&2
+            exit 1
+          fi
+
+
+ scripts/install.sh
+          grep -Fq 'task/$SUPERVISOR_PID/children' scripts/install.sh
           grep -Fq 'COMMAND_NAME' scripts/install.sh
+          test "$(grep -c 'onActiveChanged:' quickshell/a16een/ui/ControlDetailSection.qml)" -eq 1
+          grep -Fq 'required property int index' quickshell/a16een/ui/Launcher.qml
+          grep -Fq 'appGrid.currentIndex = appTile.index' quickshell/a16een/ui/Launcher.qml
           grep -Fq 'UtilitiesPanel {' quickshell/a16een/shell.qml
           grep -Fq 'import QtQuick.Layouts' quickshell/a16een/ui/Dock.qml
           grep -Fq 'import qs.ui' quickshell/a16een/ui/UtilitiesPanel.qml
