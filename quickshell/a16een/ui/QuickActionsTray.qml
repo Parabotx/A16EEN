@@ -48,8 +48,10 @@ PanelWindow {
         // Horizontal trays share the battery capsule's 12px edge alignment.
         // Align the vertical tray exactly with the visible 44px navbar rail.
         // Horizontally it sits directly beside the battery capsule.
-        left: root.horizontalNavbar ? 0 : 15
-        right: root.horizontalNavbar ? 102 : 15
+        // Keep the holder flush against the active screen side just like
+        // the workspace rail. Horizontal layouts keep the small battery gap.
+        left: root.horizontalNavbar ? 0 : 0
+        right: root.horizontalNavbar ? 102 : 0
         top: 0
         bottom: root.horizontalNavbar ? 0 : 72
     }
