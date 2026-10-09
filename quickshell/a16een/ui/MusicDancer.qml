@@ -1,46 +1,58 @@
 import QtQuick
-import Qt.labs.lottieqt
 
 Item {
     id: root
 
     property string animationSource: ""
+    property bool componentReady: false
+    readonly property bool lottieReady: rendererLoader.item ? rendererLoader.item.ready : false
 
     anchors.fill: parent
 
-    LottieAnimation {
-        id: lottie
-        anchors.fill: parent
-        source: root.animationSource
-        loops: LottieAnimation.Infinite
-        autoPlay: false
-        quality: LottieAnimation.HighQuality
-        visible: status === LottieAnimation.Ready
+    function syncRenderer() {
+        if (!root.componentReady)
+            return
 
+        if (!root.animationSource.length) {
+            rendererLoader.active = false
+            rendererLoader.source = ""
+            return
+        }
+
+        if (rendererLoader.item) {
+            rendererLoader.item.animationSource = root.animationSource
+            return
+        }
+
+        rendererLoader.active = true
+        rendererLoader.setSource(Qt.resolvedUrl("MusicDancerLottie.qml"), {
+            "animationSource": root.animationSource
+        })
+    }
+
+    onAnimationSourceChanged: root.syncRenderer()
+
+    Component.onCompleted: {
+        root.componentReady = true
+        root.syncRenderer()
+    }
+
+    Loader {
+        id: rendererLoader
+        anchors.fill: parent
+        active: false
         onStatusChanged: {
-            if (status === LottieAnimation.Ready) {
-                start()
-                console.info("A16EEN Music: dancer animation loaded", root.sourceForLog(),
-                    "frames:", startFrame, "to", endFrame, "canvas:", root.width, "x", root.height)
-            } else if (status === LottieAnimation.Error) {
-                console.warn("A16EEN Music: failed to load dancer animation",
-                    root.animationSource, "status:", status)
-            } else if (status === LottieAnimation.Loading) {
-                console.info("A16EEN Music: loading dancer animation", root.animationSource)
-            }
+            if (status === Loader.Error)
+                console.warn("A16EEN Music: Lottie module/component unavailable; using animated fallback")
         }
     }
 
-    function sourceForLog() {
-        return root.animationSource
-    }
-
-    // A visible fallback avoids an empty stage when a file cannot be decoded.
-    // It is replaced automatically as soon as the Lottie player becomes ready.
+    // A visible fallback avoids an empty stage when Lottie is unavailable,
+    // invalid, or still loading. It disappears as soon as the renderer is ready.
     Item {
         id: fallback
         anchors.fill: parent
-        visible: lottie.status !== LottieAnimation.Ready
+        visible: !root.lottieReady
 
         Item {
             id: dancer
@@ -65,30 +77,9 @@ Item {
                 border.width: 1
                 border.color: "#B96E91"
 
-                Rectangle {
-                    width: 2.5
-                    height: 3
-                    x: 5
-                    y: 7
-                    radius: 1
-                    color: "#563F4D"
-                }
-                Rectangle {
-                    width: 2.5
-                    height: 3
-                    x: 12
-                    y: 7
-                    radius: 1
-                    color: "#563F4D"
-                }
-                Rectangle {
-                    width: 5
-                    height: 2
-                    x: 7
-                    y: 13
-                    radius: 1
-                    color: "#B96E91"
-                }
+                Rectangle { width: 2.5; height: 3; x: 5; y: 7; radius: 1; color: "#563F4D" }
+                Rectangle { width: 2.5; height: 3; x: 12; y: 7; radius: 1; color: "#563F4D" }
+                Rectangle { width: 5; height: 2; x: 7; y: 13; radius: 1; color: "#B96E91" }
             }
 
             Rectangle {
@@ -103,15 +94,8 @@ Item {
             }
 
             Rectangle {
-                id: leftArm
-                width: 5
-                height: 17
-                x: 35
-                y: 28
-                radius: 2.5
-                color: "#7C589E"
-                transformOrigin: Item.Top
-                rotation: 25
+                width: 5; height: 17; x: 35; y: 28; radius: 2.5
+                color: "#7C589E"; transformOrigin: Item.Top; rotation: 25
                 SequentialAnimation on rotation {
                     loops: Animation.Infinite
                     NumberAnimation { to: -32; duration: 260; easing.type: Easing.InOutSine }
@@ -120,15 +104,8 @@ Item {
             }
 
             Rectangle {
-                id: rightArm
-                width: 5
-                height: 17
-                x: 58
-                y: 28
-                radius: 2.5
-                color: "#7C589E"
-                transformOrigin: Item.Top
-                rotation: -25
+                width: 5; height: 17; x: 58; y: 28; radius: 2.5
+                color: "#7C589E"; transformOrigin: Item.Top; rotation: -25
                 SequentialAnimation on rotation {
                     loops: Animation.Infinite
                     NumberAnimation { to: 32; duration: 240; easing.type: Easing.InOutSine }
@@ -137,15 +114,8 @@ Item {
             }
 
             Rectangle {
-                id: leftLeg
-                width: 6
-                height: 14
-                x: 43
-                y: 46
-                radius: 3
-                color: "#5D506F"
-                transformOrigin: Item.Top
-                rotation: -14
+                width: 6; height: 14; x: 43; y: 46; radius: 3
+                color: "#5D506F"; transformOrigin: Item.Top; rotation: -14
                 SequentialAnimation on rotation {
                     loops: Animation.Infinite
                     NumberAnimation { to: 20; duration: 260; easing.type: Easing.InOutSine }
@@ -154,15 +124,8 @@ Item {
             }
 
             Rectangle {
-                id: rightLeg
-                width: 6
-                height: 14
-                x: 51
-                y: 46
-                radius: 3
-                color: "#5D506F"
-                transformOrigin: Item.Top
-                rotation: 14
+                width: 6; height: 14; x: 51; y: 46; radius: 3
+                color: "#5D506F"; transformOrigin: Item.Top; rotation: 14
                 SequentialAnimation on rotation {
                     loops: Animation.Infinite
                     NumberAnimation { to: -20; duration: 260; easing.type: Easing.InOutSine }
@@ -175,4 +138,5 @@ Item {
             Rectangle { width: 2; height: 2; x: 26; y: 49; radius: 1; color: "#A992CF" }
         }
     }
+
 }
