@@ -699,6 +699,8 @@ ShellRoot {
 
     function openQuickTasks() {
         root.quickTasksOpen = true
+        // The navbar's lightweight task list is independent of the old desktop widget.
+        root.tasksWidgetEnabled = false
         root.quickNotesOpen = false
         root.commandCenterOpen = false
         root.launcherOpen = false
