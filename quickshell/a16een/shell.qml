@@ -27,6 +27,7 @@ ShellRoot {
     property string navbarPosition: "right"
     property bool quickNotesOpen: false
     property bool quickTasksOpen: false
+    property bool quickPresetsOpen: false
     property bool navbarRevealed: false
 
     readonly property string navbarLayoutPath: {
@@ -699,9 +700,24 @@ ShellRoot {
 
     function openQuickTasks() {
         root.quickTasksOpen = true
+        root.quickPresetsOpen = false
         // The navbar's lightweight task list is independent of the old desktop widget.
         root.tasksWidgetEnabled = false
         root.quickNotesOpen = false
+        root.commandCenterOpen = false
+        root.launcherOpen = false
+        root.dashboardOpen = false
+        root.wallpaperPickerOpen = false
+        root.widgetsCenterOpen = false
+        root.screenshotCenterOpen = false
+        root.screenshotSettingsOpen = false
+    }
+
+    function openQuickPresets() {
+        root.quickPresetsOpen = true
+        root.quickNotesOpen = false
+        root.quickTasksOpen = false
+        root.tasksWidgetEnabled = false
         root.commandCenterOpen = false
         root.launcherOpen = false
         root.dashboardOpen = false
@@ -719,6 +735,7 @@ ShellRoot {
         onNotesRequested: {
             root.quickNotesOpen = true
             root.quickTasksOpen = false
+            root.quickPresetsOpen = false
             root.commandCenterOpen = false
             root.launcherOpen = false
             root.dashboardOpen = false
@@ -730,18 +747,7 @@ ShellRoot {
 
         onTasksRequested: root.openQuickTasks()
 
-        onPresetsRequested: {
-            root.quickNotesOpen = false
-            root.quickTasksOpen = false
-            root.launcherOpen = false
-            root.dashboardOpen = false
-            root.wallpaperPickerOpen = false
-            root.widgetsCenterOpen = false
-            root.screenshotCenterOpen = false
-            root.screenshotSettingsOpen = false
-            root.commandCenterOpen = true
-            Qt.callLater(() => commandCenter.openWorkspacePresetView())
-        }
+        onPresetsRequested: root.openQuickPresets()
 
     }
 
@@ -762,6 +768,14 @@ ShellRoot {
         dockVisible: true
         opened: root.quickTasksOpen
         onCloseRequested: root.quickTasksOpen = false
+    }
+
+    QuickPresets {
+        modelData: root.primaryScreen
+        navbarPosition: root.navbarPosition
+        dockVisible: true
+        opened: root.quickPresetsOpen
+        onCloseRequested: root.quickPresetsOpen = false
     }
 
     CommandCenter {
