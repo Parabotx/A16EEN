@@ -16,6 +16,7 @@ PanelWindow {
     signal launcherRequested()
     signal lockRequested()
     signal dockVisibilityChanged(bool visible)
+    signal utilitiesRequested(string mode)
 
     property bool lockInProgress: false
     property bool powerMenuOpen: false
@@ -61,7 +62,59 @@ PanelWindow {
     property int navbarRevision: 0
     property int workspaceCount: 6
     property bool edgeRevealed: false
+    property bool utilitiesExpanded: false
+    property string selectedUtility: "wifi"
+    property string utilityWifiState: "unavailable"
+    property string utilityWifiName: "Not connected"
+    property string utilityBluetoothState: "unavailable"
     required property string navbarPosition
+
+    function parseUtilitySnapshot(output) {
+        const snapshot = {}
+        String(output || "").split("\n").forEach(line => {
+            const index = line.indexOf("=")
+            if (index > 0)
+                snapshot[line.slice(0, index).trim()] = line.slice(index + 1).trim()
+        })
+
+        const wifi = String(snapshot.wifi || "").toLowerCase()
+        root.utilityWifiState = ["enabled", "on"].includes(wifi)
+            ? "on"
+            : (["disabled", "off"].includes(wifi) ? "off" : "unavailable")
+        root.utilityWifiName = snapshot.wifi_name || "Not connected"
+
+        const bluetooth = String(snapshot.bluetooth || "").toLowerCase()
+        root.utilityBluetoothState = ["enabled", "on"].includes(bluetooth)
+            ? "on"
+            : (["disabled", "off"].includes(bluetooth) ? "off" : "unavailable")
+    }
+
+    Process {
+        id: utilityStatusReader
+        command: ["a16een-control", "snapshot"]
+        running: false
+        stdout: StdioCollector {
+            onStreamFinished: root.parseUtilitySnapshot(text)
+        }
+    }
+
+    Timer {
+        interval: 5000
+        repeat: true
+        running: root.dockVisible
+        onTriggered: {
+            if (!utilityStatusReader.running)
+                utilityStatusReader.running = true
+        }
+    }
+
+    Component.onCompleted: utilityStatusReader.running = true
+
+    readonly property bool utilityWifiConnected:
+        root.utilityWifiState === "on"
+        && root.utilityWifiName !== "Not connected"
+    readonly property bool utilityBluetoothEnabled:
+        root.utilityBluetoothState === "on"
 
     readonly property var workspaceCatalog: [
         { id: "home", icon: "house.svg" },
@@ -449,8 +502,8 @@ PanelWindow {
 
         // Keep the clock visually consistent with the navbar: a slim capsule
         // whose vertical width matches the workspace rail.
-        width: root.horizontalNavbar ? 64 : 40
-        height: root.horizontalNavbar ? 30 : 58
+        width: root.horizontalNavbar ? 76 : 44
+        height: root.horizontalNavbar ? 30 : 68
 
         anchors {
             left: root.horizontalNavbar || root.navbarPosition === "left"
@@ -593,10 +646,10 @@ PanelWindow {
             Text {
                 visible: root.horizontalNavbar
                 anchors.centerIn: parent
-                text: Qt.formatTime(navbarClockPanel.clockNow, "HH:mm")
+                text: Qt.formatTime(navbarClockPanel.clockNow, "h:mm ap")
                 color: "#111318"
                 font.family: "Monospace"
-                font.pixelSize: 13
+                font.pixelSize: 11
                 font.weight: Font.DemiBold
                 font.letterSpacing: 0.2
                 horizontalAlignment: Text.AlignHCenter
@@ -609,8 +662,8 @@ PanelWindow {
                 spacing: 1
 
                 Text {
-                    width: 40
-                    text: Qt.formatTime(navbarClockPanel.clockNow, "HH")
+                    width: 44
+                    text: Qt.formatTime(navbarClockPanel.clockNow, "h")
                     color: "#111318"
                     font.family: "Monospace"
                     font.pixelSize: 13
@@ -628,13 +681,23 @@ PanelWindow {
                 }
 
                 Text {
-                    width: 40
+                    width: 44
                     text: Qt.formatTime(navbarClockPanel.clockNow, "mm")
                     color: "#111318"
                     font.family: "Monospace"
                     font.pixelSize: 13
                     font.weight: Font.DemiBold
                     font.letterSpacing: 0.25
+                    horizontalAlignment: Text.AlignHCenter
+                }
+
+                Text {
+                    width: 44
+                    text: Qt.formatTime(navbarClockPanel.clockNow, "ap")
+                    color: "#606A76"
+                    font.family: "Monospace"
+                    font.pixelSize: 7
+                    font.weight: Font.DemiBold
                     horizontalAlignment: Text.AlignHCenter
                 }
             }
@@ -660,6 +723,145 @@ PanelWindow {
                 navbarClockPanel.calendarWindowVisible = false
                 calendarHideTimer.stop()
                 calendarPopupHideTimer.stop()
+            }
+        }
+    }
+
+
+    // Utilities launcher below the clock. Expanding it reveals Wi-Fi and
+    // Bluetooth shortcuts with live status dots; either opens the matching page.
+    PanelWindow {
+        id: navbarUtilitiesLauncher
+        screen: root.modelData
+        visible: root.dockVisible
+        color: "transparent"
+        aboveWindows: true
+        exclusionMode: ExclusionMode.Ignore
+        exclusiveZone: 0
+        width: 38
+        height: root.utilitiesExpanded ? 104 : 38
+
+        anchors {
+            left: root.horizontalNavbar || root.navbarPosition === "left"
+            right: root.navbarPosition === "right"
+            top: root.navbarPosition !== "bottom"
+            bottom: root.navbarPosition === "bottom"
+        }
+
+        margins {
+            left: root.horizontalNavbar ? 100 : (root.navbarPosition === "left" ? 8 : 12)
+            right: root.horizontalNavbar ? 12 : (root.navbarPosition === "right" ? 8 : 12)
+            top: root.navbarPosition === "top" ? 0 : (root.horizontalNavbar ? 12 : 116)
+            bottom: root.navbarPosition === "bottom" ? 12 : 0
+        }
+
+        WlrLayershell.layer: WlrLayer.Overlay
+        WlrLayershell.namespace: "a16een-navbar-utilities"
+
+        Rectangle {
+            anchors.fill: parent
+            radius: 13
+            color: "#FFFFFF"
+            border.width: 1
+            border.color: "#D9DEE5"
+
+            Rectangle {
+                anchors.fill: parent
+                anchors.margins: -3
+                radius: 16
+                color: "#10000000"
+                z: -1
+            }
+
+            Column {
+                anchors.fill: parent
+                anchors.margins: 4
+                spacing: 4
+
+                Rectangle {
+                    id: utilitiesMainButton
+                    width: 28
+                    height: 28
+                    radius: 9
+                    color: utilitiesMainMouse.containsMouse || root.utilitiesExpanded ? "#F0F2F5" : "transparent"
+                    border.width: root.utilitiesExpanded ? 1 : 0
+                    border.color: "#DFE4EA"
+
+                    Image {
+                        anchors.centerIn: parent
+                        width: 15
+                        height: 15
+                        source: Qt.resolvedUrl("../assets/icons/lucide-sliders-horizontal.svg")
+                        sourceSize.width: 30
+                        sourceSize.height: 30
+                        fillMode: Image.PreserveAspectFit
+                        smooth: true
+                    }
+
+                    MouseArea {
+                        id: utilitiesMainMouse
+                        anchors.fill: parent
+                        hoverEnabled: true
+                        cursorShape: Qt.PointingHandCursor
+                        onClicked: root.utilitiesRequested("toggle")
+                    }
+                }
+
+                Repeater {
+                    model: root.utilitiesExpanded
+                        ? [{ mode: "wifi", icon: "lucide-wifi.svg" },
+                           { mode: "bluetooth", icon: "lucide-bluetooth.svg" }]
+                        : []
+
+                    delegate: Rectangle {
+                        id: utilityShortcut
+                        required property var modelData
+                        width: 28
+                        height: 28
+                        radius: 9
+                        color: root.selectedUtility === utilityShortcut.modelData.mode
+                            ? "#F1F3F5"
+                            : (utilityShortcutMouse.containsMouse ? "#F8F9FA" : "transparent")
+                        border.width: root.selectedUtility === utilityShortcut.modelData.mode ? 1 : 0
+                        border.color: "#DFE4EA"
+
+                        Image {
+                            anchors.centerIn: parent
+                            width: 15
+                            height: 15
+                            source: Qt.resolvedUrl("../assets/icons/" + utilityShortcut.modelData.icon)
+                            sourceSize.width: 30
+                            sourceSize.height: 30
+                            fillMode: Image.PreserveAspectFit
+                            smooth: true
+                        }
+
+                        Rectangle {
+                            width: 6
+                            height: 6
+                            radius: 3
+                            anchors.right: parent.right
+                            anchors.bottom: parent.bottom
+                            anchors.rightMargin: 2
+                            anchors.bottomMargin: 2
+                            color: utilityShortcut.modelData.mode === "wifi"
+                                ? (root.utilityWifiConnected ? "#3FA779"
+                                    : (root.utilityWifiState === "off" ? "#B8C0C9" : "#D5A94F"))
+                                : (root.utilityBluetoothEnabled ? "#3FA779"
+                                    : (root.utilityBluetoothState === "off" ? "#B8C0C9" : "#D5A94F"))
+                            border.width: 1
+                            border.color: "#FFFFFF"
+                        }
+
+                        MouseArea {
+                            id: utilityShortcutMouse
+                            anchors.fill: parent
+                            hoverEnabled: true
+                            cursorShape: Qt.PointingHandCursor
+                            onClicked: root.utilitiesRequested(utilityShortcut.modelData.mode)
+                        }
+                    }
+                }
             }
         }
     }
