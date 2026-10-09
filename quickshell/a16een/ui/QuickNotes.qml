@@ -31,24 +31,15 @@ PanelWindow {
     exclusionMode: ExclusionMode.Ignore
     exclusiveZone: 0
     focusable: root.opened
-    width: root.sidebarVisible ? 390 : 290
-    height: 340
+    readonly property int popupWidth: root.sidebarVisible ? 390 : 290
+    readonly property int popupHeight: 340
 
+    // A transparent screen surface catches clicks outside the actual card.
     anchors {
-        left: !root.horizontalNavbar && root.navbarPosition === "left"
-        right: root.horizontalNavbar || root.navbarPosition === "right"
-        top: root.navbarPosition === "top"
-        bottom: root.navbarPosition !== "top"
-    }
-
-    margins {
-        // Popovers sit 12px beyond the quick-actions tray, not on top of it.
-        left: !root.horizontalNavbar && root.navbarPosition === "left" ? 122 : 12
-        right: root.horizontalNavbar ? 118
-            : (!root.horizontalNavbar && root.navbarPosition === "right" ? 124 : 12)
-        top: root.horizontalNavbar && root.navbarPosition === "top" ? 58 : 12
-        bottom: root.horizontalNavbar && root.navbarPosition === "bottom" ? 58
-            : (!root.horizontalNavbar ? 72 : 12)
+        left: true
+        right: true
+        top: true
+        bottom: true
     }
 
     WlrLayershell.layer: WlrLayer.Overlay
@@ -71,7 +62,7 @@ PanelWindow {
 
     Timer {
         id: saveTimer
-        interval: 280
+        interval: 950
         repeat: false
         onTriggered: root.saveNow()
     }
@@ -221,8 +212,31 @@ PanelWindow {
         }
     }
 
-    Rectangle {
+    MouseArea {
+        id: outsideClickArea
         anchors.fill: parent
+        z: 0
+        acceptedButtons: Qt.LeftButton
+        onClicked: root.closeRequested()
+    }
+
+    Rectangle {
+        id: noteCard
+        z: 1
+        width: root.popupWidth
+        height: root.popupHeight
+        anchors {
+            left: !root.horizontalNavbar && root.navbarPosition === "left"
+            right: root.horizontalNavbar || root.navbarPosition === "right"
+            top: root.navbarPosition === "top"
+            bottom: root.navbarPosition !== "top"
+            leftMargin: !root.horizontalNavbar && root.navbarPosition === "left" ? 122 : 12
+            rightMargin: root.horizontalNavbar ? 118
+                : (!root.horizontalNavbar && root.navbarPosition === "right" ? 124 : 12)
+            topMargin: root.horizontalNavbar && root.navbarPosition === "top" ? 58 : 12
+            bottomMargin: root.horizontalNavbar && root.navbarPosition === "bottom" ? 58
+                : (!root.horizontalNavbar ? 72 : 12)
+        }
         radius: 19
         color: "#FFFFFF"
         border.width: 1
