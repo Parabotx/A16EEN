@@ -663,8 +663,10 @@ PanelWindow {
         }
 
         margins {
-            left: 12
-            right: 12
+            // The visible vertical rail is inset 10px inside a 66px surface.
+            // Leave a clean 12px gap beside the actual white rail.
+            left: !root.horizontalNavbar && root.navbarPosition === "left" ? 66 : 12
+            right: !root.horizontalNavbar && root.navbarPosition === "right" ? 68 : 12
             top: root.navbarPosition === "bottom" ? 12 : (root.horizontalNavbar ? 56 : 12)
             bottom: root.navbarPosition === "bottom" ? 56 : 12
         }
