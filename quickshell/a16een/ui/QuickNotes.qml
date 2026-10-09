@@ -450,7 +450,7 @@ PanelWindow {
                 const end = raw.indexOf(">", i + 1)
                 if (end >= 0) {
                     const tag = raw.slice(i, end + 1)
-                    if (/^<br\\s*\\/?\\s*>$/i.test(tag)) {
+                    if (/^<br\s*\/?\s*>$/i.test(tag)) {
                         if (visibleIndex === targetIndex)
                             return i
                         visibleIndex++
