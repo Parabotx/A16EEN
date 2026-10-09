@@ -29,6 +29,70 @@ ShellRoot {
     property bool quickTasksOpen: false
     property bool quickPresetsOpen: false
     property bool navbarRevealed: false
+    property bool lockLaunchQueued: false
+    property bool lockSessionActive: false
+    property string lockErrorMessage: ""
+    readonly property bool secureLockActive: root.lockLaunchQueued || root.lockSessionActive
+
+    Timer {
+        id: lockLaunchTimer
+        interval: 220
+        repeat: false
+        onTriggered: {
+            root.lockLaunchQueued = false
+            root.lockSessionActive = true
+        }
+    }
+
+    // Run the installed Wayland locker as a tracked process so A16EEN can
+    // hide its own overlay layer until the user successfully unlocks.
+    Process {
+        id: lockSessionProcess
+        command: ["/usr/local/bin/a16een-lock"]
+        running: root.lockSessionActive
+
+        stderr: StdioCollector {
+            onStreamFinished: {
+                const message = String(this.text || "").trim()
+                if (message.length) {
+                    root.lockErrorMessage = message
+                    console.warn("A16EEN lock screen:", message)
+                }
+            }
+        }
+
+        onExited: (exitCode, exitStatus) => {
+            root.lockSessionActive = false
+            if (exitCode !== 0) {
+                const reason = root.lockErrorMessage.length
+                    ? root.lockErrorMessage
+                    : "Locker exited with status " + exitCode
+                console.warn("A16EEN lock screen failed:", reason)
+            }
+        }
+    }
+
+    function requestLockScreen() {
+        if (root.lockLaunchQueued || root.lockSessionActive)
+            return
+
+        root.lockErrorMessage = ""
+        root.quickNotesOpen = false
+        root.quickTasksOpen = false
+        root.quickPresetsOpen = false
+        root.commandCenterOpen = false
+        root.launcherOpen = false
+        root.dashboardOpen = false
+        root.wallpaperPickerOpen = false
+        root.widgetsCenterOpen = false
+        root.screenshotCenterOpen = false
+        root.screenshotSettingsOpen = false
+        root.screenshotPreviewOpen = false
+        root.tasksWidgetEnabled = false
+        root.navbarRevealed = false
+        root.lockLaunchQueued = true
+        lockLaunchTimer.restart()
+    }
 
     readonly property string navbarLayoutPath: {
         const stateHome = Quickshell.env("XDG_STATE_HOME")
@@ -92,13 +156,14 @@ ShellRoot {
         && !root.screenshotCenterOpen
         && !root.quickNotesOpen
         && !root.quickTasksOpen
+        && !root.secureLockActive
 
     readonly property bool wallpaperAnimationAllowed: {
         switch (root.powerProfile) {
         case "performance":
             // Performance mode keeps live wallpapers running behind normal
             // and half-open/floating windows. Only a true fullscreen window pauses it.
-            return !root.focusedWindowFullscreen
+            return !root.focusedWindowFullscreen && !root.secureLockActive
         case "power-saver":
             // Eco mode always freezes animated wallpapers.
             return false
@@ -643,7 +708,7 @@ ShellRoot {
 
         CalendarWidget {
             modelData: modelData
-            widgetEnabled: root.calendarWidgetEnabled
+            widgetEnabled: root.calendarWidgetEnabled && !root.secureLockActive
             use24Hour: root.timeUse24Hour
             showSeconds: root.timeShowSeconds
         }
@@ -654,7 +719,7 @@ ShellRoot {
 
         SystemPulseWidget {
             modelData: modelData
-            widgetEnabled: root.pulseWidgetEnabled
+            widgetEnabled: root.pulseWidgetEnabled && !root.secureLockActive
             systemLoad: root.systemLoad
             volumePercent: root.volumePercent
             volumeMuted: root.volumeMuted
@@ -666,7 +731,7 @@ ShellRoot {
 
         WorkspaceWidget {
             modelData: modelData
-            widgetEnabled: root.workspaceWidgetEnabled
+            widgetEnabled: root.workspaceWidgetEnabled && !root.secureLockActive
             workspaces: root.workspaces
             focusedWorkspaceId: root.focusedWorkspaceId
         }
@@ -677,7 +742,7 @@ ShellRoot {
 
         TasksWidget {
             modelData: modelData
-            widgetEnabled: root.tasksWidgetEnabled
+            widgetEnabled: root.tasksWidgetEnabled && !root.secureLockActive
         }
     }
 
@@ -690,6 +755,7 @@ ShellRoot {
             focusedWorkspaceId: root.focusedWorkspaceId
             fullscreenActive: root.focusedWindowFullscreen
             navbarPosition: root.navbarPosition
+            lockInProgress: root.secureLockActive
             onDockVisibilityChanged: {
                 if (modelData === root.primaryScreen)
                     root.navbarRevealed = visible
@@ -702,6 +768,8 @@ ShellRoot {
                 root.wallpaperPickerOpen = false
                 root.widgetsCenterOpen = false
             }
+
+            onLockRequested: root.requestLockScreen()
         }
     }
 
@@ -737,7 +805,7 @@ ShellRoot {
     QuickActionsTray {
         modelData: root.primaryScreen
         navbarPosition: root.navbarPosition
-        dockVisible: !root.focusedWindowFullscreen || root.navbarRevealed
+        dockVisible: !root.secureLockActive && (!root.focusedWindowFullscreen || root.navbarRevealed)
 
         onNotesRequested: {
             root.quickNotesOpen = true
@@ -763,7 +831,7 @@ ShellRoot {
         navbarPosition: root.navbarPosition
         // Once opened, keep the small popup available even if fullscreen
         // auto-hide retracts the navbar underneath it.
-        dockVisible: true
+        dockVisible: !root.secureLockActive
         opened: root.quickNotesOpen
         onCloseRequested: root.quickNotesOpen = false
     }
@@ -772,7 +840,7 @@ ShellRoot {
         modelData: root.primaryScreen
         navbarPosition: root.navbarPosition
         // The popup survives navbar auto-hide until the user closes it.
-        dockVisible: true
+        dockVisible: !root.secureLockActive
         opened: root.quickTasksOpen
         onCloseRequested: root.quickTasksOpen = false
     }
@@ -780,7 +848,7 @@ ShellRoot {
     QuickPresets {
         modelData: root.primaryScreen
         navbarPosition: root.navbarPosition
-        dockVisible: true
+        dockVisible: !root.secureLockActive
         opened: root.quickPresetsOpen
         onCloseRequested: root.quickPresetsOpen = false
     }
@@ -924,21 +992,7 @@ ShellRoot {
         volumePercent: root.volumePercent
         volumeMuted: root.volumeMuted
 
-        onLockRequested: {
-            // Close shell overlays before the secure Wayland locker appears.
-            root.dashboardOpen = false
-            root.quickNotesOpen = false
-            root.quickTasksOpen = false
-            root.quickPresetsOpen = false
-            root.commandCenterOpen = false
-            root.launcherOpen = false
-            root.wallpaperPickerOpen = false
-            root.widgetsCenterOpen = false
-            root.screenshotCenterOpen = false
-            root.screenshotSettingsOpen = false
-            root.screenshotPreviewOpen = false
-            Quickshell.execDetached(["a16een-lock"])
-        }
+        onLockRequested: root.requestLockScreen()
     }
 
     Variants {
