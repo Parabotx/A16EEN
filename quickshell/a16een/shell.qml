@@ -25,6 +25,9 @@ ShellRoot {
     property bool doNotDisturb: false
     property int iconThemeRevision: 0
     property string navbarPosition: "right"
+    property bool quickNotesOpen: false
+    property bool navbarRevealed: false
+    property bool calendarQuickOpenPulse: false
 
     readonly property string navbarLayoutPath: {
         const stateHome = Quickshell.env("XDG_STATE_HOME")
@@ -86,6 +89,7 @@ ShellRoot {
         && !root.wallpaperPickerOpen
         && !root.widgetsCenterOpen
         && !root.screenshotCenterOpen
+        && !root.quickNotesOpen
 
     readonly property bool wallpaperAnimationAllowed: {
         switch (root.powerProfile) {
@@ -677,6 +681,13 @@ ShellRoot {
             focusedWorkspaceId: root.focusedWorkspaceId
             fullscreenActive: root.focusedWindowFullscreen
             navbarPosition: root.navbarPosition
+            isPrimaryScreen: modelData === root.primaryScreen
+            calendarQuickOpenPulse: root.calendarQuickOpenPulse
+
+            onDockVisibilityChanged: {
+                if (modelData === root.primaryScreen)
+                    root.navbarRevealed = visible
+            }
 
             onLauncherRequested: {
                 root.launcherOpen = true
@@ -688,7 +699,72 @@ ShellRoot {
         }
     }
 
+    QuickActionsTray {
+        modelData: root.primaryScreen
+        navbarPosition: root.navbarPosition
+        dockVisible: !root.focusedWindowFullscreen || root.navbarRevealed
+
+        onNotesRequested: {
+            root.quickNotesOpen = true
+            root.commandCenterOpen = false
+            root.launcherOpen = false
+            root.dashboardOpen = false
+            root.wallpaperPickerOpen = false
+            root.widgetsCenterOpen = false
+            root.screenshotCenterOpen = false
+            root.screenshotSettingsOpen = false
+        }
+
+        onTasksRequested: {
+            const shouldOpen = !root.tasksWidgetEnabled
+            root.tasksWidgetEnabled = shouldOpen
+            if (shouldOpen) {
+                root.quickNotesOpen = false
+                root.commandCenterOpen = false
+                root.launcherOpen = false
+                root.dashboardOpen = false
+                root.wallpaperPickerOpen = false
+                root.widgetsCenterOpen = false
+                root.screenshotCenterOpen = false
+                root.screenshotSettingsOpen = false
+            }
+        }
+
+        onPresetsRequested: {
+            root.quickNotesOpen = false
+            root.tasksWidgetEnabled = false
+            root.launcherOpen = false
+            root.dashboardOpen = false
+            root.wallpaperPickerOpen = false
+            root.widgetsCenterOpen = false
+            root.screenshotCenterOpen = false
+            root.screenshotSettingsOpen = false
+            root.commandCenterOpen = true
+            Qt.callLater(() => commandCenter.openWorkspacePresetView())
+        }
+
+        onCalendarRequested: {
+            root.quickNotesOpen = false
+            root.commandCenterOpen = false
+            root.launcherOpen = false
+            root.dashboardOpen = false
+            root.wallpaperPickerOpen = false
+            root.widgetsCenterOpen = false
+            root.screenshotCenterOpen = false
+            root.screenshotSettingsOpen = false
+            root.calendarQuickOpenPulse = true
+            Qt.callLater(() => root.calendarQuickOpenPulse = false)
+        }
+    }
+
+    QuickNotes {
+        modelData: root.primaryScreen
+        opened: root.quickNotesOpen
+        onCloseRequested: root.quickNotesOpen = false
+    }
+
     CommandCenter {
+        id: commandCenter
         modelData: root.primaryScreen
         opened: root.commandCenterOpen
         widgetViewOpen: root.widgetsCenterOpen
