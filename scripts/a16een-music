@@ -237,7 +237,8 @@ def read_status():
         5: ["get_property", "pause"],
         6: ["get_property", "loop-file"],
         7: ["get_property", "metadata"],
-        8: ["get_property", "loop-playlist"]
+        8: ["get_property", "loop-playlist"],
+        9: ["get_property", "eof-reached"]
     }
     client = open_ipc(timeout=0.25)
     if client is None:
@@ -303,6 +304,7 @@ def read_status():
         "paused": bool(values.get(5, True)),
         "repeat": str(values.get(6) or "no") == "inf",
         "loopPlaylist": str(values.get(8) or "no"),
+        "eofReached": bool(values.get(9)),
         "error": ""
     }
 

@@ -136,9 +136,10 @@ PanelWindow {
                 && previous.running
                 && String(previous.path || "").length > 0
                 && !previous.paused
-                && !String(result.path || "").length
                 && Number(previous.duration) > 0
-                && Number(previous.time) >= Math.max(0, Number(previous.duration) - 2.5)
+                && (result.eofReached === true
+                    || (!String(result.path || "").length
+                        && Number(previous.time) >= Math.max(0, Number(previous.duration) - 2.5)))
 
             root.playback = result
 

@@ -180,6 +180,8 @@ jobs:
           grep -Fq 'root.runAction(["repeat", String(root.repeatMode)])' quickshell/a16een/ui/MusicWidget.qml
           grep -Fq 'action == "repeat"' scripts/a16een-music
           grep -Fq 'loop-file' scripts/a16een-music
+          grep -Fq 'eof-reached' scripts/a16een-music
+          grep -Fq 'result.eofReached === true' quickshell/a16een/ui/MusicWidget.qml
           grep -Fq 'repeatMode === 1 ? "1" : "∞"' quickshell/a16een/ui/MusicWidget.qml
           grep -Fq 'find_cover' scripts/a16een-music
           ! grep -Fq 'qt6-lottie' scripts/install.sh
