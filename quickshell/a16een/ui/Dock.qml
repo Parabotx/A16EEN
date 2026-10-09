@@ -733,8 +733,8 @@ PanelWindow {
     }
 
 
-    // Utilities launcher below the clock. Expanding it reveals Wi-Fi and
-    // Bluetooth shortcuts with live status dots; either opens the matching page.
+    // One compact Utilities button. Wi-Fi and Bluetooth controls live only
+    // inside the popup, keeping the navbar as minimal as the power control.
     PanelWindow {
         id: navbarUtilitiesLauncher
         screen: root.modelData
@@ -743,8 +743,8 @@ PanelWindow {
         aboveWindows: true
         exclusionMode: ExclusionMode.Ignore
         exclusiveZone: 0
-        width: root.utilitiesExpanded ? 104 : 38
-        height: 38
+        width: 28
+        height: 28
 
         anchors {
             left: root.horizontalNavbar || root.navbarPosition === "left"
@@ -754,8 +754,8 @@ PanelWindow {
         }
 
         margins {
-            left: root.horizontalNavbar ? 114 : (root.navbarPosition === "left" ? 8 : 12)
-            right: root.horizontalNavbar ? 12 : (root.navbarPosition === "right" ? 8 : 12)
+            left: root.horizontalNavbar ? 114 : (root.navbarPosition === "left" ? 16 : 12)
+            right: root.horizontalNavbar ? 12 : (root.navbarPosition === "right" ? 16 : 12)
             top: root.navbarPosition === "top" ? 0 : (root.horizontalNavbar ? 12 : 124)
             bottom: root.navbarPosition === "bottom" ? 12 : 0
         }
@@ -765,117 +765,37 @@ PanelWindow {
 
         Rectangle {
             anchors.fill: parent
-            radius: 13
-            color: "#FFFFFF"
+            radius: 10
+            color: utilitiesMainMouse.containsMouse || root.utilitiesExpanded
+                ? "#F0F2F5" : "#FFFFFF"
             border.width: 1
-            border.color: "#D9DEE5"
+            border.color: root.utilitiesExpanded ? "#BFC7D1" : "#D9DEE5"
 
             Rectangle {
                 anchors.fill: parent
                 anchors.margins: -3
-                radius: 16
+                radius: 13
                 color: "#10000000"
                 z: -1
             }
 
-            GridLayout {
+            Image {
+                anchors.centerIn: parent
+                width: 15
+                height: 15
+                source: Qt.resolvedUrl("../assets/icons/lucide-sliders-horizontal-dark.svg")
+                sourceSize.width: 30
+                sourceSize.height: 30
+                fillMode: Image.PreserveAspectFit
+                smooth: true
+            }
+
+            MouseArea {
+                id: utilitiesMainMouse
                 anchors.fill: parent
-                anchors.margins: 4
-                rowSpacing: 4
-                columnSpacing: 4
-                columns: root.utilitiesExpanded ? 3 : 1
-                rows: 1
-
-                Rectangle {
-                    id: utilitiesMainButton
-                    Layout.column: !root.horizontalNavbar
-                        && root.navbarPosition === "right"
-                        && root.utilitiesExpanded ? 2 : 0
-                    width: 28
-                    height: 28
-                    radius: 9
-                    color: utilitiesMainMouse.containsMouse || root.utilitiesExpanded ? "#F0F2F5" : "transparent"
-                    border.width: root.utilitiesExpanded ? 1 : 0
-                    border.color: "#DFE4EA"
-
-                    Image {
-                        anchors.centerIn: parent
-                        width: 15
-                        height: 15
-                        source: Qt.resolvedUrl("../assets/icons/lucide-sliders-horizontal-dark.svg")
-                        sourceSize.width: 30
-                        sourceSize.height: 30
-                        fillMode: Image.PreserveAspectFit
-                        smooth: true
-                    }
-
-                    MouseArea {
-                        id: utilitiesMainMouse
-                        anchors.fill: parent
-                        hoverEnabled: true
-                        cursorShape: Qt.PointingHandCursor
-                        onClicked: root.utilitiesRequested("toggle")
-                    }
-                }
-
-                Repeater {
-                    model: root.utilitiesExpanded
-                        ? [{ mode: "wifi", icon: "lucide-wifi-dark.svg" },
-                           { mode: "bluetooth", icon: "lucide-bluetooth-dark.svg" }]
-                        : []
-
-                    delegate: Rectangle {
-                        id: utilityShortcut
-                        required property var modelData
-                        Layout.column: !root.horizontalNavbar && root.navbarPosition === "right"
-                            ? (utilityShortcut.modelData.mode === "wifi" ? 0 : 1)
-                            : (utilityShortcut.modelData.mode === "wifi" ? 1 : 2)
-                        width: 28
-                        height: 28
-                        radius: 9
-                        color: root.selectedUtility === utilityShortcut.modelData.mode
-                            ? "#F1F3F5"
-                            : (utilityShortcutMouse.containsMouse ? "#F8F9FA" : "transparent")
-                        border.width: root.selectedUtility === utilityShortcut.modelData.mode ? 1 : 0
-                        border.color: "#DFE4EA"
-
-                        Image {
-                            anchors.centerIn: parent
-                            width: 15
-                            height: 15
-                            source: Qt.resolvedUrl("../assets/icons/" + utilityShortcut.modelData.icon)
-                            sourceSize.width: 30
-                            sourceSize.height: 30
-                            fillMode: Image.PreserveAspectFit
-                            smooth: true
-                        }
-
-                        Rectangle {
-                            width: 6
-                            height: 6
-                            radius: 3
-                            anchors.right: parent.right
-                            anchors.bottom: parent.bottom
-                            anchors.rightMargin: 2
-                            anchors.bottomMargin: 2
-                            color: utilityShortcut.modelData.mode === "wifi"
-                                ? (root.utilityWifiConnected ? "#3FA779"
-                                    : (root.utilityWifiState === "off" ? "#B8C0C9" : "#D5A94F"))
-                                : (root.utilityBluetoothEnabled ? "#3FA779"
-                                    : (root.utilityBluetoothState === "off" ? "#B8C0C9" : "#D5A94F"))
-                            border.width: 1
-                            border.color: "#FFFFFF"
-                        }
-
-                        MouseArea {
-                            id: utilityShortcutMouse
-                            anchors.fill: parent
-                            hoverEnabled: true
-                            cursorShape: Qt.PointingHandCursor
-                            onClicked: root.utilitiesRequested(utilityShortcut.modelData.mode)
-                        }
-                    }
-                }
+                hoverEnabled: true
+                cursorShape: Qt.PointingHandCursor
+                onClicked: root.utilitiesRequested("toggle")
             }
         }
     }
