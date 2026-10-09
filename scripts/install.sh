@@ -44,7 +44,6 @@ xdg-utils
 qt6-imageformats
 qt6-svg
 qt6-multimedia
-qt6-lottie
 hicolor-icon-theme
 adwaita-icon-theme
 power-profiles-daemon
