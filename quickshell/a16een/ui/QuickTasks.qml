@@ -367,6 +367,16 @@ PanelWindow {
                         spacing: 5
                         model: root.tasks
 
+                        Text {
+                            parent: tasksList
+                            anchors.centerIn: parent
+                            visible: tasksList.count === 0
+                            text: "No tasks yet. Create your first task."
+                            color: "#8A939E"
+                            font.pixelSize: 11
+                            horizontalAlignment: Text.AlignHCenter
+                        }
+
                         delegate: Rectangle {
                             id: taskRow
                             required property var modelData
@@ -428,15 +438,6 @@ PanelWindow {
                         }
                     }
 
-                    Text {
-                        visible: root.tasks.length === 0
-                        width: parent.width
-                        anchors.horizontalCenter: parent.horizontalCenter
-                        text: "No tasks yet. Create your first task."
-                        color: "#8A939E"
-                        font.pixelSize: 11
-                        horizontalAlignment: Text.AlignHCenter
-                    }
                 }
 
                 Column {
