@@ -675,10 +675,16 @@ PanelWindow {
         }
 
         margins {
-            left: root.horizontalNavbar ? 18 : 16
+            // For top/bottom navbars, place power immediately right of the
+            // clock on the same baseline. Vertical navbars keep their corner slot.
+            left: root.horizontalNavbar ? 68 : 16
             right: root.horizontalNavbar ? 12 : 18
-            top: root.navbarPosition === "top" ? 0 : 12
-            bottom: root.navbarPosition === "bottom" ? 36 : 12
+            top: root.navbarPosition === "top"
+                ? (root.horizontalNavbar ? 40 : 0)
+                : 12
+            bottom: root.navbarPosition === "bottom"
+                ? (root.horizontalNavbar ? 0 : 36)
+                : 12
         }
 
         WlrLayershell.layer: WlrLayer.Overlay
@@ -761,14 +767,14 @@ PanelWindow {
         Item {
             id: powerMenuCard
             x: root.horizontalNavbar
-                ? 10
+                ? 68
                 : (root.navbarPosition === "left"
                     ? 56
                     : Math.max(8, navbarPowerMenu.width - width - 56))
             y: root.horizontalNavbar
                 ? (root.navbarPosition === "top"
                     ? 78
-                    : Math.max(8, navbarPowerMenu.height - height - 78))
+                    : Math.max(8, navbarPowerMenu.height - height - 38))
                 : 12
             width: 188
             height: 158
@@ -913,7 +919,10 @@ PanelWindow {
         root.pendingPowerAction = ""
         switch (actionId) {
         case "lock":
-            Quickshell.execDetached(["loginctl", "lock-session"])
+            // Launch the real A16EEN Wayland locker directly. A loginctl
+            // lock request needs a separate session-lock listener, which is
+            // not running in this setup, so it silently did nothing.
+            Quickshell.execDetached(["a16een-lock"])
             break
         case "logout":
             Quickshell.execDetached(["niri", "msg", "action", "quit"])
@@ -1121,7 +1130,7 @@ PanelWindow {
         x: root.horizontalNavbar
             ? Math.round((parent.width - width) / 2)
             : (root.dockVisible
-                ? 10
+                ? (root.navbarPosition === "right" ? parent.width - width : 0)
                 : (root.navbarPosition === "right" ? parent.width + 2 : -width - 2))
         y: root.horizontalNavbar
             ? (root.dockVisible
