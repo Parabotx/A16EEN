@@ -936,6 +936,7 @@ ShellRoot {
             root.widgetsCenterOpen = false
             root.screenshotCenterOpen = false
             root.screenshotSettingsOpen = false
+            root.screenshotPreviewOpen = false
             Quickshell.execDetached(["a16een-lock"])
         }
     }
