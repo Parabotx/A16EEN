@@ -225,11 +225,6 @@ PanelWindow {
         root.creating = false
     }
 
-    function deleteTask(id) {
-        root.tasks = root.tasks.filter(item => String(item.id) !== String(id))
-        saveTimer.restart()
-    }
-
     onOpenedChanged: {
         if (opened) {
             root.creating = false
@@ -389,9 +384,9 @@ PanelWindow {
 
                             Column {
                                 anchors.left: parent.left
+                                anchors.right: parent.right
                                 anchors.leftMargin: 11
-                                anchors.right: deleteButton.left
-                                anchors.rightMargin: 5
+                                anchors.rightMargin: 9
                                 anchors.verticalCenter: parent.verticalCenter
                                 spacing: 4
 
@@ -409,30 +404,6 @@ PanelWindow {
                                     color: "#8A939E"
                                     font.pixelSize: 9
                                     elide: Text.ElideRight
-                                }
-                            }
-
-                            Rectangle {
-                                id: deleteButton
-                                anchors.right: parent.right
-                                anchors.rightMargin: 7
-                                anchors.verticalCenter: parent.verticalCenter
-                                width: 26
-                                height: 26
-                                radius: 8
-                                color: deleteHover.containsMouse ? "#FBEDEE" : "transparent"
-                                Text {
-                                    anchors.centerIn: parent
-                                    text: "×"
-                                    color: deleteHover.containsMouse ? "#B9444A" : "#98A1AD"
-                                    font.pixelSize: 17
-                                }
-                                MouseArea {
-                                    id: deleteHover
-                                    anchors.fill: parent
-                                    hoverEnabled: true
-                                    cursorShape: Qt.PointingHandCursor
-                                    onClicked: root.deleteTask(taskRow.modelData.id)
                                 }
                             }
                         }
