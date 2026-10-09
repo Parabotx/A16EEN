@@ -646,7 +646,9 @@ PanelWindow {
             Text {
                 visible: root.horizontalNavbar
                 anchors.centerIn: parent
-                text: Qt.formatTime(navbarClockPanel.clockNow, "h:mm ap")
+                text: (((navbarClockPanel.clockNow.getHours() % 12) || 12)
+                    + ":" + String(navbarClockPanel.clockNow.getMinutes()).padStart(2, "0")
+                    + (navbarClockPanel.clockNow.getHours() >= 12 ? " PM" : " AM"))
                 color: "#111318"
                 font.family: "Monospace"
                 font.pixelSize: 11
@@ -663,7 +665,7 @@ PanelWindow {
 
                 Text {
                     width: 44
-                    text: Qt.formatTime(navbarClockPanel.clockNow, "h")
+                    text: String((navbarClockPanel.clockNow.getHours() % 12) || 12)
                     color: "#111318"
                     font.family: "Monospace"
                     font.pixelSize: 13
@@ -693,7 +695,7 @@ PanelWindow {
 
                 Text {
                     width: 44
-                    text: Qt.formatTime(navbarClockPanel.clockNow, "ap")
+                    text: navbarClockPanel.clockNow.getHours() >= 12 ? "PM" : "AM"
                     color: "#606A76"
                     font.family: "Monospace"
                     font.pixelSize: 7
