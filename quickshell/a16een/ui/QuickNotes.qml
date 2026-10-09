@@ -30,6 +30,7 @@ PanelWindow {
 
     WlrLayershell.layer: WlrLayer.Overlay
     WlrLayershell.namespace: "a16een-quick-notes"
+    focusable: root.opened
     WlrLayershell.keyboardFocus: root.opened
         ? WlrKeyboardFocus.OnDemand
         : WlrKeyboardFocus.None
