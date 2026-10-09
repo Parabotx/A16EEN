@@ -298,6 +298,7 @@ PanelWindow {
                     id: appTile
 
                     required property var modelData
+                    required property int index
 
                     width: 82
                     height: 68
@@ -356,7 +357,7 @@ PanelWindow {
                         anchors.fill: parent
                         hoverEnabled: true
                         cursorShape: Qt.PointingHandCursor
-                        onEntered: appGrid.currentIndex = index
+                        onEntered: appGrid.currentIndex = appTile.index
                         onClicked: root.launch(appTile.entry)
                     }
                 }
