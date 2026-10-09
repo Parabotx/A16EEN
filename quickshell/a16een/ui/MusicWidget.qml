@@ -546,12 +546,12 @@ PanelWindow {
 
             Column {
                 width: parent.width
-                spacing: 4
+                spacing: 2
 
                 Row {
                     id: timelineLabels
                     width: parent.width
-                    height: 15
+                    height: 13
 
                     Text {
                         id: elapsedTime
@@ -588,11 +588,11 @@ PanelWindow {
                 Item {
                     id: progressTrack
                     width: parent.width
-                    height: 12
+                    height: 10
 
                     Rectangle {
                         x: 1
-                        y: 4
+                        y: 3
                         width: Math.max(0, parent.width - 2)
                         height: 4
                         radius: 2
@@ -620,7 +620,7 @@ PanelWindow {
                         height: 8
                         x: Math.max(0, Math.min(parent.width - width,
                             1 + (parent.width - 2) * root.progress - width / 2))
-                        y: 2
+                        y: 1
                         radius: 4
                         color: "#FFFCF7"
                         border.width: 1
