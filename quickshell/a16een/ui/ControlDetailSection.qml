@@ -16,6 +16,7 @@ Item {
 
     property string statusMessage: "READING SYSTEM"
     property string wifiState: "unavailable"
+    property string wifiRadioState: "unavailable"
     property string wifiName: "Not connected"
     property string wifiDevice: "—"
     property var wifiNetworks: []
@@ -138,6 +139,7 @@ Item {
         switch (root.mode) {
         case "wifi":
             root.wifiState = root.normalizeState(root.parseKeyValue(data, "state"))
+            root.wifiRadioState = root.normalizeState(root.parseKeyValue(data, "radio"))
             root.wifiName = root.parseKeyValue(data, "connection") || "Not connected"
             root.wifiDevice = root.parseKeyValue(data, "device") || "—"
             break
@@ -466,7 +468,9 @@ Item {
 
                     Text {
                         anchors.centerIn: parent
-                        text: root.wifiState === "on" ? "DISCONNECT" : "TURN ON"
+                        text: root.wifiState === "on"
+                            ? "DISCONNECT"
+                            : (root.wifiRadioState === "on" ? "TURN OFF" : "TURN ON")
                         color: root.textPrimary
                         font.pixelSize: 8
                         font.weight: Font.DemiBold
