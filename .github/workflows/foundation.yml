@@ -153,7 +153,8 @@ jobs:
           grep -Fq 'navbarClockPanel.clockNow.getHours() % 12' quickshell/a16een/ui/Dock.qml
           test "$(grep -c 'Component.onCompleted:' quickshell/a16een/ui/Dock.qml)" -eq 1
           grep -Fq 'utilityStatusReader.running = true' quickshell/a16een/ui/Dock.qml
-          grep -Fq 'GridLayout.column:' quickshell/a16een/ui/Dock.qml
+          grep -Fq 'Layout.column:' quickshell/a16een/ui/Dock.qml
+          ! grep -Fq 'GridLayout.column:' quickshell/a16een/ui/Dock.qml
           grep -Fq 'CONFIG_SHELL_DIR="$QS_DIR"' scripts/install.sh
           grep -Fq 'Requested a Quickshell restart' scripts/install.sh
           grep -Fq 'grep -Fxq -- "$CONFIG_SHELL_DIR"' scripts/install.sh
