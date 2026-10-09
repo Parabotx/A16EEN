@@ -361,11 +361,27 @@ def main():
         return
 
     if action == "dancer":
+        # Qt Lottie is an optional renderer. Do not ask Quickshell to load the
+        # module when it is absent; the music controls must work without it.
+        lottie_installed = False
+        if shutil_which("pacman"):
+            try:
+                lottie_installed = subprocess.run(
+                    ["pacman", "-Qq", "qt6-lottie"],
+                    stdin=subprocess.DEVNULL,
+                    stdout=subprocess.DEVNULL,
+                    stderr=subprocess.DEVNULL,
+                    check=False
+                ).returncode == 0
+            except OSError:
+                pass
+
         dancers = []
-        for index in range(1, 6):
-            candidate = DANCER_DIR / f"dancer-{index}.json"
-            if candidate.is_file():
-                dancers.append(candidate.as_uri())
+        if lottie_installed:
+            for index in range(1, 6):
+                candidate = DANCER_DIR / f"dancer-{index}.json"
+                if candidate.is_file():
+                    dancers.append(candidate.as_uri())
         emit({"path": random.choice(dancers) if dancers else ""})
         return
 
