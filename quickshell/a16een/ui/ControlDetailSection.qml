@@ -122,7 +122,7 @@ Item {
     }
 
     function parseKeyValue(text, key) {
-        const lines = String(text || "").split("\\n")
+        const lines = String(text || "").split("\n")
         for (const raw of lines) {
             const index = raw.indexOf("=")
             if (index < 0)
@@ -179,7 +179,7 @@ Item {
 
     function parseWifiNetworks(output) {
         const result = []
-        const lines = String(output || "").split("\\n")
+        const lines = String(output || "").split("\n")
         for (const raw of lines) {
             if (!raw.trim())
                 continue
@@ -201,7 +201,7 @@ Item {
         const state = root.parseKeyValue(output, "state")
         if (state.length)
             root.bluetoothState = root.normalizeState(state)
-        const lines = String(output || "").split("\\n")
+        const lines = String(output || "").split("\n")
         for (const raw of lines) {
             if (!raw.trim())
                 continue
