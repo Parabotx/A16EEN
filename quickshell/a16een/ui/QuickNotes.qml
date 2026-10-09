@@ -22,9 +22,6 @@ PanelWindow {
     property bool noteMenuOpen: false
     property real noteMenuX: 0
     property real noteMenuY: 0
-    property string lastNoteClickId: ""
-    property double lastNoteClickAt: 0
-
     // The passcode is hashed before it is written to disk. This is a local
     // interface lock, not encryption of the note file itself.
     property string passcodeHash: ""
@@ -1127,21 +1124,16 @@ PanelWindow {
                                         id: noteHover
                                         anchors.fill: parent
                                         hoverEnabled: true
+                                        acceptedButtons: Qt.LeftButton | Qt.RightButton
                                         cursorShape: Qt.PointingHandCursor
-                                        // Detect the second click ourselves. QtQuick can deliver
-                                        // clicked after doubleClicked, which used to close the menu
-                                        // immediately on some input stacks.
+
                                         onClicked: {
                                             const id = String(noteRow.modelData.id)
-                                            const timestamp = Date.now()
-                                            const doubleClick = root.lastNoteClickId === id
-                                                && timestamp - root.lastNoteClickAt <= 550
-
-                                            root.lastNoteClickId = doubleClick ? "" : id
-                                            root.lastNoteClickAt = doubleClick ? 0 : timestamp
-
-                                            if (doubleClick) {
-                                                root.selectNote(id)
+                                            if (mouse.button === Qt.RightButton) {
+                                                // Right-click opens Pin/Delete directly. Avoid
+                                                // the previous double-left-click timing behavior.
+                                                root.selectedNoteId = id
+                                                Qt.callLater(root.syncEditor)
                                                 root.openNoteMenu(id, noteRow)
                                             } else {
                                                 root.noteMenuOpen = false
@@ -1577,7 +1569,7 @@ PanelWindow {
         }
     }
 
-    // Pin/delete menu for a sidebar note, opened by double-clicking its row.
+    // Pin/delete menu for a sidebar note, opened by right-clicking its row.
     Item {
         id: noteContextMenu
         x: root.noteMenuX
