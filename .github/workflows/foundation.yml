@@ -129,24 +129,22 @@ jobs:
           test -f quickshell/a16een/ui/MusicWidget.qml
           test -f quickshell/a16een/ui/MusicDecor.qml
           grep -Fq 'MusicDecor {' quickshell/a16een/ui/MusicWidget.qml
-          grep -Fq 'model: 21' quickshell/a16een/ui/MusicDecor.qml
-          grep -Fq 'property real audioLevel: 0' quickshell/a16een/ui/MusicDecor.qml
-          grep -Fq 'property var bandLevels: []' quickshell/a16een/ui/MusicDecor.qml
-          grep -Fq 'color: "#171717"' quickshell/a16een/ui/MusicDecor.qml
-          grep -Fq 'Math.pow(bandValue, 0.62)' quickshell/a16een/ui/MusicDecor.qml
-          grep -Fq 'duration: 88' quickshell/a16een/ui/MusicDecor.qml
-          ! grep -Fq 'E33131' quickshell/a16een/ui/MusicDecor.qml
-          ! grep -Fq 'gradient:' quickshell/a16een/ui/MusicDecor.qml
-          ! grep -Fqi 'particle' quickshell/a16een/ui/MusicDecor.qml
-          grep -Fq 'command: ["a16een-music", "visualizer"]' quickshell/a16een/ui/MusicWidget.qml
-          grep -Fq 'audioLevel: root.audioLevel' quickshell/a16een/ui/MusicWidget.qml
-          grep -Fq 'bandLevels: root.bandLevels' quickshell/a16een/ui/MusicWidget.qml
-          ! grep -Fq 'hotBeat' quickshell/a16een/ui/MusicWidget.qml
-          grep -Fq 'def visualizer_state()' scripts/a16een-music
-          grep -Fq 'tone_amplitude(frequency)' scripts/a16een-music
-          grep -Fq '"bandLevels": [round(value, 3) for value in band_levels]' scripts/a16een-music
-          grep -Fq 'action == "visualizer"' scripts/a16een-music
-          ! grep -Fq '"hardBeat"' scripts/a16een-music
+          grep -Fq 'readonly property real recordSize:' quickshell/a16een/ui/MusicDecor.qml
+          grep -Fq 'A quiet, monochrome vinyl-inspired mark' quickshell/a16een/ui/MusicDecor.qml
+          grep -Fq 'id: record' quickshell/a16een/ui/MusicDecor.qml
+          grep -Fq 'border.color: "#171717"' quickshell/a16een/ui/MusicDecor.qml
+          grep -Fq 'MusicDecor {' quickshell/a16een/ui/MusicWidget.qml
+          ! grep -Fq 'visualizerProcess' quickshell/a16een/ui/MusicWidget.qml
+          ! grep -Fq 'refreshAudioLevel' quickshell/a16een/ui/MusicWidget.qml
+          ! grep -Fq 'applyAudioLevelOutput' quickshell/a16een/ui/MusicWidget.qml
+          ! grep -Fq 'audioLevel' quickshell/a16een/ui/MusicWidget.qml
+          ! grep -Fq 'bandLevels' quickshell/a16een/ui/MusicWidget.qml
+          ! grep -Fq 'hardBeat' quickshell/a16een/ui/MusicWidget.qml
+          ! grep -Fq 'def visualizer_state()' scripts/a16een-music
+          ! grep -Fq 'tone_amplitude(frequency)' scripts/a16een-music
+          ! grep -Fq 'action == "visualizer"' scripts/a16een-music
+          ! grep -Fq 'import math' scripts/a16een-music
+          ! grep -Fq 'import struct' scripts/a16een-music
           ! grep -R -Fq 'Qt.labs.lottieqt' quickshell/a16een/ui
           test -f scripts/a16een-music
           test -f scripts/a16een-widget-settings
@@ -196,9 +194,6 @@ jobs:
           grep -Fq 'id: totalTimePill' quickshell/a16een/ui/MusicWidget.qml
           grep -Fq 'Removing obsolete music dancer assets' scripts/install.sh
           ! grep -Fq 'MUSIC_DANCER_SOURCE_DIR' scripts/install.sh
-          grep -Fq 'action == "visualizer"' scripts/a16een-music
-          grep -Fq '"-t", "0.16"' scripts/a16een-music
-          grep -Fq 'interval: 160' quickshell/a16een/ui/MusicWidget.qml
           grep -Fq 'onPressed: function(mouse)' quickshell/a16een/ui/MusicWidget.qml
           grep -Fq 'onPositionChanged: function(mouse)' quickshell/a16een/ui/MusicWidget.qml
           grep -Fq 'onReleased: {' quickshell/a16een/ui/MusicWidget.qml

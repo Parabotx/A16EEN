@@ -1,11 +1,9 @@
 #!/usr/bin/env python3
 """A16EEN local music helper. Plays files from ~/Music through MPV's IPC socket."""
 import hashlib
-import math
 import json
 import os
 import socket
-import struct
 import subprocess
 import sys
 import time
@@ -309,93 +307,7 @@ def read_status():
     }
 
 
-def visualizer_state():
-    """Sample a short window and estimate 21 spectral bands for a lightweight equalizer."""
-    inactive = {"active": False, "level": 0.0, "bandLevels": [0.0] * 21}
-    status = read_status()
-    raw_path = str(status.get("path") or "")
-    if not status.get("running") or not raw_path or status.get("paused", True):
-        return inactive
 
-    try:
-        audio_path = Path(raw_path).expanduser().resolve()
-        position = max(0.0, float(status.get("time") or 0.0))
-    except (OSError, RuntimeError, ValueError, TypeError):
-        return inactive
-    if not audio_path.is_file():
-        return inactive
-
-    ffmpeg = shutil_which("ffmpeg")
-    if not ffmpeg:
-        return {**inactive, "reason": "ffmpeg is not available"}
-
-    command = [
-        ffmpeg, "-hide_banner", "-loglevel", "error",
-        "-ss", f"{position:.3f}", "-i", str(audio_path),
-        "-t", "0.16", "-vn", "-ac", "1", "-ar", "8000",
-        "-f", "s16le", "pipe:1"
-    ]
-    try:
-        sample = subprocess.run(
-            command,
-            stdin=subprocess.DEVNULL,
-            stdout=subprocess.PIPE,
-            stderr=subprocess.DEVNULL,
-            timeout=0.9,
-            check=False
-        )
-    except (OSError, subprocess.TimeoutExpired):
-        return {**inactive, "reason": "could not sample the current audio window"}
-
-    pcm = sample.stdout
-    usable_bytes = len(pcm) - (len(pcm) % 2)
-    if sample.returncode != 0 or usable_bytes < 256:
-        return {**inactive, "reason": "audio sample is unavailable"}
-
-    count = usable_bytes // 2
-    try:
-        samples = struct.unpack("<" + ("h" * count), pcm[:usable_bytes])
-    except struct.error:
-        return {**inactive, "reason": "invalid PCM sample"}
-
-    square_mean = sum(value * value for value in samples) / count
-    rms = math.sqrt(square_mean) / 32768.0
-    level = max(0.0, min(1.0, (20.0 * math.log10(max(rms, 0.000001)) + 45.0) / 38.0))
-
-    # A Hann window reduces spectral leakage; one Goertzel probe per bar keeps
-    # CPU use low enough for frequent updates on modest hardware.
-    sample_rate = 8000.0
-    windowed = []
-    window_sum = 0.0
-    denominator = max(1, count - 1)
-    for index, value in enumerate(samples):
-        window = 0.5 - 0.5 * math.cos((2.0 * math.pi * index) / denominator)
-        windowed.append(value * window)
-        window_sum += window
-
-    def tone_amplitude(frequency):
-        coefficient = 2.0 * math.cos((2.0 * math.pi * frequency) / sample_rate)
-        q1 = 0.0
-        q2 = 0.0
-        for value in windowed:
-            q0 = value + coefficient * q1 - q2
-            q2 = q1
-            q1 = q0
-        power = max(0.0, q1 * q1 + q2 * q2 - coefficient * q1 * q2)
-        return (2.0 * math.sqrt(power)) / max(1.0, window_sum * 32768.0)
-
-    band_levels = []
-    for index in range(21):
-        frequency = 45.0 * ((3400.0 / 45.0) ** (index / 20.0))
-        amplitude = tone_amplitude(frequency)
-        amplitude_db = 20.0 * math.log10(max(amplitude, 0.000001))
-        band_levels.append(max(0.0, min(1.0, (amplitude_db + 52.0) / 34.0)))
-
-    return {
-        "active": True,
-        "level": round(level, 3),
-        "bandLevels": [round(value, 3) for value in band_levels]
-    }
 
 def main():
     args = sys.argv[1:]
@@ -440,10 +352,6 @@ def main():
             return
         result = send_command(["seek", position, "absolute"], wait_for_response=True)
         emit(result if result is not None else {"ok": False, "error": "The music player is not responding."})
-        return
-
-    if action == "visualizer":
-        emit(visualizer_state())
         return
 
     if action == "repeat":

@@ -3,44 +3,72 @@ import QtQuick
 Item {
     id: root
 
-    property bool animating: true
-    property bool playing: false
-    property real audioLevel: 0
-    property var bandLevels: []
+    readonly property real recordSize: Math.min(width, height) - 10
 
-    // Transparent equalizer: one simple monochrome style, no beat flash or backdrop.
-    Repeater {
-        model: 21
+    // A quiet, monochrome vinyl-inspired mark: purely decorative and static.
+    Rectangle {
+        id: record
+        anchors.centerIn: parent
+        width: root.recordSize
+        height: root.recordSize
+        radius: width / 2
+        color: "transparent"
+        border.width: 1.2
+        border.color: "#171717"
 
-        delegate: Rectangle {
-            required property int index
+        Rectangle {
+            anchors.centerIn: parent
+            width: parent.width * 0.76
+            height: width
+            radius: width / 2
+            color: "transparent"
+            border.width: 1
+            border.color: "#C7B8A4"
+        }
 
-            readonly property real bandValue: root.bandLevels
-                && root.bandLevels.length > index
-                ? Math.max(0, Math.min(1, Number(root.bandLevels[index]) || 0))
-                : Math.max(0, Math.min(1, root.audioLevel * 0.65))
-            readonly property real quietHeight: 3 + 4 * Math.abs(Math.sin(index * 0.76))
+        Rectangle {
+            anchors.centerIn: parent
+            width: parent.width * 0.52
+            height: width
+            radius: width / 2
+            color: "transparent"
+            border.width: 1
+            border.color: "#DED2C2"
+        }
 
-            x: 2 + index * 4.65
-            y: root.height - height - 5
-            width: 2.5
-            height: root.playing
-                ? 3.5 + Math.pow(bandValue, 0.62) * Math.min(56, root.height - 10)
-                : quietHeight
-            radius: 1.25
+        Rectangle {
+            anchors.centerIn: parent
+            width: 13
+            height: 13
+            radius: width / 2
             color: "#171717"
-            opacity: root.playing ? 1.0 : 0.42
 
-            Behavior on height {
-                NumberAnimation {
-                    duration: 88
-                    easing.type: Easing.OutCubic
-                }
-            }
-
-            Behavior on opacity {
-                NumberAnimation { duration: 140 }
+            Rectangle {
+                anchors.centerIn: parent
+                width: 3
+                height: 3
+                radius: width / 2
+                color: "#FFF5E7"
             }
         }
+    }
+
+    Rectangle {
+        width: 12
+        height: 2
+        radius: 1
+        x: root.width / 2 + root.recordSize * 0.30
+        y: root.height / 2 - root.recordSize * 0.34
+        rotation: 42
+        color: "#171717"
+    }
+
+    Rectangle {
+        width: 4
+        height: 4
+        radius: width / 2
+        x: root.width / 2 + root.recordSize * 0.39
+        y: root.height / 2 - root.recordSize * 0.40
+        color: "#171717"
     }
 }

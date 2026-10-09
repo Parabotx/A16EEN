@@ -26,8 +26,6 @@ PanelWindow {
     property string statusMessage: ""
     property bool actionBusy: false
     property bool libraryOpen: false
-    property real audioLevel: 0
-    property var bandLevels: []
     property bool shuffleEnabled: false
     property int repeatMode: 0
     property bool seekDragging: false
@@ -179,27 +177,6 @@ PanelWindow {
         statusProcess.running = true
     }
 
-    function refreshAudioLevel() {
-        if (!root.widgetEnabled || !root.isPlaying || visualizerProcess.running)
-            return
-        visualizerProcess.running = true
-    }
-
-    function applyAudioLevelOutput(raw) {
-        try {
-            const result = JSON.parse(String(raw || "{}"))
-            const active = root.widgetEnabled && root.isPlaying && result.active === true
-            root.audioLevel = active
-                ? Math.max(0, Math.min(1, Number(result.level) || 0)) : 0
-            root.bandLevels = active && Array.isArray(result.bandLevels)
-                ? result.bandLevels.map(value => Math.max(0, Math.min(1, Number(value) || 0)))
-                : []
-        } catch (error) {
-            root.audioLevel = 0
-            root.bandLevels = []
-        }
-    }
-
     function setRepeatMode(mode) {
         const normalized = ((Number(mode) || 0) + 3) % 3
         root.repeatMode = normalized
@@ -254,16 +231,6 @@ PanelWindow {
         if (root.widgetEnabled) {
             root.refreshLibrary()
             root.refreshPlayback()
-        } else {
-            root.audioLevel = 0
-            root.bandLevels = []
-        }
-    }
-
-    onIsPlayingChanged: {
-        if (!root.isPlaying) {
-            root.audioLevel = 0
-            root.bandLevels = []
         }
     }
 
@@ -286,15 +253,6 @@ PanelWindow {
     }
 
     Process {
-        id: visualizerProcess
-        command: ["a16een-music", "visualizer"]
-        running: false
-        stdout: StdioCollector {
-            onStreamFinished: root.applyAudioLevelOutput(this.text)
-        }
-    }
-
-    Process {
         id: actionProcess
         command: ["a16een-music", "status"]
         running: false
@@ -308,13 +266,6 @@ PanelWindow {
         repeat: true
         running: root.widgetEnabled
         onTriggered: root.refreshPlayback()
-    }
-
-    Timer {
-        interval: 160
-        repeat: true
-        running: root.widgetEnabled && root.isPlaying
-        onTriggered: root.refreshAudioLevel()
     }
 
     // Two low-opacity layers give the compact card a soft, lifted shadow
@@ -532,10 +483,6 @@ PanelWindow {
                     width: 98
                     height: 76
                     anchors.verticalCenter: parent.verticalCenter
-                    animating: root.widgetEnabled
-                    playing: root.isPlaying
-                    audioLevel: root.audioLevel
-                    bandLevels: root.bandLevels
                 }
             }
 
