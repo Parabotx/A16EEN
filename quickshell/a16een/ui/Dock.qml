@@ -1,5 +1,6 @@
 import QtQuick
 import QtQuick.Shapes
+import QtQuick.Layouts
 import Quickshell
 import Quickshell.Io
 import Quickshell.Wayland
@@ -775,7 +776,7 @@ PanelWindow {
                 z: -1
             }
 
-            Grid {
+            GridLayout {
                 anchors.fill: parent
                 anchors.margins: 4
                 rowSpacing: 4
@@ -785,7 +786,7 @@ PanelWindow {
 
                 Rectangle {
                     id: utilitiesMainButton
-                    Grid.column: !root.horizontalNavbar
+                    GridLayout.column: !root.horizontalNavbar
                         && root.navbarPosition === "right"
                         && root.utilitiesExpanded ? 2 : 0
                     width: 28
@@ -824,7 +825,7 @@ PanelWindow {
                     delegate: Rectangle {
                         id: utilityShortcut
                         required property var modelData
-                        Grid.column: !root.horizontalNavbar && root.navbarPosition === "right"
+                        GridLayout.column: !root.horizontalNavbar && root.navbarPosition === "right"
                             ? (utilityShortcut.modelData.mode === "wifi" ? 0 : 1)
                             : (utilityShortcut.modelData.mode === "wifi" ? 1 : 2)
                         width: 28
