@@ -469,32 +469,7 @@ for cmdline in /proc/[0-9]*/cmdline; do
     esac
 
     ARGS="$(tr '\0' '\n' < "$cmdline" 2>/dev/null || true)"
-    if printf '%s\n' "$ARGS" | grep -Eq '(^|/)a16een-shell
-# The supervisor normally restarts Quickshell after its process exits. If it is
-# no longer running, bring it back only from an active A16EEN/Niri session.
-SESSION_ACTIVE=0
-[ -n "${NIRI_SOCKET:-}" ] && SESSION_ACTIVE=1
-case ":${XDG_CURRENT_DESKTOP:-}:" in
-    *:A16EEN:*) SESSION_ACTIVE=1 ;;
-esac
-
-if { [ "$RESTARTED_SHELL" -eq 1 ] || [ "$SESSION_ACTIVE" -eq 1 ]; } &&
-   ! pgrep -f '[a]16een-shell' >/dev/null 2>&1; then
-    nohup /usr/local/bin/a16een-shell >/dev/null 2>&1 &
-    echo "==> Started the A16EEN shell supervisor."
-fi
-
-echo
-echo "╭──────────────────────────────────────────────╮"
-echo "│           A16EEN installation complete       │"
-echo "╰──────────────────────────────────────────────╯"
-printf '%s\n' "$SOURCE_COMMIT" > "$STATE_DIR/installed-commit"
-
-echo "Run 'a16een-update' whenever you want to check for updates."
-echo "Built-in wallpapers: $QS_DIR/assets/wallpapers"
-echo "Personal wallpapers: $USER_WALLPAPER_DIR"
-echo "Personal animated wallpapers: $USER_WALLPAPER_DIR/animated"
-; then
+    if printf '%s\n' "$ARGS" | grep -Eq '(^|/)a16een-shell$'; then
         SUPERVISOR_PID="$PID"
         break
     fi
@@ -517,6 +492,7 @@ if [ -n "$SUPERVISOR_PID" ]; then
         esac
     done
 fi
+
 # The supervisor normally restarts Quickshell after its process exits. If it is
 # no longer running, bring it back only from an active A16EEN/Niri session.
 SESSION_ACTIVE=0
