@@ -155,12 +155,15 @@ jobs:
           test -f quickshell/a16een/assets/icons/music-repeat.svg
           test -f quickshell/a16een/assets/icons/music-list.svg
           test -f quickshell/a16een/assets/icons/music-close.svg
-          grep -Fq 'source: active ? Qt.resolvedUrl("MusicDancer.qml") : ""' quickshell/a16een/ui/MusicWidget.qml
+          grep -Fq 'dancerLoader.setSource(Qt.resolvedUrl("MusicDancer.qml")' quickshell/a16een/ui/MusicWidget.qml
+          grep -Fq 'id: dancerRetryTimer' quickshell/a16een/ui/MusicWidget.qml
+          grep -Fq 'root.widgetEnabled && root.isPlaying && root.dancerSource.length === 0' quickshell/a16een/ui/MusicWidget.qml
           grep -Fq 'anchors.bottom: parent.bottom' quickshell/a16een/ui/MusicWidget.qml
           grep -Fq 'libraryOpen ? 284 : 170' quickshell/a16een/ui/MusicWidget.qml
           grep -Fq 'property bool shuffleEnabled: false' quickshell/a16een/ui/MusicWidget.qml
           grep -Fq 'root.runAction(["repeat"])' quickshell/a16een/ui/MusicWidget.qml
-          grep -Fq 'active: root.widgetEnabled && root.isPlaying && root.dancerSource.length > 0' quickshell/a16een/ui/MusicWidget.qml
+          grep -Fq 'visible: lottie.status !== LottieAnimation.Ready' quickshell/a16een/ui/MusicDancer.qml
+          grep -Fq 'no dancer is available:' quickshell/a16een/ui/MusicWidget.qml
           grep -Fq 'root.dancerSource = ""' quickshell/a16een/ui/MusicWidget.qml
           grep -Fq 'action == "dancer"' scripts/a16een-music
           grep -Fq 'action == "repeat"' scripts/a16een-music
@@ -172,6 +175,11 @@ jobs:
           grep -Fq 'pacman", "-Qq", "qt6-lottie' scripts/a16een-music
           grep -Fq 'music-dancers/dancer-' scripts/a16een-update
           grep -Fq 'dancer-{index}.json' scripts/a16een-music
+          grep -Fq 'action in {"dancer", "dancer-status"}' scripts/a16een-music
+          grep -Fq 'def dancer_state()' scripts/a16een-music
+          grep -Fq 'text: root.formatTime(root.playback.time)' quickshell/a16een/ui/MusicWidget.qml
+          grep -Fq 'progressThumb' quickshell/a16een/ui/MusicWidget.qml
+          grep -Fq 'root.playback.duration - root.playback.time' quickshell/a16een/ui/MusicWidget.qml
           python3 - <<'PY'
           import json
           from pathlib import Path
@@ -184,7 +192,15 @@ jobs:
               assert data.get("assets", []) == [], f"{path}: precompositions/assets are unsupported"
               assert data.get("chars", []) == [], f"{path}: text assets are unsupported"
               assert data.get("layers"), f"{path}: no layers"
-              assert all(layer.get("ty") == 4 for layer in data["layers"]), f"{path}: only shape layers are supported"
+              for layer in data["layers"]:
+                  assert layer.get("ty") == 4, f"{path}: only shape layers are supported"
+                  groups = layer.get("shapes", [])
+                  assert groups and all(group.get("ty") == "gr" for group in groups), f"{path}: shape elements must be inside groups"
+                  for group in groups:
+                      types = [item.get("ty") for item in group.get("it", [])]
+                      assert types.count("tr") == 1, f"{path}: every group needs one transform"
+                      assert "fl" in types, f"{path}: each generated shape needs a fill"
+                      assert all(kind in {"el", "rc", "fl", "tr"} for kind in types), f"{path}: unsupported shape element"
           PY
           grep -Fq 'mpv' scripts/install.sh
           test -f quickshell/a16een/ui/WallpaperPicker.qml
