@@ -39,8 +39,10 @@ ShellRoot {
         interval: 220
         repeat: false
         onTriggered: {
-            root.lockLaunchQueued = false
+            // Raise the active state first. secureLockActive is an OR of these
+            // flags, so this order prevents a one-frame navbar/desktop flash.
             root.lockSessionActive = true
+            root.lockLaunchQueued = false
         }
     }
 
