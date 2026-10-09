@@ -413,72 +413,79 @@ PanelWindow {
                 height: 87
                 clip: true
 
-                Column {
+                ListView {
+                    id: trackList
                     anchors.fill: parent
+                    model: root.tracks
+                    clip: true
                     spacing: 2
+                    boundsBehavior: Flickable.StopAtBounds
+                    currentIndex: root.activeIndex
 
-                    Repeater {
-                        model: root.previewTracks
+                    onCurrentIndexChanged: {
+                        if (currentIndex >= 0)
+                            positionViewAtIndex(currentIndex, ListView.Contain)
+                    }
 
-                        delegate: Rectangle {
-                            required property var modelData
-                            required property int index
+                    delegate: Rectangle {
+                        required property var modelData
+                        required property int index
 
-                            readonly property int libraryIndex: root.indexForPath(modelData.path)
-                            readonly property bool isCurrent: modelData.path === root.playback.path
+                        readonly property bool isCurrent: modelData.path === root.playback.path
 
-                            width: parent.width
-                            height: 27
-                            radius: 8
-                            color: isCurrent ? "#EAF2FC" : trackHover.containsMouse ? "#F2F6FA" : "transparent"
-                            border.width: isCurrent ? 1 : 0
-                            border.color: "#D8E6F7"
+                        width: trackList.width
+                        height: 27
+                        radius: 8
+                        color: isCurrent ? "#EAF2FC" : trackHover.containsMouse ? "#F2F6FA" : "transparent"
+                        border.width: isCurrent ? 1 : 0
+                        border.color: "#D8E6F7"
 
-                            Row {
-                                anchors.fill: parent
-                                anchors.leftMargin: 8
-                                anchors.rightMargin: 8
-                                spacing: 8
+                        Row {
+                            anchors.fill: parent
+                            anchors.leftMargin: 8
+                            anchors.rightMargin: 8
+                            spacing: 8
+
+                            Text {
+                                width: 15
+                                anchors.verticalCenter: parent.verticalCenter
+                                text: parent.parent.isCurrent && !root.playback.paused
+                                    ? "♫"
+                                    : String(index + 1).padStart(2, "0")
+                                color: parent.parent.isCurrent ? root.accent : root.muted
+                                font.pixelSize: 7
+                                font.weight: Font.DemiBold
+                            }
+
+                            Column {
+                                width: parent.width - 48
+                                anchors.verticalCenter: parent.verticalCenter
+                                spacing: 2
 
                                 Text {
-                                    width: 15
-                                    anchors.verticalCenter: parent.verticalCenter
-                                    text: parent.parent.isCurrent && !root.playback.paused ? "♫" : String(parent.parent.libraryIndex + 1).padStart(2, "0")
-                                    color: parent.parent.isCurrent ? root.accent : root.muted
+                                    width: parent.width
+                                    text: modelData.title
+                                    color: parent.parent.parent.isCurrent ? root.ink : root.secondary
                                     font.pixelSize: 7
-                                    font.weight: Font.DemiBold
+                                    font.weight: parent.parent.parent.isCurrent ? Font.DemiBold : Font.Medium
+                                    elide: Text.ElideRight
                                 }
 
-                                Column {
-                                    width: parent.width - 48
-                                    anchors.verticalCenter: parent.verticalCenter
-                                    spacing: 2
-
-                                    Text {
-                                        width: parent.width
-                                        text: modelData.title
-                                        color: parent.parent.parent.isCurrent ? root.ink : root.secondary
-                                        font.pixelSize: 7
-                                        font.weight: parent.parent.parent.isCurrent ? Font.DemiBold : Font.Medium
-                                        elide: Text.ElideRight
-                                    }
-
-                                    Text {
-                                        width: parent.width
-                                        text: modelData.artist
-                                        color: root.muted
-                                        font.pixelSize: 6
-                                        elide: Text.ElideRight
-                                    }
+                                Text {
+                                    width: parent.width
+                                    text: modelData.artist
+                                    color: root.muted
+                                    font.pixelSize: 6
+                                    elide: Text.ElideRight
                                 }
                             }
+                        }
 
-                            MouseArea {
-                                id: trackHover
-                                anchors.fill: parent
-                                cursorShape: Qt.PointingHandCursor
-                                onClicked: root.playTrack(parent.libraryIndex)
-                            }
+                        MouseArea {
+                            id: trackHover
+                            anchors.fill: parent
+                            cursorShape: Qt.PointingHandCursor
+                            onClicked: root.playTrack(index)
                         }
                     }
                 }
