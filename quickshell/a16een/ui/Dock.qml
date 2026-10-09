@@ -390,7 +390,7 @@ PanelWindow {
     }
 
     // Compact clock capsule at the corner opposite the battery.
-    // Vertical navbars stack hour/minute digits; horizontal navbars show HH:MM.
+    // Hovering opens a live Ethiopian calendar popup in Amharic.
     PanelWindow {
         id: navbarClockPanel
         screen: root.modelData
@@ -421,6 +421,118 @@ PanelWindow {
         WlrLayershell.namespace: "a16een-clock"
 
         property date clockNow: new Date()
+        property bool calendarOpen: false
+
+        readonly property var ethiopianMonths: [
+            "መስከረም", "ጥቅምት", "ሕዳር", "ታህሳስ",
+            "ጥር", "የካቲት", "መጋቢት", "ሚያዝያ",
+            "ግንቦት", "ሰኔ", "ሐምሌ", "ነሐሴ", "ጳጉሜ"
+        ]
+
+        readonly property var ethiopianWeekdays: [
+            "ሰኞ", "ማክሰኞ", "ረቡዕ", "ሐሙስ", "ዓርብ", "ቅዳሜ", "እሑድ"
+        ]
+
+        readonly property var weekdayShortNames: ["ሰ", "ማ", "ረ", "ሐ", "አ", "ቅ", "እ"]
+
+        // Gregorian -> Julian Day Number, using integer arithmetic to avoid
+        // timezone, month-boundary and leap-century errors.
+        function gregorianToJdn(date) {
+            const month = date.getMonth() + 1
+            const day = date.getDate()
+            let year = date.getFullYear()
+            const a = Math.floor((14 - month) / 12)
+            year = year + 4800 - a
+            const m = month + 12 * a - 3
+
+            return day
+                + Math.floor((153 * m + 2) / 5)
+                + 365 * year
+                + Math.floor(year / 4)
+                - Math.floor(year / 100)
+                + Math.floor(year / 400)
+                - 32045
+        }
+
+        // Ethiopian year 1 is anchored to JDN 1723856. Leap years are
+        // every fourth Ethiopian year (year % 4 === 3), without Gregorian
+        // century exceptions. This is the standard Ethiopic civil calendar.
+        function ethiopianYearStartJdn(year) {
+            return 1723856 + 365 * year + Math.floor(year / 4)
+        }
+
+        function toEthiopianDate(date) {
+            const jdn = navbarClockPanel.gregorianToJdn(date)
+            let year = date.getFullYear() - 7
+
+            // Find the year whose first Meskerem day is on/before this JDN.
+            while (navbarClockPanel.ethiopianYearStartJdn(year) > jdn)
+                year--
+            while (navbarClockPanel.ethiopianYearStartJdn(year + 1) <= jdn)
+                year++
+
+            const dayOfYear = jdn - navbarClockPanel.ethiopianYearStartJdn(year)
+            const month = Math.floor(dayOfYear / 30) + 1
+            const day = dayOfYear % 30 + 1
+
+            return {
+                year: year,
+                month: Math.max(1, Math.min(13, month)),
+                day: day,
+                weekday: jdn % 7
+            }
+        }
+
+        function ethiopicSmallNumber(number) {
+            const tens = ["", "፲", "፳", "፴", "፵", "፶", "፷", "፸", "፹", "፺"]
+            const ones = ["", "፩", "፪", "፫", "፬", "፭", "፮", "፯", "፰", "፱"]
+            const n = Math.max(0, Math.floor(number))
+            return tens[Math.floor(n / 10)] + ones[n % 10]
+        }
+
+        function toEthiopicNumerals(number) {
+            let n = Math.max(0, Math.floor(number))
+            if (n === 0)
+                return "0"
+
+            let result = ""
+            const tenThousands = Math.floor(n / 10000)
+            if (tenThousands > 0) {
+                result += (tenThousands === 1 ? "" : navbarClockPanel.ethiopicSmallNumber(tenThousands)) + "፼"
+                n %= 10000
+            }
+
+            const hundreds = Math.floor(n / 100)
+            if (hundreds > 0) {
+                result += (hundreds === 1 ? "" : navbarClockPanel.ethiopicSmallNumber(hundreds)) + "፻"
+                n %= 100
+            }
+
+            result += navbarClockPanel.ethiopicSmallNumber(n)
+            return result
+        }
+
+        readonly property var ethiopianToday: toEthiopianDate(clockNow)
+
+        readonly property var calendarCells: {
+            const today = navbarClockPanel.ethiopianToday
+            const firstDayJdn = navbarClockPanel.ethiopianYearStartJdn(today.year)
+                + 30 * (today.month - 1)
+            const offset = firstDayJdn % 7
+            const monthLength = today.month === 13
+                ? (today.year % 4 === 3 ? 6 : 5)
+                : 30
+            const cells = []
+
+            for (let i = 0; i < 42; i++) {
+                const day = i - offset + 1
+                cells.push({
+                    day: day > 0 && day <= monthLength ? day : 0,
+                    today: day === today.day
+                })
+            }
+            return cells
+        }
 
         Timer {
             interval: 1000
@@ -492,6 +604,184 @@ PanelWindow {
                     font.letterSpacing: 0.6
                     horizontalAlignment: Text.AlignHCenter
                 }
+            }
+
+            MouseArea {
+                id: clockHoverSensor
+                anchors.fill: parent
+                hoverEnabled: true
+                acceptedButtons: Qt.NoButton
+                cursorShape: Qt.ArrowCursor
+                z: 10
+                onEntered: {
+                    calendarHideTimer.stop()
+                    navbarClockPanel.calendarOpen = true
+                }
+                onExited: calendarHideTimer.restart()
+            }
+        }
+
+        onVisibleChanged: {
+            if (!visible) {
+                navbarClockPanel.calendarOpen = false
+                calendarHideTimer.stop()
+            }
+        }
+    }
+
+    // A separate popup keeps the clock compact and never changes dock geometry.
+    // It bridges pointer movement from the clock with a short close delay.
+    Timer {
+        id: calendarHideTimer
+        interval: 320
+        repeat: false
+        onTriggered: {
+            if (!clockHoverSensor.containsMouse && !calendarPopupHoverSensor.containsMouse)
+                navbarClockPanel.calendarOpen = false
+        }
+    }
+
+    PanelWindow {
+        id: calendarPopup
+        screen: root.modelData
+        visible: navbarClockPanel.calendarOpen && root.dockVisible
+        color: "transparent"
+        aboveWindows: true
+        exclusionMode: ExclusionMode.Ignore
+        exclusiveZone: 0
+        width: 288
+        height: 326
+
+        anchors {
+            left: root.navbarPosition !== "right"
+            right: root.navbarPosition === "right"
+            top: root.navbarPosition !== "bottom"
+            bottom: root.navbarPosition === "bottom"
+        }
+
+        margins {
+            left: 12
+            right: 12
+            top: root.navbarPosition === "bottom" ? 12 : (root.horizontalNavbar ? 56 : 92)
+            bottom: root.navbarPosition === "bottom" ? 56 : 12
+        }
+
+        WlrLayershell.layer: WlrLayer.Overlay
+        WlrLayershell.namespace: "a16een-ethiopian-calendar"
+
+        Rectangle {
+            anchors.fill: parent
+            radius: 20
+            color: "#FFFFFF"
+            border.width: 1
+            border.color: "#D9DEE5"
+
+            Rectangle {
+                anchors.fill: parent
+                anchors.margins: -4
+                radius: 24
+                color: "#18000000"
+                z: -1
+            }
+
+            Column {
+                x: 16
+                y: 14
+                width: parent.width - 32
+                spacing: 3
+
+                Text {
+                    width: parent.width
+                    text: "ዛሬ  ·  " + navbarClockPanel.ethiopianWeekdays[navbarClockPanel.ethiopianToday.weekday]
+                        + " " + navbarClockPanel.ethiopianToday.day
+                    color: "#66707C"
+                    font.family: "Noto Sans Ethiopic"
+                    font.pixelSize: 10
+                    font.weight: Font.Medium
+                }
+
+                Text {
+                    width: parent.width
+                    text: navbarClockPanel.ethiopianMonths[navbarClockPanel.ethiopianToday.month - 1]
+                        + " " + navbarClockPanel.toEthiopicNumerals(navbarClockPanel.ethiopianToday.year)
+                        + " ዓ.ም."
+                    color: "#111318"
+                    font.family: "Noto Sans Ethiopic"
+                    font.pixelSize: 20
+                    font.weight: Font.DemiBold
+                    elide: Text.ElideRight
+                }
+            }
+
+            Row {
+                x: 18
+                y: 82
+                spacing: 4
+
+                Repeater {
+                    model: navbarClockPanel.weekdayShortNames
+
+                    delegate: Text {
+                        required property var modelData
+                        width: 32
+                        height: 18
+                        text: modelData
+                        color: "#8A939E"
+                        font.family: "Noto Sans Ethiopic"
+                        font.pixelSize: 9
+                        font.weight: Font.DemiBold
+                        horizontalAlignment: Text.AlignHCenter
+                        verticalAlignment: Text.AlignVCenter
+                    }
+                }
+            }
+
+            Grid {
+                id: ethiopianMonthGrid
+                x: 18
+                y: 105
+                columns: 7
+                rows: 6
+                columnSpacing: 4
+                rowSpacing: 4
+
+                Repeater {
+                    model: navbarClockPanel.calendarCells
+
+                    delegate: Rectangle {
+                        required property var modelData
+                        width: 32
+                        height: 29
+                        radius: 9
+                        color: modelData.day === navbarClockPanel.ethiopianToday.day
+                            ? "#111318"
+                            : (modelData.day > 0 ? "#F7F8FA" : "transparent")
+                        border.width: modelData.day === navbarClockPanel.ethiopianToday.day ? 1 : 0
+                        border.color: "#111318"
+
+                        Text {
+                            anchors.fill: parent
+                            text: modelData.day > 0 ? String(modelData.day) : ""
+                            color: modelData.today ? "#FFFFFF" : "#4B5563"
+                            font.family: "Monospace"
+                            font.pixelSize: 11
+                            font.weight: modelData.today ? Font.DemiBold : Font.Normal
+                            horizontalAlignment: Text.AlignHCenter
+                            verticalAlignment: Text.AlignVCenter
+                        }
+                    }
+                }
+            }
+
+            MouseArea {
+                id: calendarPopupHoverSensor
+                anchors.fill: parent
+                hoverEnabled: true
+                acceptedButtons: Qt.NoButton
+                cursorShape: Qt.ArrowCursor
+                z: 20
+                onEntered: calendarHideTimer.stop()
+                onExited: calendarHideTimer.restart()
             }
         }
     }
