@@ -454,11 +454,11 @@ else
     echo "==> A16EEN navbar icons already generated; skipping rebuild."
 fi
 
-# Restart the running Quickshell after deploying component changes. Match
-# the config directory as an exact argv item so this works whether argv[0]
-# is named "qs" or "quickshell", and avoid touching unrelated Quickshell sessions.
-CONFIG_SHELL_DIR="$QS_DIR"
+# Restart only the Quickshell instance owned by A16EEN's supervisor.
+# Quickshell can rewrite its argv after startup, so matching "-c $QS_DIR"
+# against /proc/<pid>/cmdline is unreliable. The supervisor's child list is stable.
 RESTARTED_SHELL=0
+SUPERVISOR_PID=""
 
 for cmdline in /proc/[0-9]*/cmdline; do
     [ -r "$cmdline" ] || continue
@@ -469,24 +469,54 @@ for cmdline in /proc/[0-9]*/cmdline; do
     esac
 
     ARGS="$(tr '\0' '\n' < "$cmdline" 2>/dev/null || true)"
-    COMMAND="$(printf '%s\n' "$ARGS" | sed -n '1p')"
-    COMMAND_NAME="${COMMAND##*/}"
-    case "$COMMAND_NAME" in
-        qs|quickshell) ;;
-        *) continue ;;
-    esac
+    if printf '%s\n' "$ARGS" | grep -Eq '(^|/)a16een-shell
+# The supervisor normally restarts Quickshell after its process exits. If it is
+# no longer running, bring it back only from an active A16EEN/Niri session.
+SESSION_ACTIVE=0
+[ -n "${NIRI_SOCKET:-}" ] && SESSION_ACTIVE=1
+case ":${XDG_CURRENT_DESKTOP:-}:" in
+    *:A16EEN:*) SESSION_ACTIVE=1 ;;
+esac
 
-    if ! printf '%s\n' "$ARGS" | grep -Fxq -- "$CONFIG_SHELL_DIR"; then
-        continue
-    fi
+if { [ "$RESTARTED_SHELL" -eq 1 ] || [ "$SESSION_ACTIVE" -eq 1 ]; } &&
+   ! pgrep -f '[a]16een-shell' >/dev/null 2>&1; then
+    nohup /usr/local/bin/a16een-shell >/dev/null 2>&1 &
+    echo "==> Started the A16EEN shell supervisor."
+fi
 
-    if kill -TERM "$PID" 2>/dev/null; then
-        RESTARTED_SHELL=1
-        echo "==> Requested a Quickshell restart so the deployed navbar and Utilities UI load."
+echo
+echo "╭──────────────────────────────────────────────╮"
+echo "│           A16EEN installation complete       │"
+echo "╰──────────────────────────────────────────────╯"
+printf '%s\n' "$SOURCE_COMMIT" > "$STATE_DIR/installed-commit"
+
+echo "Run 'a16een-update' whenever you want to check for updates."
+echo "Built-in wallpapers: $QS_DIR/assets/wallpapers"
+echo "Personal wallpapers: $USER_WALLPAPER_DIR"
+echo "Personal animated wallpapers: $USER_WALLPAPER_DIR/animated"
+; then
+        SUPERVISOR_PID="$PID"
+        break
     fi
-    break
 done
 
+if [ -n "$SUPERVISOR_PID" ]; then
+    CHILDREN="$(cat "/proc/$SUPERVISOR_PID/task/$SUPERVISOR_PID/children" 2>/dev/null || true)"
+    for PID in $CHILDREN; do
+        [ -r "/proc/$PID/exe" ] || continue
+        EXECUTABLE="$(readlink "/proc/$PID/exe" 2>/dev/null || true)"
+        COMMAND_NAME="${EXECUTABLE##*/}"
+        case "$COMMAND_NAME" in
+            qs|quickshell)
+                if kill -TERM "$PID" 2>/dev/null; then
+                    RESTARTED_SHELL=1
+                    echo "==> Requested Quickshell restart through the A16EEN supervisor."
+                    break
+                fi
+                ;;
+        esac
+    done
+fi
 # The supervisor normally restarts Quickshell after its process exits. If it is
 # no longer running, bring it back only from an active A16EEN/Niri session.
 SESSION_ACTIVE=0
