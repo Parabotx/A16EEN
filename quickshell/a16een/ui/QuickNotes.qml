@@ -22,6 +22,8 @@ PanelWindow {
     property bool noteMenuOpen: false
     property real noteMenuX: 0
     property real noteMenuY: 0
+    property string lastNoteClickId: ""
+    property double lastNoteClickAt: 0
 
     // The passcode is hashed before it is written to disk. This is a local
     // interface lock, not encryption of the note file itself.
@@ -1126,13 +1128,25 @@ PanelWindow {
                                         anchors.fill: parent
                                         hoverEnabled: true
                                         cursorShape: Qt.PointingHandCursor
+                                        // Detect the second click ourselves. QtQuick can deliver
+                                        // clicked after doubleClicked, which used to close the menu
+                                        // immediately on some input stacks.
                                         onClicked: {
-                                            root.noteMenuOpen = false
-                                            root.selectNote(noteRow.modelData.id)
-                                        }
-                                        onDoubleClicked: {
-                                            root.selectNote(noteRow.modelData.id)
-                                            root.openNoteMenu(noteRow.modelData.id, noteRow)
+                                            const id = String(noteRow.modelData.id)
+                                            const timestamp = Date.now()
+                                            const doubleClick = root.lastNoteClickId === id
+                                                && timestamp - root.lastNoteClickAt <= 550
+
+                                            root.lastNoteClickId = doubleClick ? "" : id
+                                            root.lastNoteClickAt = doubleClick ? 0 : timestamp
+
+                                            if (doubleClick) {
+                                                root.selectNote(id)
+                                                root.openNoteMenu(id, noteRow)
+                                            } else {
+                                                root.noteMenuOpen = false
+                                                root.selectNote(id)
+                                            }
                                         }
                                     }
                                 }
