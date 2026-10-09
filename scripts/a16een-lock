@@ -119,7 +119,7 @@ if command -v gtklock >/dev/null 2>&1; then
         done
 
         if [[ -e "$GTKLOCK_READY_FILE" ]]; then
-            printf '%s\\n' "A16EEN_LOCK_READY"
+            printf '%s\n' "A16EEN_LOCK_READY"
             log "GTKLock confirmed that the session is securely locked."
             GTKLOCK_READY_SENT=1
         fi
