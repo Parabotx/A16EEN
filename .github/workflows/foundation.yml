@@ -76,6 +76,7 @@ jobs:
       - name: Validate foundation files
         run: |
           set -euo pipefail
+          trap 'status=$?; echo "Foundation check failed at line ${LINENO}: ${BASH_COMMAND} (exit ${status})" >&2; exit "$status"' ERR
 
           test -f niri/config.kdl
           test -f quickshell/a16een/shell.qml
