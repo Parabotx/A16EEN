@@ -129,10 +129,20 @@ jobs:
           test -f quickshell/a16een/ui/MusicWidget.qml
           test -f quickshell/a16een/ui/MusicDecor.qml
           grep -Fq 'MusicDecor {' quickshell/a16een/ui/MusicWidget.qml
-          grep -Fq 'property bool animating: true' quickshell/a16een/ui/MusicDecor.qml
-          grep -Fq 'Diagonal rain: droplets fall toward the lower-right' quickshell/a16een/ui/MusicDecor.qml
-          grep -Fq 'property real driftX' quickshell/a16een/ui/MusicDecor.qml
-          grep -Fq 'ParallelAnimation {' quickshell/a16een/ui/MusicDecor.qml
+          grep -Fq 'model: 21' quickshell/a16een/ui/MusicDecor.qml
+          grep -Fq 'property real audioLevel: 0' quickshell/a16een/ui/MusicDecor.qml
+          grep -Fq 'property bool hotBeat: false' quickshell/a16een/ui/MusicDecor.qml
+          grep -Fq 'root.hotBeat ? "#E33131" : "#161616"' quickshell/a16een/ui/MusicDecor.qml
+          grep -Fq 'property real phase: 0' quickshell/a16een/ui/MusicDecor.qml
+          ! grep -Fq 'gradient:' quickshell/a16een/ui/MusicDecor.qml
+          ! grep -Fqi 'rain' quickshell/a16een/ui/MusicDecor.qml
+          grep -Fq 'command: ["a16een-music", "visualizer"]' quickshell/a16een/ui/MusicWidget.qml
+          grep -Fq 'audioLevel: root.audioLevel' quickshell/a16een/ui/MusicWidget.qml
+          grep -Fq 'hotBeat: root.hardBeat' quickshell/a16een/ui/MusicWidget.qml
+          grep -Fq 'def visualizer_state()' scripts/a16een-music
+          grep -Fq 'action == "visualizer"' scripts/a16een-music
+          grep -Fq '"hardBeat": bool(hard_beat)' scripts/a16een-music
+          grep -Fq 'astats' scripts/a16een-music || true
           ! grep -R -Fq 'Qt.labs.lottieqt' quickshell/a16een/ui
           test -f scripts/a16een-music
           grep -Fq 'id: "music"' quickshell/a16een/ui/WidgetCatalog.js
@@ -173,6 +183,10 @@ jobs:
           grep -Fq 'id: totalTimePill' quickshell/a16een/ui/MusicWidget.qml
           grep -Fq 'Removing obsolete music dancer assets' scripts/install.sh
           ! grep -Fq 'MUSIC_DANCER_SOURCE_DIR' scripts/install.sh
+          grep -Fq 'action == "visualizer"' scripts/a16een-music
+          grep -Fq 'music-meter-state.json' scripts/a16een-music
+          grep -Fq 'interval: 470' quickshell/a16een/ui/MusicWidget.qml
+          grep -Fq 'id: beatHoldTimer' quickshell/a16een/ui/MusicWidget.qml
           grep -Fq 'mpv' scripts/install.sh
           test -f quickshell/a16een/ui/WallpaperPicker.qml
           test -f quickshell/a16een/ui/NotificationToast.qml

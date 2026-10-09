@@ -26,6 +26,8 @@ PanelWindow {
     property string statusMessage: ""
     property bool actionBusy: false
     property bool libraryOpen: false
+    property real audioLevel: 0
+    property bool hardBeat: false
     property bool shuffleEnabled: false
 
     readonly property color ink: "#493C31"
@@ -142,6 +144,24 @@ PanelWindow {
         statusProcess.running = true
     }
 
+    function refreshAudioLevel() {
+        if (!root.widgetEnabled || !root.isPlaying || visualizerProcess.running)
+            return
+        visualizerProcess.running = true
+    }
+
+    function applyAudioLevelOutput(raw) {
+        try {
+            const result = JSON.parse(String(raw || "{}"))
+            root.audioLevel = root.widgetEnabled && root.isPlaying && result.active
+                ? Math.max(0, Math.min(1, Number(result.level) || 0)) : 0
+            if (root.widgetEnabled && root.isPlaying && result.hardBeat === true)
+                beatHoldTimer.restart()
+        } catch (error) {
+            root.audioLevel = 0
+        }
+    }
+
     function runAction(argumentsList) {
         if (root.actionBusy || actionProcess.running)
             return
@@ -190,6 +210,18 @@ PanelWindow {
         if (root.widgetEnabled) {
             root.refreshLibrary()
             root.refreshPlayback()
+        } else {
+            root.audioLevel = 0
+            root.hardBeat = false
+            beatHoldTimer.stop()
+        }
+    }
+
+    onIsPlayingChanged: {
+        if (!root.isPlaying) {
+            root.audioLevel = 0
+            root.hardBeat = false
+            beatHoldTimer.stop()
         }
     }
 
@@ -212,6 +244,15 @@ PanelWindow {
     }
 
     Process {
+        id: visualizerProcess
+        command: ["a16een-music", "visualizer"]
+        running: false
+        stdout: StdioCollector {
+            onStreamFinished: root.applyAudioLevelOutput(this.text)
+        }
+    }
+
+    Process {
         id: actionProcess
         command: ["a16een-music", "status"]
         running: false
@@ -225,6 +266,20 @@ PanelWindow {
         repeat: true
         running: root.widgetEnabled
         onTriggered: root.refreshPlayback()
+    }
+
+    Timer {
+        interval: 470
+        repeat: true
+        running: root.widgetEnabled && root.isPlaying
+        onTriggered: root.refreshAudioLevel()
+    }
+
+    Timer {
+        id: beatHoldTimer
+        interval: 310
+        repeat: false
+        onTriggered: root.hardBeat = false
     }
 
     // Two low-opacity layers give the compact card a soft, lifted shadow
@@ -448,6 +503,8 @@ PanelWindow {
                     anchors.verticalCenter: parent.verticalCenter
                     animating: root.widgetEnabled
                     playing: root.isPlaying
+                    audioLevel: root.audioLevel
+                    hotBeat: root.hardBeat
                 }
             }
 
