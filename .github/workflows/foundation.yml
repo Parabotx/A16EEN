@@ -132,16 +132,16 @@ jobs:
           grep -Fq 'model: 21' quickshell/a16een/ui/MusicDecor.qml
           grep -Fq 'property real audioLevel: 0' quickshell/a16een/ui/MusicDecor.qml
           grep -Fq 'property var bandLevels: []' quickshell/a16een/ui/MusicDecor.qml
-          grep -Fq 'property bool hotBeat: false' quickshell/a16een/ui/MusicDecor.qml
-          grep -Fq 'root.hotBeat ? "#E33131" : "#161616"' quickshell/a16een/ui/MusicDecor.qml
-          grep -Fq 'Math.pow(bandValue, 0.72)' quickshell/a16een/ui/MusicDecor.qml
+          grep -Fq 'color: "#171717"' quickshell/a16een/ui/MusicDecor.qml
+          grep -Fq 'Math.pow(bandValue, 0.62)' quickshell/a16een/ui/MusicDecor.qml
+          grep -Fq 'duration: 88' quickshell/a16een/ui/MusicDecor.qml
+          ! grep -Fq 'E33131' quickshell/a16een/ui/MusicDecor.qml
           ! grep -Fq 'gradient:' quickshell/a16een/ui/MusicDecor.qml
           ! grep -Fqi 'particle' quickshell/a16een/ui/MusicDecor.qml
           grep -Fq 'command: ["a16een-music", "visualizer"]' quickshell/a16een/ui/MusicWidget.qml
           grep -Fq 'audioLevel: root.audioLevel' quickshell/a16een/ui/MusicWidget.qml
           grep -Fq 'bandLevels: root.bandLevels' quickshell/a16een/ui/MusicWidget.qml
-          grep -Fq 'hotBeat: root.hardBeat' quickshell/a16een/ui/MusicWidget.qml
-          grep -Fq 'root.hardBeat = true' quickshell/a16een/ui/MusicWidget.qml
+          ! grep -Fq 'hotBeat' quickshell/a16een/ui/MusicWidget.qml
           grep -Fq 'def visualizer_state()' scripts/a16een-music
           grep -Fq 'tone_amplitude(frequency)' scripts/a16een-music
           grep -Fq '"bandLevels": [round(value, 3) for value in band_levels]' scripts/a16een-music
@@ -174,7 +174,9 @@ jobs:
           grep -Fq 'id: elapsedTimePill' quickshell/a16een/ui/MusicWidget.qml
           grep -Fq 'id: totalTimePill' quickshell/a16een/ui/MusicWidget.qml
           grep -Fq 'anchors.bottom: parent.bottom' quickshell/a16een/ui/MusicWidget.qml
-          grep -Fq 'libraryOpen ? 284 : 170' quickshell/a16een/ui/MusicWidget.qml
+          grep -Fq 'height: 170' quickshell/a16een/ui/MusicWidget.qml
+          grep -Fq 'id: libraryPopup' quickshell/a16een/ui/MusicWidget.qml
+          grep -Fq 'y: Math.max(12, card.y - height - 8)' quickshell/a16een/ui/MusicWidget.qml
           grep -Fq 'property bool shuffleEnabled: false' quickshell/a16een/ui/MusicWidget.qml
           grep -Fq 'root.runAction(["repeat", String(normalized)])' quickshell/a16een/ui/MusicWidget.qml
           grep -Fq 'root.runAction(["repeat", String(root.repeatMode)])' quickshell/a16een/ui/MusicWidget.qml
@@ -182,8 +184,8 @@ jobs:
           grep -Fq 'loop-file' scripts/a16een-music
           grep -Fq 'eof-reached' scripts/a16een-music
           grep -Fq 'result.eofReached === true' quickshell/a16een/ui/MusicWidget.qml
-          grep -Fq 'repeatIndicatorMode: 1' quickshell/a16een/ui/MusicWidget.qml
-          grep -Fq 'repeatIndicatorMode: 2' quickshell/a16een/ui/MusicWidget.qml
+          grep -Fq 'repeatIndicatorMode: root.repeatMode' quickshell/a16een/ui/MusicWidget.qml
+          grep -Fq 'root.repeatMode === 0 ? 2' quickshell/a16een/ui/MusicWidget.qml
           grep -Fq 'parent.parent.repeatIndicatorMode === 1 ? "1" : "∞"' quickshell/a16een/ui/MusicWidget.qml
           grep -Fq 'find_cover' scripts/a16een-music
           ! grep -Fq 'qt6-lottie' scripts/install.sh
@@ -195,9 +197,8 @@ jobs:
           grep -Fq 'Removing obsolete music dancer assets' scripts/install.sh
           ! grep -Fq 'MUSIC_DANCER_SOURCE_DIR' scripts/install.sh
           grep -Fq 'action == "visualizer"' scripts/a16een-music
-          grep -Fq 'music-meter-state.json' scripts/a16een-music
-          grep -Fq 'interval: 220' quickshell/a16een/ui/MusicWidget.qml
-          grep -Fq 'id: beatHoldTimer' quickshell/a16een/ui/MusicWidget.qml
+          grep -Fq '"-t", "0.16"' scripts/a16een-music
+          grep -Fq 'interval: 160' quickshell/a16een/ui/MusicWidget.qml
           grep -Fq 'onPressed: function(mouse)' quickshell/a16een/ui/MusicWidget.qml
           grep -Fq 'onPositionChanged: function(mouse)' quickshell/a16een/ui/MusicWidget.qml
           grep -Fq 'onReleased: {' quickshell/a16een/ui/MusicWidget.qml

@@ -7,15 +7,12 @@ Item {
     property bool playing: false
     property real audioLevel: 0
     property var bandLevels: []
-    property bool hotBeat: false
 
-    // Transparent, native bars. Heights come from measured frequency energy.
-
+    // Transparent equalizer: one simple monochrome style, no beat flash or backdrop.
     Repeater {
         model: 21
 
         delegate: Rectangle {
-            id: equalizerBar
             required property int index
 
             readonly property real bandValue: root.bandLevels
@@ -28,28 +25,21 @@ Item {
             y: root.height - height - 5
             width: 2.5
             height: root.playing
-                ? 3.5 + Math.pow(bandValue, 0.72) * Math.min(56, root.height - 10)
+                ? 3.5 + Math.pow(bandValue, 0.62) * Math.min(56, root.height - 10)
                 : quietHeight
             radius: 1.25
-            color: root.hotBeat ? "#E33131" : "#161616"
+            color: "#171717"
             opacity: root.playing ? 1.0 : 0.42
 
             Behavior on height {
                 NumberAnimation {
-                    duration: 95
+                    duration: 88
                     easing.type: Easing.OutCubic
                 }
             }
 
-            Behavior on color {
-                ColorAnimation {
-                    duration: 125
-                    easing.type: Easing.InOutSine
-                }
-            }
-
             Behavior on opacity {
-                NumberAnimation { duration: 180 }
+                NumberAnimation { duration: 140 }
             }
         }
     }

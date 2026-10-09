@@ -28,7 +28,6 @@ PanelWindow {
     property bool libraryOpen: false
     property real audioLevel: 0
     property var bandLevels: []
-    property bool hardBeat: false
     property bool shuffleEnabled: false
     property int repeatMode: 0
     property bool seekDragging: false
@@ -108,24 +107,12 @@ PanelWindow {
         }
     }
 
-    function nextRepeatFolderIndex(path) {
-        const currentPath = String(path || "")
-        const folder = currentPath.split("/").slice(0, -1).join("/")
-        if (!folder)
+    function nextRepeatPlaylistIndex(path) {
+        if (!root.tracks.length)
             return -1
-
-        const matching = []
-        for (let i = 0; i < root.tracks.length; i++) {
-            const candidate = String(root.tracks[i].path || "")
-            if (candidate.split("/").slice(0, -1).join("/") === folder)
-                matching.push(i)
-        }
-        if (!matching.length)
-            return -1
-
-        const currentIndex = root.indexForPath(currentPath)
-        const folderPosition = matching.indexOf(currentIndex)
-        return folderPosition < 0 ? matching[0] : matching[(folderPosition + 1) % matching.length]
+        const currentIndex = root.indexForPath(path)
+        // Infinity mode repeats the entire visible music library in order.
+        return currentIndex < 0 ? 0 : (currentIndex + 1) % root.tracks.length
     }
 
     function applyPlaybackOutput(raw) {
@@ -144,7 +131,7 @@ PanelWindow {
             root.playback = result
 
             if (reachedEnd) {
-                const nextIndex = root.nextRepeatFolderIndex(previous.path)
+                const nextIndex = root.nextRepeatPlaylistIndex(previous.path)
                 if (nextIndex >= 0)
                     Qt.callLater(() => root.playTrack(nextIndex))
             }
@@ -207,11 +194,6 @@ PanelWindow {
             root.bandLevels = active && Array.isArray(result.bandLevels)
                 ? result.bandLevels.map(value => Math.max(0, Math.min(1, Number(value) || 0)))
                 : []
-            // Previous code restarted the timer without ever turning red on.
-            if (active && result.hardBeat === true) {
-                root.hardBeat = true
-                beatHoldTimer.restart()
-            }
         } catch (error) {
             root.audioLevel = 0
             root.bandLevels = []
@@ -275,8 +257,6 @@ PanelWindow {
         } else {
             root.audioLevel = 0
             root.bandLevels = []
-            root.hardBeat = false
-            beatHoldTimer.stop()
         }
     }
 
@@ -284,8 +264,6 @@ PanelWindow {
         if (!root.isPlaying) {
             root.audioLevel = 0
             root.bandLevels = []
-            root.hardBeat = false
-            beatHoldTimer.stop()
         }
     }
 
@@ -333,17 +311,10 @@ PanelWindow {
     }
 
     Timer {
-        interval: 220
+        interval: 160
         repeat: true
         running: root.widgetEnabled && root.isPlaying
         onTriggered: root.refreshAudioLevel()
-    }
-
-    Timer {
-        id: beatHoldTimer
-        interval: 360
-        repeat: false
-        onTriggered: root.hardBeat = false
     }
 
     // Two low-opacity layers give the compact card a soft, lifted shadow
@@ -373,7 +344,7 @@ PanelWindow {
     Rectangle {
         id: card
         width: 410
-        height: root.libraryOpen ? 284 : 170
+        height: 170
         anchors.left: parent.left
         anchors.bottom: parent.bottom
         anchors.leftMargin: root.navbarPosition === "left" ? 88 : 24
@@ -397,10 +368,6 @@ PanelWindow {
                 GradientStop { position: 0.52; color: "#D98D80" }
                 GradientStop { position: 1.0; color: "#A992CF" }
             }
-        }
-
-        Behavior on height {
-            NumberAnimation { duration: 190; easing.type: Easing.OutCubic }
         }
 
         Column {
@@ -569,7 +536,6 @@ PanelWindow {
                     playing: root.isPlaying
                     audioLevel: root.audioLevel
                     bandLevels: root.bandLevels
-                    hotBeat: root.hardBeat
                 }
             }
 
@@ -765,16 +731,11 @@ PanelWindow {
 
                     ControlButton {
                         iconName: "music-repeat"
-                        repeatIndicatorMode: 1
-                        selected: root.repeatMode === 1
-                        onClicked: root.setRepeatMode(root.repeatMode === 1 ? 0 : 1)
-                    }
-
-                    ControlButton {
-                        iconName: "music-repeat"
-                        repeatIndicatorMode: 2
-                        selected: root.repeatMode === 2
-                        onClicked: root.setRepeatMode(root.repeatMode === 2 ? 0 : 2)
+                        repeatIndicatorMode: root.repeatMode
+                        selected: root.repeatMode !== 0
+                        onClicked: root.setRepeatMode(
+                            root.repeatMode === 0 ? 2
+                            : root.repeatMode === 2 ? 1 : 0)
                     }
 
                     ControlButton {
@@ -785,135 +746,157 @@ PanelWindow {
                 }
             }
 
-            Column {
-                width: parent.width
-                height: root.libraryOpen ? 104 : 0
-                visible: root.libraryOpen
-                spacing: 4
+        }
+    }
 
-                Row {
-                    width: parent.width
-                    height: 12
+    // The library floats above the player. Opening it never resizes or nudges the card.
+    Rectangle {
+        id: libraryPopup
+        x: card.x
+        y: Math.max(12, card.y - height - 8)
+        width: card.width
+        height: 128
+        radius: 16
+        color: root.cream
+        border.width: 1
+        border.color: root.border
+        clip: true
+        visible: root.libraryOpen
+        z: 5
+        opacity: root.libraryOpen ? 1 : 0
 
-                    Text {
-                        text: "YOUR MUSIC"
-                        color: root.ink
-                        font.pixelSize: 7
-                        font.weight: Font.DemiBold
-                        font.letterSpacing: 0.9
-                    }
+        Behavior on opacity {
+            NumberAnimation { duration: 120; easing.type: Easing.OutCubic }
+        }
 
-                    Item { width: Math.max(1, parent.width - 94); height: 1 }
+        Column {
+            anchors.fill: parent
+            anchors.margins: 12
+            spacing: 4
 
-                    Text {
-                        text: String(root.tracks.length) + (root.tracks.length === 1 ? " SONG" : " SONGS")
-                        color: root.muted
-                        font.pixelSize: 6
-                        font.weight: Font.DemiBold
-                    }
-                }
-
-                Item {
-                    width: parent.width
-                    height: 88
-                    clip: true
-
-                    ListView {
-                        id: trackList
-                        anchors.fill: parent
-                        model: root.tracks
-                        clip: true
-                        spacing: 2
-                        boundsBehavior: Flickable.StopAtBounds
-                        currentIndex: root.activeIndex
-
-                        onCurrentIndexChanged: {
-                            if (currentIndex >= 0)
-                                positionViewAtIndex(currentIndex, ListView.Contain)
-                        }
-
-                        delegate: Rectangle {
-                            required property var modelData
-                            required property int index
-
-                            readonly property bool currentTrack: modelData.path === root.playback.path
-
-                            width: trackList.width
-                            height: 26
-                            radius: 8
-                            color: currentTrack ? "#F0E2CE" : trackHover.containsMouse ? "#F7EBDD" : "transparent"
-                            border.width: currentTrack ? 1 : 0
-                            border.color: "#E4CEB1"
-
-                            Row {
-                                anchors.fill: parent
-                                anchors.leftMargin: 8
-                                anchors.rightMargin: 8
-                                spacing: 8
-
-                                Text {
-                                    width: 16
-                                    anchors.verticalCenter: parent.verticalCenter
-                                    text: parent.parent.currentTrack && root.isPlaying ? "♫" : String(index + 1).padStart(2, "0")
-                                    color: parent.parent.currentTrack ? root.accent : root.muted
-                                    font.pixelSize: 7
-                                    font.weight: Font.DemiBold
-                                }
-
-                                Column {
-                                    width: parent.width - 48
-                                    anchors.verticalCenter: parent.verticalCenter
-                                    spacing: 1
-
-                                    Text {
-                                        width: parent.width
-                                        text: modelData.title
-                                        color: parent.parent.parent.currentTrack ? root.ink : root.secondary
-                                        font.pixelSize: 7
-                                        font.weight: parent.parent.parent.currentTrack ? Font.DemiBold : Font.Medium
-                                        elide: Text.ElideRight
-                                    }
-
-                                    Text {
-                                        width: parent.width
-                                        text: modelData.artist
-                                        color: root.muted
-                                        font.pixelSize: 6
-                                        elide: Text.ElideRight
-                                    }
-                                }
-                            }
-
-                            MouseArea {
-                                id: trackHover
-                                anchors.fill: parent
-                                cursorShape: Qt.PointingHandCursor
-                                onClicked: root.playTrack(index)
-                            }
-                        }
-                    }
-
-                    Column {
-                        anchors.centerIn: parent
-                        visible: root.tracks.length === 0
-                        spacing: 2
+                    Row {
+                        width: parent.width
+                        height: 12
 
                         Text {
-                            anchors.horizontalCenter: parent.horizontalCenter
-                            text: root.statusMessage.length ? root.statusMessage : "No songs yet"
-                            color: root.secondary
-                            font.pixelSize: 8
+                            text: "YOUR MUSIC"
+                            color: root.ink
+                            font.pixelSize: 7
+                            font.weight: Font.DemiBold
+                            font.letterSpacing: 0.9
                         }
 
+                        Item { width: Math.max(1, parent.width - 94); height: 1 }
+
                         Text {
-                            anchors.horizontalCenter: parent.horizontalCenter
-                            text: "Add tracks to ~/Music"
+                            text: String(root.tracks.length) + (root.tracks.length === 1 ? " SONG" : " SONGS")
                             color: root.muted
                             font.pixelSize: 6
+                            font.weight: Font.DemiBold
                         }
                     }
-                }
-            }
+
+                    Item {
+                        width: parent.width
+                        height: 88
+                        clip: true
+
+                        ListView {
+                            id: trackList
+                            anchors.fill: parent
+                            model: root.tracks
+                            clip: true
+                            spacing: 2
+                            boundsBehavior: Flickable.StopAtBounds
+                            currentIndex: root.activeIndex
+
+                            onCurrentIndexChanged: {
+                                if (currentIndex >= 0)
+                                    positionViewAtIndex(currentIndex, ListView.Contain)
+                            }
+
+                            delegate: Rectangle {
+                                required property var modelData
+                                required property int index
+
+                                readonly property bool currentTrack: modelData.path === root.playback.path
+
+                                width: trackList.width
+                                height: 26
+                                radius: 8
+                                color: currentTrack ? "#F0E2CE" : trackHover.containsMouse ? "#F7EBDD" : "transparent"
+                                border.width: currentTrack ? 1 : 0
+                                border.color: "#E4CEB1"
+
+                                Row {
+                                    anchors.fill: parent
+                                    anchors.leftMargin: 8
+                                    anchors.rightMargin: 8
+                                    spacing: 8
+
+                                    Text {
+                                        width: 16
+                                        anchors.verticalCenter: parent.verticalCenter
+                                        text: parent.parent.currentTrack && root.isPlaying ? "♫" : String(index + 1).padStart(2, "0")
+                                        color: parent.parent.currentTrack ? root.accent : root.muted
+                                        font.pixelSize: 7
+                                        font.weight: Font.DemiBold
+                                    }
+
+                                    Column {
+                                        width: parent.width - 48
+                                        anchors.verticalCenter: parent.verticalCenter
+                                        spacing: 1
+
+                                        Text {
+                                            width: parent.width
+                                            text: modelData.title
+                                            color: parent.parent.parent.currentTrack ? root.ink : root.secondary
+                                            font.pixelSize: 7
+                                            font.weight: parent.parent.parent.currentTrack ? Font.DemiBold : Font.Medium
+                                            elide: Text.ElideRight
+                                        }
+
+                                        Text {
+                                            width: parent.width
+                                            text: modelData.artist
+                                            color: root.muted
+                                            font.pixelSize: 6
+                                            elide: Text.ElideRight
+                                        }
+                                    }
+                                }
+
+                                MouseArea {
+                                    id: trackHover
+                                    anchors.fill: parent
+                                    cursorShape: Qt.PointingHandCursor
+                                    onClicked: root.playTrack(index)
+                                }
+                            }
+                        }
+
+                        Column {
+                            anchors.centerIn: parent
+                            visible: root.tracks.length === 0
+                            spacing: 2
+
+                            Text {
+                                anchors.horizontalCenter: parent.horizontalCenter
+                                text: root.statusMessage.length ? root.statusMessage : "No songs yet"
+                                color: root.secondary
+                                font.pixelSize: 8
+                            }
+
+                            Text {
+                                anchors.horizontalCenter: parent.horizontalCenter
+                                text: "Add tracks to ~/Music"
+                                color: root.muted
+                                font.pixelSize: 6
+                            }
+                        }
+                    }
+
         }
     }
 
@@ -949,7 +932,6 @@ PanelWindow {
 
         Rectangle {
             visible: parent.repeatIndicatorMode !== 0
-                && parent.repeatIndicatorMode === root.repeatMode
             anchors.right: parent.right
             anchors.bottom: parent.bottom
             anchors.rightMargin: 1

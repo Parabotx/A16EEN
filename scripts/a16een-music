@@ -310,14 +310,8 @@ def read_status():
 
 
 def visualizer_state():
-    """Read short PCM windows from the current track and build 21 spectral bars."""
-    inactive = {
-        "active": False,
-        "level": 0.0,
-        "rmsDb": -96.0,
-        "bandLevels": [0.0] * 21,
-        "hardBeat": False
-    }
+    """Sample a short window and estimate 21 spectral bands for a lightweight equalizer."""
+    inactive = {"active": False, "level": 0.0, "bandLevels": [0.0] * 21}
     status = read_status()
     raw_path = str(status.get("path") or "")
     if not status.get("running") or not raw_path or status.get("paused", True):
@@ -335,12 +329,10 @@ def visualizer_state():
     if not ffmpeg:
         return {**inactive, "reason": "ffmpeg is not available"}
 
-    # Sample a little over 200 ms. Each update is analysed into separate
-    # frequency bands, rather than animating a synthetic sine-wave pattern.
     command = [
         ffmpeg, "-hide_banner", "-loglevel", "error",
         "-ss", f"{position:.3f}", "-i", str(audio_path),
-        "-t", "0.22", "-vn", "-ac", "1", "-ar", "8000",
+        "-t", "0.16", "-vn", "-ac", "1", "-ar", "8000",
         "-f", "s16le", "pipe:1"
     ]
     try:
@@ -349,7 +341,7 @@ def visualizer_state():
             stdin=subprocess.DEVNULL,
             stdout=subprocess.PIPE,
             stderr=subprocess.DEVNULL,
-            timeout=1.2,
+            timeout=0.9,
             check=False
         )
     except (OSError, subprocess.TimeoutExpired):
@@ -368,13 +360,10 @@ def visualizer_state():
 
     square_mean = sum(value * value for value in samples) / count
     rms = math.sqrt(square_mean) / 32768.0
-    peak = max(abs(value) for value in samples) / 32768.0
-    rms_db = 20.0 * math.log10(max(rms, 0.000001))
-    peak_db = 20.0 * math.log10(max(peak, 0.000001))
-    level = max(0.0, min(1.0, (rms_db + 45.0) / 38.0))
+    level = max(0.0, min(1.0, (20.0 * math.log10(max(rms, 0.000001)) + 45.0) / 38.0))
 
-    # Hann-windowed Goertzel probes estimate local energy at three nearby
-    # frequencies per bar. It is small enough to run without NumPy or a GPU.
+    # A Hann window reduces spectral leakage; one Goertzel probe per bar keeps
+    # CPU use low enough for frequent updates on modest hardware.
     sample_rate = 8000.0
     windowed = []
     window_sum = 0.0
@@ -385,7 +374,6 @@ def visualizer_state():
         window_sum += window
 
     def tone_amplitude(frequency):
-        frequency = max(35.0, min(3700.0, frequency))
         coefficient = 2.0 * math.cos((2.0 * math.pi * frequency) / sample_rate)
         q1 = 0.0
         q2 = 0.0
@@ -396,77 +384,17 @@ def visualizer_state():
         power = max(0.0, q1 * q1 + q2 * q2 - coefficient * q1 * q2)
         return (2.0 * math.sqrt(power)) / max(1.0, window_sum * 32768.0)
 
-    band_amplitudes = []
     band_levels = []
     for index in range(21):
-        centre = 48.0 * ((3300.0 / 48.0) ** (index / 20.0))
-        adjacent = [
-            tone_amplitude(centre * 0.91),
-            tone_amplitude(centre),
-            tone_amplitude(centre * 1.10)
-        ]
-        amplitude = math.sqrt(sum(value * value for value in adjacent) / len(adjacent))
-        band_amplitudes.append(amplitude)
+        frequency = 45.0 * ((3400.0 / 45.0) ** (index / 20.0))
+        amplitude = tone_amplitude(frequency)
         amplitude_db = 20.0 * math.log10(max(amplitude, 0.000001))
         band_levels.append(max(0.0, min(1.0, (amplitude_db + 52.0) / 34.0)))
-
-    bass_amplitude = math.sqrt(
-        sum(value * value for value in band_amplitudes[:5]) / 5.0
-    )
-    bass_db = 20.0 * math.log10(max(bass_amplitude, 0.000001))
-
-    meter_state = COVER_CACHE_DIR.parent / "music-meter-state.json"
-    baseline_db = None
-    baseline_bass_db = None
-    try:
-        previous = json.loads(meter_state.read_text(encoding="utf-8"))
-        if previous.get("path") == str(audio_path):
-            value = previous.get("baselineDb")
-            bass_value = previous.get("baselineBassDb")
-            if isinstance(value, (float, int)):
-                baseline_db = float(value)
-            if isinstance(bass_value, (float, int)):
-                baseline_bass_db = float(bass_value)
-    except (OSError, UnicodeError, json.JSONDecodeError, AttributeError, TypeError, ValueError):
-        pass
-
-    # A beat is a real transient: a sudden bass or broadband rise relative to
-    # the same track's recent energy floor. The peak/RMS fallback catches sharp
-    # kick/snare hits even when the track is heavily compressed.
-    bass_rise = (
-        baseline_bass_db is not None
-        and bass_db >= -38.0
-        and bass_db - baseline_bass_db >= 1.8
-    )
-    rms_rise = (
-        baseline_db is not None
-        and rms_db >= -34.0
-        and rms_db - baseline_db >= 3.0
-    )
-    sharp_transient = rms_db >= -35.0 and peak_db - rms_db >= 10.0
-    hard_beat = rms_db >= -9.5 or bass_rise or rms_rise or sharp_transient
-
-    updated_baseline = rms_db if baseline_db is None else (0.90 * baseline_db + 0.10 * rms_db)
-    updated_bass_baseline = (
-        bass_db if baseline_bass_db is None
-        else 0.88 * baseline_bass_db + 0.12 * bass_db
-    )
-    try:
-        meter_state.parent.mkdir(parents=True, exist_ok=True)
-        meter_state.write_text(json.dumps({
-            "path": str(audio_path),
-            "baselineDb": updated_baseline,
-            "baselineBassDb": updated_bass_baseline
-        }), encoding="utf-8")
-    except OSError:
-        pass
 
     return {
         "active": True,
         "level": round(level, 3),
-        "rmsDb": round(rms_db, 2),
-        "bandLevels": [round(value, 3) for value in band_levels],
-        "hardBeat": bool(hard_beat)
+        "bandLevels": [round(value, 3) for value in band_levels]
     }
 
 def main():
@@ -519,8 +447,7 @@ def main():
         return
 
     if action == "repeat":
-        # 0 = off, 1 = repeat current song, 2 = repeat its folder (handled by
-        # the widget when MPV reaches the end of a track).
+        # 0 = off, 1 = repeat current song, 2 = repeat the widget's full library.
         try:
             mode = int(args[1]) if len(args) > 1 else (0 if read_status().get("repeat") else 1)
         except (TypeError, ValueError):
