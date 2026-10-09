@@ -226,7 +226,7 @@ PanelWindow {
         Row {
             anchors.fill: parent
             anchors.margins: 12
-            spacing: 10
+            spacing: root.sidebarVisible ? 10 : 0
 
             Rectangle {
                 id: notesSidebar
