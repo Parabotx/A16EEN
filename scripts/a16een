@@ -374,8 +374,8 @@ case "$command" in
 
     lock)
         require_no_args "$@"
-        require_cmd loginctl
-        exec loginctl lock-session
+        require_cmd a16een-lock
+        exec a16een-lock
         ;;
 
     logout|log-out)
