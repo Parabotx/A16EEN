@@ -352,12 +352,6 @@ PanelWindow {
                         : 5)
                 y: Math.round((batteryPill.height - height) / 2)
 
-                Behavior on x {
-                    NumberAnimation {
-                        duration: 190
-                        easing.type: Easing.OutCubic
-                    }
-                }
             }
 
             Text {
