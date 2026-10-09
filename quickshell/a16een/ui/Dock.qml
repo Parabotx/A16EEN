@@ -231,8 +231,9 @@ PanelWindow {
         }
     }
 
-    // Compact, hover-expandable battery capsule. For top/bottom navbars it
-    // uses a horizontal battery; left/right navbars use an upright battery.
+    // Hover-expandable battery capsule. Keep the Wayland panel at a fixed
+    // maximum size so hover does not resize/reposition the native surface.
+    // Only the inner pill animates, with its screen-facing edge pinned.
     PanelWindow {
         id: batteryStatusPanel
         screen: root.modelData
@@ -244,18 +245,14 @@ PanelWindow {
         exclusionMode: ExclusionMode.Ignore
         exclusiveZone: 0
 
-        // The capsule grows away from its anchored screen corner. The battery
-        // stays pinned to the screen-facing end while the percentage appears.
-        width: root.horizontalNavbar
-            ? (batteryHover.containsMouse ? 82 : 32)
-            : (batteryHover.containsMouse ? 74 : 32)
-        height: root.horizontalNavbar
-            ? 32
-            : (batteryHover.containsMouse ? 42 : 38)
+        // Stable outer surface prevents the pointer leaving the surface while
+        // the pill opens/closes, which caused the repeated hover flicker.
+        width: root.horizontalNavbar ? 98 : 82
+        height: root.horizontalNavbar ? 46 : 52
 
         anchors {
-            left: root.navbarPosition !== "right"
-            right: root.navbarPosition === "right"
+            left: root.navbarPosition === "left"
+            right: root.horizontalNavbar || root.navbarPosition === "right"
             top: root.navbarPosition === "top"
             bottom: root.navbarPosition !== "top"
         }
@@ -278,10 +275,8 @@ PanelWindow {
             if (!Number.isFinite(raw))
                 return 0
 
-            // Quickshell reports the percentage on a 0..100 scale. Keep
-            // compatibility with builds/devices exposing a 0..1 fraction.
-            const percent = raw > 0 && raw <= 1 ? raw * 100 : raw
-            return Math.max(0, Math.min(100, Math.round(percent)))
+            // UPower percentage is already 0..100; do not treat 1% as 100%.
+            return Math.max(0, Math.min(100, Math.round(raw)))
         }
 
         function batteryIconColor() {
@@ -299,17 +294,46 @@ PanelWindow {
             return "#111318"
         }
 
-        Rectangle {
+        // The hover sensor has stable geometry; the pill below it animates.
+        // Qt.NoButton allows clicks to pass through this transparent sensor.
+        MouseArea {
+            id: batteryHoverSensor
             anchors.fill: parent
-            radius: 12
+            hoverEnabled: true
+            acceptedButtons: Qt.NoButton
+            cursorShape: Qt.ArrowCursor
+            z: 0
+        }
+
+        Rectangle {
+            id: batteryPill
+            x: (root.horizontalNavbar || root.navbarPosition === "right")
+                ? parent.width - width - 2
+                : 2
+            y: root.navbarPosition === "top"
+                ? 2
+                : parent.height - height - 2
+            width: root.horizontalNavbar
+                ? (batteryHoverSensor.containsMouse ? 92 : 40)
+                : (batteryHoverSensor.containsMouse ? 76 : 38)
+            height: root.horizontalNavbar ? 40 : 46
+            radius: 13
             color: "#FFFFFF"
             border.width: 1
             border.color: "#D9DEE5"
+            z: 1
+
+            Behavior on width {
+                NumberAnimation {
+                    duration: 190
+                    easing.type: Easing.OutCubic
+                }
+            }
 
             Rectangle {
                 anchors.fill: parent
                 anchors.margins: -3
-                radius: 15
+                radius: 16
                 color: "#10000000"
                 z: -1
             }
@@ -319,39 +343,45 @@ PanelWindow {
                 horizontal: root.horizontalNavbar
                 percentage: batteryStatusPanel.batteryPercent()
                 tint: batteryStatusPanel.batteryIconColor()
-                width: root.horizontalNavbar ? 25 : 18
-                height: root.horizontalNavbar ? 16 : 27
+                width: root.horizontalNavbar ? 27 : 18
+                height: root.horizontalNavbar ? 20 : 28
                 x: root.horizontalNavbar
-                    ? 5
-                    : (batteryHover.containsMouse
-                        ? (root.navbarPosition === "right" ? parent.width - width - 5 : 5)
-                        : Math.round((parent.width - width) / 2))
-                y: Math.round((parent.height - height) / 2)
+                    ? batteryPill.width - width - 6
+                    : (root.navbarPosition === "right"
+                        ? batteryPill.width - width - 5
+                        : 5)
+                y: Math.round((batteryPill.height - height) / 2)
+
+                Behavior on x {
+                    NumberAnimation {
+                        duration: 190
+                        easing.type: Easing.OutCubic
+                    }
+                }
             }
 
             Text {
-                visible: batteryHover.containsMouse
+                id: batteryPercentLabel
+                visible: opacity > 0.02
+                opacity: batteryHoverSensor.containsMouse ? 1 : 0
                 x: root.horizontalNavbar
-                    ? 35
-                    : (root.navbarPosition === "right" ? 5 : 28)
-                y: Math.round((parent.height - height) / 2)
-                width: root.horizontalNavbar ? 42 : 40
+                    ? 8
+                    : (root.navbarPosition === "right" ? 5 : 29)
+                y: Math.round((batteryPill.height - height) / 2)
+                width: root.horizontalNavbar ? 43 : 41
                 text: batteryStatusPanel.batteryPercent() + "%"
                 color: "#111318"
                 font.pixelSize: root.horizontalNavbar ? 12 : 11
                 font.weight: Font.DemiBold
-                horizontalAlignment: root.navbarPosition === "right" && !root.horizontalNavbar
-                    ? Text.AlignLeft : Text.AlignLeft
+                horizontalAlignment: Text.AlignLeft
                 verticalAlignment: Text.AlignVCenter
-            }
 
-            MouseArea {
-                id: batteryHover
-                anchors.fill: parent
-                hoverEnabled: true
-                acceptedButtons: Qt.NoButton
-                cursorShape: Qt.ArrowCursor
-                z: 10
+                Behavior on opacity {
+                    NumberAnimation {
+                        duration: 130
+                        easing.type: Easing.OutCubic
+                    }
+                }
             }
         }
     }
@@ -481,6 +511,13 @@ PanelWindow {
         property bool horizontal: true
         property real percentage: 0
         property color tint: "#111318"
+
+        Behavior on percentage {
+            NumberAnimation {
+                duration: 260
+                easing.type: Easing.OutCubic
+            }
+        }
 
         readonly property real bodyX: horizontal ? 0 : 3
         readonly property real bodyY: horizontal ? 2 : 4
