@@ -136,8 +136,9 @@ PanelWindow {
             root.dancerSource = ""
             root.dancerOffsetX = 0
             root.dancerOffsetY = 0
-            root.syncDancerLoader()
         }
+        // Keep the animated QML fallback visible while the helper selects a Lottie file.
+        root.syncDancerLoader()
         dancerProcess.running = true
     }
 
@@ -563,13 +564,13 @@ PanelWindow {
                 Row {
                     id: timelineLabels
                     width: parent.width
-                    height: 17
+                    height: 15
 
                     Rectangle {
                         id: elapsedTimePill
                         width: elapsedTime.implicitWidth + 12
-                        height: 17
-                        radius: 8.5
+                        height: 15
+                        radius: 7.5
                         color: "#F0E2D0"
                         border.width: 1
                         border.color: "#E7D3BA"
@@ -595,8 +596,8 @@ PanelWindow {
                     Rectangle {
                         id: totalTimePill
                         width: totalTime.implicitWidth + 12
-                        height: 17
-                        radius: 8.5
+                        height: 15
+                        radius: 7.5
                         color: "#FBF7F0"
                         border.width: 1
                         border.color: "#EAE0D3"
@@ -617,12 +618,12 @@ PanelWindow {
                 Item {
                     id: progressTrack
                     width: parent.width
-                    height: 12
+                    height: 8
 
                     Rectangle {
                         id: progressRail
                         x: 1
-                        y: 4
+                        y: 2
                         width: Math.max(0, parent.width - 2)
                         height: 4
                         radius: 2
@@ -650,11 +651,11 @@ PanelWindow {
                     // feel like a precise, draggable control instead of a hard dot.
                     Rectangle {
                         id: progressThumb
-                        width: 10
-                        height: 10
+                        width: 8
+                        height: 8
                         x: Math.max(0, Math.min(parent.width - width,
                             1 + (parent.width - 2) * root.progress - width / 2))
-                        y: 1
+                        y: 0
                         radius: 5
                         color: "#FFFCF7"
                         border.width: 1
@@ -664,9 +665,9 @@ PanelWindow {
 
                         Rectangle {
                             anchors.centerIn: parent
-                            width: 3
-                            height: 3
-                            radius: 1.5
+                            width: 2.5
+                            height: 2.5
+                            radius: 1.25
                             color: "#C58B75"
                         }
 
