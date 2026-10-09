@@ -8,41 +8,51 @@ PanelWindow {
 
     required property var modelData
     property bool widgetEnabled: false
+    property string navbarPosition: "right"
     property var tracks: []
     property var playback: ({
         running: false,
         path: "",
         title: "",
+        artist: "",
+        album: "",
+        cover: "",
         duration: 0,
         time: 0,
         paused: true,
+        repeat: false,
         error: ""
     })
     property string statusMessage: ""
     property bool actionBusy: false
+    property bool libraryOpen: false
+    property bool shuffleEnabled: false
+    property string dancerSource: ""
+    property real dancerOffsetX: 0
+    property real dancerOffsetY: 0
 
-    readonly property color ink: "#182331"
-    readonly property color secondary: "#68788B"
-    readonly property color muted: "#9AA7B5"
-    readonly property color accent: "#4C82C8"
-    readonly property color border: "#E1E8F0"
+    readonly property color ink: "#493C31"
+    readonly property color secondary: "#837264"
+    readonly property color muted: "#AA9A87"
+    readonly property color border: "#E8D9C5"
+    readonly property color cream: "#FFF5E7"
+    readonly property color accent: "#C98765"
     readonly property int activeIndex: root.indexForPath(root.playback.path)
-    readonly property var previewTracks: {
-        if (root.tracks.length <= 3)
-            return root.tracks
-        const center = root.activeIndex >= 0 ? root.activeIndex : 0
-        const start = Math.max(0, Math.min(center - 1, root.tracks.length - 3))
-        return root.tracks.slice(start, start + 3)
-    }
+    readonly property bool isPlaying: root.playback.running
+        && String(root.playback.path || "").length > 0
+        && !root.playback.paused
+    readonly property string currentTitle: root.playback.title && String(root.playback.title).length
+        ? String(root.playback.title)
+        : root.activeIndex >= 0 ? root.tracks[root.activeIndex].title : "Choose your next song"
+    readonly property string currentArtist: root.playback.artist && String(root.playback.artist).length
+        ? String(root.playback.artist)
+        : root.activeIndex >= 0 ? root.tracks[root.activeIndex].artist : "Your music collection"
+    readonly property string currentCover: root.playback.cover && String(root.playback.cover).length
+        ? String(root.playback.cover)
+        : root.activeIndex >= 0 ? String(root.tracks[root.activeIndex].cover || "") : ""
     readonly property real progress: root.playback.duration > 0
         ? Math.max(0, Math.min(1, root.playback.time / root.playback.duration))
         : 0
-    readonly property string currentTitle: root.playback.title.length
-        ? root.playback.title
-        : root.activeIndex >= 0 ? root.tracks[root.activeIndex].title : "Pick something to play"
-    readonly property string currentArtist: root.activeIndex >= 0
-        ? root.tracks[root.activeIndex].artist
-        : root.tracks.length ? "Your local library" : "Songs in ~/Music appear here"
 
     screen: modelData
     visible: root.widgetEnabled
@@ -61,7 +71,7 @@ PanelWindow {
     WlrLayershell.namespace: "a16een-widget-music"
 
     function indexForPath(path) {
-        if (!path || !path.length)
+        if (!path || !String(path).length)
             return -1
         for (let i = 0; i < root.tracks.length; i++) {
             if (root.tracks[i].path === path)
@@ -82,7 +92,7 @@ PanelWindow {
             const result = JSON.parse(String(raw || "{}"))
             root.tracks = result.tracks || []
             if (!result.directoryExists)
-                root.statusMessage = "Create ~/Music and add audio files"
+                root.statusMessage = "Add audio files to ~/Music"
             else if (!root.tracks.length)
                 root.statusMessage = "No supported audio files found"
             else
@@ -93,14 +103,50 @@ PanelWindow {
         }
     }
 
+    function requestDancer() {
+        if (!root.widgetEnabled || !root.isPlaying || dancerProcess.running)
+            return
+        root.dancerSource = ""
+        root.dancerOffsetX = 0
+        root.dancerOffsetY = 0
+        dancerProcess.running = true
+    }
+
+    function applyDancerOutput(raw) {
+        if (!root.widgetEnabled || !root.isPlaying)
+            return
+        try {
+            const result = JSON.parse(String(raw || "{}"))
+            root.dancerSource = String(result.path || "")
+        } catch (error) {
+            root.dancerSource = ""
+        }
+    }
+
     function applyPlaybackOutput(raw) {
         try {
             const result = JSON.parse(String(raw || "{}"))
+            const wasPlaying = root.isPlaying
+            const previousPath = String(root.playback.path || "")
             root.playback = result
+
+            if (root.isPlaying) {
+                if (!wasPlaying || previousPath !== String(root.playback.path || ""))
+                    root.requestDancer()
+            } else {
+                // Clearing the URL deactivates the Loader and destroys the SVG
+                // item completely; no animation keeps running while paused.
+                root.dancerSource = ""
+                root.dancerOffsetX = 0
+                root.dancerOffsetY = 0
+            }
+
             if (result.error)
                 root.statusMessage = result.error
+            else if (root.statusMessage === "The music player is not responding.")
+                root.statusMessage = ""
         } catch (error) {
-            // A failed or empty status query should not interrupt the widget.
+            // Bad status output shouldn't interrupt the desktop shell.
         }
     }
 
@@ -148,12 +194,20 @@ PanelWindow {
     }
 
     function advanceTrack(amount) {
-        if (!root.tracks.length)
+        const count = root.tracks.length
+        if (!count)
             return
+
         let nextIndex = root.activeIndex
-        if (nextIndex < 0)
-            nextIndex = amount > 0 ? -1 : 0
-        nextIndex = (nextIndex + amount + root.tracks.length) % root.tracks.length
+        if (root.shuffleEnabled && amount > 0 && count > 1) {
+            nextIndex = Math.floor(Math.random() * (count - 1))
+            if (nextIndex >= root.activeIndex)
+                nextIndex++
+        } else {
+            if (nextIndex < 0)
+                nextIndex = amount > 0 ? -1 : 0
+            nextIndex = (nextIndex + amount + count) % count
+        }
         root.playTrack(nextIndex)
     }
 
@@ -168,6 +222,10 @@ PanelWindow {
         if (root.widgetEnabled) {
             root.refreshLibrary()
             root.refreshPlayback()
+        } else {
+            root.dancerSource = ""
+            root.dancerOffsetX = 0
+            root.dancerOffsetY = 0
         }
     }
 
@@ -175,7 +233,6 @@ PanelWindow {
         id: libraryProcess
         command: ["a16een-music", "list"]
         running: false
-
         stdout: StdioCollector {
             onStreamFinished: root.applyLibraryOutput(this.text)
         }
@@ -185,7 +242,6 @@ PanelWindow {
         id: statusProcess
         command: ["a16een-music", "status"]
         running: false
-
         stdout: StdioCollector {
             onStreamFinished: root.applyPlaybackOutput(this.text)
         }
@@ -195,169 +251,197 @@ PanelWindow {
         id: actionProcess
         command: ["a16een-music", "status"]
         running: false
-
         stdout: StdioCollector {
             onStreamFinished: root.applyActionOutput(this.text)
         }
     }
 
+    Process {
+        id: dancerProcess
+        command: ["a16een-music", "dancer"]
+        running: false
+        stdout: StdioCollector {
+            onStreamFinished: root.applyDancerOutput(this.text)
+        }
+    }
+
     Timer {
-        interval: 1500
+        interval: 1200
         repeat: true
         running: root.widgetEnabled
         onTriggered: root.refreshPlayback()
     }
 
+    SequentialAnimation {
+        running: root.widgetEnabled && root.isPlaying && root.dancerSource.length > 0
+        loops: Animation.Infinite
+
+        PauseAnimation { duration: 1700 }
+
+        NumberAnimation {
+            target: root
+            property: "dancerOffsetX"
+            to: 24
+            duration: 360
+            easing.type: Easing.OutBack
+        }
+
+        NumberAnimation {
+            target: root
+            property: "dancerOffsetY"
+            to: -12
+            duration: 220
+            easing.type: Easing.OutCubic
+        }
+
+        PauseAnimation { duration: 360 }
+
+        NumberAnimation {
+            target: root
+            property: "dancerOffsetX"
+            to: 0
+            duration: 480
+            easing.type: Easing.OutBack
+        }
+
+        NumberAnimation {
+            target: root
+            property: "dancerOffsetY"
+            to: 0
+            duration: 280
+            easing.type: Easing.OutCubic
+        }
+
+        PauseAnimation { duration: 1100 }
+    }
+
+    // Two low-opacity layers give the compact card a soft, lifted shadow
+    // without continuously running a blur effect.
+    Rectangle {
+        width: card.width
+        height: card.height
+        x: card.x
+        y: card.y + 5
+        radius: card.radius
+        color: "#72563D"
+        opacity: 0.075
+        z: 0
+    }
+
+    Rectangle {
+        width: card.width
+        height: card.height
+        x: card.x
+        y: card.y + 2
+        radius: card.radius
+        color: "#A38A6E"
+        opacity: 0.055
+        z: 0
+    }
+
     Rectangle {
         id: card
-        width: 344
-        height: 354
-        anchors.top: parent.top
-        anchors.right: parent.right
-        anchors.topMargin: 28
-        anchors.rightMargin: 28
-        radius: 22
-        color: "#F9FFFFFF"
+        width: 410
+        height: root.libraryOpen ? 284 : 170
+        anchors.left: parent.left
+        anchors.bottom: parent.bottom
+        anchors.leftMargin: root.navbarPosition === "left" ? 88 : 24
+        anchors.bottomMargin: root.navbarPosition === "bottom" ? 74 : 72
+        radius: 20
+        color: root.cream
         border.width: 1
         border.color: root.border
-        clip: true
+        clip: false
+        z: 1
+
+        Behavior on height {
+            NumberAnimation { duration: 190; easing.type: Easing.OutCubic }
+        }
 
         Column {
             anchors.fill: parent
-            anchors.margins: 15
-            spacing: 9
+            anchors.margins: 12
+            spacing: 7
 
             Row {
+                id: trackSummary
                 width: parent.width
-                height: 26
-                spacing: 9
+                height: 76
+                spacing: 10
 
                 Rectangle {
-                    width: 27
-                    height: 27
-                    radius: 9
-                    color: "#EAF2FC"
-                    border.width: 1
-                    border.color: "#DCE8F7"
-
-                    Text {
-                        anchors.centerIn: parent
-                        text: "♫"
-                        color: root.accent
-                        font.pixelSize: 17
-                    }
-                }
-
-                Column {
+                    id: albumArt
+                    width: 68
+                    height: 68
                     anchors.verticalCenter: parent.verticalCenter
-                    spacing: 2
-
-                    Text {
-                        text: "MUSIC PLAYER"
-                        color: root.ink
-                        font.pixelSize: 8
-                        font.weight: Font.DemiBold
-                        font.letterSpacing: 1.1
-                    }
-
-                    Text {
-                        text: "LOCAL LIBRARY"
-                        color: root.muted
-                        font.pixelSize: 6
-                        font.weight: Font.DemiBold
-                        font.letterSpacing: 1
-                    }
-                }
-
-                Item { width: Math.max(1, parent.width - 192); height: 1 }
-
-                Rectangle {
-                    width: 28
-                    height: 27
-                    radius: 9
-                    color: refreshHover.containsMouse ? "#EAF2FC" : "#FFFFFF"
+                    radius: 14
+                    color: "#EAD7BB"
                     border.width: 1
-                    border.color: root.border
-
-                    Text {
-                        anchors.centerIn: parent
-                        text: "↻"
-                        color: root.secondary
-                        font.pixelSize: 17
-                    }
-
-                    MouseArea {
-                        id: refreshHover
-                        anchors.fill: parent
-                        cursorShape: Qt.PointingHandCursor
-                        onClicked: root.refreshLibrary()
-                    }
-                }
-            }
-
-            Row {
-                width: parent.width
-                height: 78
-                spacing: 12
-
-                Rectangle {
-                    width: 78
-                    height: 78
-                    radius: 17
-                    color: "#E8F0FB"
-                    border.width: 1
-                    border.color: "#DBE6F5"
+                    border.color: "#E2CEB2"
                     clip: true
 
                     Rectangle {
-                        width: 74
-                        height: 74
-                        radius: 37
-                        anchors.right: parent.right
+                        width: 55
+                        height: 55
+                        radius: 28
+                        anchors.left: parent.left
                         anchors.bottom: parent.bottom
-                        anchors.rightMargin: -27
-                        anchors.bottomMargin: -24
-                        color: "#D4E3F6"
+                        anchors.leftMargin: -16
+                        anchors.bottomMargin: -20
+                        color: "#F6E9D6"
                     }
 
                     Rectangle {
-                        width: 42
-                        height: 42
-                        radius: 21
-                        anchors.left: parent.left
+                        width: 35
+                        height: 35
+                        radius: 18
+                        anchors.right: parent.right
                         anchors.top: parent.top
-                        anchors.leftMargin: -16
-                        anchors.topMargin: -15
-                        color: "#F7FAFE"
+                        anchors.rightMargin: -7
+                        anchors.topMargin: -7
+                        color: "#D6BBA0"
                     }
 
                     Text {
                         anchors.centerIn: parent
                         text: "♫"
-                        color: "#356BAE"
-                        font.pixelSize: 38
+                        color: "#8A6449"
+                        font.pixelSize: 31
                         font.weight: Font.Light
+                        visible: albumCover.status !== Image.Ready
+                    }
+
+                    Image {
+                        id: albumCover
+                        anchors.fill: parent
+                        source: root.currentCover
+                        visible: source.toString().length > 0 && status === Image.Ready
+                        fillMode: Image.PreserveAspectCrop
+                        asynchronous: true
+                        cache: true
                     }
                 }
 
                 Column {
-                    width: parent.width - 90
+                    width: parent.width - 68 - 98 - 20
                     anchors.verticalCenter: parent.verticalCenter
-                    spacing: 5
+                    spacing: 4
 
                     Text {
-                        text: "NOW PLAYING"
+                        width: parent.width
+                        text: root.isPlaying ? "NOW PLAYING" : "A16EEN MUSIC"
                         color: root.accent
                         font.pixelSize: 7
                         font.weight: Font.DemiBold
-                        font.letterSpacing: 1
+                        font.letterSpacing: 1.15
+                        elide: Text.ElideRight
                     }
 
                     Text {
                         width: parent.width
                         text: root.currentTitle
                         color: root.ink
-                        font.pixelSize: 12
+                        font.pixelSize: 13
                         font.weight: Font.DemiBold
                         elide: Text.ElideRight
                         maximumLineCount: 1
@@ -369,53 +453,177 @@ PanelWindow {
                         color: root.secondary
                         font.pixelSize: 8
                         elide: Text.ElideRight
+                        maximumLineCount: 1
                     }
 
                     Text {
                         width: parent.width
                         text: root.statusMessage.length
                             ? root.statusMessage
-                            : root.playback.running
-                                ? (root.playback.paused ? "READY TO RESUME" : "PLAYING FROM MUSIC")
-                                : "READY WHEN YOU ARE"
+                            : root.isPlaying ? "You're in the groove" : "Ready when you are"
                         color: root.muted
                         font.pixelSize: 6
                         elide: Text.ElideRight
+                        maximumLineCount: 1
+                    }
+                }
+
+                Item {
+                    id: dancerStage
+                    width: 98
+                    height: 76
+                    anchors.verticalCenter: parent.verticalCenter
+                    clip: false
+
+                    Loader {
+                        id: dancerLoader
+                        width: 105
+                        height: 100
+                        x: root.dancerOffsetX
+                        y: root.dancerOffsetY
+                        active: root.widgetEnabled && root.isPlaying && root.dancerSource.length > 0
+                        sourceComponent: dancerImageComponent
+                    }
+                }
+            }
+
+            Column {
+                width: parent.width
+                spacing: 4
+
+                Row {
+                    width: parent.width
+                    height: 11
+
+                    Text {
+                        text: root.formatTime(root.playback.time)
+                        color: root.secondary
+                        font.pixelSize: 7
+                        font.family: "Inter"
+                    }
+
+                    Item { width: Math.max(1, parent.width - 76); height: 1 }
+
+                    Text {
+                        text: root.formatTime(root.playback.duration)
+                        color: root.secondary
+                        font.pixelSize: 7
+                        font.family: "Inter"
+                    }
+                }
+
+                Rectangle {
+                    id: progressTrack
+                    width: parent.width
+                    height: 4
+                    radius: 2
+                    color: "#E9DCC9"
+
+                    Rectangle {
+                        width: parent.width * root.progress
+                        height: parent.height
+                        radius: 2
+                        gradient: Gradient {
+                            GradientStop { position: 0.0; color: "#E5B276" }
+                            GradientStop { position: 0.52; color: "#D78F83" }
+                            GradientStop { position: 1.0; color: "#B9A2D4" }
+                        }
+
+                        Behavior on width {
+                            NumberAnimation { duration: 180; easing.type: Easing.OutCubic }
+                        }
+                    }
+
+                    MouseArea {
+                        anchors.fill: parent
+                        cursorShape: root.playback.duration > 0 ? Qt.PointingHandCursor : Qt.ArrowCursor
+                        onClicked: function(mouse) {
+                            if (root.playback.duration > 0)
+                                root.runAction(["seek", String(root.playback.duration * mouse.x / width)])
+                        }
                     }
                 }
             }
 
             Row {
-                width: parent.width
-                height: 13
-                spacing: 5
+                id: controls
+                anchors.horizontalCenter: parent.horizontalCenter
+                height: 31
+                spacing: 7
 
-                Text {
-                    text: "YOUR LIBRARY"
-                    color: root.ink
-                    font.pixelSize: 7
-                    font.weight: Font.DemiBold
-                    font.letterSpacing: 0.8
+                ControlButton {
+                    glyph: "⤨"
+                    selected: root.shuffleEnabled
+                    onClicked: root.shuffleEnabled = !root.shuffleEnabled
                 }
 
-                Item { width: Math.max(1, parent.width - 145); height: 1 }
+                ControlButton {
+                    glyph: "◂"
+                    onClicked: root.advanceTrack(-1)
+                }
 
-                Text {
-                    text: root.tracks.length + (root.tracks.length === 1 ? " TRACK" : " TRACKS")
-                    color: root.muted
-                    font.pixelSize: 6
-                    font.weight: Font.DemiBold
+                ControlButton {
+                    glyph: root.isPlaying ? "Ⅱ" : "▶"
+                    primary: true
+                    enabledControl: root.tracks.length > 0 || String(root.playback.path || "").length > 0
+                    onClicked: {
+                        if (root.playback.running && String(root.playback.path || "").length)
+                            root.runAction(["toggle"])
+                        else if (root.tracks.length)
+                            root.playTrack(root.activeIndex >= 0 ? root.activeIndex : 0)
+                    }
+                }
+
+                ControlButton {
+                    glyph: "▸"
+                    onClicked: root.advanceTrack(1)
+                }
+
+                ControlButton {
+                    glyph: "↻"
+                    selected: root.playback.repeat === true
+                    onClicked: root.runAction(["repeat"])
+                }
+
+                ControlButton {
+                    glyph: root.libraryOpen ? "×" : "≡"
+                    selected: root.libraryOpen
+                    onClicked: root.libraryOpen = !root.libraryOpen
                 }
             }
 
-            Item {
+            Column {
                 width: parent.width
-                height: 87
-                clip: true
+                height: root.libraryOpen ? 104 : 0
+                visible: root.libraryOpen
+                spacing: 4
+
+                Row {
+                    width: parent.width
+                    height: 12
+
+                    Text {
+                        text: "YOUR MUSIC"
+                        color: root.ink
+                        font.pixelSize: 7
+                        font.weight: Font.DemiBold
+                        font.letterSpacing: 0.9
+                    }
+
+                    Item { width: Math.max(1, parent.width - 94); height: 1 }
+
+                    Text {
+                        text: String(root.tracks.length) + (root.tracks.length === 1 ? " SONG" : " SONGS")
+                        color: root.muted
+                        font.pixelSize: 6
+                        font.weight: Font.DemiBold
+                    }
+                }
 
                 ListView {
                     id: trackList
-                    anchors.fill: parent
+                    width: parent.width
+                    height: 88
                     model: root.tracks
                     clip: true
                     spacing: 2
@@ -431,14 +639,14 @@ PanelWindow {
                         required property var modelData
                         required property int index
 
-                        readonly property bool isCurrent: modelData.path === root.playback.path
+                        readonly property bool currentTrack: modelData.path === root.playback.path
 
                         width: trackList.width
-                        height: 27
+                        height: 26
                         radius: 8
-                        color: isCurrent ? "#EAF2FC" : trackHover.containsMouse ? "#F2F6FA" : "transparent"
-                        border.width: isCurrent ? 1 : 0
-                        border.color: "#D8E6F7"
+                        color: currentTrack ? "#F0E2CE" : trackHover.containsMouse ? "#F7EBDD" : "transparent"
+                        border.width: currentTrack ? 1 : 0
+                        border.color: "#E4CEB1"
 
                         Row {
                             anchors.fill: parent
@@ -447,12 +655,10 @@ PanelWindow {
                             spacing: 8
 
                             Text {
-                                width: 15
+                                width: 16
                                 anchors.verticalCenter: parent.verticalCenter
-                                text: parent.parent.isCurrent && !root.playback.paused
-                                    ? "♫"
-                                    : String(index + 1).padStart(2, "0")
-                                color: parent.parent.isCurrent ? root.accent : root.muted
+                                text: parent.parent.currentTrack && root.isPlaying ? "♫" : String(index + 1).padStart(2, "0")
+                                color: parent.parent.currentTrack ? root.accent : root.muted
                                 font.pixelSize: 7
                                 font.weight: Font.DemiBold
                             }
@@ -460,14 +666,14 @@ PanelWindow {
                             Column {
                                 width: parent.width - 48
                                 anchors.verticalCenter: parent.verticalCenter
-                                spacing: 2
+                                spacing: 1
 
                                 Text {
                                     width: parent.width
                                     text: modelData.title
-                                    color: parent.parent.parent.isCurrent ? root.ink : root.secondary
+                                    color: parent.parent.parent.currentTrack ? root.ink : root.secondary
                                     font.pixelSize: 7
-                                    font.weight: parent.parent.parent.isCurrent ? Font.DemiBold : Font.Medium
+                                    font.weight: parent.parent.parent.currentTrack ? Font.DemiBold : Font.Medium
                                     elide: Text.ElideRight
                                 }
 
@@ -488,169 +694,85 @@ PanelWindow {
                             onClicked: root.playTrack(index)
                         }
                     }
-                }
 
-                Column {
-                    anchors.centerIn: parent
-                    visible: root.tracks.length === 0
-                    spacing: 4
+                    Column {
+                        anchors.centerIn: parent
+                        visible: root.tracks.length === 0
+                        spacing: 2
 
-                    Text {
-                        anchors.horizontalCenter: parent.horizontalCenter
-                        text: "♫"
-                        color: "#A8BFE0"
-                        font.pixelSize: 21
-                    }
-
-                    Text {
-                        anchors.horizontalCenter: parent.horizontalCenter
-                        text: "Your music will appear here"
-                        color: root.secondary
-                        font.pixelSize: 8
-                    }
-                }
-            }
-
-            Column {
-                width: parent.width
-                spacing: 4
-
-                Row {
-                    width: parent.width
-                    height: 10
-
-                    Text {
-                        text: root.formatTime(root.playback.time)
-                        color: root.secondary
-                        font.pixelSize: 6
-                        font.family: "Inter"
-                    }
-
-                    Item { width: Math.max(1, parent.width - 90); height: 1 }
-
-                    Text {
-                        text: root.formatTime(root.playback.duration)
-                        color: root.muted
-                        font.pixelSize: 6
-                    }
-                }
-
-                Rectangle {
-                    id: progressTrack
-                    width: parent.width
-                    height: 4
-                    radius: 2
-                    color: "#E6ECF3"
-
-                    Rectangle {
-                        width: parent.width * root.progress
-                        height: parent.height
-                        radius: 2
-                        color: root.accent
-
-                        Behavior on width {
-                            NumberAnimation { duration: 200; easing.type: Easing.OutCubic }
+                        Text {
+                            anchors.horizontalCenter: parent.horizontalCenter
+                            text: root.statusMessage.length ? root.statusMessage : "No songs yet"
+                            color: root.secondary
+                            font.pixelSize: 8
                         }
-                    }
 
-                    MouseArea {
-                        anchors.fill: parent
-                        cursorShape: Qt.PointingHandCursor
-                        onClicked: {
-                            if (root.playback.duration > 0)
-                                root.runAction(["seek", String(root.playback.duration * mouse.x / width)])
+                        Text {
+                            anchors.horizontalCenter: parent.horizontalCenter
+                            text: "Add tracks to ~/Music"
+                            color: root.muted
+                            font.pixelSize: 6
                         }
                     }
                 }
             }
+        }
+    }
 
-            Row {
-                width: parent.width
-                height: 34
-                spacing: 10
+    Component {
+        id: dancerImageComponent
 
-                Item { width: Math.max(1, parent.width / 2 - 57); height: 1 }
+        Image {
+            anchors.fill: parent
+            source: root.dancerSource
+            fillMode: Image.PreserveAspectFit
+            asynchronous: true
+            cache: false
+            smooth: true
+        }
+    }
 
-                Rectangle {
-                    width: 31
-                    height: 31
-                    radius: 11
-                    color: controlHoverPrev.containsMouse ? "#EFF4FA" : "#FFFFFF"
-                    border.width: 1
-                    border.color: root.border
+    component ControlButton: Rectangle {
+        property string glyph: ""
+        property bool primary: false
+        property bool selected: false
+        property bool enabledControl: true
+        signal clicked()
 
-                    Text {
-                        anchors.centerIn: parent
-                        text: "‹"
-                        color: root.ink
-                        font.pixelSize: 25
-                        font.weight: Font.Light
-                        y: -1
-                    }
+        width: primary ? 39 : 29
+        height: 30
+        radius: primary ? 11 : 9
+        color: primary
+            ? "#57483B"
+            : selected ? "#EBD8C0" : buttonHover.containsMouse ? "#F5E7D4" : "#FFFBF4"
+        border.width: primary ? 0 : 1
+        border.color: selected ? "#DCC2A3" : "#E9DCCB"
+        opacity: enabledControl ? 1 : 0.48
 
-                    MouseArea {
-                        id: controlHoverPrev
-                        anchors.fill: parent
-                        cursorShape: Qt.PointingHandCursor
-                        onClicked: root.advanceTrack(-1)
-                    }
-                }
+        Text {
+            anchors.centerIn: parent
+            text: parent.glyph
+            color: parent.primary ? "#FFF9F0" : parent.selected ? "#855D41" : root.ink
+            font.pixelSize: parent.primary ? 13 : 12
+            font.weight: Font.DemiBold
+            y: parent.glyph === "▶" || parent.glyph === "▸" ? -1 : 0
+        }
 
-                Rectangle {
-                    width: 42
-                    height: 34
-                    radius: 12
-                    color: root.accent
-                    opacity: root.actionBusy ? 0.6 : 1
+        MouseArea {
+            id: buttonHover
+            anchors.fill: parent
+            enabled: parent.enabledControl
+            hoverEnabled: true
+            cursorShape: enabled ? Qt.PointingHandCursor : Qt.ArrowCursor
+            onClicked: parent.clicked()
+        }
 
-                    Text {
-                        anchors.centerIn: parent
-                        text: root.playback.running && !root.playback.paused ? "Ⅱ" : "▶"
-                        color: "#FFFFFF"
-                        font.pixelSize: 15
-                        font.weight: Font.DemiBold
-                    }
+        Behavior on color {
+            ColorAnimation { duration: 120 }
+        }
 
-                    MouseArea {
-                        anchors.fill: parent
-                        enabled: !root.actionBusy && root.tracks.length > 0
-                        cursorShape: Qt.PointingHandCursor
-                        onClicked: {
-                            if (root.playback.running && root.playback.path.length)
-                                root.runAction(["toggle"])
-                            else
-                                root.playTrack(root.activeIndex >= 0 ? root.activeIndex : 0)
-                        }
-                    }
-                }
-
-                Rectangle {
-                    width: 31
-                    height: 31
-                    radius: 11
-                    color: controlHoverNext.containsMouse ? "#EFF4FA" : "#FFFFFF"
-                    border.width: 1
-                    border.color: root.border
-
-                    Text {
-                        anchors.centerIn: parent
-                        text: "›"
-                        color: root.ink
-                        font.pixelSize: 25
-                        font.weight: Font.Light
-                        y: -1
-                    }
-
-                    MouseArea {
-                        id: controlHoverNext
-                        anchors.fill: parent
-                        cursorShape: Qt.PointingHandCursor
-                        onClicked: root.advanceTrack(1)
-                    }
-                }
-
-                Item { width: Math.max(1, parent.width / 2 - 57); height: 1 }
-            }
+        Behavior on opacity {
+            NumberAnimation { duration: 120 }
         }
     }
 }
