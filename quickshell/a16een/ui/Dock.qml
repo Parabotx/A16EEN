@@ -16,6 +16,9 @@ PanelWindow {
     signal launcherRequested()
     signal dockVisibilityChanged(bool visible)
 
+    property bool powerMenuOpen: false
+    property string pendingPowerAction: ""
+
     // The quick-actions tray follows the dock's fullscreen edge-reveal state.
 
     readonly property color dockBackground: "#FFFFFF"
@@ -426,7 +429,8 @@ PanelWindow {
         margins {
             left: root.horizontalNavbar ? 0 : 10
             right: 12
-            top: root.navbarPosition === "top" ? 0 : 12
+            // Reserve the small slot immediately before the time capsule.
+            top: root.navbarPosition === "top" ? 40 : (root.horizontalNavbar ? 12 : 52)
             bottom: root.navbarPosition === "bottom" ? 0 : 12
         }
 
@@ -622,6 +626,263 @@ PanelWindow {
                 calendarHideTimer.stop()
                 calendarPopupHideTimer.stop()
             }
+        }
+    }
+
+    // Small power button above the time; the menu opens beside this cluster.
+    PanelWindow {
+        id: navbarPowerPanel
+        screen: root.modelData
+        visible: root.dockVisible
+        color: "transparent"
+        aboveWindows: true
+        exclusionMode: ExclusionMode.Ignore
+        exclusiveZone: 0
+        width: 32
+        height: 32
+
+        anchors {
+            left: root.horizontalNavbar || root.navbarPosition === "left"
+            right: root.navbarPosition === "right"
+            top: root.navbarPosition !== "bottom"
+            bottom: root.navbarPosition === "bottom"
+        }
+
+        margins {
+            left: root.horizontalNavbar ? 20 : 16
+            right: root.horizontalNavbar ? 12 : 18
+            top: root.navbarPosition === "top" ? 0 : 12
+            bottom: root.navbarPosition === "bottom" ? 40 : 12
+        }
+
+        WlrLayershell.layer: WlrLayer.Overlay
+        WlrLayershell.namespace: "a16een-navbar-power"
+
+        Rectangle {
+            anchors.fill: parent
+            radius: 11
+            color: powerButtonMouse.containsMouse || root.powerMenuOpen ? "#F0F2F5" : "#FFFFFF"
+            border.width: 1
+            border.color: root.powerMenuOpen ? "#BFC7D1" : "#D9DEE5"
+
+            Behavior on color {
+                ColorAnimation { duration: 120 }
+            }
+
+            Image {
+                anchors.centerIn: parent
+                width: 17
+                height: 17
+                source: Qt.resolvedUrl("../assets/icons/quick-power.svg")
+                sourceSize.width: 34
+                sourceSize.height: 34
+                fillMode: Image.PreserveAspectFit
+                smooth: true
+            }
+
+            MouseArea {
+                id: powerButtonMouse
+                anchors.fill: parent
+                hoverEnabled: true
+                cursorShape: Qt.PointingHandCursor
+                onClicked: {
+                    root.powerMenuOpen = !root.powerMenuOpen
+                    root.pendingPowerAction = ""
+                }
+            }
+        }
+    }
+
+    PanelWindow {
+        id: navbarPowerMenu
+        screen: root.modelData
+        visible: root.powerMenuOpen && root.dockVisible
+        color: "transparent"
+        aboveWindows: true
+        exclusionMode: ExclusionMode.Ignore
+        exclusiveZone: 0
+        width: 208
+        height: 212
+        focusable: visible
+
+        anchors {
+            left: root.horizontalNavbar || root.navbarPosition === "left"
+            right: root.navbarPosition === "right"
+            top: root.navbarPosition !== "bottom"
+            bottom: root.navbarPosition === "bottom"
+        }
+
+        margins {
+            left: root.horizontalNavbar ? 0 : 56
+            right: root.horizontalNavbar ? 12 : 56
+            top: root.navbarPosition === "top" ? 78 : 12
+            bottom: root.navbarPosition === "bottom" ? 78 : 12
+        }
+
+        WlrLayershell.layer: WlrLayer.Overlay
+        WlrLayershell.namespace: "a16een-power-menu"
+        WlrLayershell.keyboardFocus: visible
+            ? WlrKeyboardFocus.OnDemand
+            : WlrKeyboardFocus.None
+
+        Rectangle {
+            anchors.fill: parent
+            radius: 18
+            color: "#FFFFFF"
+            border.width: 1
+            border.color: "#D9DEE5"
+            opacity: root.powerMenuOpen ? 1 : 0
+            scale: root.powerMenuOpen ? 1 : 0.97
+            transformOrigin: root.navbarPosition === "right" ? Item.TopRight
+                : (root.navbarPosition === "bottom" ? Item.BottomLeft : Item.TopLeft)
+
+            Behavior on opacity {
+                NumberAnimation { duration: 140; easing.type: Easing.OutCubic }
+            }
+            Behavior on scale {
+                NumberAnimation { duration: 160; easing.type: Easing.OutCubic }
+            }
+
+            Rectangle {
+                anchors.fill: parent
+                anchors.margins: -4
+                radius: 22
+                color: "#16000000"
+                z: -1
+            }
+
+            Column {
+                anchors.fill: parent
+                anchors.margins: 11
+                spacing: 5
+
+                Row {
+                    width: parent.width
+                    height: 28
+                    spacing: 6
+
+                    Text {
+                        width: parent.width - 31
+                        text: "POWER"
+                        color: "#818B98"
+                        font.pixelSize: 9
+                        font.weight: Font.DemiBold
+                        font.letterSpacing: 1.3
+                        verticalAlignment: Text.AlignVCenter
+                    }
+
+                    Rectangle {
+                        width: 27
+                        height: 27
+                        radius: 8
+                        color: closePowerHover.containsMouse ? "#EEF1F4" : "transparent"
+                        Text {
+                            anchors.centerIn: parent
+                            text: "×"
+                            color: "#596370"
+                            font.pixelSize: 18
+                        }
+                        MouseArea {
+                            id: closePowerHover
+                            anchors.fill: parent
+                            hoverEnabled: true
+                            cursorShape: Qt.PointingHandCursor
+                            onClicked: {
+                                root.powerMenuOpen = false
+                                root.pendingPowerAction = ""
+                            }
+                        }
+                    }
+                }
+
+                Rectangle { width: parent.width; height: 1; color: "#E9EDF1" }
+
+                Repeater {
+                    model: [
+                        { id: "lock", label: "Lock", icon: "quick-lock.svg" },
+                        { id: "logout", label: "Log out", icon: "quick-logout.svg" },
+                        { id: "restart", label: "Restart", icon: "quick-restart.svg" },
+                        { id: "poweroff", label: "Power off", icon: "quick-power.svg" }
+                    ]
+
+                    delegate: Rectangle {
+                        id: powerActionRow
+                        required property var modelData
+                        width: parent.width
+                        height: 34
+                        radius: 10
+                        color: powerActionMouse.containsMouse
+                            ? (powerActionRow.modelData.id === "poweroff" ? "#FFF0F0" : "#F2F4F7")
+                            : (root.pendingPowerAction === powerActionRow.modelData.id ? "#FFF5E8" : "transparent")
+                        border.width: root.pendingPowerAction === powerActionRow.modelData.id ? 1 : 0
+                        border.color: "#E6B66D"
+
+                        Image {
+                            anchors.left: parent.left
+                            anchors.leftMargin: 10
+                            anchors.verticalCenter: parent.verticalCenter
+                            width: 16
+                            height: 16
+                            source: Qt.resolvedUrl("../assets/icons/" + powerActionRow.modelData.icon)
+                            sourceSize.width: 32
+                            sourceSize.height: 32
+                            fillMode: Image.PreserveAspectFit
+                            smooth: true
+                        }
+
+                        Text {
+                            anchors.left: parent.left
+                            anchors.leftMargin: 34
+                            anchors.right: parent.right
+                            anchors.rightMargin: 8
+                            anchors.verticalCenter: parent.verticalCenter
+                            text: root.pendingPowerAction === powerActionRow.modelData.id
+                                ? "Confirm " + powerActionRow.modelData.label.toLowerCase() + "?"
+                                : powerActionRow.modelData.label
+                            color: root.pendingPowerAction === powerActionRow.modelData.id
+                                ? "#9A5A14"
+                                : (powerActionRow.modelData.id === "poweroff" ? "#B83A42" : "#28313B")
+                            font.pixelSize: 11
+                            font.weight: Font.Medium
+                            elide: Text.ElideRight
+                            verticalAlignment: Text.AlignVCenter
+                        }
+
+                        MouseArea {
+                            id: powerActionMouse
+                            anchors.fill: parent
+                            hoverEnabled: true
+                            cursorShape: Qt.PointingHandCursor
+                            onClicked: root.triggerPowerAction(powerActionRow.modelData.id)
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    function triggerPowerAction(actionId) {
+        const destructive = actionId === "poweroff" || actionId === "restart"
+        if (destructive && root.pendingPowerAction !== actionId) {
+            root.pendingPowerAction = actionId
+            return
+        }
+
+        root.powerMenuOpen = false
+        root.pendingPowerAction = ""
+        switch (actionId) {
+        case "lock":
+            Quickshell.execDetached(["loginctl", "lock-session"])
+            break
+        case "logout":
+            Quickshell.execDetached(["niri", "msg", "action", "quit"])
+            break
+        case "restart":
+            Quickshell.execDetached(["systemctl", "reboot"])
+            break
+        case "poweroff":
+            Quickshell.execDetached(["systemctl", "poweroff"])
+            break
         }
     }
 
