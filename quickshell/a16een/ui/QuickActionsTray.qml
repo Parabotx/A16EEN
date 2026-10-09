@@ -11,6 +11,7 @@ PanelWindow {
 
     signal notesRequested()
     signal tasksRequested()
+    signal tasksHoverRequested()
     signal presetsRequested()
 
     readonly property bool horizontalNavbar:
@@ -30,7 +31,7 @@ PanelWindow {
     exclusiveZone: 0
 
     // Size the shell surface to the three compact buttons, with minimal padding.
-    width: root.horizontalNavbar ? 100 : 44
+    width: root.horizontalNavbar ? 100 : 36
     height: root.horizontalNavbar ? 44 : 96
 
     anchors {
@@ -44,10 +45,12 @@ PanelWindow {
     // just eight pixels above the battery panel. Horizontally, it sits just
     // before the battery capsule, away from the centered workspace navbar.
     margins {
-        left: root.horizontalNavbar ? 12 : 66
-        right: root.horizontalNavbar ? 118 : 68
-        top: root.horizontalNavbar ? 0 : 12
-        bottom: root.horizontalNavbar ? 0 : 72
+        // Vertical trays sit just outside the navbar's visible 44px rail.
+        // Horizontal trays share the battery capsule's 12px edge alignment.
+        left: root.horizontalNavbar ? 12 : 58
+        right: root.horizontalNavbar ? 118 : 58
+        top: 12
+        bottom: root.horizontalNavbar ? 12 : 72
     }
 
     WlrLayershell.layer: WlrLayer.Overlay
@@ -103,6 +106,10 @@ PanelWindow {
                         anchors.fill: parent
                         hoverEnabled: true
                         cursorShape: Qt.PointingHandCursor
+                        onEntered: {
+                            if (actionButton.modelData.id === "tasks")
+                                root.tasksHoverRequested()
+                        }
                         onClicked: root.activateAction(actionButton.modelData.id)
                     }
                 }
@@ -144,6 +151,10 @@ PanelWindow {
                         anchors.fill: parent
                         hoverEnabled: true
                         cursorShape: Qt.PointingHandCursor
+                        onEntered: {
+                            if (actionButton.modelData.id === "tasks")
+                                root.tasksHoverRequested()
+                        }
                         onClicked: root.activateAction(actionButton.modelData.id)
                     }
                 }
