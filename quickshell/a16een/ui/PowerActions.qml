@@ -68,7 +68,7 @@ Rectangle {
             Layout.fillWidth: true
             spacing: 6
 
-            Button { label: "LOCK"; action: ["loginctl", "lock-session"]; confirm: false }
+            Button { label: "LOCK"; action: ["a16een-lock"]; confirm: false }
             Button { label: "LOG OUT"; action: ["niri", "msg", "action", "quit"]; confirm: false }
             Button { label: "REBOOT"; action: ["systemctl", "reboot"]; confirm: true }
             Button { label: "POWER"; action: ["systemctl", "poweroff"]; confirm: true }
