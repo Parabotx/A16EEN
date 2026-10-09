@@ -40,7 +40,7 @@ def find_cover(path):
         if not candidates:
             return ""
         candidates.sort(key=lambda item: (COVER_NAMES.index(item.stem.casefold()), item.name.casefold()))
-        return str(candidates[0])
+        return candidates[0].as_uri()
     except OSError:
         return ""
 
@@ -227,8 +227,9 @@ def read_status():
     path = values.get(1) or ""
     metadata = values.get(7) if isinstance(values.get(7), dict) else {}
     title = metadata.get("title") or values.get(2) or (Path(path).stem if path else "")
-    artist = metadata.get("artist") or metadata.get("album_artist") or ""
-    album = metadata.get("album") or ""
+    artist = (metadata.get("artist") or metadata.get("ARTIST")
+              or metadata.get("album_artist") or metadata.get("ALBUM_ARTIST") or "")
+    album = metadata.get("album") or metadata.get("ALBUM") or ""
     try:
         duration = max(0.0, float(values.get(3) or 0))
     except (TypeError, ValueError):
@@ -312,7 +313,7 @@ def main():
         for index in range(1, 6):
             candidate = DANCER_DIR / f"dancer-{index}.svg"
             if candidate.is_file():
-                dancers.append(str(candidate))
+                dancers.append(candidate.as_uri())
         emit({"path": random.choice(dancers) if dancers else ""})
         return
 
