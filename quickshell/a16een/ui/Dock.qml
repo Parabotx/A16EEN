@@ -389,8 +389,8 @@ PanelWindow {
         }
     }
 
-    // Independent clock capsule, placed at the opposite corner from the battery.
-    // Vertical navbars stack hours/minutes; horizontal navbars use a compact HH:MM.
+    // Compact clock capsule at the corner opposite the battery.
+    // Vertical navbars stack hour/minute digits; horizontal navbars show HH:MM.
     PanelWindow {
         id: navbarClockPanel
         screen: root.modelData
@@ -400,11 +400,9 @@ PanelWindow {
         exclusionMode: ExclusionMode.Ignore
         exclusiveZone: 0
 
-        width: root.horizontalNavbar ? 106 : 64
-        height: root.horizontalNavbar ? 52 : 100
+        width: root.horizontalNavbar ? 84 : 46
+        height: root.horizontalNavbar ? 38 : 74
 
-        // Battery sits bottom on left/right bars and right on top/bottom bars.
-        // Clock goes to the opposite end of that same screen edge.
         anchors {
             left: root.horizontalNavbar || root.navbarPosition === "left"
             right: root.navbarPosition === "right"
@@ -433,8 +431,8 @@ PanelWindow {
 
         Rectangle {
             anchors.fill: parent
-            anchors.margins: 2
-            radius: 15
+            anchors.margins: 1
+            radius: 12
             color: "#FFFFFF"
             border.width: 1
             border.color: "#D9DEE5"
@@ -442,19 +440,9 @@ PanelWindow {
             Rectangle {
                 anchors.fill: parent
                 anchors.margins: -3
-                radius: 18
+                radius: 15
                 color: "#10000000"
                 z: -1
-            }
-
-            // A restrained accent line gives the digits a designed, instrument-like feel.
-            Rectangle {
-                width: root.horizontalNavbar ? 3 : 28
-                height: root.horizontalNavbar ? 24 : 2
-                radius: 2
-                color: "#3B82F6"
-                x: root.horizontalNavbar ? 8 : Math.round((parent.width - width) / 2)
-                y: root.horizontalNavbar ? Math.round((parent.height - height) / 2) : 8
             }
 
             Text {
@@ -463,9 +451,9 @@ PanelWindow {
                 text: Qt.formatTime(navbarClockPanel.clockNow, "HH:mm")
                 color: "#111318"
                 font.family: "Monospace"
-                font.pixelSize: 22
-                font.weight: Font.Bold
-                font.letterSpacing: 1.2
+                font.pixelSize: 18
+                font.weight: Font.DemiBold
+                font.letterSpacing: 0.4
                 horizontalAlignment: Text.AlignHCenter
                 verticalAlignment: Text.AlignVCenter
             }
@@ -473,21 +461,21 @@ PanelWindow {
             Column {
                 visible: !root.horizontalNavbar
                 anchors.centerIn: parent
-                spacing: 1
+                spacing: 0
 
                 Text {
-                    width: 48
+                    width: 36
                     text: Qt.formatTime(navbarClockPanel.clockNow, "HH")
                     color: "#111318"
                     font.family: "Monospace"
-                    font.pixelSize: 21
-                    font.weight: Font.Bold
-                    font.letterSpacing: 1.4
+                    font.pixelSize: 17
+                    font.weight: Font.DemiBold
+                    font.letterSpacing: 0.6
                     horizontalAlignment: Text.AlignHCenter
                 }
 
                 Rectangle {
-                    width: 24
+                    width: 18
                     height: 1
                     radius: 1
                     color: "#D9DEE5"
@@ -495,13 +483,13 @@ PanelWindow {
                 }
 
                 Text {
-                    width: 48
+                    width: 36
                     text: Qt.formatTime(navbarClockPanel.clockNow, "mm")
                     color: "#111318"
                     font.family: "Monospace"
-                    font.pixelSize: 21
-                    font.weight: Font.Bold
-                    font.letterSpacing: 1.4
+                    font.pixelSize: 17
+                    font.weight: Font.DemiBold
+                    font.letterSpacing: 0.6
                     horizontalAlignment: Text.AlignHCenter
                 }
             }
