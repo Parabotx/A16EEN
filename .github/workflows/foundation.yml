@@ -168,8 +168,9 @@ jobs:
           ! grep -Fq 'root.openProcess.running' quickshell/a16een/ui/WorkspacePresetsSection.qml
           grep -Fq 'modelData ? modelData.x : 0' quickshell/a16een/ui/ScreenshotCenter.qml
           grep -Fq 'lucide-sliders-horizontal-dark.svg' quickshell/a16een/ui/Dock.qml
-          grep -Fq 'lucide-wifi-dark.svg' quickshell/a16een/ui/UtilitiesPanel.qml
-          grep -Fq 'lucide-bluetooth-dark.svg' quickshell/a16een/ui/UtilitiesPanel.qml
+          grep -Fq 'tabButton.modelData.icon' quickshell/a16een/ui/UtilitiesPanel.qml
+          grep -Fq '"-refined-dark.svg"' quickshell/a16een/ui/UtilitiesPanel.qml
+          grep -Fq '"-refined.svg"' quickshell/a16een/ui/UtilitiesPanel.qml
           grep -Fq 'width: 28' quickshell/a16een/ui/Dock.qml
           ! grep -Fq 'id: utilityShortcut' quickshell/a16een/ui/Dock.qml
           grep -Fq 'popupWidth: 360' quickshell/a16een/ui/UtilitiesPanel.qml
