@@ -30,18 +30,20 @@ ShellRoot {
     property bool quickPresetsOpen: false
     property bool navbarRevealed: false
     property bool lockLaunchQueued: false
+    property bool lockProcessRunning: false
     property bool lockSessionActive: false
     property string lockErrorMessage: ""
-    readonly property bool secureLockActive: root.lockLaunchQueued || root.lockSessionActive
+    // Only hide A16EEN surfaces after swaylock confirms the session is locked.
+    readonly property bool secureLockActive: root.lockSessionActive
 
     Timer {
         id: lockLaunchTimer
         interval: 220
         repeat: false
         onTriggered: {
-            // Raise the active state first. secureLockActive is an OR of these
-            // flags, so this order prevents a one-frame navbar/desktop flash.
-            root.lockSessionActive = true
+            // Start the locker while the UI remains visible. The locker emits
+            // A16EEN_LOCK_READY only after Niri/Wayland confirms screen security.
+            root.lockProcessRunning = true
             root.lockLaunchQueued = false
         }
     }
@@ -51,7 +53,18 @@ ShellRoot {
     Process {
         id: lockSessionProcess
         command: ["/usr/local/bin/a16een-lock"]
-        running: root.lockSessionActive
+        running: root.lockProcessRunning
+
+        stdout: SplitParser {
+            splitMarker: "\n"
+            onRead: data => {
+                if (String(data).trim() === "A16EEN_LOCK_READY") {
+                    root.lockSessionActive = true
+                    root.lockLaunchQueued = false
+                    console.info("A16EEN screen locker is ready.")
+                }
+            }
+        }
 
         stderr: StdioCollector {
             onStreamFinished: {
@@ -64,18 +77,23 @@ ShellRoot {
         }
 
         onExited: (exitCode, exitStatus) => {
+            const hadReadySignal = root.lockSessionActive
+            root.lockProcessRunning = false
             root.lockSessionActive = false
-            if (exitCode !== 0) {
+            root.lockLaunchQueued = false
+            if (!hadReadySignal || exitCode !== 0) {
                 const reason = root.lockErrorMessage.length
                     ? root.lockErrorMessage
-                    : "Locker exited with status " + exitCode
+                    : (!hadReadySignal
+                        ? "Locker exited before confirming that the screen was secured."
+                        : "Locker exited with status " + exitCode)
                 console.warn("A16EEN lock screen failed:", reason)
             }
         }
     }
 
     function requestLockScreen() {
-        if (root.lockLaunchQueued || root.lockSessionActive)
+        if (root.lockLaunchQueued || root.lockProcessRunning || root.lockSessionActive)
             return
 
         root.lockErrorMessage = ""
@@ -157,6 +175,8 @@ ShellRoot {
         && !root.screenshotCenterOpen
         && !root.quickNotesOpen
         && !root.quickTasksOpen
+        && !root.lockLaunchQueued
+        && !root.secureLockActive
         && !root.secureLockActive
 
     readonly property bool wallpaperAnimationAllowed: {
