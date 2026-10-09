@@ -558,39 +558,39 @@ PanelWindow {
                     anchors.centerIn: parent
                     spacing: 7
 
-                ControlButton {
-                    glyph: "⤨"
-                    selected: root.shuffleEnabled
-                    onClicked: root.shuffleEnabled = !root.shuffleEnabled
-                }
-
-                ControlButton {
-                    glyph: "◂"
-                    onClicked: root.advanceTrack(-1)
-                }
-
-                ControlButton {
-                    glyph: root.isPlaying ? "Ⅱ" : "▶"
-                    primary: true
-                    enabledControl: root.tracks.length > 0 || String(root.playback.path || "").length > 0
-                    onClicked: {
-                        if (root.playback.running && String(root.playback.path || "").length)
-                            root.runAction(["toggle"])
-                        else if (root.tracks.length)
-                            root.playTrack(root.activeIndex >= 0 ? root.activeIndex : 0)
+                    ControlButton {
+                        glyph: "⤨"
+                        selected: root.shuffleEnabled
+                        onClicked: root.shuffleEnabled = !root.shuffleEnabled
                     }
-                }
 
-                ControlButton {
-                    glyph: "▸"
-                    onClicked: root.advanceTrack(1)
-                }
+                    ControlButton {
+                        glyph: "◂"
+                        onClicked: root.advanceTrack(-1)
+                    }
 
-                ControlButton {
-                    glyph: "↻"
-                    selected: root.playback.repeat === true
-                    onClicked: root.runAction(["repeat"])
-                }
+                    ControlButton {
+                        glyph: root.isPlaying ? "Ⅱ" : "▶"
+                        primary: true
+                        enabledControl: root.tracks.length > 0 || String(root.playback.path || "").length > 0
+                        onClicked: {
+                            if (root.playback.running && String(root.playback.path || "").length)
+                                root.runAction(["toggle"])
+                            else if (root.tracks.length)
+                                root.playTrack(root.activeIndex >= 0 ? root.activeIndex : 0)
+                        }
+                    }
+
+                    ControlButton {
+                        glyph: "▸"
+                        onClicked: root.advanceTrack(1)
+                    }
+
+                    ControlButton {
+                        glyph: "↻"
+                        selected: root.playback.repeat === true
+                        onClicked: root.runAction(["repeat"])
+                    }
 
                     ControlButton {
                         glyph: root.libraryOpen ? "×" : "≡"
