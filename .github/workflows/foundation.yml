@@ -157,6 +157,8 @@ jobs:
           ! grep -Fq 'GridLayout.column:' quickshell/a16een/ui/Dock.qml
           grep -Fq 'CONFIG_SHELL_DIR="$QS_DIR"' scripts/install.sh
           grep -Fq 'Requested a Quickshell restart' scripts/install.sh
+          grep -Fq 'grep -Fxq -- "$config_dir"' scripts/a16een
+          ! grep -Fq '*"qs -c $config_dir"*' scripts/a16een
           grep -Fq 'grep -Fxq -- "$CONFIG_SHELL_DIR"' scripts/install.sh
           grep -Fq 'COMMAND_NAME' scripts/install.sh
           grep -Fq 'UtilitiesPanel {' quickshell/a16een/shell.qml
