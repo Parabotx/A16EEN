@@ -127,6 +127,7 @@ jobs:
           test -f quickshell/a16een/ui/WidgetCatalog.js
           test -f quickshell/a16een/ui/MusicWidget.qml
           test -f quickshell/a16een/ui/MusicDancer.qml
+          test -f quickshell/a16een/ui/MusicDancerLottie.qml
           test -f quickshell/a16een/assets/music-dancers/README.md
           test -f scripts/a16een-music
           grep -Fq 'id: "music"' quickshell/a16een/ui/WidgetCatalog.js
@@ -137,11 +138,12 @@ jobs:
           grep -Fq 'property bool musicEnabled: false' quickshell/a16een/ui/WidgetSection.qml
           grep -Fq 'A16EEN MUSIC' quickshell/a16een/ui/MusicWidget.qml
           ! grep -Fq 'import Qt.labs.lottieqt' quickshell/a16een/ui/MusicWidget.qml
-          grep -Fq 'import Qt.labs.lottieqt' quickshell/a16een/ui/MusicDancer.qml
-          grep -Fq 'LottieAnimation {' quickshell/a16een/ui/MusicDancer.qml
-          grep -Fq 'source: root.animationSource' quickshell/a16een/ui/MusicDancer.qml
-          grep -Fq 'status === LottieAnimation.Ready' quickshell/a16een/ui/MusicDancer.qml
-          grep -Fq 'start()' quickshell/a16een/ui/MusicDancer.qml
+          ! grep -Fq 'import Qt.labs.lottieqt' quickshell/a16een/ui/MusicDancer.qml
+          grep -Fq 'import Qt.labs.lottieqt' quickshell/a16een/ui/MusicDancerLottie.qml
+          grep -Fq 'LottieAnimation {' quickshell/a16een/ui/MusicDancerLottie.qml
+          grep -Fq 'source: root.animationSource' quickshell/a16een/ui/MusicDancerLottie.qml
+          grep -Fq 'status === LottieAnimation.Ready' quickshell/a16een/ui/MusicDancerLottie.qml
+          grep -Fq 'start()' quickshell/a16een/ui/MusicDancerLottie.qml
           grep -Fq 'iconName: "music-skip-back"' quickshell/a16een/ui/MusicWidget.qml
           grep -Fq 'iconName: "music-skip-forward"' quickshell/a16een/ui/MusicWidget.qml
           ! grep -Fq 'glyph:' quickshell/a16een/ui/MusicWidget.qml
