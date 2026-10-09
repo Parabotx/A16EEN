@@ -1,0 +1,120 @@
+/* A16EEN lock screen — neutral glass surfaces, gold details, wallpaper-first. */
+window {
+    background-color: #090C11;
+    color: #F5F6F8;
+}
+
+#window-box {
+    margin: 0;
+    padding: 30px;
+    min-width: 440px;
+    background-color: rgba(11, 15, 22, 0.78);
+    border: 1px solid rgba(255, 255, 255, 0.16);
+    border-radius: 26px;
+}
+
+#info-box {
+    margin-bottom: 4px;
+}
+
+#time-box {
+    margin-bottom: 6px;
+}
+
+#clock-label {
+    color: #FFFFFF;
+    font-family: Inter, sans-serif;
+    font-size: 58pt;
+    font-weight: 600;
+}
+
+#date-label {
+    color: rgba(246, 248, 251, 0.78);
+    font-family: Inter, sans-serif;
+    font-size: 13pt;
+}
+
+#lock-header {
+    margin-top: 4px;
+    margin-bottom: 8px;
+}
+
+#lock-icon {
+    color: #D7B56D;
+}
+
+#lock-brand {
+    color: #F8F9FB;
+    font-family: Inter, sans-serif;
+    font-size: 12pt;
+    font-weight: 700;
+}
+
+#lock-hint {
+    color: rgba(241, 244, 248, 0.64);
+    font-family: Inter, sans-serif;
+    font-size: 10pt;
+}
+
+#input-label {
+    color: rgba(246, 248, 251, 0.84);
+    font-family: Inter, sans-serif;
+    font-size: 10pt;
+    padding-right: 8px;
+}
+
+#input-field {
+    min-width: 320px;
+    min-height: 48px;
+    padding: 8px 14px;
+    color: #FFFFFF;
+    background-color: rgba(255, 255, 255, 0.09);
+    border: 1px solid rgba(255, 255, 255, 0.20);
+    border-radius: 12px;
+    font-family: Inter, sans-serif;
+    font-size: 12pt;
+    box-shadow: none;
+}
+
+#input-field:focus {
+    background-color: rgba(255, 255, 255, 0.12);
+    border: 1px solid #D7B56D;
+    box-shadow: none;
+}
+
+#unlock-button {
+    min-height: 40px;
+    padding: 7px 18px;
+    color: #141820;
+    background-color: #D7B56D;
+    background-image: none;
+    border: 1px solid #D7B56D;
+    border-radius: 11px;
+    font-family: Inter, sans-serif;
+    font-size: 10pt;
+    font-weight: 700;
+    box-shadow: none;
+}
+
+#unlock-button:hover {
+    background-color: #E5C982;
+    border-color: #E5C982;
+}
+
+#unlock-button:active {
+    background-color: #C4A258;
+    border-color: #C4A258;
+}
+
+#error-label,
+#warning-label {
+    color: #FFB4AE;
+    font-family: Inter, sans-serif;
+    font-size: 10pt;
+}
+
+#message-box {
+    color: #F5F6F8;
+    font-family: Inter, sans-serif;
+    font-size: 10pt;
+}
