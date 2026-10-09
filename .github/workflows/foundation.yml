@@ -171,6 +171,13 @@ jobs:
           grep -Fq 'lucide-sliders-horizontal-dark.svg' quickshell/a16een/ui/Dock.qml
           grep -Fq 'lucide-wifi-dark.svg' quickshell/a16een/ui/UtilitiesPanel.qml
           grep -Fq 'lucide-bluetooth-dark.svg' quickshell/a16een/ui/UtilitiesPanel.qml
+          grep -Fq 'width: 28' quickshell/a16een/ui/Dock.qml
+          ! grep -Fq 'id: utilityShortcut' quickshell/a16een/ui/Dock.qml
+          grep -Fq 'popupWidth: 420' quickshell/a16een/ui/UtilitiesPanel.qml
+          grep -Fq 'Qt.RightToLeft' quickshell/a16een/ui/UtilitiesPanel.qml
+          ! grep -Fq '"LIVE STATUS"' quickshell/a16een/ui/UtilitiesPanel.qml
+          ! grep -Fq '"CONNECTIONS"' quickshell/a16een/ui/UtilitiesPanel.qml
+          grep -Fq 'height: root.embedded ? 60 : 100' quickshell/a16een/ui/ControlDetailSection.qml
           test "$(grep -c 'onActiveChanged:' quickshell/a16een/ui/ControlDetailSection.qml)" -eq 1
           grep -Fq 'required property int index' quickshell/a16een/ui/Launcher.qml
           grep -Fq 'appGrid.currentIndex = appTile.index' quickshell/a16een/ui/Launcher.qml
