@@ -20,6 +20,7 @@ Item {
     property string wifiName: "Not connected"
     property string wifiDevice: "—"
     property var wifiNetworks: []
+    property bool wifiRefreshing: false
     property string wifiSelectedSsid: ""
     property string wifiSelectedSecurity: ""
     property string wifiPassword: ""
@@ -112,6 +113,7 @@ Item {
     function refreshVisibleMode() {
         root.loadDetails()
         if (root.mode === "wifi") {
+            root.wifiRefreshing = true
             root.run(["wifi", "rescan"])
             wifiScanRefresh.restart()
         }
@@ -327,6 +329,10 @@ Item {
         stdout: StdioCollector {
             onStreamFinished: root.parseWifiNetworks(text)
         }
+        onRunningChanged: {
+            if (!running)
+                root.wifiRefreshing = false
+        }
     }
 
     Process {
@@ -531,11 +537,32 @@ Item {
                     color: refreshWifiMouse.containsMouse ? root.tileHover : root.tile
                     border.width: 1
                     border.color: root.border
-                    Text {
+                    Image {
+                        id: wifiRefreshIcon
+                        visible: root.embedded
                         anchors.centerIn: parent
-                        text: root.embedded ? "↻" : "REFRESH"
+                        width: 14
+                        height: 14
+                        source: Qt.resolvedUrl("../assets/icons/lucide-refresh-cw-refined-dark.svg")
+                        sourceSize.width: 28
+                        sourceSize.height: 28
+                        smooth: true
+
+                        RotationAnimation on rotation {
+                            from: 0
+                            to: 360
+                            duration: 700
+                            loops: Animation.Infinite
+                            running: root.embedded && root.wifiRefreshing
+                        }
+                    }
+
+                    Text {
+                        visible: !root.embedded
+                        anchors.centerIn: parent
+                        text: "REFRESH"
                         color: root.textSecondary
-                        font.pixelSize: root.embedded ? 12 : 7
+                        font.pixelSize: 7
                         font.weight: Font.DemiBold
                         font.letterSpacing: 0.8
                     }
@@ -545,6 +572,7 @@ Item {
                         hoverEnabled: true
                         cursorShape: Qt.PointingHandCursor
                         onClicked: {
+                            root.wifiRefreshing = true
                             root.run(["wifi", "rescan"])
                             wifiScanRefresh.restart()
                         }
@@ -775,11 +803,32 @@ Item {
                     color: scanMouse.containsMouse ? root.tileHover : root.tile
                     border.width: 1
                     border.color: root.border
-                    Text {
+                    Image {
+                        id: bluetoothRefreshIcon
+                        visible: root.embedded
                         anchors.centerIn: parent
-                        text: root.embedded ? (root.bluetoothScanning ? "…" : "↻") : (root.bluetoothScanning ? "SCANNING" : "SCAN")
+                        width: 14
+                        height: 14
+                        source: Qt.resolvedUrl("../assets/icons/lucide-refresh-cw-refined-dark.svg")
+                        sourceSize.width: 28
+                        sourceSize.height: 28
+                        smooth: true
+
+                        RotationAnimation on rotation {
+                            from: 0
+                            to: 360
+                            duration: 700
+                            loops: Animation.Infinite
+                            running: root.embedded && root.bluetoothScanning
+                        }
+                    }
+
+                    Text {
+                        visible: !root.embedded
+                        anchors.centerIn: parent
+                        text: root.bluetoothScanning ? "SCANNING" : "SCAN"
                         color: root.textSecondary
-                        font.pixelSize: root.embedded ? 12 : 7
+                        font.pixelSize: 7
                         font.weight: Font.DemiBold
                     }
                     MouseArea {
