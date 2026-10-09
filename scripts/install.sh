@@ -44,6 +44,7 @@ xdg-utils
 qt6-imageformats
 qt6-svg
 qt6-multimedia
+qt6-lottie
 hicolor-icon-theme
 adwaita-icon-theme
 power-profiles-daemon
@@ -285,20 +286,21 @@ else
     trap - EXIT INT TERM
 fi
 
-# Sync optional animated music dancers on every update, including when the
-# source commit is unchanged and the user has just added their five local SVGs.
-# Only the named assets are touched; other files in the folder are preserved.
-echo "==> Syncing optional music dancer assets"
+# Deploy the optional animated Lottie dancers that are committed to GitHub.
+# This runs even when the code revision is unchanged so newly added assets ship
+# on the next update. Remove obsolete SVG variants from older revisions.
+echo "==> Syncing bundled Lottie music dancers"
 MUSIC_DANCER_SOURCE_DIR="$ROOT_DIR/quickshell/a16een/assets/music-dancers"
 MUSIC_DANCER_TARGET_DIR="$QS_DIR/assets/music-dancers"
 mkdir -p "$MUSIC_DANCER_TARGET_DIR"
 for dancer_index in 1 2 3 4 5; do
-    dancer_name="dancer-$dancer_index.svg"
+    dancer_name="dancer-$dancer_index.json"
     if [ -f "$MUSIC_DANCER_SOURCE_DIR/$dancer_name" ]; then
         install -m644 "$MUSIC_DANCER_SOURCE_DIR/$dancer_name" "$MUSIC_DANCER_TARGET_DIR/$dancer_name"
     else
         rm -f "$MUSIC_DANCER_TARGET_DIR/$dancer_name"
     fi
+    rm -f "$MUSIC_DANCER_TARGET_DIR/dancer-$dancer_index.svg"
 done
 
 # Keep the lock-screen theme deployed even when the desktop config itself is
