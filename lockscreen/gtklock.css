@@ -1,30 +1,40 @@
-/* A16EEN lock screen — neutral glass surfaces, gold details, wallpaper-first. */
+/* A16EEN lock screen — live clock, quiet glass card, visible security badge. */
+
 window {
     background-color: #090C11;
     color: #F5F6F8;
 }
 
+/* Full-output transparent GTKOverlay; wallpaper remains visible behind it. */
 #window-box {
+    background-color: transparent;
+    border: none;
+    border-radius: 0;
+    padding: 0;
+}
+
+/* Centered password card. The shell wallpaper is kept crisp behind the glass. */
+#lock-card {
     margin: 0;
-    padding: 30px;
+    padding: 34px 38px;
     min-width: 440px;
-    background-color: rgba(11, 15, 22, 0.78);
-    border: 1px solid rgba(255, 255, 255, 0.16);
+    background-color: rgba(11, 15, 22, 0.80);
+    border: 1px solid rgba(255, 255, 255, 0.18);
     border-radius: 26px;
 }
 
 #info-box {
-    margin-bottom: 4px;
+    margin-bottom: 2px;
 }
 
 #time-box {
-    margin-bottom: 6px;
+    margin-bottom: 7px;
 }
 
 #clock-label {
     color: #FFFFFF;
     font-family: Inter, sans-serif;
-    font-size: 58pt;
+    font-size: 62pt;
     font-weight: 600;
 }
 
@@ -35,25 +45,42 @@ window {
 }
 
 #lock-header {
-    margin-top: 4px;
-    margin-bottom: 8px;
+    margin-top: 2px;
+    margin-bottom: 7px;
+}
+
+#lock-brand {
+    color: #F8F9FB;
+    font-family: Inter, sans-serif;
+    font-size: 11pt;
+    font-weight: 700;
+    letter-spacing: 3px;
+}
+
+#lock-hint {
+    color: rgba(241, 244, 248, 0.68);
+    font-family: Inter, sans-serif;
+    font-size: 10pt;
+}
+
+/* This floating status chip lives in the actual top-right screen corner. */
+#security-row {
+    padding: 10px 14px;
+    background-color: rgba(11, 15, 22, 0.78);
+    border: 1px solid rgba(255, 255, 255, 0.20);
+    border-radius: 22px;
 }
 
 #lock-icon {
     color: #D7B56D;
 }
 
-#lock-brand {
-    color: #F8F9FB;
+#lock-status-label {
+    color: #F5F2EA;
     font-family: Inter, sans-serif;
-    font-size: 12pt;
+    font-size: 9pt;
     font-weight: 700;
-}
-
-#lock-hint {
-    color: rgba(241, 244, 248, 0.64);
-    font-family: Inter, sans-serif;
-    font-size: 10pt;
+    letter-spacing: 1.2px;
 }
 
 #input-label {
