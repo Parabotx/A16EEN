@@ -455,9 +455,9 @@ PanelWindow {
 
                             Column {
                                 anchors.left: completeButton.right
-                                anchors.right: deleteButton.left
+                                anchors.right: parent.right
                                 anchors.leftMargin: 7
-                                anchors.rightMargin: 5
+                                anchors.rightMargin: 9
                                 anchors.verticalCenter: parent.verticalCenter
                                 spacing: 4
 
