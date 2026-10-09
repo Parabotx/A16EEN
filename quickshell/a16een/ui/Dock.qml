@@ -400,8 +400,10 @@ PanelWindow {
         exclusionMode: ExclusionMode.Ignore
         exclusiveZone: 0
 
-        width: root.horizontalNavbar ? 84 : 46
-        height: root.horizontalNavbar ? 38 : 74
+        // Keep the clock visually consistent with the navbar: a slim capsule
+        // whose vertical width matches the workspace rail.
+        width: root.horizontalNavbar ? 76 : 44
+        height: root.horizontalNavbar ? 36 : 68
 
         anchors {
             left: root.horizontalNavbar || root.navbarPosition === "left"
@@ -422,6 +424,16 @@ PanelWindow {
 
         property date clockNow: new Date()
         property bool calendarOpen: false
+        property bool calendarWindowVisible: false
+
+        onCalendarOpenChanged: {
+            if (calendarOpen) {
+                calendarPopupHideTimer.stop()
+                calendarWindowVisible = true
+            } else {
+                calendarPopupHideTimer.restart()
+            }
+        }
 
         readonly property var ethiopianMonths: [
             "መስከረም", "ጥቅምት", "ሕዳር", "ታህሳስ",
@@ -483,35 +495,6 @@ PanelWindow {
             }
         }
 
-        function ethiopicSmallNumber(number) {
-            const tens = ["", "፲", "፳", "፴", "፵", "፶", "፷", "፸", "፹", "፺"]
-            const ones = ["", "፩", "፪", "፫", "፬", "፭", "፮", "፯", "፰", "፱"]
-            const n = Math.max(0, Math.floor(number))
-            return tens[Math.floor(n / 10)] + ones[n % 10]
-        }
-
-        function toEthiopicNumerals(number) {
-            let n = Math.max(0, Math.floor(number))
-            if (n === 0)
-                return "0"
-
-            let result = ""
-            const tenThousands = Math.floor(n / 10000)
-            if (tenThousands > 0) {
-                result += (tenThousands === 1 ? "" : navbarClockPanel.ethiopicSmallNumber(tenThousands)) + "፼"
-                n %= 10000
-            }
-
-            const hundreds = Math.floor(n / 100)
-            if (hundreds > 0) {
-                result += (hundreds === 1 ? "" : navbarClockPanel.ethiopicSmallNumber(hundreds)) + "፻"
-                n %= 100
-            }
-
-            result += navbarClockPanel.ethiopicSmallNumber(n)
-            return result
-        }
-
         readonly property var ethiopianToday: toEthiopianDate(clockNow)
 
         readonly property var calendarCells: {
@@ -544,7 +527,7 @@ PanelWindow {
         Rectangle {
             anchors.fill: parent
             anchors.margins: 1
-            radius: 12
+            radius: root.horizontalNavbar ? 18 : 16
             color: "#FFFFFF"
             border.width: 1
             border.color: "#D9DEE5"
@@ -552,7 +535,7 @@ PanelWindow {
             Rectangle {
                 anchors.fill: parent
                 anchors.margins: -3
-                radius: 15
+                radius: root.horizontalNavbar ? 21 : 19
                 color: "#10000000"
                 z: -1
             }
@@ -563,9 +546,9 @@ PanelWindow {
                 text: Qt.formatTime(navbarClockPanel.clockNow, "HH:mm")
                 color: "#111318"
                 font.family: "Monospace"
-                font.pixelSize: 18
+                font.pixelSize: 15
                 font.weight: Font.DemiBold
-                font.letterSpacing: 0.4
+                font.letterSpacing: 0.25
                 horizontalAlignment: Text.AlignHCenter
                 verticalAlignment: Text.AlignVCenter
             }
@@ -573,21 +556,21 @@ PanelWindow {
             Column {
                 visible: !root.horizontalNavbar
                 anchors.centerIn: parent
-                spacing: 0
+                spacing: 1
 
                 Text {
-                    width: 36
+                    width: 40
                     text: Qt.formatTime(navbarClockPanel.clockNow, "HH")
                     color: "#111318"
                     font.family: "Monospace"
-                    font.pixelSize: 17
+                    font.pixelSize: 15
                     font.weight: Font.DemiBold
-                    font.letterSpacing: 0.6
+                    font.letterSpacing: 0.35
                     horizontalAlignment: Text.AlignHCenter
                 }
 
                 Rectangle {
-                    width: 18
+                    width: 16
                     height: 1
                     radius: 1
                     color: "#D9DEE5"
@@ -595,13 +578,13 @@ PanelWindow {
                 }
 
                 Text {
-                    width: 36
+                    width: 40
                     text: Qt.formatTime(navbarClockPanel.clockNow, "mm")
                     color: "#111318"
                     font.family: "Monospace"
-                    font.pixelSize: 17
+                    font.pixelSize: 15
                     font.weight: Font.DemiBold
-                    font.letterSpacing: 0.6
+                    font.letterSpacing: 0.35
                     horizontalAlignment: Text.AlignHCenter
                 }
             }
@@ -624,7 +607,9 @@ PanelWindow {
         onVisibleChanged: {
             if (!visible) {
                 navbarClockPanel.calendarOpen = false
+                navbarClockPanel.calendarWindowVisible = false
                 calendarHideTimer.stop()
+                calendarPopupHideTimer.stop()
             }
         }
     }
@@ -641,10 +626,21 @@ PanelWindow {
         }
     }
 
+    // Keep the layer-shell surface alive while its contents fade out.
+    Timer {
+        id: calendarPopupHideTimer
+        interval: 190
+        repeat: false
+        onTriggered: {
+            if (!navbarClockPanel.calendarOpen)
+                navbarClockPanel.calendarWindowVisible = false
+        }
+    }
+
     PanelWindow {
         id: calendarPopup
         screen: root.modelData
-        visible: navbarClockPanel.calendarOpen && root.dockVisible
+        visible: navbarClockPanel.calendarWindowVisible && root.dockVisible
         color: "transparent"
         aboveWindows: true
         exclusionMode: ExclusionMode.Ignore
@@ -659,11 +655,18 @@ PanelWindow {
             bottom: root.navbarPosition === "bottom"
         }
 
+        // For a vertical navbar, place the calendar outside the rail and beside
+        // the clock, rather than over the navbar. Horizontal docks keep the
+        // popup below/above the clock to avoid covering workspace icons.
         margins {
-            left: 12
-            right: 12
-            top: root.navbarPosition === "bottom" ? 12 : (root.horizontalNavbar ? 56 : 92)
-            bottom: root.navbarPosition === "bottom" ? 56 : 12
+            left: !root.horizontalNavbar && root.navbarPosition === "left"
+                ? root.surfaceWidth + 12 : 12
+            right: !root.horizontalNavbar && root.navbarPosition === "right"
+                ? root.surfaceWidth + 12 : 12
+            top: root.navbarPosition === "bottom"
+                ? 12 : (root.horizontalNavbar ? 56 : 12)
+            bottom: root.navbarPosition === "bottom"
+                ? 56 : 12
         }
 
         WlrLayershell.layer: WlrLayer.Overlay
@@ -675,6 +678,25 @@ PanelWindow {
             color: "#FFFFFF"
             border.width: 1
             border.color: "#D9DEE5"
+            opacity: navbarClockPanel.calendarOpen ? 1 : 0
+            scale: navbarClockPanel.calendarOpen ? 1 : 0.95
+            transformOrigin: root.navbarPosition === "right"
+                ? Item.TopRight
+                : (root.navbarPosition === "bottom" ? Item.BottomLeft : Item.TopLeft)
+
+            Behavior on opacity {
+                NumberAnimation {
+                    duration: 165
+                    easing.type: Easing.OutCubic
+                }
+            }
+
+            Behavior on scale {
+                NumberAnimation {
+                    duration: 190
+                    easing.type: Easing.OutCubic
+                }
+            }
 
             Rectangle {
                 anchors.fill: parent
@@ -703,7 +725,7 @@ PanelWindow {
                 Text {
                     width: parent.width
                     text: navbarClockPanel.ethiopianMonths[navbarClockPanel.ethiopianToday.month - 1]
-                        + " " + navbarClockPanel.toEthiopicNumerals(navbarClockPanel.ethiopianToday.year)
+                        + " " + String(navbarClockPanel.ethiopianToday.year)
                         + " ዓ.ም."
                     color: "#111318"
                     font.family: "Noto Sans Ethiopic"
