@@ -50,7 +50,7 @@ PanelWindow {
         // Horizontally it sits directly beside the battery capsule.
         // Keep the holder flush against the active screen side just like
         // the workspace rail. Horizontal layouts keep the small battery gap.
-        left: root.horizontalNavbar ? 0 : 0
+        left: 0
         right: root.horizontalNavbar ? 102 : 0
         top: 0
         bottom: root.horizontalNavbar ? 0 : 72
