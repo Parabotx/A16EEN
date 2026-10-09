@@ -802,7 +802,7 @@ PanelWindow {
                         anchors.centerIn: parent
                         width: 15
                         height: 15
-                        source: Qt.resolvedUrl("../assets/icons/lucide-sliders-horizontal.svg")
+                        source: Qt.resolvedUrl("../assets/icons/lucide-sliders-horizontal-dark.svg")
                         sourceSize.width: 30
                         sourceSize.height: 30
                         fillMode: Image.PreserveAspectFit
@@ -820,8 +820,8 @@ PanelWindow {
 
                 Repeater {
                     model: root.utilitiesExpanded
-                        ? [{ mode: "wifi", icon: "lucide-wifi.svg" },
-                           { mode: "bluetooth", icon: "lucide-bluetooth.svg" }]
+                        ? [{ mode: "wifi", icon: "lucide-wifi-dark.svg" },
+                           { mode: "bluetooth", icon: "lucide-bluetooth-dark.svg" }]
                         : []
 
                     delegate: Rectangle {
