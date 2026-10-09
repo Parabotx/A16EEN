@@ -110,7 +110,9 @@ if command -v gtklock >/dev/null 2>&1; then
         GTKLOCK_ARGS+=(--layout "$LOCK_LAYOUT")
     fi
 
-    GTKLOCK_HELP="$(gtklock --help 2>&1 || true)"
+    # GTKLock 4.x keeps its configurable options (including --lock-command)
+    # under --help-config; plain --help only lists the generic GTK options.
+    GTKLOCK_HELP="$(gtklock --help-config 2>&1 || true)"
     if grep -q -- '--lock-command' <<<"$GTKLOCK_HELP"; then
         GTKLOCK_READY_FILE="$LOCK_DIR/gtklock-ready"
         GTKLOCK_ARGS+=(--lock-command "touch $GTKLOCK_READY_FILE")
