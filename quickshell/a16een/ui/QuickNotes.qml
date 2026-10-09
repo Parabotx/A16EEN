@@ -285,7 +285,7 @@ PanelWindow {
                         font.letterSpacing: 0.8
                     }
 
-                    Item { width: Math.max(1, parent.width - 230); height: 1 }
+                    Item { width: Math.max(1, parent.width - 200); height: 1 }
 
                     Text {
                         text: root.noteText.length + " characters"
