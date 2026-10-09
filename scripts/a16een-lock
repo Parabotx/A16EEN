@@ -104,7 +104,7 @@ if command -v gtklock >/dev/null 2>&1; then
         GTKLOCK_READY_FILE="$LOCK_DIR/gtklock-ready"
         GTKLOCK_ARGS+=(--lock-command "touch $GTKLOCK_READY_FILE")
         log "Starting GTKLock with the A16EEN password-field theme."
-        gtklock "${GTKLOCK_ARGS[@]}" &
+        env "XCURSOR_THEME=${XCURSOR_THEME:-Adwaita}" "XCURSOR_SIZE=${XCURSOR_SIZE:-24}" gtklock "${GTKLOCK_ARGS[@]}" &
         GTKLOCK_PID=$!
         GTKLOCK_READY_SENT=0
 
@@ -139,7 +139,14 @@ if command -v gtklock >/dev/null 2>&1; then
     fi
 fi
 
-# Secure fallback for machines where GTKLock is unavailable or fails. Keep the
+# Secure fallback for machines where GTKLock is unavailable or fails. The
+# clock and screen-corner status badge require GTKLock; swaylock remains the
+# safe fallback on systems where GTKLock is not installed.
+if ! command -v gtklock >/dev/null 2>&1; then
+    log "GTKLock is not installed; using swaylock fallback (custom clock and corner badge require GTKLock)."
+fi
+
+# Keep the
 # pointer visible and retain the same wallpaper and restrained gold/charcoal
 # colors rather than hiding the cursor or reverting to a flat blue-gray look.
 if ! command -v swaylock >/dev/null 2>&1; then
