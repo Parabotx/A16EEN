@@ -88,7 +88,6 @@ ShellRoot {
         root.screenshotCenterOpen = false
         root.screenshotSettingsOpen = false
         root.screenshotPreviewOpen = false
-        root.tasksWidgetEnabled = false
         root.navbarRevealed = false
         root.lockLaunchQueued = true
         lockLaunchTimer.restart()
@@ -1002,12 +1001,12 @@ ShellRoot {
             modelData: modelData
             requestedLevel: root.controlIndicatorLevel
             requestRevision: root.controlIndicatorRevision
-            active: modelData === root.primaryScreen
+            active: modelData === root.primaryScreen && !root.secureLockActive
         }
     }
 
     NotificationToast {
         modelData: root.primaryScreen
-        notification: root.latestNotification
+        notification: root.secureLockActive ? null : root.latestNotification
     }
 }
