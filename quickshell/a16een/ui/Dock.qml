@@ -389,6 +389,125 @@ PanelWindow {
         }
     }
 
+    // Independent clock capsule, placed at the opposite corner from the battery.
+    // Vertical navbars stack hours/minutes; horizontal navbars use a compact HH:MM.
+    PanelWindow {
+        id: navbarClockPanel
+        screen: root.modelData
+        visible: root.dockVisible
+        color: "transparent"
+        aboveWindows: true
+        exclusionMode: ExclusionMode.Ignore
+        exclusiveZone: 0
+
+        width: root.horizontalNavbar ? 106 : 64
+        height: root.horizontalNavbar ? 52 : 100
+
+        // Battery sits bottom on left/right bars and right on top/bottom bars.
+        // Clock goes to the opposite end of that same screen edge.
+        anchors {
+            left: root.horizontalNavbar || root.navbarPosition === "left"
+            right: root.navbarPosition === "right"
+            top: root.navbarPosition !== "bottom"
+            bottom: root.navbarPosition === "bottom"
+        }
+
+        margins {
+            left: 12
+            right: 12
+            top: 12
+            bottom: 12
+        }
+
+        WlrLayershell.layer: WlrLayer.Overlay
+        WlrLayershell.namespace: "a16een-clock"
+
+        property date clockNow: new Date()
+
+        Timer {
+            interval: 1000
+            repeat: true
+            running: navbarClockPanel.visible
+            onTriggered: navbarClockPanel.clockNow = new Date()
+        }
+
+        Rectangle {
+            anchors.fill: parent
+            anchors.margins: 2
+            radius: 15
+            color: "#FFFFFF"
+            border.width: 1
+            border.color: "#D9DEE5"
+
+            Rectangle {
+                anchors.fill: parent
+                anchors.margins: -3
+                radius: 18
+                color: "#10000000"
+                z: -1
+            }
+
+            // A restrained accent line gives the digits a designed, instrument-like feel.
+            Rectangle {
+                width: root.horizontalNavbar ? 3 : 28
+                height: root.horizontalNavbar ? 24 : 2
+                radius: 2
+                color: "#3B82F6"
+                x: root.horizontalNavbar ? 8 : Math.round((parent.width - width) / 2)
+                y: root.horizontalNavbar ? Math.round((parent.height - height) / 2) : 8
+            }
+
+            Text {
+                visible: root.horizontalNavbar
+                anchors.centerIn: parent
+                text: Qt.formatTime(navbarClockPanel.clockNow, "HH:mm")
+                color: "#111318"
+                font.family: "Monospace"
+                font.pixelSize: 22
+                font.weight: Font.Bold
+                font.letterSpacing: 1.2
+                horizontalAlignment: Text.AlignHCenter
+                verticalAlignment: Text.AlignVCenter
+            }
+
+            Column {
+                visible: !root.horizontalNavbar
+                anchors.centerIn: parent
+                spacing: 1
+
+                Text {
+                    width: 48
+                    text: Qt.formatTime(navbarClockPanel.clockNow, "HH")
+                    color: "#111318"
+                    font.family: "Monospace"
+                    font.pixelSize: 21
+                    font.weight: Font.Bold
+                    font.letterSpacing: 1.4
+                    horizontalAlignment: Text.AlignHCenter
+                }
+
+                Rectangle {
+                    width: 24
+                    height: 1
+                    radius: 1
+                    color: "#D9DEE5"
+                    anchors.horizontalCenter: parent.horizontalCenter
+                }
+
+                Text {
+                    width: 48
+                    text: Qt.formatTime(navbarClockPanel.clockNow, "mm")
+                    color: "#111318"
+                    font.family: "Monospace"
+                    font.pixelSize: 21
+                    font.weight: Font.Bold
+                    font.letterSpacing: 1.4
+                    horizontalAlignment: Text.AlignHCenter
+                }
+            }
+        }
+    }
+
     Rectangle {
         id: dock
         x: root.horizontalNavbar
