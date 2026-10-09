@@ -608,6 +608,75 @@ PanelWindow {
             }
         }
 
+        // Fail safely if NavbarManager cannot be loaded. The panel must never
+        // become an empty white rectangle: show a readable recovery message.
+        Rectangle {
+            id: navbarLoadFallback
+            anchors.fill: parent
+            z: 40
+            visible: root.navbarViewOpen
+                && (!navbarLoader.item || navbarLoader.status !== Loader.Ready)
+            color: "#F3F5F7"
+            radius: 26
+            border.width: 1
+            border.color: "#D5DCE4"
+
+            Column {
+                anchors.centerIn: parent
+                width: Math.min(parent.width - 56, 420)
+                spacing: 12
+
+                Text {
+                    width: parent.width
+                    text: navbarLoader.status === Loader.Error
+                        ? "NAVBAR MANAGER COULD NOT LOAD"
+                        : "LOADING NAVBAR MANAGER"
+                    color: "#111318"
+                    font.pixelSize: 16
+                    font.weight: Font.DemiBold
+                    horizontalAlignment: Text.AlignHCenter
+                    wrapMode: Text.WordWrap
+                }
+
+                Text {
+                    width: parent.width
+                    text: navbarLoader.status === Loader.Error
+                        ? "A16EEN kept this panel readable instead of showing a blank white screen. Close this view and check the Quickshell log for the loading error."
+                        : "Preparing your navbar controls…"
+                    color: "#4B5563"
+                    font.pixelSize: 12
+                    horizontalAlignment: Text.AlignHCenter
+                    wrapMode: Text.WordWrap
+                }
+
+                Rectangle {
+                    x: (parent.width - width) / 2
+                    width: 148
+                    height: 38
+                    radius: 10
+                    color: fallbackMouse.containsMouse ? "#E5E7EB" : "#FFFFFF"
+                    border.width: 1
+                    border.color: "#B8C1CC"
+
+                    Text {
+                        anchors.centerIn: parent
+                        text: "CLOSE NAVBAR"
+                        color: "#111318"
+                        font.pixelSize: 10
+                        font.weight: Font.DemiBold
+                    }
+
+                    MouseArea {
+                        id: fallbackMouse
+                        anchors.fill: parent
+                        hoverEnabled: true
+                        cursorShape: Qt.PointingHandCursor
+                        onClicked: root.closeNavbarView()
+                    }
+                }
+            }
+        }
+
         ControlCenterSection {
             id: controlSection
             anchors.fill: parent
