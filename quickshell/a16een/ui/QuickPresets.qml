@@ -41,7 +41,8 @@ PanelWindow {
 
     readonly property var applicationCatalog: {
         return [...DesktopEntries.applications.values]
-            .filter(entry => entry && !entry.noDisplay)
+            .filter(entry => entry && !entry.noDisplay
+                && entry.command && entry.command.length > 0)
             .sort((a, b) => String(a.name || "").localeCompare(String(b.name || "")))
     }
 
@@ -137,6 +138,8 @@ PanelWindow {
         root.draftApps = []
         root.appSearch = ""
         root.editorOpen = true
+        presetNameField.text = ""
+        appSearchField.text = ""
         Qt.callLater(() => presetNameField.forceActiveFocus())
     }
 
@@ -146,6 +149,8 @@ PanelWindow {
         root.draftName = ""
         root.draftApps = []
         root.appSearch = ""
+        presetNameField.text = ""
+        appSearchField.text = ""
     }
 
     function toggleApp(entry) {
