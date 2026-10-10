@@ -40,8 +40,9 @@ jobs:
           bash -n scripts/a16een-icons
           bash -n scripts/a16een-screenshot
           bash -n scripts/a16een-control
-          python3 -m py_compile scripts/a16een-clipboard scripts/a16een-app-stash
+          python3 -m py_compile scripts/a16een-clipboard scripts/a16een-app-stash scripts/a16een-system-monitor
           python3 tests/test_app_stash.py
+          python3 tests/test_system_monitor.py
           bash -n scripts/a16een-icon-theme
           bash -n scripts/a16een-workspace-preset
           python3 -m py_compile scripts/a16een-music scripts/a16een-widget-settings
@@ -49,8 +50,8 @@ jobs:
           grep -Fq 'a16een-clipboard' scripts/install.sh
           grep -Fq 'a16een-app-stash' scripts/install.sh
           grep -Fq 'workspace "app-stash"' niri/config.kdl
-          grep -Fq 'Super+H repeat=false hotkey-overlay-title="A16EEN Hide Window to App Stash"' niri/config.kdl
-          grep -Fq 'Super+Ctrl+H repeat=false hotkey-overlay-title="A16EEN App Stash"' niri/config.kdl
+          grep -Fq 'Super+H repeat=false hotkey-overlay-title="A16EEN Hide Window to Nest"' niri/config.kdl
+          grep -Fq 'Super+Ctrl+H repeat=false hotkey-overlay-title="A16EEN Nest"' niri/config.kdl
           grep -Fq 'target: "app-stash"' quickshell/a16een/shell.qml
           grep -Fq 'CalculatorPanel {' quickshell/a16een/shell.qml
           grep -Fq 'clipboardHistoryWatcher' quickshell/a16een/shell.qml
@@ -60,9 +61,16 @@ jobs:
           grep -Fq 'NotificationCenter {' quickshell/a16een/shell.qml
           grep -Fq 'ToolsPanel {' quickshell/a16een/shell.qml
           grep -Fq 'id: "notifications", icon: "lucide-bell.svg"' quickshell/a16een/ui/QuickHubTray.qml
-          grep -Fq 'id: "tools", icon: "lucide-wrench.svg"' quickshell/a16een/ui/QuickHubTray.qml
+          grep -Fq 'id: "tools", icon: "lucide-toolbox.svg"' quickshell/a16een/ui/QuickHubTray.qml
           test "$(grep -c 'sourceSize.width: 64' quickshell/a16een/ui/QuickHubTray.qml)" -eq 2
           grep -Fq 'signal toolRequested(string toolId)' quickshell/a16een/ui/ToolsPanel.qml
+          grep -Fq 'label: "System Monitor"' quickshell/a16een/ui/ToolsPanel.qml
+          grep -Fq 'a16een-system-monitor' quickshell/a16een/ui/ToolsPanel.qml
+          grep -Fq 'running: root.opened && root.page === "monitor"' quickshell/a16een/ui/ToolsPanel.qml
+          ! grep -Fq 'App Stash' quickshell/a16een/ui/ToolsPanel.qml
+          grep -Fq 'lucide-toolbox.svg' quickshell/a16een/ui/ToolsPanel.qml
+          grep -Fq 'id: monitorPage' quickshell/a16een/ui/ToolsPanel.qml
+          ! grep -Fq 'Behavior on opacity' quickshell/a16een/ui/CalculatorPanel.qml
           grep -Fq "You're all caught up" quickshell/a16een/ui/NotificationCenter.qml
           grep -Fq 'implicitWidth: 322' quickshell/a16een/ui/NotificationToast.qml
           grep -Fq 'root.modeRequested(tabButton.modelData.id)' quickshell/a16een/ui/UtilitiesPanel.qml
@@ -150,6 +158,10 @@ jobs:
           grep -Fq 'root.editorOpen = true' quickshell/a16een/ui/WorkspacePresetsSection.qml
           grep -Fq 'onClicked: {' quickshell/a16een/ui/WorkspacePresetsSection.qml
           test -f scripts/a16een-screenshot
+          test -f scripts/a16een-system-monitor
+          test -f tests/test_system_monitor.py
+          test -f quickshell/a16een/assets/icons/lucide-toolbox.svg
+          test -f quickshell/a16een/assets/icons/lucide-activity.svg
           test -f scripts/a16een-control
           test -f scripts/a16een-icon-theme
           test -f quickshell/a16een/assets/icons/lucide-monitor.svg
