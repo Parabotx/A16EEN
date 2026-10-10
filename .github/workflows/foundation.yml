@@ -601,8 +601,8 @@ jobs:
           grep -Fq 'a16 update' README.md
           grep -Fq 'A16 terminal command' README.md
           grep -Fq 'a16 <command> [options]' scripts/a16een
-          grep -Fq '/usr/local/bin/a16' scripts/install.sh
-          grep -Fq '/usr/local/bin/a16een' scripts/install.sh
+          grep -Fq 'sudo install -Dm755 "$ROOT_DIR/scripts/a16een" /usr/local/bin/a16' scripts/install.sh
+          grep -Fq 'sudo install -Dm755 "$ROOT_DIR/scripts/a16een" /usr/local/bin/a16een' scripts/install.sh
           # Launcher shortcut is already validated earlier in this block.
 
       - name: Validate no legacy wallpaper reference
