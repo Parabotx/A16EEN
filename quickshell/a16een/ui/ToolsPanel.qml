@@ -8,25 +8,21 @@ PanelWindow {
     required property var modelData
     required property string navbarPosition
     property bool opened: false
-    property string page: "tools"
-    property var stashedApps: []
 
     signal closeRequested()
     signal toolRequested(string toolId)
-    signal appStashRequested()
-    signal backRequested()
-    signal restoreRequested(string windowId)
 
-    readonly property bool horizontalNavbar: root.navbarPosition === "top" || root.navbarPosition === "bottom"
+    readonly property bool horizontalNavbar:
+        root.navbarPosition === "top" || root.navbarPosition === "bottom"
     readonly property real screenWidth: root.modelData ? root.modelData.width : 1920
     readonly property real screenHeight: root.modelData ? root.modelData.height : 1080
-    readonly property int popupWidth: 344
-    readonly property int popupHeight: root.page === "stash" ? 410 : 326
+    readonly property int popupWidth: 322
+    readonly property int popupHeight: 292
     readonly property var tools: [
         { id: "screenshot", label: "Screenshot", detail: "Capture your screen", icon: "lucide-crop.svg" },
         { id: "wallpapers", label: "Wallpapers", detail: "Change your background", icon: "lucide-image.svg" },
         { id: "clipboard", label: "Clipboard", detail: "Reuse copied text", icon: "lucide-clipboard.svg" },
-        { id: "calculator", label: "Calculator", detail: "Quick calculations", icon: "lucide-calculator.svg" }
+        { id: "command-center", label: "Command center", detail: "Personalize A16EEN", icon: "lucide-sliders-horizontal.svg" }
     ]
 
     readonly property real popupX: root.horizontalNavbar
@@ -46,11 +42,18 @@ PanelWindow {
     width: root.screenWidth
     height: root.screenHeight
 
-    anchors { left: true; right: true; top: true; bottom: true }
+    anchors {
+        left: true
+        right: true
+        top: true
+        bottom: true
+    }
 
     WlrLayershell.layer: WlrLayer.Overlay
     WlrLayershell.namespace: "a16een-tools-panel"
-    WlrLayershell.keyboardFocus: root.opened ? WlrKeyboardFocus.OnDemand : WlrKeyboardFocus.None
+    WlrLayershell.keyboardFocus: root.opened
+        ? WlrKeyboardFocus.OnDemand
+        : WlrKeyboardFocus.None
 
     MouseArea {
         id: outsideClick
@@ -65,7 +68,8 @@ PanelWindow {
     Item {
         id: card
         x: Math.max(8, Math.min(root.popupX, root.screenWidth - width - 8))
-        y: Math.max(8, Math.min(root.popupY, root.screenHeight - height - 8)) + (root.opened ? 0 : 6)
+        y: Math.max(8, Math.min(root.popupY, root.screenHeight - height - 8))
+            + (root.opened ? 0 : 6)
         width: Math.min(root.popupWidth, root.screenWidth - 16)
         height: Math.min(root.popupHeight, root.screenHeight - 16)
         z: 1
@@ -78,7 +82,7 @@ PanelWindow {
 
         Rectangle {
             anchors.fill: parent
-            radius: 17
+            radius: 16
             color: "#FFFFFF"
             border.width: 1
             border.color: "#D9DEE5"
@@ -86,7 +90,7 @@ PanelWindow {
             Rectangle {
                 anchors.fill: parent
                 anchors.margins: -4
-                radius: 21
+                radius: 20
                 color: "#16000000"
                 z: -1
             }
@@ -99,6 +103,7 @@ PanelWindow {
             }
 
             Column {
+                id: content
                 anchors.fill: parent
                 anchors.margins: 13
                 spacing: 9
@@ -106,65 +111,25 @@ PanelWindow {
 
                 Row {
                     width: parent.width
-                    height: 28
-                    spacing: 9
+                    height: 25
+                    spacing: 8
 
-                    Rectangle {
-                        visible: root.page === "stash"
-                        width: 27
-                        height: 27
-                        radius: 9
-                        color: backMouse.containsMouse ? "#EEF1F4" : "#F7F8FA"
-                        border.width: 1
-                        border.color: "#E9ECF0"
+                    Image {
+                        width: 16
+                        height: 16
                         anchors.verticalCenter: parent.verticalCenter
-
-                        Image {
-                            anchors.centerIn: parent
-                            width: 15
-                            height: 15
-                            source: Qt.resolvedUrl("../assets/icons/lucide-arrow-left.svg")
-                            sourceSize.width: 48
-                            sourceSize.height: 48
-                            smooth: true
-                        }
-
-                        MouseArea {
-                            id: backMouse
-                            anchors.fill: parent
-                            hoverEnabled: true
-                            cursorShape: Qt.PointingHandCursor
-                            onClicked: root.backRequested()
-                        }
-                    }
-
-                    Rectangle {
-                        visible: root.page === "tools" || root.page === "stash"
-                        width: 28
-                        height: 28
-                        radius: 9
-                        color: "#F2F4F7"
-                        anchors.verticalCenter: parent.verticalCenter
-
-                        Image {
-                            anchors.centerIn: parent
-                            width: 16
-                            height: 16
-                            source: Qt.resolvedUrl(root.page === "stash"
-                                ? "../assets/icons/lucide-archive.svg"
-                                : "../assets/icons/lucide-wrench.svg")
-                            sourceSize.width: 48
-                            sourceSize.height: 48
-                            smooth: true
-                        }
+                        source: Qt.resolvedUrl("../assets/icons/lucide-wrench.svg")
+                        sourceSize.width: 32
+                        sourceSize.height: 32
+                        smooth: true
                     }
 
                     Column {
                         anchors.verticalCenter: parent.verticalCenter
-                        spacing: 2
+                        spacing: 1
 
                         Text {
-                            text: root.page === "stash" ? "APP STASH" : "QUICK TOOLS"
+                            text: "TOOLS"
                             color: "#171B21"
                             font.pixelSize: 10
                             font.weight: Font.DemiBold
@@ -172,9 +137,7 @@ PanelWindow {
                         }
 
                         Text {
-                            text: root.page === "stash"
-                                ? "Hidden windows stay running"
-                                : "Small things, right when you need them"
+                            text: "Useful actions, one click away"
                             color: "#89929E"
                             font.pixelSize: 8
                         }
@@ -183,11 +146,10 @@ PanelWindow {
 
                 Grid {
                     id: toolsGrid
-                    visible: root.page === "tools"
                     width: parent.width
                     columns: 2
                     spacing: 8
-                    height: 2 * 70 + spacing
+                    height: Math.ceil(root.tools.length / 2) * 72 + spacing
 
                     Repeater {
                         model: root.tools
@@ -196,11 +158,12 @@ PanelWindow {
                             id: toolTile
                             required property var modelData
                             width: (toolsGrid.width - toolsGrid.spacing) / 2
-                            height: 70
-                            radius: 11
-                            color: toolMouse.containsMouse ? "#F0F2F5" : "#FAFBFC"
+                            height: 72
+                            radius: 10
+                            color: toolMouse.containsMouse ? "#EEF1F4" : "#FAFBFC"
                             border.width: 1
                             border.color: toolMouse.containsMouse ? "#DDE3E9" : "#EDF0F3"
+
                             Behavior on color { ColorAnimation { duration: 120 } }
 
                             Row {
@@ -210,20 +173,19 @@ PanelWindow {
                                 spacing: 8
 
                                 Rectangle {
-                                    width: 29
-                                    height: 29
-                                    radius: 9
+                                    width: 28
+                                    height: 28
+                                    radius: 8
                                     color: "#F0F3F6"
                                     anchors.verticalCenter: parent.verticalCenter
 
                                     Image {
                                         anchors.centerIn: parent
-                                        width: 17
-                                        height: 17
+                                        width: 16
+                                        height: 16
                                         source: Qt.resolvedUrl("../assets/icons/" + toolTile.modelData.icon)
-                                        sourceSize.width: 48
-                                        sourceSize.height: 48
-                                        fillMode: Image.PreserveAspectFit
+                                        sourceSize.width: 32
+                                        sourceSize.height: 32
                                         smooth: true
                                     }
                                 }
@@ -264,204 +226,12 @@ PanelWindow {
                     }
                 }
 
-                Rectangle {
-                    visible: root.page === "tools"
-                    width: parent.width
-                    height: 44
-                    radius: 11
-                    color: appStashRowMouse.containsMouse ? "#F0F2F5" : "#FFFFFF"
-                    border.width: 1
-                    border.color: appStashRowMouse.containsMouse ? "#DDE3E9" : "#E8ECF0"
-
-                    Row {
-                        anchors.fill: parent
-                        anchors.leftMargin: 10
-                        anchors.rightMargin: 9
-                        spacing: 9
-
-                        Rectangle {
-                            width: 29
-                            height: 29
-                            radius: 9
-                            color: "#F2F4F7"
-                            anchors.verticalCenter: parent.verticalCenter
-
-                            Image {
-                                anchors.centerIn: parent
-                                width: 17
-                                height: 17
-                                source: Qt.resolvedUrl("../assets/icons/lucide-archive.svg")
-                                sourceSize.width: 48
-                                sourceSize.height: 48
-                                smooth: true
-                            }
-                        }
-
-                        Column {
-                            anchors.verticalCenter: parent.verticalCenter
-                            spacing: 3
-
-                            Text {
-                                text: "App Stash"
-                                color: "#222831"
-                                font.pixelSize: 9
-                                font.weight: Font.DemiBold
-                            }
-
-                            Text {
-                                text: root.stashedApps.length === 0
-                                    ? "Your hidden apps appear here"
-                                    : String(root.stashedApps.length) + (root.stashedApps.length === 1 ? " hidden window" : " hidden windows")
-                                color: "#8A939E"
-                                font.pixelSize: 7
-                            }
-                        }
-
-                        Item {
-                            width: Math.max(0, parent.width - 29 - 9 - 145 - 55)
-                            height: 1
-                        }
-
-                        Text {
-                            anchors.verticalCenter: parent.verticalCenter
-                            text: "Ctrl + Super + H"
-                            color: "#7B8490"
-                            font.pixelSize: 7
-                            font.weight: Font.Medium
-                        }
-                    }
-
-                    MouseArea {
-                        id: appStashRowMouse
-                        anchors.fill: parent
-                        hoverEnabled: true
-                        cursorShape: Qt.PointingHandCursor
-                        onClicked: root.appStashRequested()
-                    }
-                }
-
-                GridView {
-                    id: stashGrid
-                    visible: root.page === "stash" && root.stashedApps.length > 0
-                    width: parent.width
-                    height: root.popupHeight - 112
-                    clip: true
-                    cellWidth: 78
-                    cellHeight: 82
-                    model: root.stashedApps
-                    interactive: contentHeight > height
-
-                    delegate: Item {
-                        id: stashTile
-                        required property var modelData
-                        width: stashGrid.cellWidth
-                        height: stashGrid.cellHeight
-
-                        Rectangle {
-                            anchors.horizontalCenter: parent.horizontalCenter
-                            y: 1
-                            width: 46
-                            height: 46
-                            radius: 13
-                            color: stashItemMouse.containsMouse ? "#F0F2F5" : "#F7F8FA"
-                            border.width: 1
-                            border.color: "#E8ECF0"
-
-                            Image {
-                                anchors.centerIn: parent
-                                width: 29
-                                height: 29
-                                source: Quickshell.iconPath(
-                                    String(stashTile.modelData.icon || "application-x-executable"),
-                                    "application-x-executable"
-                                )
-                                sourceSize.width: 96
-                                sourceSize.height: 96
-                                fillMode: Image.PreserveAspectFit
-                                smooth: true
-                                mipmap: true
-                                asynchronous: true
-                            }
-
-                            MouseArea {
-                                id: stashItemMouse
-                                anchors.fill: parent
-                                hoverEnabled: true
-                                cursorShape: Qt.PointingHandCursor
-                                onClicked: root.restoreRequested(String(stashTile.modelData.windowId))
-                            }
-                        }
-
-                        Text {
-                            anchors.top: parent.top
-                            anchors.topMargin: 51
-                            anchors.horizontalCenter: parent.horizontalCenter
-                            width: parent.width - 4
-                            text: String(stashTile.modelData.appName || stashTile.modelData.title || "Application")
-                            color: "#444D58"
-                            font.pixelSize: 8
-                            horizontalAlignment: Text.AlignHCenter
-                            elide: Text.ElideRight
-                            maximumLineCount: 1
-                        }
-                    }
-                }
-
-                Item {
-                    visible: root.page === "stash" && root.stashedApps.length === 0
-                    width: parent.width
-                    height: root.popupHeight - 112
-
-                    Column {
-                        anchors.centerIn: parent
-                        spacing: 10
-
-                        Rectangle {
-                            anchors.horizontalCenter: parent.horizontalCenter
-                            width: 52
-                            height: 52
-                            radius: 16
-                            color: "#F4F6F8"
-                            border.width: 1
-                            border.color: "#E8ECF0"
-
-                            Image {
-                                anchors.centerIn: parent
-                                width: 24
-                                height: 24
-                                source: Qt.resolvedUrl("../assets/icons/lucide-archive.svg")
-                                sourceSize.width: 64
-                                sourceSize.height: 64
-                                smooth: true
-                            }
-                        }
-
-                        Text {
-                            anchors.horizontalCenter: parent.horizontalCenter
-                            text: "Nothing stashed yet"
-                            color: "#252B34"
-                            font.pixelSize: 11
-                            font.weight: Font.DemiBold
-                        }
-
-                        Text {
-                            anchors.horizontalCenter: parent.horizontalCenter
-                            text: "Press Super + H on an open app."
-                            color: "#89929E"
-                            font.pixelSize: 9
-                        }
-                    }
-                }
-
                 Text {
                     width: parent.width
-                    height: 11
-                    text: root.page === "stash"
-                        ? "Super + H hides the focused window"
-                        : "A16EEN · everyday tools"
-                    color: "#9AA3AE"
+                    height: 12
+                    text: "A16EEN tools · more can be added here"
+                    color: "#98A1AC"
                     font.pixelSize: 8
-                    elide: Text.ElideRight
                 }
             }
         }

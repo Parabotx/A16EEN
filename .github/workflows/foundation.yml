@@ -46,22 +46,6 @@ jobs:
           grep -Fq 'id: "notifications", icon: "lucide-bell.svg"' quickshell/a16een/ui/QuickHubTray.qml
           grep -Fq 'id: "tools", icon: "lucide-wrench.svg"' quickshell/a16een/ui/QuickHubTray.qml
           grep -Fq 'signal toolRequested(string toolId)' quickshell/a16een/ui/ToolsPanel.qml
-          grep -Fq 'id: "calculator", label: "Calculator"' quickshell/a16een/ui/ToolsPanel.qml
-          grep -Fq 'App Stash' quickshell/a16een/ui/ToolsPanel.qml
-          ! grep -Fq 'command-center' quickshell/a16een/ui/ToolsPanel.qml
-          test -f quickshell/a16een/ui/CalculatorPanel.qml
-          test -f quickshell/a16een/assets/icons/lucide-calculator.svg
-          test -f quickshell/a16een/assets/icons/lucide-archive.svg
-          grep -Fq 'import Quickshell.Widgets' quickshell/a16een/shell.qml
-          grep -Fq 'function hideFocusedWindow()' quickshell/a16een/shell.qml
-          grep -Fq 'function restoreStashedWindow(windowId)' quickshell/a16een/shell.qml
-          grep -Fq 'move-window-to-workspace' quickshell/a16een/shell.qml
-          grep -Fq 'target: "app-stash"' quickshell/a16een/shell.qml
-          grep -Fq 'workspace "app-stash"' niri/config.kdl
-          grep -Fq 'Super+H repeat=false hotkey-overlay-title="A16EEN Hide Window to App Stash"' niri/config.kdl
-          grep -Fq 'Super+Ctrl+H repeat=false hotkey-overlay-title="A16EEN App Stash"' niri/config.kdl
-          ! grep -Fq 'Mod+H { focus-column-left; }' niri/config.kdl
-          grep -Fq 'sourceSize.width: 64' quickshell/a16een/ui/QuickHubTray.qml
           grep -Fq "You're all caught up" quickshell/a16een/ui/NotificationCenter.qml
           grep -Fq 'implicitWidth: 322' quickshell/a16een/ui/NotificationToast.qml
           grep -Fq 'root.modeRequested(tabButton.modelData.id)' quickshell/a16een/ui/UtilitiesPanel.qml
@@ -132,7 +116,6 @@ jobs:
           test -f niri/config.kdl
           test -f quickshell/a16een/shell.qml
           test -f quickshell/a16een/ui/Launcher.qml
-          test -f quickshell/a16een/ui/CalculatorPanel.qml
           test -f quickshell/a16een/ui/Dock.qml
           test -f quickshell/a16een/ui/Dashboard.qml
           test -f quickshell/a16een/ui/CommandCenter.qml
