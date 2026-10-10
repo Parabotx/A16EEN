@@ -267,7 +267,7 @@ A16 installs a unified `a16` command for terminal control:
 
 ```sh
 a16 launcher
-a16 dashboard
+a16 control open
 a16 overview
 a16 close
 a16 maximize
@@ -307,7 +307,6 @@ Reboot and power-off require confirmation unless `--yes` / `-y` is explicitly su
 ```
 Super + Space          Application launcher
 Super + /              A16EEN command center
-Super + P              A16EEN dashboard
 Super + O              Niri overview
 Super + Return         Terminal
 Super + X              Close window
