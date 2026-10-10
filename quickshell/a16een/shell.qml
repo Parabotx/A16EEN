@@ -1102,6 +1102,7 @@ ShellRoot {
             }
 
             onLauncherRequested: {
+                root.closeTransientPanels()
                 root.launcherOpen = true
                 root.dashboardOpen = false
                 root.commandCenterOpen = false

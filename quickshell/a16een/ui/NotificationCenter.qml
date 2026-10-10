@@ -267,7 +267,16 @@ PanelWindow {
                             border.width: 1
                             border.color: historyRowMouse.containsMouse ? "#E1E6EB" : "#F0F2F5"
 
+                            MouseArea {
+                                id: historyRowMouse
+                                anchors.fill: parent
+                                z: 0
+                                hoverEnabled: true
+                                acceptedButtons: Qt.NoButton
+                            }
+
                             Row {
+                                z: 1
                                 anchors.fill: parent
                                 anchors.margins: 7
                                 spacing: 7
@@ -360,13 +369,6 @@ PanelWindow {
                                 }
                             }
 
-                            MouseArea {
-                                id: historyRowMouse
-                                anchors.fill: parent
-                                z: -1
-                                hoverEnabled: true
-                                acceptedButtons: Qt.NoButton
-                            }
                         }
                     }
 

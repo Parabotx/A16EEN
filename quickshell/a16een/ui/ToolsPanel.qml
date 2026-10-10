@@ -149,6 +149,7 @@ PanelWindow {
                     width: parent.width
                     columns: 2
                     spacing: 8
+                    height: Math.ceil(root.tools.length / 2) * 72 + spacing
 
                     Repeater {
                         model: root.tools
