@@ -119,6 +119,8 @@ ShellRoot {
             return
 
         root.lockErrorMessage = ""
+        root.notificationCenterOpen = false
+        root.toolsPanelOpen = false
         root.quickNotesOpen = false
         root.quickTasksOpen = false
         root.quickPresetsOpen = false
@@ -329,8 +331,42 @@ ShellRoot {
     property int volumePercent: 0
     property bool volumeMuted: false
     property var latestNotification: null
+    property bool notificationCenterOpen: false
+    property bool toolsPanelOpen: false
+    property var notificationHistory: []
+    property bool notificationHistoryReady: false
+    readonly property int unreadNotificationCount:
+        root.notificationHistory.filter(item => !Boolean(item.read)).length
 
     readonly property var primaryScreen: Quickshell.screens.length > 0 ? Quickshell.screens[0] : null
+
+    FileView {
+        id: notificationHistoryFile
+        path: Quickshell.stateDir + "/notification-history.json"
+        preload: true
+        printErrors: false
+        atomicWrites: true
+        onLoaded: root.loadNotificationHistory()
+        onLoadFailed: {
+            root.notificationHistoryReady = true
+            if (root.notificationHistory.length)
+                notificationHistorySaveTimer.restart()
+        }
+    }
+
+    Timer {
+        id: notificationHistorySaveTimer
+        interval: 250
+        repeat: false
+        onTriggered: {
+            if (root.notificationHistoryReady) {
+                notificationHistoryFile.setText(JSON.stringify({
+                    version: 1,
+                    notifications: root.notificationHistory
+                }))
+            }
+        }
+    }
 
     FileView {
         id: controlIndicatorEvent
@@ -699,6 +735,148 @@ ShellRoot {
         Qt.callLater(() => dndWriter.running = true)
     }
 
+    function loadNotificationHistory() {
+        if (root.notificationHistoryReady)
+            return
+
+        let diskEntries = []
+        try {
+            const parsed = JSON.parse(String(notificationHistoryFile.text() || "{}"))
+            if (parsed && Array.isArray(parsed.notifications)) {
+                diskEntries = parsed.notifications
+                    .filter(item => item && String(item.id || "").length)
+                    .map(item => ({
+                        id: String(item.id),
+                        appName: String(item.appName || "Notification"),
+                        summary: String(item.summary || "Notification"),
+                        body: String(item.body || ""),
+                        appIcon: String(item.appIcon || ""),
+                        timestamp: Number(item.timestamp) || Date.now(),
+                        read: Boolean(item.read)
+                    }))
+            }
+        } catch (error) {
+            diskEntries = []
+            console.warn("A16EEN notification history could not be read:", error)
+        }
+
+        const alreadyInMemory = root.notificationHistory.slice()
+        const combined = alreadyInMemory.concat(diskEntries)
+        combined.sort((a, b) => Number(b.timestamp || 0) - Number(a.timestamp || 0))
+        const seen = ({})
+        root.notificationHistory = combined.filter(item => {
+            const key = String(item.id || "")
+            if (!key.length || seen[key])
+                return false
+            seen[key] = true
+            return true
+        }).slice(0, 60)
+
+        root.notificationHistoryReady = true
+        if (alreadyInMemory.length)
+            notificationHistorySaveTimer.restart()
+    }
+
+    function rememberNotification(notification) {
+        const entry = {
+            id: String(Date.now()) + "-" + String(root.notificationHistory.length),
+            appName: String(notification.appName || "Notification"),
+            summary: String(notification.summary || "Notification"),
+            body: String(notification.body || ""),
+            appIcon: String(notification.appIcon || ""),
+            timestamp: Date.now(),
+            read: false
+        }
+        root.notificationHistory = [entry, ...root.notificationHistory].slice(0, 60)
+        if (root.notificationHistoryReady)
+            notificationHistorySaveTimer.restart()
+    }
+
+    function markNotificationHistoryRead() {
+        if (!root.notificationHistory.some(item => !Boolean(item.read)))
+            return
+        root.notificationHistory = root.notificationHistory.map(item => ({
+            id: String(item.id),
+            appName: String(item.appName || "Notification"),
+            summary: String(item.summary || "Notification"),
+            body: String(item.body || ""),
+            appIcon: String(item.appIcon || ""),
+            timestamp: Number(item.timestamp) || Date.now(),
+            read: true
+        }))
+        if (root.notificationHistoryReady)
+            notificationHistorySaveTimer.restart()
+    }
+
+    function removeNotificationHistory(id) {
+        root.notificationHistory = root.notificationHistory.filter(item => String(item.id) !== String(id))
+        if (root.notificationHistoryReady)
+            notificationHistorySaveTimer.restart()
+    }
+
+    function clearNotificationHistory() {
+        root.notificationHistory = []
+        if (root.notificationHistoryReady)
+            notificationHistorySaveTimer.restart()
+    }
+
+    function closeTransientPanels() {
+        root.quickNotesOpen = false
+        root.quickTasksOpen = false
+        root.quickPresetsOpen = false
+        root.quickUtilitiesOpen = false
+        root.utilitiesExpanded = false
+        root.notificationCenterOpen = false
+        root.toolsPanelOpen = false
+        root.commandCenterOpen = false
+        root.launcherOpen = false
+        root.dashboardOpen = false
+        root.wallpaperPickerOpen = false
+        root.widgetsCenterOpen = false
+        root.screenshotCenterOpen = false
+        root.screenshotSettingsOpen = false
+        root.screenshotPreviewOpen = false
+    }
+
+    function openNotificationCenter() {
+        if (root.notificationCenterOpen) {
+            root.notificationCenterOpen = false
+            return
+        }
+        root.closeTransientPanels()
+        root.notificationCenterOpen = true
+        root.markNotificationHistoryRead()
+    }
+
+    function openToolsPanel() {
+        if (root.toolsPanelOpen) {
+            root.toolsPanelOpen = false
+            return
+        }
+        root.closeTransientPanels()
+        root.toolsPanelOpen = true
+    }
+
+    function activateHubTool(toolId) {
+        root.closeTransientPanels()
+        switch (String(toolId || "")) {
+        case "screenshot":
+            root.screenshotCenterOpen = true
+            break
+        case "wallpapers":
+            root.wallpaperPickerOpen = true
+            break
+        case "clipboard":
+            root.quickUtilitiesOpen = true
+            root.utilitiesExpanded = true
+            root.utilitiesMode = "clipboard"
+            break
+        case "command-center":
+            root.commandCenterOpen = true
+            break
+        }
+    }
+
     NotificationServer {
         id: notificationServer
 
@@ -710,6 +888,10 @@ ShellRoot {
         persistenceSupported: false
 
         onNotification: notification => {
+            // Keep every received notification in the local inbox, even when
+            // DND suppresses the transient toast.
+            root.rememberNotification(notification)
+
             if (root.doNotDisturb) {
                 notification.tracked = false
                 return
@@ -933,6 +1115,8 @@ ShellRoot {
     }
 
     function handleUtilitiesRequest(mode) {
+        root.notificationCenterOpen = false
+        root.toolsPanelOpen = false
         if (mode === "toggle" && root.quickUtilitiesOpen) {
             root.quickUtilitiesOpen = false
             root.utilitiesExpanded = false
@@ -956,6 +1140,8 @@ ShellRoot {
     }
 
     function openQuickTasks() {
+        root.notificationCenterOpen = false
+        root.toolsPanelOpen = false
         root.quickTasksOpen = true
         root.quickPresetsOpen = false
         root.quickUtilitiesOpen = false
@@ -973,6 +1159,8 @@ ShellRoot {
     }
 
     function openQuickPresets() {
+        root.notificationCenterOpen = false
+        root.toolsPanelOpen = false
         root.quickPresetsOpen = true
         root.quickUtilitiesOpen = false
         root.utilitiesExpanded = false
@@ -986,6 +1174,17 @@ ShellRoot {
         root.widgetsCenterOpen = false
         root.screenshotCenterOpen = false
         root.screenshotSettingsOpen = false
+    }
+
+    QuickHubTray {
+        modelData: root.primaryScreen
+        navbarPosition: root.navbarPosition
+        dockVisible: !root.secureLockActive && (!root.focusedWindowFullscreen || root.navbarRevealed)
+        unreadCount: root.unreadNotificationCount
+        notificationsOpen: root.notificationCenterOpen
+        toolsOpen: root.toolsPanelOpen
+        onNotificationsRequested: root.openNotificationCenter()
+        onToolsRequested: root.openToolsPanel()
     }
 
     QuickActionsTray {
@@ -1006,12 +1205,32 @@ ShellRoot {
             root.widgetsCenterOpen = false
             root.screenshotCenterOpen = false
             root.screenshotSettingsOpen = false
+            root.notificationCenterOpen = false
+            root.toolsPanelOpen = false
         }
 
         onTasksRequested: root.openQuickTasks()
 
         onPresetsRequested: root.openQuickPresets()
 
+    }
+
+    NotificationCenter {
+        modelData: root.primaryScreen
+        navbarPosition: root.navbarPosition
+        opened: root.notificationCenterOpen
+        history: root.notificationHistory
+        onCloseRequested: root.notificationCenterOpen = false
+        onClearRequested: root.clearNotificationHistory()
+        onRemoveRequested: id => root.removeNotificationHistory(id)
+    }
+
+    ToolsPanel {
+        modelData: root.primaryScreen
+        navbarPosition: root.navbarPosition
+        opened: root.toolsPanelOpen
+        onCloseRequested: root.toolsPanelOpen = false
+        onToolRequested: toolId => root.activateHubTool(toolId)
     }
 
     QuickNotes {

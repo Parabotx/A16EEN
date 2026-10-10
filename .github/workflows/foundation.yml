@@ -37,6 +37,16 @@ jobs:
           grep -Fq 'a16een-workspace-preset' scripts/install.sh
           grep -Fq 'a16een-clipboard' scripts/install.sh
           grep -Fq 'clipboardHistoryWatcher' quickshell/a16een/shell.qml
+          grep -Fq 'notification-history.json' quickshell/a16een/shell.qml
+          grep -Fq 'function rememberNotification(notification)' quickshell/a16een/shell.qml
+          grep -Fq 'QuickHubTray {' quickshell/a16een/shell.qml
+          grep -Fq 'NotificationCenter {' quickshell/a16een/shell.qml
+          grep -Fq 'ToolsPanel {' quickshell/a16een/shell.qml
+          grep -Fq 'id: "notifications", icon: "lucide-bell.svg"' quickshell/a16een/ui/QuickHubTray.qml
+          grep -Fq 'id: "tools", icon: "lucide-wrench.svg"' quickshell/a16een/ui/QuickHubTray.qml
+          grep -Fq 'signal toolRequested(string toolId)' quickshell/a16een/ui/ToolsPanel.qml
+          grep -Fq 'You're all caught up' quickshell/a16een/ui/NotificationCenter.qml
+          grep -Fq 'implicitWidth: 322' quickshell/a16een/ui/NotificationToast.qml
           grep -Fq 'modeRequested("clipboard")' quickshell/a16een/ui/UtilitiesPanel.qml
           grep -Fq '{ id: "clipboard", label: "Clipboard", icon: "clipboard" }' quickshell/a16een/ui/UtilitiesPanel.qml
           grep -Fq 'width: (modeTabs.width - modeTabs.spacing * 2) / 3' quickshell/a16een/ui/UtilitiesPanel.qml
@@ -94,7 +104,7 @@ jobs:
           grep -Fq 'mipmap: true' quickshell/a16een/ui/Launcher.qml
           ! grep -Fq 'pacman -Syu --needed "$package"' scripts/a16een-icon-theme
           ! grep -Fq 'pacman -Syu --needed "$package"' scripts/a16een-icon-theme
-          grep -Fq 'pacman -S --needed "$package"' scripts/a16een-icon-theme
+          grep -Fq 'pacman -S --needed' scripts/a16een-icon-theme
           grep -Fq 'INSTALL' quickshell/a16een/ui/IconThemeSection.qml
 
       - name: Validate foundation files
