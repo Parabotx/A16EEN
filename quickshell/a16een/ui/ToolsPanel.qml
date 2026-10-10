@@ -96,7 +96,7 @@ PanelWindow {
     }
 
     function calculate(sourceText) {
-        const source = String(sourceText || "").replace(/\\s+/g, "")
+        const source = String(sourceText || "").replace(/\s+/g, "")
         if (!source.length) throw new Error("Enter an expression")
         let position = 0
         function parsePrimary() {
@@ -111,7 +111,7 @@ PanelWindow {
                 while (source[position] === "%") { value /= 100; position++ }
                 return value
             }
-            const match = source.slice(position).match(/^(?:\\d+(?:\\.\\d*)?|\\.\\d+)/)
+            const match = source.slice(position).match(/^(?:\d+(?:\.\d*)?|\.\d+)/)
             if (!match) throw new Error("Invalid number")
             position += match[0].length
             let value = Number(match[0])
@@ -165,13 +165,13 @@ PanelWindow {
             return
         }
         if (value === "sign") {
-            const match = root.expression.match(/(-?\\d*\\.?\\d+)$/)
+            const match = root.expression.match(/(-?\d*\.?\d+)$/)
             if (match) {
                 const start = root.expression.length - match[0].length
                 const number = match[0]
                 root.expression = root.expression.slice(0, start) + (number.startsWith("-") ? number.slice(1) : "-" + number)
             } else if (root.expression === "0") root.expression = "-0"
-            else if (/[+\\-*/(]$/.test(root.expression)) root.expression += "-"
+            else if (/[+\-*/(]$/.test(root.expression)) root.expression += "-"
             root.justEvaluated = false
             return
         }
@@ -183,9 +183,9 @@ PanelWindow {
                 root.justEvaluated = false
                 return
             }
-            if (/[+\\-*/%]$/.test(root.expression) && value !== "-") root.expression = root.expression.slice(0, -1)
+            if (/[+\-*/%]$/.test(root.expression) && value !== "-") root.expression = root.expression.slice(0, -1)
         }
-        if (value === "." && String(root.expression.split(/[+\\-*/()%]/).pop()).includes(".")) return
+        if (value === "." && String(root.expression.split(/[+\-*/()%]/).pop()).includes(".")) return
         if (root.expression === "0" && /^[0-9]$/.test(value)) root.expression = value
         else root.expression += value
         root.justEvaluated = false
@@ -592,9 +592,9 @@ PanelWindow {
                         Text {
                             width: parent.width
                             height: 35
-                            text: root.expression.replace(/\\*/g, "×").replace(/\\//g, "÷").replace(/-/g, "−")
+                            text: root.expression.replace(/\*/g, "×").replace(/\//g, "÷").replace(/-/g, "−")
                             color: "#161B22"
-                            font.pixelSize: Math.min(25, 284 / Math.max(1, text.length) * 1.35)
+                            font.pixelSize: Math.min(25, 284 / Math.max(1, root.expression.length) * 1.35)
                             font.weight: Font.Medium
                             horizontalAlignment: Text.AlignRight
                             verticalAlignment: Text.AlignVCenter

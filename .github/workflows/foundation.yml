@@ -25,6 +25,7 @@ jobs:
           qmlformat quickshell/a16een/shell.qml >/dev/null
           qmlformat quickshell/a16een/ui/ToolsPanel.qml >/dev/null
           qmlformat quickshell/a16een/ui/CalculatorPanel.qml >/dev/null
+          qmlformat quickshell/a16een/ui/DataMeterIndicator.qml >/dev/null
 
       - name: Validate shell scripts
         run: |
@@ -40,7 +41,7 @@ jobs:
           bash -n scripts/a16een-icons
           bash -n scripts/a16een-screenshot
           bash -n scripts/a16een-control
-          python3 -m py_compile scripts/a16een-clipboard scripts/a16een-app-stash scripts/a16een-system-monitor scripts/a16een-data-meter scripts/a16een-system-monitor
+          python3 -m py_compile scripts/a16een-clipboard scripts/a16een-app-stash scripts/a16een-system-monitor scripts/a16een-data-meter
           python3 tests/test_app_stash.py
           python3 tests/test_system_monitor.py
           python3 tests/test_data_meter.py
@@ -54,7 +55,7 @@ jobs:
           grep -Fq 'Super+H repeat=false hotkey-overlay-title="A16EEN Hide Window to Nest"' niri/config.kdl
           grep -Fq 'Super+Ctrl+H repeat=false hotkey-overlay-title="A16EEN Nest"' niri/config.kdl
           grep -Fq 'target: "app-stash"' quickshell/a16een/shell.qml
-          grep -Fq 'CalculatorPanel {' quickshell/a16een/shell.qml
+          ! grep -Fq 'CalculatorPanel {' quickshell/a16een/shell.qml
           grep -Fq 'clipboardHistoryWatcher' quickshell/a16een/shell.qml
           grep -Fq 'notification-history.json' quickshell/a16een/shell.qml
           grep -Fq 'function rememberNotification(notification)' quickshell/a16een/shell.qml
@@ -66,6 +67,16 @@ jobs:
           test "$(grep -c 'sourceSize.width: 64' quickshell/a16een/ui/QuickHubTray.qml)" -eq 2
           grep -Fq 'signal toolRequested(string toolId)' quickshell/a16een/ui/ToolsPanel.qml
           grep -Fq 'label: "System Monitor"' quickshell/a16een/ui/ToolsPanel.qml
+          grep -Fq 'label: "Data Meter"' quickshell/a16een/ui/ToolsPanel.qml
+          grep -Fq 'DataMeterIndicator {' quickshell/a16een/shell.qml
+          grep -Fq 'data-meter-settings.json' quickshell/a16een/shell.qml
+          grep -Fq 'function openToolsPage(pageName)' quickshell/a16een/shell.qml
+          grep -Fq 'a16een-data-meter' scripts/install.sh
+          grep -Fq 'id: "stash", label: "Nest"' quickshell/a16een/ui/ToolsPanel.qml
+          ! grep -Fq 'label: "Clipboard"' quickshell/a16een/ui/ToolsPanel.qml
+          ! grep -Fq 'label: "Wallpapers"' quickshell/a16een/ui/ToolsPanel.qml
+          grep -Fq 'dataMeterToggleRequested(bool enabled)' quickshell/a16een/ui/ToolsPanel.qml
+          grep -Fq 'Flow.LeftToRight' quickshell/a16een/ui/ToolsPanel.qml
           grep -Fq 'a16een-system-monitor' quickshell/a16een/ui/ToolsPanel.qml
           grep -Fq 'running: root.opened && root.page === "monitor"' quickshell/a16een/ui/ToolsPanel.qml
           ! grep -Fq 'App Stash' quickshell/a16een/ui/ToolsPanel.qml
