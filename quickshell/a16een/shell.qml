@@ -509,6 +509,9 @@ ShellRoot {
         function toggle(): void {
             root.launcherOpen = !root.launcherOpen
             if (root.launcherOpen) {
+                root.toolsPanelOpen = false
+                root.toolsPanelPage = "tools"
+                root.calculatorOpen = false
                 root.dashboardOpen = false
                 root.commandCenterOpen = false
                 root.wallpaperPickerOpen = false
@@ -519,6 +522,9 @@ ShellRoot {
 
         function open(): void {
             root.launcherOpen = true
+            root.toolsPanelOpen = false
+            root.toolsPanelPage = "tools"
+            root.calculatorOpen = false
             root.dashboardOpen = false
             root.commandCenterOpen = false
             root.wallpaperPickerOpen = false
@@ -599,6 +605,9 @@ ShellRoot {
         function toggle(): void {
             root.dashboardOpen = !root.dashboardOpen
             if (root.dashboardOpen) {
+                root.toolsPanelOpen = false
+                root.toolsPanelPage = "tools"
+                root.calculatorOpen = false
                 root.launcherOpen = false
                 root.commandCenterOpen = false
                 root.wallpaperPickerOpen = false
@@ -609,6 +618,9 @@ ShellRoot {
 
         function open(): void {
             root.dashboardOpen = true
+            root.toolsPanelOpen = false
+            root.toolsPanelPage = "tools"
+            root.calculatorOpen = false
             root.launcherOpen = false
             root.commandCenterOpen = false
             root.wallpaperPickerOpen = false
@@ -640,6 +652,9 @@ ShellRoot {
             }
 
             root.widgetsCenterOpen = true
+            root.toolsPanelOpen = false
+            root.toolsPanelPage = "tools"
+            root.calculatorOpen = false
             root.commandCenterOpen = true
             root.launcherOpen = false
             root.dashboardOpen = false
@@ -649,6 +664,9 @@ ShellRoot {
 
         function open(): void {
             root.widgetsCenterOpen = true
+            root.toolsPanelOpen = false
+            root.toolsPanelPage = "tools"
+            root.calculatorOpen = false
             root.commandCenterOpen = true
             root.launcherOpen = false
             root.dashboardOpen = false
@@ -673,6 +691,9 @@ ShellRoot {
             }
 
             root.screenshotCenterOpen = true
+            root.toolsPanelOpen = false
+            root.toolsPanelPage = "tools"
+            root.calculatorOpen = false
             root.screenshotSettingsOpen = false
             root.launcherOpen = false
             root.dashboardOpen = false
@@ -683,6 +704,9 @@ ShellRoot {
 
         function open(): void {
             root.screenshotCenterOpen = true
+            root.toolsPanelOpen = false
+            root.toolsPanelPage = "tools"
+            root.calculatorOpen = false
             root.screenshotSettingsOpen = false
             root.launcherOpen = false
             root.dashboardOpen = false
@@ -699,6 +723,9 @@ ShellRoot {
         function settings(): void {
             root.screenshotCenterOpen = false
             root.screenshotSettingsOpen = true
+            root.toolsPanelOpen = false
+            root.toolsPanelPage = "tools"
+            root.calculatorOpen = false
             root.launcherOpen = false
             root.dashboardOpen = false
             root.commandCenterOpen = false
@@ -720,6 +747,9 @@ ShellRoot {
         function toggle(): void {
             root.commandCenterOpen = !root.commandCenterOpen
             if (root.commandCenterOpen) {
+                root.toolsPanelOpen = false
+                root.toolsPanelPage = "tools"
+                root.calculatorOpen = false
                 root.launcherOpen = false
                 root.dashboardOpen = false
                 root.wallpaperPickerOpen = false
@@ -731,6 +761,9 @@ ShellRoot {
 
         function open(): void {
             root.commandCenterOpen = true
+            root.toolsPanelOpen = false
+            root.toolsPanelPage = "tools"
+            root.calculatorOpen = false
             root.launcherOpen = false
             root.dashboardOpen = false
             root.wallpaperPickerOpen = false
