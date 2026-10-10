@@ -13,7 +13,6 @@ Usage:
 
 Desktop
   launcher                    Open the A16EEN application launcher
-  dashboard                   Open the A16EEN control center
   overview                    Toggle Niri workspace overview
   close                       Close the focused window
   maximize                    Maximize the focused column
@@ -277,7 +276,7 @@ case "$command" in
         ;;
     control|controls)
         case "${1:-}" in
-            open|show|dashboard) command="dashboard"; shift ;;
+            open|show|controls) command="controls"; shift ;;
             *) die "usage: a16 control open" ;;
         esac
         ;;
@@ -337,11 +336,11 @@ case "$command" in
         exec qs ipc call workspace-presets open
         ;;
 
-    dashboard|control-center|controls)
+    controls|control-center)
         require_no_args "$@"
         ensure_desktop_session
         require_cmd qs
-        exec qs ipc call dashboard toggle
+        exec qs ipc call command-center toggle
         ;;
 
     overview)
