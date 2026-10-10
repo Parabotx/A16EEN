@@ -127,6 +127,15 @@ jobs:
           test -f quickshell/a16een/assets/icons/lucide-palette.svg
           test -f quickshell/a16een/ui/WidgetCatalog.js
           test -f quickshell/a16een/ui/MusicWidget.qml
+          test -f quickshell/a16een/ui/QuotesWidget.qml
+          test -f quickshell/a16een/assets/quotes.json
+          python3 -m json.tool quickshell/a16een/assets/quotes.json >/dev/null
+          grep -Fq 'id: "quotes"' quickshell/a16een/ui/WidgetCatalog.js
+          grep -Fq 'quotesWidgetEnabled' quickshell/a16een/shell.qml
+          grep -Fq 'quotesWidgetEnabledRequested' quickshell/a16een/ui/CommandCenter.qml
+          grep -Fq 'quotesWidgetEnabledRequested' quickshell/a16een/ui/WidgetSection.qml
+          grep -Fq 'id: registryScroll' quickshell/a16een/ui/WidgetSection.qml
+          grep -Fq 'cp "$ROOT_DIR/quickshell/a16een/assets/quotes.json" "$TMP_DEPLOY/assets/quotes.json"' scripts/install.sh
           test -f quickshell/a16een/ui/MusicDecor.qml
           grep -Fq 'MusicDecor {' quickshell/a16een/ui/MusicWidget.qml
           grep -Fq 'readonly property real recordSize:' quickshell/a16een/ui/MusicDecor.qml
@@ -174,7 +183,10 @@ jobs:
           grep -Fq 'anchors.bottom: parent.bottom' quickshell/a16een/ui/MusicWidget.qml
           grep -Fq 'height: 170' quickshell/a16een/ui/MusicWidget.qml
           grep -Fq 'id: libraryPopup' quickshell/a16een/ui/MusicWidget.qml
-          grep -Fq 'y: Math.max(12, card.y - height - 8)' quickshell/a16een/ui/MusicWidget.qml
+          grep -Fq 'readonly property bool libraryPopupOpensRight' quickshell/a16een/ui/MusicWidget.qml
+          grep -Fq 'x: root.libraryPopupOpensRight ? card.x + card.width + 8' quickshell/a16een/ui/MusicWidget.qml
+          grep -Fq '? card.y + card.height - height' quickshell/a16een/ui/MusicWidget.qml
+          grep -Fq ': Math.max(12, card.y - height - 8)' quickshell/a16een/ui/MusicWidget.qml
           grep -Fq 'property bool shuffleEnabled: false' quickshell/a16een/ui/MusicWidget.qml
           grep -Fq 'root.runAction(["repeat", String(normalized)])' quickshell/a16een/ui/MusicWidget.qml
           grep -Fq 'root.runAction(["repeat", String(root.repeatMode)])' quickshell/a16een/ui/MusicWidget.qml
