@@ -12,7 +12,6 @@ ShellRoot {
     id: root
 
     property bool launcherOpen: false
-    property bool dashboardOpen: false
     property bool commandCenterOpen: false
     property bool wallpaperPickerOpen: false
     property bool screenshotCenterOpen: false
@@ -130,7 +129,6 @@ ShellRoot {
         root.utilitiesExpanded = false
         root.commandCenterOpen = false
         root.launcherOpen = false
-        root.dashboardOpen = false
         root.wallpaperPickerOpen = false
         root.widgetsCenterOpen = false
         root.screenshotCenterOpen = false
@@ -287,7 +285,6 @@ ShellRoot {
         root.focusedWindowId < 0
         && !root.focusedWindowFullscreen
         && !root.launcherOpen
-        && !root.dashboardOpen
         && !root.commandCenterOpen
         && !root.wallpaperPickerOpen
         && !root.widgetsCenterOpen
@@ -330,7 +327,6 @@ ShellRoot {
         }
     }
 
-    property string activeTitle: "A16EEN"
 
     property real systemLoad: 0
     property int volumePercent: 0
@@ -579,11 +575,6 @@ ShellRoot {
         }
     }
 
-    readonly property string computedActiveTitle: {
-        const focused = root.windows.find(window => window.id === root.focusedWindowId)
-        return focused ? (focused.title || focused.app_id || "Desktop") : "A16EEN"
-    }
-
     IpcHandler {
         target: "launcher"
 
@@ -593,7 +584,6 @@ ShellRoot {
                 root.toolsPanelOpen = false
                 root.toolsPanelPage = "tools"
                 root.calculatorOpen = false
-                root.dashboardOpen = false
                 root.commandCenterOpen = false
                 root.wallpaperPickerOpen = false
                 root.widgetsCenterOpen = false
@@ -606,7 +596,6 @@ ShellRoot {
             root.toolsPanelOpen = false
             root.toolsPanelPage = "tools"
             root.calculatorOpen = false
-            root.dashboardOpen = false
             root.commandCenterOpen = false
             root.wallpaperPickerOpen = false
             root.widgetsCenterOpen = false
@@ -677,40 +666,6 @@ ShellRoot {
     }
 
     IpcHandler {
-        target: "dashboard"
-
-        function toggle(): void {
-            root.dashboardOpen = !root.dashboardOpen
-            if (root.dashboardOpen) {
-                root.toolsPanelOpen = false
-                root.toolsPanelPage = "tools"
-                root.calculatorOpen = false
-                root.launcherOpen = false
-                root.commandCenterOpen = false
-                root.wallpaperPickerOpen = false
-                root.widgetsCenterOpen = false
-                root.screenshotCenterOpen = false
-            }
-        }
-
-        function open(): void {
-            root.dashboardOpen = true
-            root.toolsPanelOpen = false
-            root.toolsPanelPage = "tools"
-            root.calculatorOpen = false
-            root.launcherOpen = false
-            root.commandCenterOpen = false
-            root.wallpaperPickerOpen = false
-            root.widgetsCenterOpen = false
-            root.screenshotCenterOpen = false
-        }
-
-        function close(): void {
-            root.dashboardOpen = false
-        }
-    }
-
-    IpcHandler {
         target: "wallpaper"
 
         function apply(path: string): void {
@@ -734,7 +689,6 @@ ShellRoot {
             root.calculatorOpen = false
             root.commandCenterOpen = true
             root.launcherOpen = false
-            root.dashboardOpen = false
             root.wallpaperPickerOpen = false
             root.screenshotCenterOpen = false
         }
@@ -746,7 +700,6 @@ ShellRoot {
             root.calculatorOpen = false
             root.commandCenterOpen = true
             root.launcherOpen = false
-            root.dashboardOpen = false
             root.wallpaperPickerOpen = false
             root.screenshotCenterOpen = false
             root.screenshotSettingsOpen = false
@@ -773,7 +726,6 @@ ShellRoot {
             root.calculatorOpen = false
             root.screenshotSettingsOpen = false
             root.launcherOpen = false
-            root.dashboardOpen = false
             root.commandCenterOpen = false
             root.wallpaperPickerOpen = false
             root.widgetsCenterOpen = false
@@ -786,7 +738,6 @@ ShellRoot {
             root.calculatorOpen = false
             root.screenshotSettingsOpen = false
             root.launcherOpen = false
-            root.dashboardOpen = false
             root.commandCenterOpen = false
             root.wallpaperPickerOpen = false
             root.widgetsCenterOpen = false
@@ -804,7 +755,6 @@ ShellRoot {
             root.toolsPanelPage = "tools"
             root.calculatorOpen = false
             root.launcherOpen = false
-            root.dashboardOpen = false
             root.commandCenterOpen = false
             root.wallpaperPickerOpen = false
             root.widgetsCenterOpen = false
@@ -828,7 +778,6 @@ ShellRoot {
                 root.toolsPanelPage = "tools"
                 root.calculatorOpen = false
                 root.launcherOpen = false
-                root.dashboardOpen = false
                 root.wallpaperPickerOpen = false
                 root.widgetsCenterOpen = false
                 root.screenshotCenterOpen = false
@@ -842,7 +791,6 @@ ShellRoot {
             root.toolsPanelPage = "tools"
             root.calculatorOpen = false
             root.launcherOpen = false
-            root.dashboardOpen = false
             root.wallpaperPickerOpen = false
             root.widgetsCenterOpen = false
             root.screenshotSettingsOpen = false
@@ -1012,7 +960,6 @@ ShellRoot {
         root.notificationCenterOpen = false
         root.commandCenterOpen = false
         root.launcherOpen = false
-        root.dashboardOpen = false
         root.wallpaperPickerOpen = false
         root.widgetsCenterOpen = false
         root.screenshotCenterOpen = false
@@ -1037,7 +984,6 @@ ShellRoot {
         root.calculatorOpen = false
         root.commandCenterOpen = false
         root.launcherOpen = false
-        root.dashboardOpen = false
         root.wallpaperPickerOpen = false
         root.widgetsCenterOpen = false
         root.screenshotCenterOpen = false
@@ -1313,7 +1259,6 @@ ShellRoot {
             onLauncherRequested: {
                 root.closeTransientPanels()
                 root.launcherOpen = true
-                root.dashboardOpen = false
                 root.commandCenterOpen = false
                 root.wallpaperPickerOpen = false
                 root.widgetsCenterOpen = false
@@ -1340,7 +1285,6 @@ ShellRoot {
         root.quickPresetsOpen = false
         root.commandCenterOpen = false
         root.launcherOpen = false
-        root.dashboardOpen = false
         root.wallpaperPickerOpen = false
         root.widgetsCenterOpen = false
         root.screenshotCenterOpen = false
@@ -1365,7 +1309,6 @@ ShellRoot {
         root.quickNotesOpen = false
         root.commandCenterOpen = false
         root.launcherOpen = false
-        root.dashboardOpen = false
         root.wallpaperPickerOpen = false
         root.widgetsCenterOpen = false
         root.screenshotCenterOpen = false
@@ -1385,7 +1328,6 @@ ShellRoot {
         root.tasksWidgetEnabled = false
         root.commandCenterOpen = false
         root.launcherOpen = false
-        root.dashboardOpen = false
         root.wallpaperPickerOpen = false
         root.widgetsCenterOpen = false
         root.screenshotCenterOpen = false
@@ -1425,7 +1367,6 @@ ShellRoot {
             root.quickPresetsOpen = false
             root.commandCenterOpen = false
             root.launcherOpen = false
-            root.dashboardOpen = false
             root.wallpaperPickerOpen = false
             root.widgetsCenterOpen = false
             root.screenshotCenterOpen = false
@@ -1555,7 +1496,6 @@ ShellRoot {
             root.screenshotCenterOpen = true
             root.screenshotSettingsOpen = false
             root.launcherOpen = false
-            root.dashboardOpen = false
             root.wallpaperPickerOpen = false
             root.widgetsCenterOpen = false
         }
@@ -1565,7 +1505,6 @@ ShellRoot {
             root.screenshotCenterOpen = false
             root.screenshotSettingsOpen = true
             root.launcherOpen = false
-            root.dashboardOpen = false
             root.wallpaperPickerOpen = false
             root.widgetsCenterOpen = false
         }
@@ -1576,7 +1515,6 @@ ShellRoot {
             root.screenshotCenterOpen = false
             root.screenshotSettingsOpen = false
             root.launcherOpen = false
-            root.dashboardOpen = false
             root.wallpaperPickerOpen = false
         }
 
@@ -1665,17 +1603,6 @@ ShellRoot {
         iconThemeRevision: root.iconThemeRevision
         onSearchTextChanged: root.searchText = searchText
         onCloseRequested: root.launcherOpen = false
-    }
-
-    Dashboard {
-        modelData: root.primaryScreen
-        opened: root.dashboardOpen
-        activeTitle: root.computedActiveTitle
-        systemLoad: root.systemLoad
-        volumePercent: root.volumePercent
-        volumeMuted: root.volumeMuted
-
-        onLockRequested: root.requestLockScreen()
     }
 
     Variants {
