@@ -88,7 +88,8 @@ PanelWindow {
         // First-run suggestions are common, useful actions; usage history
         // gradually promotes the commands each user actually runs most.
         { id: "launcher", name: "launcher", keywords: ["launcher", "applications", "apps"] },
-        { id: "controls", name: "controls", keywords: ["controls", "control center", "settings", "system settings"] },
+        { id: "setting", name: "setting", keywords: ["setting", "settings", "system settings", "preferences", "desktop settings"] },
+        { id: "controls", name: "controls", keywords: ["controls", "control center", "quick controls"] },
         { id: "wallpaper", name: "wallpaper", keywords: ["wallpaper", "background", "image"] },
         { id: "screenshot", name: "screenshot", keywords: ["screenshot", "screen", "capture", "snapshot", "area", "window"] },
         { id: "power", name: "power", keywords: ["power", "performance", "balanced", "energy", "eco", "power-saving", "power-saver"] },
@@ -1612,6 +1613,7 @@ PanelWindow {
         case "power":
             root.openPowerView()
             break
+        case "setting":
         case "controls":
             root.openControlView()
             break
