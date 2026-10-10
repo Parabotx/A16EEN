@@ -1,6 +1,7 @@
 import QtQuick
 import Quickshell
 import Quickshell.Wayland
+import Quickshell.Io
 import qs.ui
 
 PanelWindow {
@@ -443,14 +444,26 @@ PanelWindow {
                                         smooth: true
                                     }
 
-                                    TextInput {
+                                    Item {
+                                        width: parent.width - 24
+                                        height: parent.height
+
+                                        Text {
+                                            anchors.fill: parent
+                                            verticalAlignment: Text.AlignVCenter
+                                            text: "Search copied text"
+                                            color: "#9AA3AE"
+                                            font.pixelSize: 10
+                                            visible: clipboardSearchInput.text.length === 0
+                                        }
+
+                                        TextInput {
                                         id: clipboardSearchInput
                                         width: parent.width - 24
                                         height: parent.height
                                         verticalAlignment: TextInput.AlignVCenter
                                         text: clipboardContent.clipboardSearch
                                         onTextChanged: clipboardContent.clipboardSearch = text
-                                        placeholderText: "Search copied text"
                                         color: "#222831"
                                         selectionColor: "#DDE5EF"
                                         selectedTextColor: "#111318"
@@ -458,6 +471,11 @@ PanelWindow {
                                         clip: true
                                         activeFocusOnTab: true
                                         Keys.onEscapePressed: root.closeRequested()
+                                        anchors.fill: parent
+                                        verticalAlignment: TextInput.AlignVCenter
+                                        width: parent.width
+                                        height: parent.height
+                                        }
                                     }
                                 }
                             }

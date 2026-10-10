@@ -172,9 +172,9 @@ def start_watcher() -> int:
         return subprocess.Popen(
             [
                 wl_paste,
-                "--watch",
                 "--type",
                 "text",
+                "--watch",
                 sys.executable,
                 str(Path(__file__).resolve()),
                 "capture",
