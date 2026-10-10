@@ -340,6 +340,12 @@ ShellRoot {
     property bool toolsPanelOpen: false
     property bool calculatorOpen: false
     property string toolsPanelPage: "tools"
+    property bool dataMeterEnabled: false
+    property bool dataMeterSettingsReady: false
+    property bool dataMeterSnapshotReady: false
+    property var dataMeterSnapshot: ({})
+    property string dataMeterError: ""
+    readonly property string dataMeterSettingsPath: Quickshell.stateDir + "/data-meter-settings.json"
     property var notificationHistory: []
     property bool notificationHistoryReady: false
     readonly property int unreadNotificationCount:
@@ -373,6 +379,68 @@ ShellRoot {
                 }))
             }
         }
+    }
+
+    FileView {
+        id: dataMeterSettingsFile
+        path: root.dataMeterSettingsPath
+        preload: true
+        printErrors: false
+        atomicWrites: true
+        onLoaded: root.loadDataMeterSettings()
+        onLoadFailed: root.dataMeterSettingsReady = true
+    }
+
+    Timer {
+        id: dataMeterSettingsSaveTimer
+        interval: 250
+        repeat: false
+        onTriggered: {
+            if (root.dataMeterSettingsReady) {
+                dataMeterSettingsFile.setText(JSON.stringify({
+                    version: 1,
+                    showSpeed: root.dataMeterEnabled
+                }))
+            }
+        }
+    }
+
+    Process {
+        id: dataMeterProcess
+        command: ["a16een-data-meter", "snapshot"]
+        running: false
+        stdout: StdioCollector {
+            onStreamFinished: {
+                try {
+                    const parsed = JSON.parse(String(text || "{}"))
+                    if (!parsed || typeof parsed !== "object")
+                        throw new Error("No data snapshot was returned")
+                    root.dataMeterSnapshot = parsed
+                    root.dataMeterSnapshotReady = true
+                    root.dataMeterError = ""
+                } catch (error) {
+                    root.dataMeterError = "Network data is unavailable."
+                    console.warn("A16EEN Data Meter could not parse the snapshot:", error)
+                }
+            }
+        }
+        stderr: StdioCollector {
+            onStreamFinished: {
+                const message = String(text || "").trim()
+                if (message.length) {
+                    root.dataMeterError = "Network data is unavailable."
+                    console.warn("A16EEN Data Meter:", message)
+                }
+            }
+        }
+    }
+
+    Timer {
+        id: dataMeterTimer
+        interval: 3000
+        repeat: true
+        running: root.dataMeterEnabled || (root.toolsPanelOpen && root.toolsPanelPage === "data-meter")
+        onTriggered: root.requestDataMeterSnapshot()
     }
 
     FileView {
@@ -551,15 +619,11 @@ ShellRoot {
                 root.toolsPanelPage = "tools"
                 return
             }
-            root.closeTransientPanels()
-            root.toolsPanelPage = "stash"
-            root.toolsPanelOpen = true
+            root.openToolsPage("stash")
         }
 
         function open(): void {
-            root.closeTransientPanels()
-            root.toolsPanelPage = "stash"
-            root.toolsPanelOpen = true
+            root.openToolsPage("stash")
         }
 
         function close(): void {
@@ -890,6 +954,64 @@ ShellRoot {
             notificationHistorySaveTimer.restart()
     }
 
+    function loadDataMeterSettings() {
+        try {
+            const parsed = JSON.parse(String(dataMeterSettingsFile.text() || "{}"))
+            root.dataMeterEnabled = Boolean(parsed && parsed.showSpeed)
+        } catch (error) {
+            root.dataMeterEnabled = false
+            console.warn("A16EEN Data Meter settings could not be read:", error)
+        }
+        root.dataMeterSettingsReady = true
+        if (root.dataMeterEnabled)
+            Qt.callLater(() => root.requestDataMeterSnapshot())
+    }
+
+    function saveDataMeterSettings() {
+        if (root.dataMeterSettingsReady)
+            dataMeterSettingsSaveTimer.restart()
+    }
+
+    function setDataMeterEnabled(value) {
+        root.dataMeterEnabled = Boolean(value)
+        root.saveDataMeterSettings()
+        if (root.dataMeterEnabled)
+            root.requestDataMeterSnapshot()
+        else if (!(root.toolsPanelOpen && root.toolsPanelPage === "data-meter"))
+            dataMeterTimer.stop()
+    }
+
+    function requestDataMeterSnapshot() {
+        if (!root.dataMeterEnabled
+            && !(root.toolsPanelOpen && root.toolsPanelPage === "data-meter"))
+            return
+        if (!dataMeterProcess.running)
+            dataMeterProcess.running = true
+    }
+
+    function openToolsPage(pageName) {
+        // Reuse the existing layer-shell surface to avoid overlay handoff/blink.
+        root.quickNotesOpen = false
+        root.quickTasksOpen = false
+        root.quickPresetsOpen = false
+        root.quickUtilitiesOpen = false
+        root.utilitiesExpanded = false
+        root.notificationCenterOpen = false
+        root.commandCenterOpen = false
+        root.launcherOpen = false
+        root.dashboardOpen = false
+        root.wallpaperPickerOpen = false
+        root.widgetsCenterOpen = false
+        root.screenshotCenterOpen = false
+        root.screenshotSettingsOpen = false
+        root.screenshotPreviewOpen = false
+        root.calculatorOpen = false
+        root.toolsPanelPage = String(pageName || "tools")
+        root.toolsPanelOpen = true
+        if (root.toolsPanelPage === "data-meter")
+            Qt.callLater(() => root.requestDataMeterSnapshot())
+    }
+
     function closeTransientPanels() {
         root.quickNotesOpen = false
         root.quickTasksOpen = false
@@ -926,21 +1048,17 @@ ShellRoot {
             root.toolsPanelPage = "tools"
             return
         }
-        root.closeTransientPanels()
-        root.toolsPanelPage = "tools"
-        root.toolsPanelOpen = true
+        root.openToolsPage("tools")
     }
 
     function activateHubTool(toolId) {
-        if (String(toolId || "") === "monitor") {
-            root.calculatorOpen = false
-            root.toolsPanelPage = "monitor"
-            root.toolsPanelOpen = true
+        const id = String(toolId || "")
+        if (["calculator", "monitor", "stash", "data-meter"].includes(id)) {
+            root.openToolsPage(id)
             return
         }
-
         root.closeTransientPanels()
-        switch (String(toolId || "")) {
+        switch (id) {
         case "screenshot":
             root.screenshotCenterOpen = true
             break
@@ -951,9 +1069,6 @@ ShellRoot {
             root.quickUtilitiesOpen = true
             root.utilitiesExpanded = true
             root.utilitiesMode = "clipboard"
-            break
-        case "calculator":
-            root.calculatorOpen = true
             break
         }
     }
@@ -1275,6 +1390,15 @@ ShellRoot {
         onToolsRequested: root.openToolsPanel()
     }
 
+    DataMeterIndicator {
+        modelData: root.primaryScreen
+        navbarPosition: root.navbarPosition
+        dockVisible: !root.secureLockActive && (!root.focusedWindowFullscreen || root.navbarRevealed)
+        enabled: root.dataMeterEnabled
+        snapshot: root.dataMeterSnapshot
+        onOpenRequested: root.openToolsPage("data-meter")
+    }
+
     QuickActionsTray {
         modelData: root.primaryScreen
         navbarPosition: root.navbarPosition
@@ -1323,7 +1447,12 @@ ShellRoot {
             root.toolsPanelPage = "tools"
         }
         onToolRequested: toolId => root.activateHubTool(toolId)
-        onAppStashRequested: root.toolsPanelPage = "stash"
+        dataMeterEnabled: root.dataMeterEnabled
+        dataMeterSnapshot: root.dataMeterSnapshot
+        dataMeterSnapshotReady: root.dataMeterSnapshotReady
+        dataMeterError: root.dataMeterError
+        onDataMeterToggleRequested: enabled => root.setDataMeterEnabled(enabled)
+        onAppStashRequested: root.openToolsPage("stash")
         onBackRequested: root.toolsPanelPage = "tools"
         onRestoreRequested: windowId => {
             Quickshell.execDetached(["a16een-app-stash", "restore", String(windowId)])
@@ -1332,12 +1461,6 @@ ShellRoot {
         }
     }
 
-    CalculatorPanel {
-        modelData: root.primaryScreen
-        navbarPosition: root.navbarPosition
-        opened: root.calculatorOpen
-        onCloseRequested: root.calculatorOpen = false
-    }
 
     QuickNotes {
         modelData: root.primaryScreen
