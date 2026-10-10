@@ -458,23 +458,18 @@ PanelWindow {
                                         }
 
                                         TextInput {
-                                        id: clipboardSearchInput
-                                        width: parent.width - 24
-                                        height: parent.height
-                                        verticalAlignment: TextInput.AlignVCenter
-                                        text: clipboardContent.clipboardSearch
-                                        onTextChanged: clipboardContent.clipboardSearch = text
-                                        color: "#222831"
-                                        selectionColor: "#DDE5EF"
-                                        selectedTextColor: "#111318"
-                                        font.pixelSize: 10
-                                        clip: true
-                                        activeFocusOnTab: true
-                                        Keys.onEscapePressed: root.closeRequested()
-                                        anchors.fill: parent
-                                        verticalAlignment: TextInput.AlignVCenter
-                                        width: parent.width
-                                        height: parent.height
+                                            id: clipboardSearchInput
+                                            anchors.fill: parent
+                                            verticalAlignment: TextInput.AlignVCenter
+                                            text: clipboardContent.clipboardSearch
+                                            onTextChanged: clipboardContent.clipboardSearch = text
+                                            color: "#222831"
+                                            selectionColor: "#DDE5EF"
+                                            selectedTextColor: "#111318"
+                                            font.pixelSize: 10
+                                            clip: true
+                                            activeFocusOnTab: true
+                                            Keys.onEscapePressed: root.closeRequested()
                                         }
                                     }
                                 }
