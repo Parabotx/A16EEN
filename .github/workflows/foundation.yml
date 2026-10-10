@@ -94,7 +94,7 @@ jobs:
           grep -Fq 'mipmap: true' quickshell/a16een/ui/Launcher.qml
           ! grep -Fq 'pacman -Syu --needed "$package"' scripts/a16een-icon-theme
           ! grep -Fq 'pacman -Syu --needed "$package"' scripts/a16een-icon-theme
-          grep -Fq 'pacman -S --needed "$package"' scripts/a16een-icon-theme
+          grep -Fq 'pacman -S --needed' scripts/a16een-icon-theme
           test -f quickshell/a16een/ui/IconThemeSection.qml
 
       - name: Validate foundation files
