@@ -523,7 +523,7 @@ jobs:
           ! grep -Fq 'restart_shell' scripts/a16een-wallpaper
           grep -Fq 'notify_shell "$path"' scripts/a16een-wallpaper
           ! grep -Fq 'sh", "-c"' quickshell/a16een/ui/CommandCenter.qml
-          grep -Fq 'anchors.verticalCenterOffset: root.powerViewOpen || root.controlViewOpen || root.iconThemeViewOpen || root.workspacePresetViewOpen || root.navbarViewOpen ? 0 : 185' quickshell/a16een/ui/CommandCenter.qml
+          grep -Fq 'anchors.verticalCenterOffset: root.plainCommandView' quickshell/a16een/ui/CommandCenter.qml
           grep -Fq 'ToplevelManager.activeToplevel' quickshell/a16een/shell.qml
           ! grep -Fq 'focusedWindowProcess' quickshell/a16een/shell.qml
           ! grep -Fq 'is_fullscreen' quickshell/a16een/shell.qml
