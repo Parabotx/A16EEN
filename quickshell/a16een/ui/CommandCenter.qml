@@ -870,6 +870,7 @@ PanelWindow {
                 focus: root.opened && root.plainCommandView
                 activeFocusOnPress: true
                 verticalAlignment: Text.AlignVCenter
+                horizontalAlignment: TextInput.AlignHCenter
                 selectByMouse: true
                 text: "/"
                 cursorVisible: activeFocus
@@ -931,8 +932,8 @@ PanelWindow {
 
                         Text {
                             anchors.fill: parent
-                            anchors.leftMargin: 2
                             verticalAlignment: Text.AlignVCenter
+                            horizontalAlignment: Text.AlignHCenter
                             text: "/" + modelData.name
                             color: root.selectedCommandIndex === index ? "#FFFFFF" : "#858585"
                             font.family: "monospace"
@@ -964,6 +965,7 @@ PanelWindow {
                 color: "#777777"
                 font.family: "monospace"
                 font.pixelSize: 12
+                horizontalAlignment: Text.AlignHCenter
                 verticalAlignment: Text.AlignVCenter
             }
         }
