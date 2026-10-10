@@ -1,420 +1,455 @@
 {
-  "version": 3,
-  "title": "A16EEN — Notes for a Brighter Day",
-  "description": "An offline collection of uplifting classics and original A16EEN reminders. Quotes rotate randomly every six hours while the widget is enabled.",
+  "version": 4,
+  "title": "A16EEN — The Wealth Mindset",
+  "description": "An offline collection of original, hard-edged reflections on capital, ownership, cash flow, business, negotiation, leverage, risk, and ambition.",
   "quotes": [
     {
-      "id": "dickinson-possibility",
-      "text": "I dwell in Possibility — a fairer house than prose.",
-      "author": "Emily Dickinson",
-      "source": "Poem beginning “I dwell in Possibility”",
-      "category": "Hope"
-    },
-    {
-      "id": "dickinson-hope",
-      "text": "Hope is the thing with feathers that perches in the soul.",
-      "author": "Emily Dickinson",
-      "source": "Poem beginning “Hope is the thing with feathers”",
-      "category": "Hope"
-    },
-    {
-      "id": "dickinson-nows",
-      "text": "Forever is composed of nows.",
-      "author": "Emily Dickinson",
-      "source": "Poem beginning “Forever is composed of nows”",
-      "category": "Presence"
-    },
-    {
-      "id": "dickens-sunrise",
-      "text": "The sun himself is weak when he first rises, and gathers strength and courage as the day gets on.",
-      "author": "Charles Dickens",
-      "source": "The Old Curiosity Shop",
-      "category": "Growth"
-    },
-    {
-      "id": "keller-sunshine",
-      "text": "Keep your face to the sunshine and you cannot see a shadow.",
-      "author": "Helen Keller",
-      "source": "Optimism: An Essay",
-      "category": "Perspective"
-    },
-    {
-      "id": "keller-adventure",
-      "text": "Life is either a daring adventure or nothing.",
-      "author": "Helen Keller",
-      "source": "The Open Door",
-      "category": "Courage"
-    },
-    {
-      "id": "angelou-light",
-      "text": "Nothing can dim the light that shines from within.",
-      "author": "Maya Angelou",
-      "source": "Letter to My Daughter",
-      "category": "Self-belief"
-    },
-    {
-      "id": "angelou-rainbow",
-      "text": "Try to be a rainbow in someone’s cloud.",
-      "author": "Maya Angelou",
-      "source": "Letter to My Daughter",
-      "category": "Kindness"
-    },
-    {
-      "id": "angelou-work",
-      "text": "Nothing will work unless you do.",
-      "author": "Maya Angelou",
-      "source": "Wouldn’t Take Nothing for My Journey Now",
-      "category": "Action"
-    },
-    {
-      "id": "roosevelt-courage",
-      "text": "You must do the thing you think you cannot do.",
-      "author": "Eleanor Roosevelt",
-      "source": "You Learn by Living",
-      "category": "Courage"
-    },
-    {
-      "id": "frost-through",
-      "text": "The best way out is always through.",
-      "author": "Robert Frost",
-      "source": "A Servant to Servants",
-      "category": "Resilience"
-    },
-    {
-      "id": "thoreau-dreams",
-      "text": "Go confidently in the direction of your dreams. Live the life you have imagined.",
-      "author": "Henry David Thoreau",
-      "source": "Walden, conclusion",
-      "category": "Purpose"
-    },
-    {
-      "id": "tolkien-wander",
-      "text": "Not all those who wander are lost.",
-      "author": "J. R. R. Tolkien",
-      "source": "The Fellowship of the Ring",
-      "category": "Discovery"
-    },
-    {
-      "id": "tolkien-time",
-      "text": "All we have to decide is what to do with the time that is given us.",
-      "author": "J. R. R. Tolkien",
-      "source": "The Fellowship of the Ring",
-      "category": "Choice"
-    },
-    {
-      "id": "austen-tenderness",
-      "text": "There is no charm equal to tenderness of heart.",
-      "author": "Jane Austen",
-      "source": "Emma",
-      "category": "Kindness"
-    },
-    {
-      "id": "austen-reading",
-      "text": "I declare after all there is no enjoyment like reading!",
-      "author": "Jane Austen",
-      "source": "Pride and Prejudice",
-      "category": "Joy"
-    },
-    {
-      "id": "shakespeare-greatness",
-      "text": "Be not afraid of greatness.",
-      "author": "William Shakespeare",
-      "source": "Twelfth Night, Act II, Scene V",
-      "category": "Courage"
-    },
-    {
-      "id": "shakespeare-adversity",
-      "text": "Sweet are the uses of adversity.",
-      "author": "William Shakespeare",
-      "source": "As You Like It, Act II, Scene I",
-      "category": "Perspective"
-    },
-    {
-      "id": "shakespeare-possibility",
-      "text": "We know what we are, but know not what we may be.",
-      "author": "William Shakespeare",
-      "source": "Hamlet, Act IV, Scene V",
-      "category": "Possibility"
-    },
-    {
-      "id": "shakespeare-integrity",
-      "text": "To thine own self be true.",
-      "author": "William Shakespeare",
-      "source": "Hamlet, Act I, Scene III",
-      "category": "Integrity"
-    },
-    {
-      "id": "shakespeare-honesty",
-      "text": "No legacy is so rich as honesty.",
-      "author": "William Shakespeare",
-      "source": "All’s Well That Ends Well, Act III, Scene V",
-      "category": "Integrity"
-    },
-    {
-      "id": "vangogh-small-things",
-      "text": "Great things are done by a series of small things brought together.",
-      "author": "Vincent van Gogh",
-      "source": "Letters to Theo",
-      "category": "Patience"
-    },
-    {
-      "id": "vangogh-attempt",
-      "text": "What would life be if we had no courage to attempt anything?",
-      "author": "Vincent van Gogh",
-      "source": "Letters to Theo",
-      "category": "Courage"
-    },
-    {
-      "id": "marcus-thoughts",
-      "text": "The happiness of your life depends upon the quality of your thoughts.",
-      "author": "Marcus Aurelius",
-      "source": "Meditations, 4.3 (translation)",
-      "category": "Perspective"
-    },
-    {
-      "id": "epictetus-become",
-      "text": "First say to yourself what you would be; and then do what you have to do.",
-      "author": "Epictetus",
-      "source": "Enchiridion, 51 (translation)",
-      "category": "Action"
-    },
-    {
-      "id": "lao-step",
-      "text": "A journey of a thousand miles begins with a single step.",
-      "author": "Lao Tzu",
-      "source": "Tao Te Ching, chapter 64 (traditional translation)",
-      "category": "Beginnings"
-    },
-    {
-      "id": "tagore-faith",
-      "text": "Faith is the bird that feels the light when the dawn is still dark.",
-      "author": "Rabindranath Tagore",
-      "source": "Fireflies",
-      "category": "Hope"
-    },
-    {
-      "id": "proust-grateful",
-      "text": "Let us be grateful to people who make us happy; they are the charming gardeners who make our souls blossom.",
-      "author": "Marcel Proust",
-      "source": "In Search of Lost Time (translation)",
-      "category": "Gratitude"
-    },
-    {
-      "id": "dalai-actions",
-      "text": "Happiness is not something ready made. It comes from your own actions.",
-      "author": "Dalai Lama",
-      "source": "The Art of Happiness",
-      "category": "Joy"
-    },
-    {
-      "id": "dalai-purpose",
-      "text": "The purpose of our lives is to be happy.",
-      "author": "Dalai Lama",
-      "source": "The Art of Happiness",
-      "category": "Purpose"
-    },
-    {
-      "id": "collier-effort",
-      "text": "Success is the sum of small efforts, repeated day in and day out.",
-      "author": "Robert Collier",
-      "source": "The Secret of the Ages",
-      "category": "Consistency"
-    },
-    {
-      "id": "malala-world",
-      "text": "One child, one teacher, one book, one pen can change the world.",
-      "author": "Malala Yousafzai",
-      "source": "United Nations Youth Assembly speech, 2013",
-      "category": "Possibility"
-    },
-    {
-      "id": "aesop-kindness",
-      "text": "No act of kindness, no matter how small, is ever wasted.",
-      "author": "Aesop",
-      "source": "The Lion and the Mouse (traditional attribution)",
-      "category": "Kindness"
-    },
-    {
-      "id": "franklin-action",
-      "text": "Well done is better than well said.",
-      "author": "Benjamin Franklin",
-      "source": "Poor Richard’s Almanack",
-      "category": "Action"
-    },
-    {
-      "id": "franklin-time",
-      "text": "Lost time is never found again.",
-      "author": "Benjamin Franklin",
-      "source": "Poor Richard’s Almanack",
-      "category": "Presence"
-    },
-    {
-      "id": "wilde-stars",
-      "text": "We are all in the gutter, but some of us are looking at the stars.",
-      "author": "Oscar Wilde",
-      "source": "Lady Windermere’s Fan, Act III",
-      "category": "Hope"
-    },
-    {
-      "id": "woolf-flow",
-      "text": "I am rooted, but I flow.",
-      "author": "Virginia Woolf",
-      "source": "The Waves",
-      "category": "Growth"
-    },
-    {
-      "id": "muir-nature",
-      "text": "In every walk with nature one receives far more than he seeks.",
-      "author": "John Muir",
-      "source": "John of the Mountains",
-      "category": "Wonder"
-    },
-    {
-      "id": "king-first-step",
-      "text": "Faith is taking the first step even when you don’t see the whole staircase.",
-      "author": "Martin Luther King Jr.",
-      "source": "Speech at Ebenezer Baptist Church, 1968",
-      "category": "Courage"
-    },
-    {
-      "id": "king-right",
-      "text": "The time is always right to do what is right.",
-      "author": "Martin Luther King Jr.",
-      "source": "Oberlin College commencement address, 1965",
-      "category": "Integrity"
-    },
-    {
-      "id": "seneca-learning",
-      "text": "As long as you live, keep learning how to live.",
-      "author": "Seneca",
-      "source": "Moral Letters to Lucilius, Letter 76 (translation)",
-      "category": "Growth"
-    },
-    {
-      "id": "a16een-begin-again",
-      "text": "You can begin again without starting from nothing.",
+      "id": "big-money",
+      "category": "Risk",
+      "text": "Big money doesn't always come clean. Know the price before you chase the prize.",
       "author": "A16EEN",
-      "source": "A daily reminder",
-      "category": "Renewal"
+      "source": "The Wealth Mindset"
     },
     {
-      "id": "a16een-shine",
-      "text": "You don’t have to shine loudly to make the world brighter.",
+      "id": "ownership",
+      "category": "Ownership",
+      "text": "Cash impresses. Ownership compounds.",
       "author": "A16EEN",
-      "source": "A daily reminder",
-      "category": "Kindness"
+      "source": "The Wealth Mindset"
     },
     {
-      "id": "a16een-wonder",
-      "text": "Make room for wonder. It has a way of finding you.",
+      "id": "cashflow",
+      "category": "Cash flow",
+      "text": "Cash flow buys options; options buy freedom.",
       "author": "A16EEN",
-      "source": "A daily reminder",
-      "category": "Wonder"
+      "source": "The Wealth Mindset"
     },
     {
-      "id": "a16een-promises",
-      "text": "Keep the promises you make to yourself, especially the small ones.",
+      "id": "hours-ceiling",
+      "category": "Leverage",
+      "text": "If you only sell your hours, your income has a ceiling.",
       "author": "A16EEN",
-      "source": "A daily reminder",
-      "category": "Self-trust"
+      "source": "The Wealth Mindset"
     },
     {
-      "id": "a16een-garden",
-      "text": "Your attention is a garden; give beautiful things room to grow.",
+      "id": "solve-scale",
+      "category": "Value",
+      "text": "Money follows problems solved at scale.",
       "author": "A16EEN",
-      "source": "A daily reminder",
-      "category": "Presence"
+      "source": "The Wealth Mindset"
     },
     {
-      "id": "a16een-good-practice",
-      "text": "The good you practice becomes the good the world remembers.",
+      "id": "build-once",
+      "category": "Business",
+      "text": "Build once, sell often, and own the upside.",
       "author": "A16EEN",
-      "source": "A daily reminder",
-      "category": "Kindness"
+      "source": "The Wealth Mindset"
     },
     {
-      "id": "a16een-gentle-beginning",
-      "text": "A gentle beginning can still grow into something extraordinary.",
+      "id": "numbers",
+      "category": "Deals",
+      "text": "A deal that cannot survive the numbers cannot survive the hype.",
       "author": "A16EEN",
-      "source": "A daily reminder",
-      "category": "Beginnings"
+      "source": "The Wealth Mindset"
     },
     {
-      "id": "a16een-timing",
-      "text": "May you be proud of your effort and gentle with your timing.",
+      "id": "balance-sheet",
+      "category": "Discipline",
+      "text": "Move in silence; let the balance sheet speak.",
       "author": "A16EEN",
-      "source": "A daily reminder",
-      "category": "Self-kindness"
+      "source": "The Wealth Mindset"
     },
     {
-      "id": "a16een-curiosity",
-      "text": "Let curiosity lead, courage steady you, and kindness guide you.",
+      "id": "status",
+      "category": "Wealth",
+      "text": "Don't finance a rich image with the money meant to build a rich future.",
       "author": "A16EEN",
-      "source": "A daily reminder",
-      "category": "Courage"
+      "source": "The Wealth Mindset"
     },
     {
-      "id": "a16een-nurture",
-      "text": "Notice what is good. Nurture what is growing. Keep going.",
+      "id": "systems",
+      "category": "Systems",
+      "text": "Hustle gets you moving. Systems keep money moving while you sleep.",
       "author": "A16EEN",
-      "source": "A daily reminder",
-      "category": "Growth"
+      "source": "The Wealth Mindset"
     },
     {
-      "id": "a16een-hours",
-      "text": "Make something beautiful from the hours you are given.",
+      "id": "margins",
+      "category": "Finance",
+      "text": "Margin gives a business oxygen. Cash gives its owner options.",
       "author": "A16EEN",
-      "source": "A daily reminder",
-      "category": "Purpose"
+      "source": "The Wealth Mindset"
     },
     {
-      "id": "a16een-small-courage",
-      "text": "A small act of courage can open an entirely new world.",
+      "id": "network",
+      "category": "Reputation",
+      "text": "Your network opens doors; your reputation determines what waits inside.",
       "author": "A16EEN",
-      "source": "A daily reminder",
-      "category": "Courage"
+      "source": "The Wealth Mindset"
     },
     {
-      "id": "a16een-today",
-      "text": "Let today hold a little more wonder, kindness, and possibility.",
+      "id": "ownership-not-appearance",
+      "category": "Ownership",
+      "text": "Study ownership, not appearances.",
       "author": "A16EEN",
-      "source": "A daily reminder",
-      "category": "Joy"
+      "source": "The Wealth Mindset"
     },
     {
-      "id": "a16een-next-step",
-      "text": "You do not need the whole road lit; the next step is enough.",
+      "id": "waste",
+      "category": "Discipline",
+      "text": "A thousand small leaks can sink a million-dollar plan.",
       "author": "A16EEN",
-      "source": "A daily reminder",
-      "category": "Hope"
+      "source": "The Wealth Mindset"
     },
     {
-      "id": "a16een-ordinary-moments",
-      "text": "The life you want is built in ordinary moments, lovingly repeated.",
+      "id": "compounding",
+      "category": "Compounding",
+      "text": "Be patient with compounding and impatient with waste.",
       "author": "A16EEN",
-      "source": "A daily reminder",
-      "category": "Consistency"
+      "source": "The Wealth Mindset"
     },
     {
-      "id": "a16een-kindness-light",
-      "text": "Carry kindness like light: it costs little and changes everything.",
+      "id": "debt",
+      "category": "Risk",
+      "text": "Debt can be a tool or a trap. The numbers decide which.",
       "author": "A16EEN",
-      "source": "A daily reminder",
-      "category": "Kindness"
+      "source": "The Wealth Mindset"
     },
     {
-      "id": "a16een-next-chapter",
-      "text": "Your next chapter does not need permission from your last.",
+      "id": "walk-away",
+      "category": "Negotiation",
+      "text": "Negotiation starts when your walk-away is real.",
       "author": "A16EEN",
-      "source": "A daily reminder",
-      "category": "Renewal"
+      "source": "The Wealth Mindset"
     },
     {
-      "id": "a16een-growing-quietly",
-      "text": "Some of the strongest growth happens where nobody is watching.",
+      "id": "value",
+      "category": "Markets",
+      "text": "A market rewards value, timing, distribution, and leverage.",
       "author": "A16EEN",
-      "source": "A daily reminder",
-      "category": "Growth"
+      "source": "The Wealth Mindset"
+    },
+    {
+      "id": "rent-job",
+      "category": "Income",
+      "text": "If the money stops when you stop showing up, you may have bought yourself a job.",
+      "author": "A16EEN",
+      "source": "The Wealth Mindset"
+    },
+    {
+      "id": "downside",
+      "category": "Risk",
+      "text": "Protect the downside so you can stay in the game.",
+      "author": "A16EEN",
+      "source": "The Wealth Mindset"
+    },
+    {
+      "id": "understand-risk",
+      "category": "Risk",
+      "text": "Risk gets expensive when you don't understand what you're buying.",
+      "author": "A16EEN",
+      "source": "The Wealth Mindset"
+    },
+    {
+      "id": "calculated-risk",
+      "category": "Risk",
+      "text": "A calculated risk beats a comfortable illusion.",
+      "author": "A16EEN",
+      "source": "The Wealth Mindset"
+    },
+    {
+      "id": "options",
+      "category": "Negotiation",
+      "text": "The strongest negotiation position is having real options.",
+      "author": "A16EEN",
+      "source": "The Wealth Mindset"
+    },
+    {
+      "id": "machine",
+      "category": "Business",
+      "text": "A business is a machine. Measure what it returns.",
+      "author": "A16EEN",
+      "source": "The Wealth Mindset"
+    },
+    {
+      "id": "profit-source",
+      "category": "Deals",
+      "text": "If you can't explain where the profit comes from, you don't understand the deal.",
+      "author": "A16EEN",
+      "source": "The Wealth Mindset"
+    },
+    {
+      "id": "money-amplifies",
+      "category": "Strategy",
+      "text": "Money doesn't fix a weak plan; it makes the consequences bigger.",
+      "author": "A16EEN",
+      "source": "The Wealth Mindset"
+    },
+    {
+      "id": "reinvent-dollar",
+      "category": "Capital",
+      "text": "A dollar deployed well can work long after the purchase is forgotten.",
+      "author": "A16EEN",
+      "source": "The Wealth Mindset"
+    },
+    {
+      "id": "price",
+      "category": "Value",
+      "text": "Raise your price when your value has earned it.",
+      "author": "A16EEN",
+      "source": "The Wealth Mindset"
+    },
+    {
+      "id": "real-need",
+      "category": "Business",
+      "text": "Sell to a real need, not just your own excitement.",
+      "author": "A16EEN",
+      "source": "The Wealth Mindset"
+    },
+    {
+      "id": "access-control",
+      "category": "Finance",
+      "text": "Access to money is not the same as control over money.",
+      "author": "A16EEN",
+      "source": "The Wealth Mindset"
+    },
+    {
+      "id": "win-numbers",
+      "category": "Strategy",
+      "text": "You don't need to win every argument. You need to win the numbers.",
+      "author": "A16EEN",
+      "source": "The Wealth Mindset"
+    },
+    {
+      "id": "quiet-owner",
+      "category": "Ownership",
+      "text": "Don't be first to brag. Be first to own.",
+      "author": "A16EEN",
+      "source": "The Wealth Mindset"
+    },
+    {
+      "id": "execution",
+      "category": "Execution",
+      "text": "Ambition isn't an asset. Execution is.",
+      "author": "A16EEN",
+      "source": "The Wealth Mindset"
+    },
+    {
+      "id": "opportunity",
+      "category": "Risk",
+      "text": "An opportunity with no downside analysis is a trap wearing a suit.",
+      "author": "A16EEN",
+      "source": "The Wealth Mindset"
+    },
+    {
+      "id": "room-full-money",
+      "category": "Ownership",
+      "text": "A room full of money means little if you own none of it.",
+      "author": "A16EEN",
+      "source": "The Wealth Mindset"
+    },
+    {
+      "id": "discipline",
+      "category": "Discipline",
+      "text": "Cash is a tool; discipline decides where it goes.",
+      "author": "A16EEN",
+      "source": "The Wealth Mindset"
+    },
+    {
+      "id": "first-million",
+      "category": "Capital",
+      "text": "Serious capital starts with learning to earn, keep, and deploy.",
+      "author": "A16EEN",
+      "source": "The Wealth Mindset"
+    },
+    {
+      "id": "multiple-income",
+      "category": "Income",
+      "text": "One income stream is a start. Ownership creates the next level.",
+      "author": "A16EEN",
+      "source": "The Wealth Mindset"
+    },
+    {
+      "id": "scarcity",
+      "category": "Markets",
+      "text": "Scarcity can set a price. Lasting usefulness creates demand.",
+      "author": "A16EEN",
+      "source": "The Wealth Mindset"
+    },
+    {
+      "id": "busy",
+      "category": "Business",
+      "text": "Being busy is not the same as being profitable.",
+      "author": "A16EEN",
+      "source": "The Wealth Mindset"
+    },
+    {
+      "id": "margin-first",
+      "category": "Finance",
+      "text": "Revenue makes noise. Profit keeps the lights on.",
+      "author": "A16EEN",
+      "source": "The Wealth Mindset"
+    },
+    {
+      "id": "equity",
+      "category": "Ownership",
+      "text": "Equity is the difference between being paid once and participating in what grows.",
+      "author": "A16EEN",
+      "source": "The Wealth Mindset"
+    },
+    {
+      "id": "distribution",
+      "category": "Business",
+      "text": "A good product is powerful. Distribution makes it hard to ignore.",
+      "author": "A16EEN",
+      "source": "The Wealth Mindset"
+    },
+    {
+      "id": "timing-prepared",
+      "category": "Execution",
+      "text": "Timing matters. Preparation lets you act when the window opens.",
+      "author": "A16EEN",
+      "source": "The Wealth Mindset"
+    },
+    {
+      "id": "price-of-hesitation",
+      "category": "Decisions",
+      "text": "Sometimes the most expensive decision is waiting without a plan.",
+      "author": "A16EEN",
+      "source": "The Wealth Mindset"
+    },
+    {
+      "id": "own-flow",
+      "category": "Cash flow",
+      "text": "The real game is who owns the cash flow.",
+      "author": "A16EEN",
+      "source": "The Wealth Mindset"
+    },
+    {
+      "id": "capital-allocation",
+      "category": "Capital",
+      "text": "Your future is shaped by what you do with capital after you earn it.",
+      "author": "A16EEN",
+      "source": "The Wealth Mindset"
+    },
+    {
+      "id": "buy-time",
+      "category": "Freedom",
+      "text": "The point of wealth is not a louder life. It's more control over your time.",
+      "author": "A16EEN",
+      "source": "The Wealth Mindset"
+    },
+    {
+      "id": "small-deals",
+      "category": "Deals",
+      "text": "Small deals teach the habits that larger deals will test.",
+      "author": "A16EEN",
+      "source": "The Wealth Mindset"
+    },
+    {
+      "id": "measure-twice",
+      "category": "Strategy",
+      "text": "Know the margin, the risk, the exit, and who gets paid first.",
+      "author": "A16EEN",
+      "source": "The Wealth Mindset"
+    },
+    {
+      "id": "money-moves",
+      "category": "Markets",
+      "text": "Money moves toward a clear edge, not a confident speech.",
+      "author": "A16EEN",
+      "source": "The Wealth Mindset"
+    },
+    {
+      "id": "quiet-compounding",
+      "category": "Compounding",
+      "text": "Quiet compounding beats loud consumption.",
+      "author": "A16EEN",
+      "source": "The Wealth Mindset"
+    },
+    {
+      "id": "incentives",
+      "category": "Strategy",
+      "text": "Follow the incentives and you'll understand the deal.",
+      "author": "A16EEN",
+      "source": "The Wealth Mindset"
+    },
+    {
+      "id": "walk-away-terms",
+      "category": "Deals",
+      "text": "Never let the excitement of a deal replace the discipline of its terms.",
+      "author": "A16EEN",
+      "source": "The Wealth Mindset"
+    },
+    {
+      "id": "own-distribution",
+      "category": "Ownership",
+      "text": "Own the product, the customer relationship, or the distribution—ideally more than one.",
+      "author": "A16EEN",
+      "source": "The Wealth Mindset"
+    },
+    {
+      "id": "profit-reinvestment",
+      "category": "Capital",
+      "text": "Profit is a result. Reinvested profit can become a force.",
+      "author": "A16EEN",
+      "source": "The Wealth Mindset"
+    },
+    {
+      "id": "bigger-game",
+      "category": "Strategy",
+      "text": "Think in margins, years, and ownership stakes—not just today's payout.",
+      "author": "A16EEN",
+      "source": "The Wealth Mindset"
+    },
+    {
+      "id": "expensive-lessons",
+      "category": "Discipline",
+      "text": "The lesson is expensive when you pay for it twice.",
+      "author": "A16EEN",
+      "source": "The Wealth Mindset"
+    },
+    {
+      "id": "financial-oxygen",
+      "category": "Finance",
+      "text": "Liquidity is not boring when the unexpected arrives.",
+      "author": "A16EEN",
+      "source": "The Wealth Mindset"
+    },
+    {
+      "id": "money-attention",
+      "category": "Strategy",
+      "text": "Watch where the money goes; that's where the strategy really lives.",
+      "author": "A16EEN",
+      "source": "The Wealth Mindset"
+    },
+    {
+      "id": "deal-maker",
+      "category": "Deals",
+      "text": "Create value, negotiate the terms, and keep a share of what you build.",
+      "author": "A16EEN",
+      "source": "The Wealth Mindset"
+    },
+    {
+      "id": "real-flex",
+      "category": "Freedom",
+      "text": "The real flex is having choices when everyone else has deadlines.",
+      "author": "A16EEN",
+      "source": "The Wealth Mindset"
+    },
+    {
+      "id": "a16een-endgame",
+      "category": "A16EEN",
+      "text": "Earn with intent. Keep with discipline. Deploy with conviction.",
+      "author": "A16EEN",
+      "source": "The Wealth Mindset"
+    },
+    {
+      "id": "a16een-prize",
+      "category": "A16EEN",
+      "text": "Build something that keeps paying after the applause stops.",
+      "author": "A16EEN",
+      "source": "The Wealth Mindset"
     }
   ]
 }

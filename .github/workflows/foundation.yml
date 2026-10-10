@@ -134,10 +134,10 @@ jobs:
           grep -Fq "anchors.top: parent.top" quickshell/a16een/ui/QuotesWidget.qml
           grep -Fq "anchors.left: parent.left" quickshell/a16een/ui/QuotesWidget.qml
           ! grep -Fq "anchors.right: parent.right" quickshell/a16een/ui/QuotesWidget.qml
-          grep -Fq "interval: 6 * 60 * 60 * 1000" quickshell/a16een/ui/QuotesWidget.qml
+          grep -Fq "interval: 60 * 60 * 1000" quickshell/a16een/ui/QuotesWidget.qml
           grep -Fq "mask: Region { item: card }" quickshell/a16een/ui/QuotesWidget.qml
           grep -Fq "Math.floor(Math.random() * root.quotes.length)" quickshell/a16een/ui/QuotesWidget.qml
-          grep -Fq "A THOUGHT TO KEEP" quickshell/a16een/ui/QuotesWidget.qml
+          grep -Fq "THE WEALTH MINDSET" quickshell/a16een/ui/QuotesWidget.qml
           test "$(python3 -c 'import json; print(len(json.load(open("quickshell/a16een/assets/quotes.json"))["quotes"]))')" -ge 50
           ! grep -Fq "quoteCounter" quickshell/a16een/ui/QuotesWidget.qml
           ! grep -Fq "showNextQuote" quickshell/a16een/ui/QuotesWidget.qml
@@ -209,6 +209,16 @@ jobs:
           grep -Fq 'anchors.bottom: parent.bottom' quickshell/a16een/ui/MusicWidget.qml
           grep -Fq 'height: 170' quickshell/a16een/ui/MusicWidget.qml
           grep -Fq 'id: libraryPopup' quickshell/a16een/ui/MusicWidget.qml
+          grep -Fq 'property string libraryQuery: ""' quickshell/a16een/ui/MusicWidget.qml
+          grep -Fq 'readonly property var filteredTracks:' quickshell/a16een/ui/MusicWidget.qml
+          grep -Fq 'focusable: root.libraryOpen' quickshell/a16een/ui/MusicWidget.qml
+          grep -Fq 'WlrKeyboardFocus.OnDemand' quickshell/a16een/ui/MusicWidget.qml
+          grep -Fq 'id: libraryKeyboardInput' quickshell/a16een/ui/MusicWidget.qml
+          grep -Fq 'root.libraryQuery = ""' quickshell/a16een/ui/MusicWidget.qml
+          grep -Fq 'model: root.filteredTracks' quickshell/a16een/ui/MusicWidget.qml
+          grep -Fq 'root.playTrack(root.indexForPath(modelData.path))' quickshell/a16een/ui/MusicWidget.qml
+          ! grep -Fq 'YOUR MUSIC' quickshell/a16een/ui/MusicWidget.qml
+          ! grep -Fq ' SONGS' quickshell/a16een/ui/MusicWidget.qml
           grep -Fq 'readonly property bool libraryPopupOpensRight' quickshell/a16een/ui/MusicWidget.qml
           grep -Fq 'x: root.libraryPopupOpensRight ? card.x + card.width + 8' quickshell/a16een/ui/MusicWidget.qml
           grep -Fq '? card.y + card.height - height' quickshell/a16een/ui/MusicWidget.qml

@@ -26,6 +26,7 @@ PanelWindow {
     property string statusMessage: ""
     property bool actionBusy: false
     property bool libraryOpen: false
+    property string libraryQuery: ""
     property bool shuffleEnabled: false
     property int repeatMode: 0
     property bool seekDragging: false
@@ -38,6 +39,14 @@ PanelWindow {
     readonly property color cream: "#B8EAF2F8"
     readonly property color accent: "#7E9BC7"
     readonly property int activeIndex: root.indexForPath(root.playback.path)
+    readonly property var filteredTracks: {
+        const query = String(root.libraryQuery || "").trim().toLowerCase()
+        if (!query.length)
+            return root.tracks
+        return root.tracks.filter(track =>
+            [track.title, track.artist, track.filename]
+                .join(" ").toLowerCase().includes(query))
+    }
     readonly property bool isPlaying: root.playback.running
         && String(root.playback.path || "").length > 0
         && !root.playback.paused
@@ -62,6 +71,7 @@ PanelWindow {
 
     screen: modelData
     visible: root.widgetEnabled
+    focusable: root.libraryOpen
     color: "transparent"
     aboveWindows: false
     exclusiveZone: 0
@@ -84,6 +94,9 @@ PanelWindow {
 
     WlrLayershell.layer: WlrLayer.Bottom
     WlrLayershell.namespace: "a16een-widget-music"
+    WlrLayershell.keyboardFocus: root.libraryOpen
+        ? WlrKeyboardFocus.OnDemand
+        : WlrKeyboardFocus.None
 
     function indexForPath(path) {
         if (!path || !String(path).length)
@@ -246,6 +259,21 @@ PanelWindow {
             root.refreshPlayback()
         }
     }
+
+    onLibraryOpenChanged: {
+        root.libraryQuery = ""
+        libraryKeyboardInput.text = ""
+        if (root.libraryOpen) {
+            root.refreshLibrary()
+            Qt.callLater(function() {
+                if (root.libraryOpen)
+                    libraryKeyboardInput.forceActiveFocus()
+            })
+        } else {
+            libraryKeyboardInput.focus = false
+        }
+    }
+
 
     Process {
         id: libraryProcess
@@ -721,7 +749,7 @@ PanelWindow {
         width: root.libraryPopupOpensRight
             ? Math.min(card.width, Math.max(180, parent.width - card.x - card.width - 8 - root.libraryPopupRightMargin))
             : card.width
-        height: 128
+        height: 138
         radius: 16
         color: root.cream
         border.width: 1
@@ -737,134 +765,139 @@ PanelWindow {
 
         Column {
             anchors.fill: parent
-            anchors.margins: 12
-            spacing: 4
+            anchors.margins: 10
+            spacing: 0
 
-                Row {
-                    width: parent.width
-                    height: 12
+            Item {
+                width: parent.width
+                height: parent.height
+                clip: true
 
-                    Text {
-                        text: "YOUR MUSIC"
-                        color: root.ink
-                        font.pixelSize: 7
-                        font.weight: Font.DemiBold
-                        font.letterSpacing: 0.9
-                    }
-
-                    Item { width: Math.max(1, parent.width - 94); height: 1 }
-
-                    Text {
-                        text: String(root.tracks.length) + (root.tracks.length === 1 ? " SONG" : " SONGS")
-                        color: root.muted
-                        font.pixelSize: 6
-                        font.weight: Font.DemiBold
-                    }
-                }
-
-                Item {
-                    width: parent.width
-                    height: 88
+                ListView {
+                    id: trackList
+                    anchors.fill: parent
+                    model: root.filteredTracks
                     clip: true
+                    spacing: 2
+                    boundsBehavior: Flickable.StopAtBounds
+                    currentIndex: root.filteredTracks.findIndex(track => track.path === root.playback.path)
 
-                    ListView {
-                        id: trackList
-                        anchors.fill: parent
-                        model: root.tracks
-                        clip: true
-                        spacing: 2
-                        boundsBehavior: Flickable.StopAtBounds
-                        currentIndex: root.activeIndex
+                    onCurrentIndexChanged: {
+                        if (currentIndex >= 0)
+                            positionViewAtIndex(currentIndex, ListView.Contain)
+                    }
 
-                        onCurrentIndexChanged: {
-                            if (currentIndex >= 0)
-                                positionViewAtIndex(currentIndex, ListView.Contain)
-                        }
+                    delegate: Rectangle {
+                        required property var modelData
+                        required property int index
+                        readonly property bool currentTrack: modelData.path === root.playback.path
 
-                        delegate: Rectangle {
-                            required property var modelData
-                            required property int index
+                        width: trackList.width
+                        height: 20
+                        radius: 7
+                        color: currentTrack ? "#DDE8F3" : trackHover.containsMouse ? "#EDF3F9" : "transparent"
+                        border.width: currentTrack ? 1 : 0
+                        border.color: "#B8C9DB"
 
-                            readonly property bool currentTrack: modelData.path === root.playback.path
+                        Row {
+                            anchors.fill: parent
+                            anchors.leftMargin: 8
+                            anchors.rightMargin: 8
+                            spacing: 7
 
-                            width: trackList.width
-                            height: 26
-                            radius: 8
-                            color: currentTrack ? "#E4EDF6" : trackHover.containsMouse ? "#EEF4F9" : "transparent"
-                            border.width: currentTrack ? 1 : 0
-                            border.color: "#CAD8E8"
+                            Text {
+                                width: 16
+                                anchors.verticalCenter: parent.verticalCenter
+                                text: parent.parent.currentTrack && root.isPlaying ? "♫" : String(index + 1).padStart(2, "0")
+                                color: parent.parent.currentTrack ? root.accent : root.muted
+                                font.pixelSize: 7
+                                font.weight: Font.DemiBold
+                            }
 
-                            Row {
-                                anchors.fill: parent
-                                anchors.leftMargin: 8
-                                anchors.rightMargin: 8
-                                spacing: 8
+                            Column {
+                                width: parent.width - 43
+                                anchors.verticalCenter: parent.verticalCenter
+                                spacing: 0
 
                                 Text {
-                                    width: 16
-                                    anchors.verticalCenter: parent.verticalCenter
-                                    text: parent.parent.currentTrack && root.isPlaying ? "♫" : String(index + 1).padStart(2, "0")
-                                    color: parent.parent.currentTrack ? root.accent : root.muted
+                                    width: parent.width
+                                    text: modelData.title
+                                    color: parent.parent.parent.currentTrack ? root.ink : root.secondary
                                     font.pixelSize: 7
-                                    font.weight: Font.DemiBold
+                                    font.weight: parent.parent.parent.currentTrack ? Font.DemiBold : Font.Medium
+                                    elide: Text.ElideRight
                                 }
 
-                                Column {
-                                    width: parent.width - 48
-                                    anchors.verticalCenter: parent.verticalCenter
-                                    spacing: 1
-
-                                    Text {
-                                        width: parent.width
-                                        text: modelData.title
-                                        color: parent.parent.parent.currentTrack ? root.ink : root.secondary
-                                        font.pixelSize: 7
-                                        font.weight: parent.parent.parent.currentTrack ? Font.DemiBold : Font.Medium
-                                        elide: Text.ElideRight
-                                    }
-
-                                    Text {
-                                        width: parent.width
-                                        text: modelData.artist
-                                        color: root.muted
-                                        font.pixelSize: 6
-                                        elide: Text.ElideRight
-                                    }
+                                Text {
+                                    width: parent.width
+                                    text: modelData.artist
+                                    color: root.muted
+                                    font.pixelSize: 6
+                                    elide: Text.ElideRight
                                 }
                             }
-
-                            MouseArea {
-                                id: trackHover
-                                anchors.fill: parent
-                                cursorShape: Qt.PointingHandCursor
-                                onClicked: root.playTrack(index)
-                            }
-                        }
-                    }
-
-                    Column {
-                        anchors.centerIn: parent
-                        visible: root.tracks.length === 0
-                        spacing: 2
-
-                        Text {
-                            anchors.horizontalCenter: parent.horizontalCenter
-                            text: root.statusMessage.length ? root.statusMessage : "No songs yet"
-                            color: root.secondary
-                            font.pixelSize: 8
                         }
 
-                        Text {
-                            anchors.horizontalCenter: parent.horizontalCenter
-                            text: "Add tracks to ~/Music"
-                            color: root.muted
-                            font.pixelSize: 6
+                        MouseArea {
+                            id: trackHover
+                            anchors.fill: parent
+                            cursorShape: Qt.PointingHandCursor
+                            onClicked: root.playTrack(root.indexForPath(modelData.path))
                         }
                     }
                 }
 
+                Column {
+                    anchors.centerIn: parent
+                    visible: root.filteredTracks.length === 0
+                    spacing: 3
+
+                    Text {
+                        anchors.horizontalCenter: parent.horizontalCenter
+                        text: root.tracks.length === 0
+                            ? (root.statusMessage.length ? root.statusMessage : "No songs yet")
+                            : "No matching tracks"
+                        color: root.secondary
+                        font.pixelSize: 8
+                    }
+
+                    Text {
+                        anchors.horizontalCenter: parent.horizontalCenter
+                        text: root.tracks.length === 0
+                            ? "Add tracks to ~/Music"
+                            : "Try another title or artist"
+                        color: root.muted
+                        font.pixelSize: 6
+                    }
+                }
+            }
+        }
+
+        // Invisible keyboard sink: it listens only while the song list is open.
+        TextInput {
+            id: libraryKeyboardInput
+            x: root.modelData ? root.modelData.width - 1 : 0
+            y: root.modelData ? root.modelData.height - 1 : 0
+            width: 1
+            height: 1
+            visible: root.libraryOpen
+            opacity: 0
+            color: "transparent"
+            selectionColor: "transparent"
+            selectedTextColor: "transparent"
+            font.pixelSize: 1
+            text: root.libraryQuery
+            activeFocusOnTab: true
+
+            onTextChanged: {
+                if (root.libraryQuery !== text)
+                    root.libraryQuery = text
+            }
+
+            Keys.onEscapePressed: root.libraryOpen = false
         }
     }
+
 
     component ControlButton: Rectangle {
         property string iconName: "music-play"

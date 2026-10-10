@@ -22,9 +22,9 @@ PanelWindow {
     readonly property var currentQuote: root.quotes.length > 0
         ? root.quotes[root.quoteIndex % root.quotes.length]
         : ({
-            text: "A gentle beginning can still grow into something extraordinary.",
+            text: "Cash flow buys options; options buy freedom.",
             author: "A16EEN",
-            source: "A daily reminder",
+            source: "The Wealth Mindset",
             category: "Beginnings"
         })
 
@@ -108,7 +108,7 @@ PanelWindow {
                 }
 
                 Text {
-                    text: "A THOUGHT TO KEEP"
+                    text: "THE WEALTH MINDSET"
                     anchors.verticalCenter: parent.verticalCenter
                     color: "#C6D0DD"
                     font.family: "Inter"
@@ -169,7 +169,7 @@ PanelWindow {
     // Six-hour rotation stays local/offline and consumes no background CPU while disabled.
     Timer {
         id: quoteRotationTimer
-        interval: 6 * 60 * 60 * 1000
+        interval: 60 * 60 * 1000
         repeat: true
         running: root.widgetEnabled && root.quotes.length > 1
         onTriggered: root.pickRandomQuote()
@@ -240,10 +240,10 @@ PanelWindow {
     function useFallbackQuote() {
         root.quotes = [{
             id: "a16een-begin-again",
-            text: "You can begin again without starting from nothing.",
+            text: "Earn with intent. Keep with discipline. Deploy with conviction.",
             author: "A16EEN",
-            source: "A daily reminder",
-            category: "Renewal"
+            source: "The Wealth Mindset",
+            category: "Capital"
         }]
         root.quoteIndex = 0
     }
