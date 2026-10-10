@@ -368,6 +368,8 @@ if [ ! -f "$STATE_DIR/icon-theme-migration-v1" ] &&
     : > "$STATE_DIR/icon-theme-migration-v1"
 fi
 sudo install -Dm755 "$ROOT_DIR/scripts/a16een-icons" /usr/local/bin/a16een-icons
+# Short updater name plus legacy compatibility.
+sudo install -Dm755 "$ROOT_DIR/scripts/a16een-update" /usr/local/bin/a16-update
 sudo install -Dm755 "$ROOT_DIR/scripts/a16een-update" /usr/local/bin/a16een-update
 sudo install -Dm755 "$ROOT_DIR/scripts/a16een-doctor" /usr/local/bin/a16een-doctor
 sudo install -Dm644 "$ROOT_DIR/session/a16een.desktop" /usr/share/wayland-sessions/a16een.desktop
@@ -538,7 +540,7 @@ echo "│           A16EEN installation complete       │"
 echo "╰──────────────────────────────────────────────╯"
 printf '%s\n' "$SOURCE_COMMIT" > "$STATE_DIR/installed-commit"
 
-echo "Run 'a16 update' whenever you want to check for updates."
+echo "Update A16 with 'a16 -u' or 'a16-update'."
 echo "Built-in wallpapers: $QS_DIR/assets/wallpapers"
 echo "Personal wallpapers: $USER_WALLPAPER_DIR"
 echo "Personal animated wallpapers: $USER_WALLPAPER_DIR/animated"
