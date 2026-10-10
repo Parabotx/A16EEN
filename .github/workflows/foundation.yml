@@ -129,7 +129,16 @@ jobs:
           test -f quickshell/a16een/ui/MusicWidget.qml
           test -f quickshell/a16een/ui/QuotesWidget.qml
           test -f quickshell/a16een/assets/quotes.json
+          test -f quickshell/a16een/assets/icons/quote-mark.svg
           python3 -m json.tool quickshell/a16een/assets/quotes.json >/dev/null
+          grep -Fq "anchors.top: parent.top" quickshell/a16een/ui/QuotesWidget.qml
+          grep -Fq "anchors.right: parent.right" quickshell/a16een/ui/QuotesWidget.qml
+          grep -Fq "Math.floor(Math.random() * root.quotes.length)" quickshell/a16een/ui/QuotesWidget.qml
+          grep -Fq "A THOUGHT TO KEEP" quickshell/a16een/ui/QuotesWidget.qml
+          ! grep -Fq "quoteCounter" quickshell/a16een/ui/QuotesWidget.qml
+          ! grep -Fq "showNextQuote" quickshell/a16een/ui/QuotesWidget.qml
+          ! grep -Fq "QUOTE FOR TODAY" quickshell/a16een/ui/QuotesWidget.qml
+          ! grep -Fq "height: 2" quickshell/a16een/ui/QuotesWidget.qml
           grep -Fq 'id: "quotes"' quickshell/a16een/ui/WidgetCatalog.js
           grep -Fq 'quotesWidgetEnabled' quickshell/a16een/shell.qml
           grep -Fq 'quotesWidgetEnabledRequested' quickshell/a16een/ui/CommandCenter.qml

@@ -1,181 +1,160 @@
 {
-  "version": 1,
+  "version": 2,
   "title": "A16EEN Quote Library",
-  "description": "A curated offline collection of short quotes. Edit this file to add, remove, or revise quotes.",
+  "description": "A curated offline collection of practical, reflective quotes. Each entry includes an author and a source or attribution note. Edit this file to customize the widget.",
   "quotes": [
     {
-      "id": "shakespeare-fault",
+      "id": "douglass-progress",
+      "text": "If there is no struggle, there is no progress.",
+      "author": "Frederick Douglass",
+      "source": "West India Emancipation speech, 1857",
+      "category": "Perseverance"
+    },
+    {
+      "id": "douglass-power",
+      "text": "Power concedes nothing without a demand. It never did and it never will.",
+      "author": "Frederick Douglass",
+      "source": "West India Emancipation speech, 1857",
+      "category": "Courage"
+    },
+    {
+      "id": "franklin-actions",
+      "text": "Well done is better than well said.",
+      "author": "Benjamin Franklin",
+      "source": "Poor Richard’s Almanack",
+      "category": "Action"
+    },
+    {
+      "id": "franklin-time",
+      "text": "Lost time is never found again.",
+      "author": "Benjamin Franklin",
+      "source": "Poor Richard’s Almanack",
+      "category": "Time"
+    },
+    {
+      "id": "seneca-time",
+      "text": "It is not that we have a short time to live, but that we waste much of it.",
+      "author": "Seneca",
+      "source": "On the Shortness of Life",
+      "category": "Time"
+    },
+    {
+      "id": "seneca-imagination",
+      "text": "We suffer more often in imagination than in reality.",
+      "author": "Seneca",
+      "source": "Moral Letters to Lucilius, Letter 13",
+      "category": "Perspective"
+    },
+    {
+      "id": "marcus-mind",
+      "text": "You have power over your mind—not outside events. Realize this, and you will find strength.",
+      "author": "Marcus Aurelius",
+      "source": "Meditations, 12.36 (translation)",
+      "category": "Self-mastery"
+    },
+    {
+      "id": "marcus-be-one",
+      "text": "Waste no more time arguing what a good person should be. Be one.",
+      "author": "Marcus Aurelius",
+      "source": "Meditations, 10.16",
+      "category": "Character"
+    },
+    {
+      "id": "epictetus-action",
+      "text": "First say to yourself what you would be; and then do what you have to do.",
+      "author": "Epictetus",
+      "source": "Enchiridion, 51",
+      "category": "Action"
+    },
+    {
+      "id": "socrates-examined",
+      "text": "The unexamined life is not worth living.",
+      "author": "Socrates",
+      "source": "Plato, Apology, 38a",
+      "category": "Reflection"
+    },
+    {
+      "id": "lao-journey",
+      "text": "A journey of a thousand miles begins with a single step.",
+      "author": "Lao Tzu",
+      "source": "Tao Te Ching, chapter 64 (traditional translation)",
+      "category": "Beginnings"
+    },
+    {
+      "id": "lao-know-yourself",
+      "text": "Knowing others is intelligence; knowing yourself is true wisdom.",
+      "author": "Lao Tzu",
+      "source": "Tao Te Ching, chapter 33 (traditional translation)",
+      "category": "Self-knowledge"
+    },
+    {
+      "id": "confucius-actions",
+      "text": "The superior person is modest in speech, but exceeds in actions.",
+      "author": "Confucius",
+      "source": "Analects, 14.29 (translation)",
+      "category": "Action"
+    },
+    {
+      "id": "shakespeare-agency",
       "text": "The fault, dear Brutus, is not in our stars, but in ourselves.",
       "author": "William Shakespeare",
       "source": "Julius Caesar, Act I, Scene II",
       "category": "Agency"
     },
     {
-      "id": "shakespeare-past-prologue",
-      "text": "What’s past is prologue.",
-      "author": "William Shakespeare",
-      "source": "The Tempest, Act II, Scene I",
-      "category": "Perspective"
-    },
-    {
-      "id": "shakespeare-brevity",
-      "text": "Brevity is the soul of wit.",
-      "author": "William Shakespeare",
-      "source": "Hamlet, Act II, Scene II",
-      "category": "Clarity"
-    },
-    {
-      "id": "shakespeare-nothing",
-      "text": "Nothing will come of nothing.",
-      "author": "William Shakespeare",
-      "source": "King Lear, Act I, Scene I",
-      "category": "Action"
-    },
-    {
-      "id": "shakespeare-self-true",
-      "text": "To thine own self be true.",
-      "author": "William Shakespeare",
-      "source": "Hamlet, Act I, Scene III",
-      "category": "Character"
-    },
-    {
-      "id": "shakespeare-we-are",
-      "text": "We know what we are, but know not what we may be.",
-      "author": "William Shakespeare",
-      "source": "Hamlet, Act IV, Scene V",
-      "category": "Possibility"
-    },
-    {
-      "id": "shakespeare-adversity",
-      "text": "Sweet are the uses of adversity.",
-      "author": "William Shakespeare",
-      "source": "As You Like It, Act II, Scene I",
-      "category": "Resilience"
-    },
-    {
-      "id": "shakespeare-honesty",
-      "text": "No legacy is so rich as honesty.",
-      "author": "William Shakespeare",
-      "source": "All’s Well That Ends Well, Act III, Scene V",
-      "category": "Integrity"
-    },
-    {
-      "id": "shakespeare-greatness",
-      "text": "Be not afraid of greatness.",
-      "author": "William Shakespeare",
-      "source": "Twelfth Night, Act II, Scene V",
-      "category": "Courage"
-    },
-    {
-      "id": "shakespeare-love-trust",
-      "text": "Love all, trust a few, do wrong to none.",
-      "author": "William Shakespeare",
-      "source": "All’s Well That Ends Well, Act I, Scene I",
-      "category": "Character"
-    },
-    {
-      "id": "shakespeare-done",
-      "text": "What’s done cannot be undone.",
-      "author": "William Shakespeare",
-      "source": "Macbeth, Act V, Scene I",
-      "category": "Acceptance"
-    },
-    {
-      "id": "shakespeare-dreams",
-      "text": "We are such stuff as dreams are made on.",
-      "author": "William Shakespeare",
-      "source": "The Tempest, Act IV, Scene I",
-      "category": "Wonder"
-    },
-    {
-      "id": "shakespeare-love-course",
-      "text": "The course of true love never did run smooth.",
-      "author": "William Shakespeare",
-      "source": "A Midsummer Night’s Dream, Act I, Scene I",
-      "category": "Love"
-    },
-    {
-      "id": "shakespeare-thinking",
-      "text": "There is nothing either good or bad, but thinking makes it so.",
-      "author": "William Shakespeare",
-      "source": "Hamlet, Act II, Scene II",
-      "category": "Perspective"
-    },
-    {
-      "id": "shakespeare-stage",
-      "text": "All the world’s a stage, and all the men and women merely players.",
-      "author": "William Shakespeare",
-      "source": "As You Like It, Act II, Scene VII",
-      "category": "Life"
-    },
-    {
-      "id": "shakespeare-ear-voice",
-      "text": "Give every man thy ear, but few thy voice.",
-      "author": "William Shakespeare",
-      "source": "Hamlet, Act I, Scene III",
-      "category": "Wisdom"
-    },
-    {
-      "id": "shakespeare-run-slow",
-      "text": "Wisely, and slow. They stumble that run fast.",
-      "author": "William Shakespeare",
-      "source": "Romeo and Juliet, Act II, Scene III",
-      "category": "Patience"
-    },
-    {
-      "id": "shakespeare-gold",
-      "text": "All that glisters is not gold.",
-      "author": "William Shakespeare",
-      "source": "The Merchant of Venice, Act II, Scene VII",
-      "category": "Judgment"
-    },
-    {
-      "id": "shakespeare-doubts",
+      "id": "shakespeare-doubt",
       "text": "Our doubts are traitors, and make us lose the good we oft might win, by fearing to attempt.",
       "author": "William Shakespeare",
       "source": "Measure for Measure, Act I, Scene IV",
       "category": "Courage"
     },
     {
-      "id": "shakespeare-remedies",
-      "text": "Our remedies oft in ourselves do lie.",
+      "id": "shakespeare-true",
+      "text": "To thine own self be true.",
       "author": "William Shakespeare",
-      "source": "All’s Well That Ends Well, Act I, Scene I",
-      "category": "Agency"
+      "source": "Hamlet, Act I, Scene III",
+      "category": "Integrity"
     },
     {
-      "id": "shakespeare-crown",
-      "text": "Uneasy lies the head that wears a crown.",
+      "id": "shakespeare-potential",
+      "text": "We know what we are, but know not what we may be.",
       "author": "William Shakespeare",
-      "source": "Henry IV, Part 2, Act III, Scene I",
-      "category": "Leadership"
+      "source": "Hamlet, Act IV, Scene V",
+      "category": "Possibility"
     },
     {
-      "id": "austen-reading",
-      "text": "I declare after all there is no enjoyment like reading!",
-      "author": "Jane Austen",
-      "source": "Pride and Prejudice, Chapter 11",
-      "category": "Learning"
+      "id": "bronte-free",
+      "text": "I am no bird; and no net ensnares me: I am a free human being with an independent will.",
+      "author": "Charlotte Brontë",
+      "source": "Jane Eyre",
+      "category": "Freedom"
     },
     {
-      "id": "austen-tenderness",
-      "text": "There is no charm equal to tenderness of heart.",
-      "author": "Jane Austen",
-      "source": "Emma, Chapter 16",
-      "category": "Kindness"
+      "id": "shelley-change",
+      "text": "Nothing is so painful to the human mind as a great and sudden change.",
+      "author": "Mary Shelley",
+      "source": "Frankenstein",
+      "category": "Change"
     },
     {
-      "id": "austen-past",
-      "text": "Think only of the past as its remembrance gives you pleasure.",
-      "author": "Jane Austen",
-      "source": "Pride and Prejudice, Chapter 58",
-      "category": "Perspective"
+      "id": "tolkien-time",
+      "text": "All we have to decide is what to do with the time that is given us.",
+      "author": "J. R. R. Tolkien",
+      "source": "The Fellowship of the Ring",
+      "category": "Choice"
+    },
+    {
+      "id": "tolkien-wander",
+      "text": "Not all those who wander are lost.",
+      "author": "J. R. R. Tolkien",
+      "source": "The Fellowship of the Ring",
+      "category": "Discovery"
     },
     {
       "id": "thoreau-simplify",
       "text": "Our life is frittered away by detail. Simplify, simplify.",
       "author": "Henry David Thoreau",
-      "source": "Walden, “Where I Lived, and What I Lived For”",
+      "source": "Walden",
       "category": "Focus"
     },
     {
@@ -186,46 +165,32 @@
       "category": "Integrity"
     },
     {
-      "id": "thoreau-price",
-      "text": "The price of anything is the amount of life you exchange for it.",
-      "author": "Henry David Thoreau",
-      "source": "Walden",
-      "category": "Time"
+      "id": "austen-kindness",
+      "text": "There is no charm equal to tenderness of heart.",
+      "author": "Jane Austen",
+      "source": "Emma",
+      "category": "Kindness"
     },
     {
-      "id": "thoreau-different-drummer",
-      "text": "If a man does not keep pace with his companions, perhaps it is because he hears a different drummer.",
-      "author": "Henry David Thoreau",
-      "source": "Walden",
-      "category": "Individuality"
+      "id": "baldwin-change",
+      "text": "Not everything that is faced can be changed, but nothing can be changed until it is faced.",
+      "author": "James Baldwin",
+      "source": "As Much Truth as One Can Bear",
+      "category": "Courage"
     },
     {
-      "id": "franklin-well-done",
-      "text": "Well done is better than well said.",
-      "author": "Benjamin Franklin",
-      "source": "Poor Richard’s Almanack",
-      "category": "Action"
+      "id": "eleanor-consent",
+      "text": "No one can make you feel inferior without your consent.",
+      "author": "Eleanor Roosevelt",
+      "source": "This Is My Story, 1937",
+      "category": "Self-respect"
     },
     {
-      "id": "franklin-lost-time",
-      "text": "Lost time is never found again.",
-      "author": "Benjamin Franklin",
-      "source": "Poor Richard’s Almanack",
-      "category": "Time"
-    },
-    {
-      "id": "douglass-struggle",
-      "text": "If there is no struggle, there is no progress.",
-      "author": "Frederick Douglass",
-      "source": "West India Emancipation speech, 1857",
-      "category": "Progress"
-    },
-    {
-      "id": "douglass-knowledge",
-      "text": "Knowledge makes a man unfit to be a slave.",
-      "author": "Frederick Douglass",
-      "source": "Speech on West India Emancipation, 1857",
-      "category": "Learning"
+      "id": "fdr-fear",
+      "text": "The only thing we have to fear is fear itself.",
+      "author": "Franklin D. Roosevelt",
+      "source": "First Inaugural Address, 1933",
+      "category": "Courage"
     },
     {
       "id": "paine-triumph",
@@ -235,85 +200,15 @@
       "category": "Perseverance"
     },
     {
-      "id": "wollstonecraft-self",
-      "text": "I do not wish women to have power over men; but over themselves.",
-      "author": "Mary Wollstonecraft",
-      "source": "A Vindication of the Rights of Woman",
-      "category": "Freedom"
-    },
-    {
-      "id": "lao-journey",
-      "text": "A journey of a thousand miles begins with a single step.",
-      "author": "Lao Tzu",
-      "source": "Tao Te Ching, Chapter 64 (traditional translation)",
-      "category": "Beginnings"
-    },
-    {
-      "id": "lao-knowing",
-      "text": "Knowing others is intelligence; knowing yourself is true wisdom.",
-      "author": "Lao Tzu",
-      "source": "Tao Te Ching, Chapter 33 (traditional translation)",
-      "category": "Self-knowledge"
-    },
-    {
-      "id": "lao-enough",
-      "text": "He who knows that enough is enough will always have enough.",
-      "author": "Lao Tzu",
-      "source": "Tao Te Ching, Chapter 46 (traditional translation)",
-      "category": "Contentment"
-    },
-    {
-      "id": "seneca-time",
-      "text": "It is not that we have a short time to live, but that we waste a lot of it.",
-      "author": "Seneca",
-      "source": "On the Shortness of Life",
-      "category": "Time"
-    },
-    {
-      "id": "seneca-imagination",
-      "text": "We suffer more often in imagination than in reality.",
-      "author": "Seneca",
-      "source": "Letters from a Stoic, Letter 13",
-      "category": "Perspective"
-    },
-    {
-      "id": "seneca-difficulties",
-      "text": "Difficulties strengthen the mind, as labor does the body.",
-      "author": "Seneca",
-      "source": "Moral Letters to Lucilius",
-      "category": "Resilience"
-    },
-    {
-      "id": "marcus-thoughts",
-      "text": "The happiness of your life depends upon the quality of your thoughts.",
-      "author": "Marcus Aurelius",
-      "source": "Meditations",
-      "category": "Mindset"
-    },
-    {
-      "id": "marcus-be-one",
-      "text": "Waste no more time arguing what a good person should be. Be one.",
-      "author": "Marcus Aurelius",
-      "source": "Meditations",
-      "category": "Character"
-    },
-    {
-      "id": "epictetus-self",
-      "text": "No man is free who is not master of himself.",
-      "author": "Epictetus",
-      "source": "Discourses (commonly translated)",
-      "category": "Freedom"
-    },
-    {
-      "id": "plato-examined",
-      "text": "The unexamined life is not worth living.",
-      "author": "Socrates",
-      "source": "Plato, Apology",
-      "category": "Reflection"
+      "id": "einstein-imagination",
+      "text": "Imagination is more important than knowledge.",
+      "author": "Albert Einstein",
+      "source": "Saturday Evening Post interview, 1929",
+      "category": "Creativity"
     },
     {
       "id": "dickinson-hope",
-      "text": "Hope is the thing with feathers that perches in the soul.",
+      "text": "“Hope” is the thing with feathers that perches in the soul.",
       "author": "Emily Dickinson",
       "source": "Poem 314",
       "category": "Hope"
@@ -326,60 +221,53 @@
       "category": "Presence"
     },
     {
-      "id": "dickinson-truth",
-      "text": "Tell all the truth but tell it slant.",
-      "author": "Emily Dickinson",
-      "source": "Poem 1263",
-      "category": "Truth"
+      "id": "frost-through",
+      "text": "The best way out is always through.",
+      "author": "Robert Frost",
+      "source": "A Servant to Servants",
+      "category": "Resilience"
     },
     {
-      "id": "hugo-night",
-      "text": "Even the darkest night will end and the sun will rise.",
-      "author": "Victor Hugo",
-      "source": "Les Misérables",
-      "category": "Hope"
-    },
-    {
-      "id": "shelley-fearless",
-      "text": "Beware; for I am fearless, and therefore powerful.",
-      "author": "Mary Shelley",
-      "source": "Frankenstein, Chapter 10",
-      "category": "Courage"
-    },
-    {
-      "id": "shelley-change",
-      "text": "Nothing is so painful to the human mind as a great and sudden change.",
-      "author": "Mary Shelley",
-      "source": "Frankenstein",
-      "category": "Change"
-    },
-    {
-      "id": "bronte-will",
-      "text": "I am a free human being with an independent will.",
-      "author": "Charlotte Brontë",
-      "source": "Jane Eyre",
-      "category": "Freedom"
-    },
-    {
-      "id": "dickens-heart",
-      "text": "Have a heart that never hardens, and a temper that never tires.",
-      "author": "Charles Dickens",
-      "source": "Our Mutual Friend",
-      "category": "Kindness"
+      "id": "oliver-life",
+      "text": "Tell me, what is it you plan to do with your one wild and precious life?",
+      "author": "Mary Oliver",
+      "source": "The Summer Day",
+      "category": "Purpose"
     },
     {
       "id": "angelou-work",
       "text": "Nothing will work unless you do.",
       "author": "Maya Angelou",
-      "source": "Often attributed to Angelou",
+      "source": "Wouldn’t Take Nothing for My Journey Now",
       "category": "Action"
     },
     {
+      "id": "horace-day",
+      "text": "Seize the day, trusting as little as possible in tomorrow.",
+      "author": "Horace",
+      "source": "Odes, 1.11 (translation)",
+      "category": "Presence"
+    },
+    {
+      "id": "virgil-bold",
+      "text": "Fortune favors the bold.",
+      "author": "Virgil",
+      "source": "Aeneid, 10.284 (traditional translation)",
+      "category": "Courage"
+    },
+    {
+      "id": "king-right",
+      "text": "The time is always right to do what is right.",
+      "author": "Martin Luther King Jr.",
+      "source": "Oberlin College commencement address, 1965",
+      "category": "Integrity"
+    },
+    {
       "id": "a16een-begin",
-      "text": "Begin where you are. Keep moving toward what matters.",
+      "text": "Start where you are. Use what you have. Take the next honest step.",
       "author": "A16EEN",
-      "source": "A reminder to keep going",
-      "category": "Focus"
+      "source": "A reminder to keep moving",
+      "category": "Beginnings"
     }
   ]
 }
