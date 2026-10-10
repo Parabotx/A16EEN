@@ -95,7 +95,7 @@ jobs:
           ! grep -Fq 'pacman -Syu --needed "$package"' scripts/a16een-icon-theme
           ! grep -Fq 'pacman -Syu --needed "$package"' scripts/a16een-icon-theme
           grep -Fq 'pacman -S --needed "$package"' scripts/a16een-icon-theme
-          grep -Fq 'FIRST USE INSTALL' quickshell/a16een/ui/IconThemeSection.qml
+          grep -Fq 'modelData.installed' quickshell/a16een/ui/IconThemeSection.qml
 
       - name: Validate foundation files
         run: |
