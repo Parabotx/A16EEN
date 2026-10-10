@@ -12,18 +12,28 @@ PanelWindow {
     property bool opened: false
     property string page: "tools"
     property var stashedApps: []
+    property bool dataMeterEnabled: false
+    property var dataMeterSnapshot: ({})
+    property bool dataMeterSnapshotReady: false
+    property string dataMeterError: ""
+    property string expression: "0"
+    property string calculatorError: ""
+    property bool justEvaluated: false
 
     signal closeRequested()
     signal toolRequested(string toolId)
     signal appStashRequested()
     signal backRequested()
     signal restoreRequested(string windowId)
+    signal dataMeterToggleRequested(bool enabled)
 
     readonly property bool horizontalNavbar: root.navbarPosition === "top" || root.navbarPosition === "bottom"
     readonly property real screenWidth: root.modelData ? root.modelData.width : 1920
     readonly property real screenHeight: root.modelData ? root.modelData.height : 1080
     readonly property int popupWidth: 322
-    readonly property int popupHeight: root.page === "stash" ? 388 : (root.page === "monitor" ? 310 : 370)
+    readonly property int popupHeight: root.page === "stash" ? 388
+        : (root.page === "monitor" ? 310
+        : (root.page === "calculator" ? 420 : (root.page === "data-meter" ? 350 : 316)))
     property var monitorStats: null
     property string monitorError: ""
     readonly property var monitorMetrics: [
@@ -58,10 +68,10 @@ PanelWindow {
     ]
     readonly property var tools: [
         { id: "screenshot", label: "Screenshot", detail: "Capture your screen", icon: "lucide-crop.svg" },
-        { id: "wallpapers", label: "Wallpapers", detail: "Change your background", icon: "lucide-image.svg" },
-        { id: "clipboard", label: "Clipboard", detail: "Reuse copied text", icon: "lucide-clipboard.svg" },
         { id: "calculator", label: "Calculator", detail: "Quick calculations", icon: "lucide-calculator.svg" },
-        { id: "monitor", label: "System Monitor", detail: "CPU, memory & disk", icon: "lucide-activity.svg" }
+        { id: "monitor", label: "System Monitor", detail: "CPU, memory & disk", icon: "lucide-activity.svg" },
+        { id: "stash", label: "Nest", detail: "Keep windows out of the way", icon: "lucide-archive.svg" },
+        { id: "data-meter", label: "Data Meter", detail: "Daily internet usage and speed", icon: "lucide-activity.svg" }
     ]
 
     readonly property real popupX: root.horizontalNavbar
@@ -70,6 +80,116 @@ PanelWindow {
     readonly property real popupY: root.horizontalNavbar
         ? (root.navbarPosition === "top" ? 40 : root.screenHeight - root.popupHeight - 40)
         : root.screenHeight - root.popupHeight - 72
+
+    function formatBytes(value) {
+        const bytes = Math.max(0, Number(value) || 0)
+        if (bytes < 1024 * 1024) return (bytes / 1024).toFixed(0) + " KB"
+        if (bytes < 1024 * 1024 * 1024) return (bytes / (1024 * 1024)).toFixed(1) + " MB"
+        return (bytes / (1024 * 1024 * 1024)).toFixed(2) + " GB"
+    }
+
+    function formatRate(value) {
+        const rate = Math.max(0, Number(value) || 0)
+        if (rate < 1024) return Math.round(rate) + " B/s"
+        if (rate < 1024 * 1024) return (rate / 1024).toFixed(rate < 10240 ? 1 : 0) + " KB/s"
+        return (rate / (1024 * 1024)).toFixed(1) + " MB/s"
+    }
+
+    function calculate(sourceText) {
+        const source = String(sourceText || "").replace(/\\s+/g, "")
+        if (!source.length) throw new Error("Enter an expression")
+        let position = 0
+        function parsePrimary() {
+            if (source[position] === "+") { position++; return parsePrimary() }
+            if (source[position] === "-") { position++; return -parsePrimary() }
+            if (source[position] === "(") {
+                position++
+                const nested = parseAddSub()
+                if (source[position] !== ")") throw new Error("Missing closing parenthesis")
+                position++
+                let value = nested
+                while (source[position] === "%") { value /= 100; position++ }
+                return value
+            }
+            const match = source.slice(position).match(/^(?:\\d+(?:\\.\\d*)?|\\.\\d+)/)
+            if (!match) throw new Error("Invalid number")
+            position += match[0].length
+            let value = Number(match[0])
+            while (source[position] === "%") { value /= 100; position++ }
+            return value
+        }
+        function parseMultiply() {
+            let value = parsePrimary()
+            while (source[position] === "*" || source[position] === "/") {
+                const operator = source[position++]
+                const next = parsePrimary()
+                if (operator === "/" && next === 0) throw new Error("Cannot divide by zero")
+                value = operator === "*" ? value * next : value / next
+            }
+            return value
+        }
+        function parseAddSub() {
+            let value = parseMultiply()
+            while (source[position] === "+" || source[position] === "-") {
+                const operator = source[position++]
+                const next = parseMultiply()
+                value = operator === "+" ? value + next : value - next
+            }
+            return value
+        }
+        const result = parseAddSub()
+        if (position !== source.length || !Number.isFinite(result)) throw new Error("Invalid expression")
+        return String(Number(result.toPrecision(12)))
+    }
+
+    function pressCalculator(value) {
+        root.calculatorError = ""
+        if (value === "clear") {
+            root.expression = "0"
+            root.justEvaluated = false
+            return
+        }
+        if (value === "backspace") {
+            root.expression = root.justEvaluated || root.expression.length <= 1 ? "0" : root.expression.slice(0, -1)
+            root.justEvaluated = false
+            return
+        }
+        if (value === "equals") {
+            try {
+                root.expression = root.calculate(root.expression)
+                root.justEvaluated = true
+            } catch (error) {
+                root.calculatorError = String(error.message || "Invalid expression")
+                root.justEvaluated = false
+            }
+            return
+        }
+        if (value === "sign") {
+            const match = root.expression.match(/(-?\\d*\\.?\\d+)$/)
+            if (match) {
+                const start = root.expression.length - match[0].length
+                const number = match[0]
+                root.expression = root.expression.slice(0, start) + (number.startsWith("-") ? number.slice(1) : "-" + number)
+            } else if (root.expression === "0") root.expression = "-0"
+            else if (/[+\\-*/(]$/.test(root.expression)) root.expression += "-"
+            root.justEvaluated = false
+            return
+        }
+        if (root.justEvaluated && /^[0-9.]$/.test(value)) root.expression = "0"
+        if (/^[+*/%]$/.test(value) || value === "-") {
+            if (root.expression === "0" && value !== "-") return
+            if (root.expression === "0" && value === "-") {
+                root.expression = "-"
+                root.justEvaluated = false
+                return
+            }
+            if (/[+\\-*/%]$/.test(root.expression) && value !== "-") root.expression = root.expression.slice(0, -1)
+        }
+        if (value === "." && String(root.expression.split(/[+\\-*/()%]/).pop()).includes(".")) return
+        if (root.expression === "0" && /^[0-9]$/.test(value)) root.expression = value
+        else root.expression += value
+        root.justEvaluated = false
+    }
 
     function iconSource(appId) {
         const id = String(appId || "").trim()
@@ -181,6 +301,11 @@ PanelWindow {
     }
 
     onPageChanged: {
+        if (root.page === "calculator") {
+            root.expression = "0"
+            root.calculatorError = ""
+            root.justEvaluated = false
+        }
         if (root.opened && root.page === "stash") {
             Qt.callLater(() => root.refreshStash())
         } else if (root.opened && root.page === "monitor") {
@@ -224,11 +349,12 @@ PanelWindow {
         height: Math.min(root.popupHeight, root.screenHeight - 16)
         z: 1
         opacity: root.opened ? 1 : 0
-        scale: root.opened ? 1 : 0.97
+        scale: root.opened ? 1 : 0.985
 
-        Behavior on opacity { NumberAnimation { duration: 160; easing.type: Easing.OutCubic } }
-        Behavior on scale { NumberAnimation { duration: 180; easing.type: Easing.OutCubic } }
-        Behavior on y { NumberAnimation { duration: 180; easing.type: Easing.OutCubic } }
+        Behavior on opacity { NumberAnimation { duration: 140; easing.type: Easing.OutCubic } }
+        Behavior on scale { NumberAnimation { duration: 150; easing.type: Easing.OutCubic } }
+        Behavior on y { NumberAnimation { duration: 170; easing.type: Easing.OutCubic } }
+        Behavior on height { NumberAnimation { duration: 170; easing.type: Easing.OutCubic } }
 
         Rectangle {
             anchors.fill: parent
@@ -278,7 +404,11 @@ PanelWindow {
                                 ? "../assets/icons/lucide-archive.svg"
                                 : (root.page === "monitor"
                                     ? "../assets/icons/lucide-activity.svg"
-                                    : "../assets/icons/lucide-toolbox.svg"))
+                                    : (root.page === "calculator"
+                                        ? "../assets/icons/lucide-calculator.svg"
+                                        : (root.page === "data-meter"
+                                            ? "../assets/icons/lucide-activity.svg"
+                                            : "../assets/icons/lucide-toolbox.svg"))))
                             sourceSize.width: 48
                             sourceSize.height: 48
                             smooth: true
@@ -293,7 +423,9 @@ PanelWindow {
                         Text {
                             width: parent.width
                             text: root.page === "stash" ? "NEST"
-                                : (root.page === "monitor" ? "SYSTEM MONITOR" : "QUICK TOOLS")
+                                : (root.page === "monitor" ? "SYSTEM MONITOR"
+                                : (root.page === "calculator" ? "CALCULATOR"
+                                : (root.page === "data-meter" ? "DATA METER" : "QUICK TOOLS")))
                             color: "#171B21"
                             font.pixelSize: 10
                             font.weight: Font.DemiBold
@@ -304,7 +436,9 @@ PanelWindow {
                             text: root.page === "stash"
                                 ? "Your hidden windows, ready to return"
                                 : (root.page === "monitor" ? "Live usage while this card is open"
-                                    : "Useful actions, one click away")
+                                : (root.page === "calculator" ? "Quick calculations, no waiting"
+                                : (root.page === "data-meter" ? "Daily usage by connection"
+                                    : "Useful actions, one click away")))
                             color: "#89929E"
                             font.pixelSize: 8
                         }
@@ -338,11 +472,11 @@ PanelWindow {
                     }
                 }
 
-                Grid {
+                Flow {
                     id: toolsGrid
                     visible: root.page === "tools"
                     width: parent.width
-                    columns: 2
+                    flow: Flow.LeftToRight
                     spacing: 8
                     height: 3 * 70 + 2 * spacing
 
@@ -352,7 +486,9 @@ PanelWindow {
                         delegate: Rectangle {
                             id: toolTile
                             required property var modelData
-                            width: (toolsGrid.width - toolsGrid.spacing) / 2
+                            width: toolTile.modelData.id === "data-meter"
+                                ? toolsGrid.width
+                                : (toolsGrid.width - toolsGrid.spacing) / 2
                             height: 70
                             radius: 11
                             color: toolMouse.containsMouse ? "#F0F2F5" : "#FAFBFC"
@@ -430,66 +566,90 @@ PanelWindow {
                 }
 
                 Rectangle {
-                    visible: root.page === "tools"
+                    visible: root.page === "calculator"
                     width: parent.width
-                    height: 44
-                    radius: 11
-                    color: stashRowMouse.containsMouse ? "#F0F2F5" : "#FFFFFF"
+                    height: 64
+                    radius: 12
+                    color: "#F7F8FA"
                     border.width: 1
-                    border.color: stashRowMouse.containsMouse ? "#DDE3E9" : "#E8ECF0"
-
-                    Row {
+                    border.color: "#EDF0F3"
+                    Column {
                         anchors.fill: parent
-                        anchors.leftMargin: 10
-                        anchors.rightMargin: 9
-                        spacing: 9
-
-                        Rectangle {
-                            width: 29
-                            height: 29
-                            radius: 9
-                            color: "#F2F4F7"
-                            anchors.verticalCenter: parent.verticalCenter
-
-                            Image {
-                                anchors.centerIn: parent
-                                width: 17
-                                height: 17
-                                source: Qt.resolvedUrl("../assets/icons/lucide-archive.svg")
-                                sourceSize.width: 48
-                                sourceSize.height: 48
-                                smooth: true
-                            }
+                        anchors.leftMargin: 12
+                        anchors.rightMargin: 12
+                        anchors.topMargin: 7
+                        anchors.bottomMargin: 7
+                        spacing: 2
+                        Text {
+                            width: parent.width
+                            height: 11
+                            text: root.calculatorError.length ? root.calculatorError : " "
+                            color: "#B93832"
+                            font.pixelSize: 8
+                            horizontalAlignment: Text.AlignRight
+                            elide: Text.ElideRight
                         }
-
-                        Column {
-                            anchors.verticalCenter: parent.verticalCenter
-                            spacing: 3
-
-                            Text {
-                                text: "Nest"
-                                color: "#222831"
-                                font.pixelSize: 9
-                                font.weight: Font.DemiBold
-                            }
-
-                            Text {
-                                text: root.stashedApps.length === 0
-                                    ? "Your hidden apps appear here"
-                                    : String(root.stashedApps.length) + (root.stashedApps.length === 1 ? " hidden window" : " hidden windows")
-                                color: "#8A939E"
-                                font.pixelSize: 7
-                            }
+                        Text {
+                            width: parent.width
+                            height: 35
+                            text: root.expression.replace(/\\*/g, "×").replace(/\\//g, "÷").replace(/-/g, "−")
+                            color: "#161B22"
+                            font.pixelSize: Math.min(25, 284 / Math.max(1, text.length) * 1.35)
+                            font.weight: Font.Medium
+                            horizontalAlignment: Text.AlignRight
+                            verticalAlignment: Text.AlignVCenter
+                            elide: Text.ElideLeft
                         }
-
                     }
+                }
 
-                    MouseArea {
-                        id: stashRowMouse
-                        anchors.fill: parent
-                        hoverEnabled: true
-                        cursorShape: Qt.PointingHandCursor
-                        onClicked: root.appStashRequested()
+                Grid {
+                    id: calculatorKeypad
+                    visible: root.page === "calculator"
+                    width: parent.width
+                    columns: 4
+                    spacing: 6
+                    height: 5 * 42 + 4 * spacing
+                    Repeater {
+                        model: [
+                            { label: "AC", value: "clear", kind: "utility" }, { label: "⌫", value: "backspace", kind: "utility" },
+                            { label: "%", value: "%", kind: "utility" }, { label: "÷", value: "/", kind: "operator" },
+                            { label: "7", value: "7", kind: "digit" }, { label: "8", value: "8", kind: "digit" },
+                            { label: "9", value: "9", kind: "digit" }, { label: "×", value: "*", kind: "operator" },
+                            { label: "4", value: "4", kind: "digit" }, { label: "5", value: "5", kind: "digit" },
+                            { label: "6", value: "6", kind: "digit" }, { label: "−", value: "-", kind: "operator" },
+                            { label: "1", value: "1", kind: "digit" }, { label: "2", value: "2", kind: "digit" },
+                            { label: "3", value: "3", kind: "digit" }, { label: "+", value: "+", kind: "operator" },
+                            { label: "±", value: "sign", kind: "utility" }, { label: "0", value: "0", kind: "digit" },
+                            { label: ".", value: ".", kind: "digit" }, { label: "=", value: "equals", kind: "equals" }
+                        ]
+                        delegate: Rectangle {
+                            id: calculatorTile
+                            required property var modelData
+                            width: (calculatorKeypad.width - calculatorKeypad.spacing * 3) / 4
+                            height: 42
+                            radius: 10
+                            color: calculatorKeyMouse.containsMouse ? "#E9EDF1"
+                                : (calculatorTile.modelData.kind === "equals" ? "#171B21"
+                                : (calculatorTile.modelData.kind === "digit" ? "#FAFBFC" : "#F0F3F6"))
+                            border.width: 1
+                            border.color: calculatorTile.modelData.kind === "equals" ? "#171B21" : "#E7EBEF"
+                            Behavior on color { ColorAnimation { duration: 90 } }
+                            Text {
+                                anchors.centerIn: parent
+                                text: calculatorTile.modelData.label
+                                color: calculatorTile.modelData.kind === "equals" ? "#FFFFFF" : "#38414C"
+                                font.pixelSize: calculatorTile.modelData.kind === "digit" ? 13 : 11
+                                font.weight: calculatorTile.modelData.kind === "equals" ? Font.DemiBold : Font.Medium
+                            }
+                            MouseArea {
+                                id: calculatorKeyMouse
+                                anchors.fill: parent
+                                hoverEnabled: true
+                                cursorShape: Qt.PointingHandCursor
+                                onClicked: root.pressCalculator(calculatorTile.modelData.value)
+                            }
+                        }
                     }
                 }
 
@@ -562,6 +722,213 @@ PanelWindow {
                                     font.pixelSize: 7
                                     elide: Text.ElideRight
                                 }
+                            }
+                        }
+                    }
+                }
+
+                Column {
+                    id: dataMeterPage
+                    visible: root.page === "data-meter"
+                    width: parent.width
+                    spacing: 7
+                    Row {
+                        width: parent.width
+                        spacing: 7
+                        Repeater {
+                            model: [
+                                { label: "DOWNLOADED", value: root.dataMeterSnapshotReady ? root.formatBytes(root.dataMeterSnapshot.today_download_bytes) : "—" },
+                                { label: "UPLOADED", value: root.dataMeterSnapshotReady ? root.formatBytes(root.dataMeterSnapshot.today_upload_bytes) : "—" }
+                            ]
+                            delegate: Rectangle {
+                                id: trafficTile
+                                required property var modelData
+                                width: (dataMeterPage.width - dataMeterPage.spacing) / 2
+                                height: 57
+                                radius: 11
+                                color: "#FAFBFC"
+                                border.width: 1
+                                border.color: "#EDF0F3"
+                                Column {
+                                    anchors.fill: parent
+                                    anchors.margins: 9
+                                    spacing: 4
+                                    Text {
+                                        width: parent.width
+                                        text: trafficTile.modelData.label
+                                        color: "#7D8793"
+                                        font.pixelSize: 7
+                                        font.weight: Font.DemiBold
+                                        font.letterSpacing: 0.35
+                                        elide: Text.ElideRight
+                                    }
+                                    Text {
+                                        width: parent.width
+                                        text: trafficTile.modelData.value
+                                        color: "#171B21"
+                                        font.pixelSize: 12
+                                        font.weight: Font.DemiBold
+                                        elide: Text.ElideRight
+                                    }
+                                    Text { text: "Today"; color: "#9AA3AE"; font.pixelSize: 7 }
+                                }
+                            }
+                        }
+                    }
+                    Rectangle {
+                        width: parent.width
+                        height: 47
+                        radius: 11
+                        color: "#FFFFFF"
+                        border.width: 1
+                        border.color: "#E8ECF0"
+                        Row {
+                            anchors.fill: parent
+                            anchors.leftMargin: 10
+                            anchors.rightMargin: 10
+                            spacing: 8
+                            Rectangle {
+                                anchors.verticalCenter: parent.verticalCenter
+                                width: 28
+                                height: 28
+                                radius: 9
+                                color: "#F2F4F7"
+                                Image {
+                                    anchors.centerIn: parent
+                                    width: 15
+                                    height: 15
+                                    source: Qt.resolvedUrl("../assets/icons/lucide-wifi.svg")
+                                    sourceSize.width: 48
+                                    sourceSize.height: 48
+                                    smooth: true
+                                }
+                            }
+                            Column {
+                                width: parent.width - 50
+                                anchors.verticalCenter: parent.verticalCenter
+                                spacing: 3
+                                Text {
+                                    width: parent.width
+                                    text: root.dataMeterSnapshotReady
+                                        ? String(root.dataMeterSnapshot.connection_name || "No active connection")
+                                        : "Reading current connection…"
+                                    color: "#27303A"
+                                    font.pixelSize: 9
+                                    font.weight: Font.DemiBold
+                                    elide: Text.ElideRight
+                                }
+                                Text {
+                                    width: parent.width
+                                    text: root.dataMeterSnapshotReady
+                                        ? String(root.dataMeterSnapshot.connection_type || "Network") + " · "
+                                            + String(root.dataMeterSnapshot.active_interface || "offline")
+                                            + " · ↓ " + root.formatRate(root.dataMeterSnapshot.down_bps)
+                                            + " ↑ " + root.formatRate(root.dataMeterSnapshot.up_bps)
+                                        : "Daily usage by network interface"
+                                    color: "#89929E"
+                                    font.pixelSize: 7
+                                    elide: Text.ElideRight
+                                }
+                            }
+                        }
+                    }
+                    Text {
+                        text: "NETWORKS · TODAY"
+                        color: "#818B97"
+                        font.pixelSize: 7
+                        font.weight: Font.DemiBold
+                        font.letterSpacing: 0.45
+                    }
+                    Column {
+                        width: parent.width
+                        spacing: 2
+                        Repeater {
+                            model: root.dataMeterSnapshot && Array.isArray(root.dataMeterSnapshot.interfaces)
+                                ? root.dataMeterSnapshot.interfaces.slice(0, 2) : []
+                            delegate: Row {
+                                required property var modelData
+                                width: parent.width
+                                height: 20
+                                Text {
+                                    width: parent.width * 0.43
+                                    text: String(modelData.connection || modelData.name || "Network")
+                                        + (modelData.is_default ? " · active" : "")
+                                    color: "#505B67"
+                                    font.pixelSize: 7
+                                    elide: Text.ElideRight
+                                    anchors.verticalCenter: parent.verticalCenter
+                                }
+                                Text {
+                                    width: parent.width * 0.57
+                                    text: "↓ " + root.formatBytes(modelData.rx_today_bytes)
+                                        + "   ↑ " + root.formatBytes(modelData.tx_today_bytes)
+                                    color: "#7D8793"
+                                    font.pixelSize: 7
+                                    horizontalAlignment: Text.AlignRight
+                                    elide: Text.ElideLeft
+                                    anchors.verticalCenter: parent.verticalCenter
+                                }
+                            }
+                        }
+                        Text {
+                            visible: !root.dataMeterSnapshotReady || !root.dataMeterSnapshot.interfaces
+                                || root.dataMeterSnapshot.interfaces.length === 0
+                            text: root.dataMeterError.length ? root.dataMeterError : "Usage starts with the first sample today."
+                            color: root.dataMeterError.length ? "#B4534B" : "#939CA7"
+                            font.pixelSize: 7
+                        }
+                    }
+                    Rectangle {
+                        width: parent.width
+                        height: 42
+                        radius: 11
+                        color: toggleMeterMouse.containsMouse ? "#F3F5F7" : "#FFFFFF"
+                        border.width: 1
+                        border.color: "#E8ECF0"
+                        Row {
+                            anchors.fill: parent
+                            anchors.leftMargin: 10
+                            anchors.rightMargin: 10
+                            spacing: 8
+                            Column {
+                                anchors.verticalCenter: parent.verticalCenter
+                                spacing: 2
+                                Text {
+                                    text: "Show speed on navbar"
+                                    color: "#252D36"
+                                    font.pixelSize: 9
+                                    font.weight: Font.DemiBold
+                                }
+                                Text {
+                                    text: root.dataMeterEnabled ? "Separate speed pill is active" : "Keep the navbar clean"
+                                    color: "#89929E"
+                                    font.pixelSize: 7
+                                }
+                            }
+                            Item { width: Math.max(0, parent.width - 170); height: 1 }
+                            Rectangle {
+                                width: 31
+                                height: 18
+                                radius: 9
+                                anchors.verticalCenter: parent.verticalCenter
+                                color: root.dataMeterEnabled ? "#252B33" : "#E4E8ED"
+                                Behavior on color { ColorAnimation { duration: 120 } }
+                                Rectangle {
+                                    width: 12
+                                    height: 12
+                                    y: 3
+                                    x: root.dataMeterEnabled ? 16 : 3
+                                    radius: 6
+                                    color: "#FFFFFF"
+                                    Behavior on x { NumberAnimation { duration: 140; easing.type: Easing.OutCubic } }
+                                }
+                            }
+                            MouseArea {
+                                id: toggleMeterMouse
+                                anchors.fill: parent
+                                hoverEnabled: true
+                                cursorShape: Qt.PointingHandCursor
+                                onClicked: root.dataMeterToggleRequested(!root.dataMeterEnabled)
                             }
                         }
                     }
@@ -683,7 +1050,9 @@ PanelWindow {
                     text: root.page === "stash"
                         ? "Choose an icon to restore its window"
                         : (root.page === "monitor" ? "Refreshes only while open"
-                            : "Nest · Ctrl + Super + H")
+                        : (root.page === "calculator" ? "Basic arithmetic · percentage included"
+                        : (root.page === "data-meter" ? "Daily totals · sampling only while needed"
+                            : "Nest · Ctrl + Super + H")))
                     color: "#9AA3AE"
                     font.pixelSize: 8
                     elide: Text.ElideRight
