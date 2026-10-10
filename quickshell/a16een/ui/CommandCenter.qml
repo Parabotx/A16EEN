@@ -18,6 +18,10 @@ PanelWindow {
     property bool doNotDisturb: false
     property string commandText: "/"
     property int selectedCommandIndex: 0
+    property var commandUsage: ({})
+    property var pendingCommandUsage: ({})
+    property bool commandUsageLoaded: false
+    readonly property string commandUsagePath: Quickshell.stateDir + "/command-center-usage.json"
 
     property bool editorialTimeWidgetEnabled: true
     property bool calendarWidgetEnabled: false
@@ -42,7 +46,6 @@ PanelWindow {
 
     signal closeRequested()
     signal launcherRequested()
-    signal dashboardRequested()
     signal wallpaperRequested()
     signal screenshotRequested()
     signal screenshotSettingsRequested()
@@ -75,25 +78,26 @@ PanelWindow {
     readonly property color selectedBackground: "#111111"
 
     readonly property var commands: [
+        // First-run suggestions are common, useful actions; usage history
+        // gradually promotes the commands each user actually runs most.
+        { id: "launcher", name: "launcher", keywords: ["launcher", "applications", "apps"] },
+        { id: "controls", name: "controls", keywords: ["controls", "control center", "settings", "system settings"] },
         { id: "wallpaper", name: "wallpaper", keywords: ["wallpaper", "background", "image"] },
         { id: "screenshot", name: "screenshot", keywords: ["screenshot", "screen", "capture", "snapshot", "area", "window"] },
+        { id: "power", name: "power", keywords: ["power", "performance", "balanced", "energy", "eco", "power-saving", "power-saver"] },
         { id: "screenshot-settings", name: "screenshot settings", keywords: ["screenshot settings", "capture settings", "save", "clipboard", "pointer", "location"] },
-        { id: "launcher", name: "launcher", keywords: ["launcher", "applications", "apps"] },
-        { id: "dashboard", name: "dashboard", keywords: ["dashboard", "system"] },
         { id: "overview", name: "overview", keywords: ["overview", "workspaces", "windows"] },
-        { id: "power", name: "power", keywords: ["power", "performance", "balanced", "battery", "energy", "eco", "power-saving", "power-saver"] },
-        { id: "controls", name: "controls", keywords: ["controls", "control center", "wifi", "wi-fi", "bluetooth", "audio", "volume", "brightness", "night light", "battery", "do not disturb", "dnd"] },
+        { id: "widgets", name: "widgets", keywords: ["widgets", "widget", "clock", "time", "day", "date", "desktop", "modules"] },
+        { id: "presets", name: "workspace presets", keywords: ["workspace presets", "preset", "workspace setup", "app sets", "app group", "session setup", "launch setup"] },
+        { id: "icons", name: "icons", keywords: ["icons", "icon theme", "icon themes", "app icons", "folder icons", "appearance"] },
+        { id: "navbar", name: "navbar", keywords: ["navbar", "navigation", "dock"] },
         { id: "wifi", name: "wifi", keywords: ["wifi", "wi-fi", "network", "networks", "internet", "connection"] },
         { id: "bluetooth", name: "bluetooth", keywords: ["bluetooth", "devices", "pair", "wireless"] },
         { id: "audio", name: "audio", keywords: ["audio", "volume", "sound", "mute", "speaker"] },
         { id: "brightness", name: "brightness", keywords: ["brightness", "display", "screen"] },
         { id: "night-light", name: "night light", keywords: ["night light", "nightlight", "warm", "temperature"] },
-        { id: "battery", name: "battery", keywords: ["battery", "power", "charge", "charging"] },
+        { id: "battery", name: "battery", keywords: ["battery", "charge", "charging"] },
         { id: "dnd", name: "do not disturb", keywords: ["do not disturb", "dnd", "focus", "notifications"] },
-        { id: "icons", name: "icons", keywords: ["icons", "icon theme", "icon themes", "app icons", "folder icons", "appearance"] },
-        { id: "navbar", name: "navbar", keywords: ["navbar", "navigation", "dock", "workspace icons", "navbar icons", "icon color", "icon colour"] },
-        { id: "presets", name: "workspace presets", keywords: ["workspace presets", "preset", "workspace setup", "app sets", "app group", "session setup", "launch setup"] },
-        { id: "widgets", name: "widgets", keywords: ["widgets", "widget", "clock", "time", "day", "date", "desktop", "modules"] },
         { id: "restart-shell", name: "restart-shell", keywords: ["restart", "shell", "reload", "quickshell"] },
         { id: "doctor", name: "doctor", keywords: ["doctor", "diagnostics", "health"] }
     ]
@@ -107,17 +111,95 @@ PanelWindow {
 
     readonly property var filteredCommands: {
         const query = root.query
+        const rankedCommands = root.commands.map((command, index) => ({
+            command: command,
+            index: index,
+            usage: Math.max(0, Number(root.commandUsage[command.id] || 0))
+        })).sort((a, b) => b.usage - a.usage || a.index - b.index)
 
-        if (!query)
-            return root.commands
+        const matches = !query
+            ? rankedCommands
+            : rankedCommands.filter(entry => {
+                const command = entry.command
+                const haystack = [command.name, ...(command.keywords || [])]
+                    .join(" ")
+                    .toLowerCase()
+                return haystack.includes(query)
+            })
 
-        return root.commands.filter(command => {
-            const haystack = [command.name, ...(command.keywords || [])]
-                .join(" ")
-                .toLowerCase()
+        return matches.slice(0, 5).map(entry => entry.command)
+    }
 
-            return haystack.includes(query)
-        })
+    FileView {
+        id: commandUsageFile
+        path: root.commandUsagePath
+        preload: true
+        printErrors: false
+        atomicWrites: true
+        onLoaded: root.loadCommandUsage(commandUsageFile.text())
+        onLoadFailed: root.loadCommandUsage("{}")
+    }
+
+    Timer {
+        id: commandUsageSaveTimer
+        interval: 250
+        repeat: false
+        onTriggered: {
+            if (root.commandUsageLoaded) {
+                commandUsageFile.setText(JSON.stringify({
+                    version: 1,
+                    usage: root.commandUsage
+                }))
+            }
+        }
+    }
+
+    function loadCommandUsage(rawText) {
+        const savedUsage = ({})
+        try {
+            const parsed = JSON.parse(String(rawText || "{}"))
+            const stored = parsed && parsed.usage && typeof parsed.usage === "object"
+                ? parsed.usage
+                : {}
+
+            for (const command of root.commands) {
+                const count = Math.floor(Number(stored[command.id] || 0))
+                if (isFinite(count) && count > 0)
+                    savedUsage[command.id] = count
+            }
+        } catch (error) {
+            console.warn("A16EEN command usage history could not be read:", error)
+        }
+
+        const pending = root.pendingCommandUsage
+        for (const command of root.commands) {
+            const count = Math.floor(Number(pending[command.id] || 0))
+            if (isFinite(count) && count > 0)
+                savedUsage[command.id] = Number(savedUsage[command.id] || 0) + count
+        }
+
+        root.commandUsage = savedUsage
+        root.pendingCommandUsage = ({})
+        root.commandUsageLoaded = true
+        if (Object.keys(pending).length > 0)
+            commandUsageSaveTimer.restart()
+    }
+
+    function recordCommandUsage(commandId) {
+        if (!root.commands.some(command => command.id === commandId))
+            return
+
+        if (!root.commandUsageLoaded) {
+            const pending = ({ ...root.pendingCommandUsage })
+            pending[commandId] = Number(pending[commandId] || 0) + 1
+            root.pendingCommandUsage = pending
+            return
+        }
+
+        const nextUsage = ({ ...root.commandUsage })
+        nextUsage[commandId] = Number(nextUsage[commandId] || 0) + 1
+        root.commandUsage = nextUsage
+        commandUsageSaveTimer.restart()
     }
 
     readonly property string activeProfileLabel: {
@@ -529,7 +611,7 @@ PanelWindow {
             : Math.min(500, parent.width - 48)
         height: root.powerViewOpen || root.widgetViewOpen || root.controlViewOpen || root.iconThemeViewOpen || root.workspacePresetViewOpen || root.navbarViewOpen
             ? Math.min(640, parent.height - 80)
-            : 326
+            : 280
         anchors.centerIn: parent
         anchors.verticalCenterOffset: root.powerViewOpen || root.controlViewOpen || root.iconThemeViewOpen || root.workspacePresetViewOpen || root.navbarViewOpen ? 0 : 185
         radius: root.powerViewOpen || root.controlViewOpen || root.iconThemeViewOpen || root.workspacePresetViewOpen || root.navbarViewOpen ? 26 : 18
@@ -748,7 +830,7 @@ PanelWindow {
                     id: search
                     anchors.fill: parent
                     anchors.leftMargin: 14
-                    anchors.rightMargin: 100
+                    anchors.rightMargin: 14
                     color: root.primaryText
                     selectionColor: "#FFFFFF20"
                     selectedTextColor: root.primaryText
@@ -811,103 +893,7 @@ PanelWindow {
                     visible: search.text === "/"
                 }
 
-                Rectangle {
-                    id: iconThemeButton
-                    anchors.right: parent.right
-                    anchors.rightMargin: 48
-                    anchors.verticalCenter: parent.verticalCenter
-                    width: 36
-                    height: 36
-                    radius: 10
-                    color: iconThemeMouse.containsMouse ? "#161616" : "#0E0E0E"
-                    border.width: 1
-                    border.color: iconThemeMouse.containsMouse ? "#303030" : "#1C1C1C"
 
-                    Image {
-                        anchors.centerIn: parent
-                        width: 16
-                        height: 16
-                        source: Qt.resolvedUrl("../assets/icons/lucide-palette.svg")
-                        fillMode: Image.PreserveAspectFit
-                        smooth: true
-                        opacity: 0.88
-                    }
-
-                    MouseArea {
-                        id: iconThemeMouse
-                        anchors.fill: parent
-                        hoverEnabled: true
-                        acceptedButtons: Qt.LeftButton
-                        cursorShape: Qt.PointingHandCursor
-                        onClicked: root.openIconThemeView()
-                    }
-                }
-
-                Rectangle {
-                    id: workspacePresetButton
-                    anchors.right: parent.right
-                    anchors.rightMargin: 90
-                    anchors.verticalCenter: parent.verticalCenter
-                    width: 36
-                    height: 36
-                    radius: 10
-                    color: workspacePresetMouse.containsMouse ? "#161616" : "#0E0E0E"
-                    border.width: 1
-                    border.color: workspacePresetMouse.containsMouse ? "#303030" : "#1C1C1C"
-
-                    Image {
-                        anchors.centerIn: parent
-                        width: 16
-                        height: 16
-                        source: Qt.resolvedUrl("../assets/icons/folder.svg")
-                        fillMode: Image.PreserveAspectFit
-                        smooth: true
-                        opacity: 0.88
-                    }
-
-                    MouseArea {
-                        id: workspacePresetMouse
-                        anchors.fill: parent
-                        hoverEnabled: true
-                        acceptedButtons: Qt.LeftButton
-                        cursorShape: Qt.PointingHandCursor
-                        onClicked: root.openWorkspacePresetView()
-                    }
-                }
-                Rectangle {
-                    id: controlsButton
-                    anchors.right: parent.right
-                    anchors.rightMargin: 6
-                    anchors.verticalCenter: parent.verticalCenter
-                    width: 36
-                    height: 36
-                    radius: 10
-                    color: controlsMouse.containsMouse ? "#161616" : "#0E0E0E"
-                    border.width: 1
-                    border.color: controlsMouse.containsMouse ? "#303030" : "#1C1C1C"
-
-                    Behavior on color { ColorAnimation { duration: 100 } }
-                    Behavior on border.color { ColorAnimation { duration: 100 } }
-
-                    Image {
-                        anchors.centerIn: parent
-                        width: 16
-                        height: 16
-                        source: Qt.resolvedUrl("../assets/icons/lucide-sliders-horizontal.svg")
-                        fillMode: Image.PreserveAspectFit
-                        smooth: true
-                        opacity: 0.88
-                    }
-
-                    MouseArea {
-                        id: controlsMouse
-                        anchors.fill: parent
-                        hoverEnabled: true
-                        acceptedButtons: Qt.LeftButton
-                        cursorShape: Qt.PointingHandCursor
-                        onClicked: root.openControlView()
-                    }
-                }
             }
 
             Rectangle {
@@ -915,11 +901,11 @@ PanelWindow {
                 x: 12
                 y: 68
                 width: parent.width - 24
-                height: 246
+                height: 200
                 radius: 12
-                color: "#000000"
+                color: "#030303"
                 border.width: 1
-                border.color: "#111111"
+                border.color: "#181818"
                 clip: true
 
                 Column {
@@ -934,22 +920,49 @@ PanelWindow {
 
                         delegate: Rectangle {
                             width: commandColumn.width
-                            height: 36
-                            radius: 9
+                            height: 34
+                            radius: 8
                             color: root.selectedCommandIndex === index
-                                ? root.selectedBackground
-                                : "#000000"
+                                ? "#111111"
+                                : "#030303"
+
+                            Behavior on color {
+                                ColorAnimation { duration: 100 }
+                            }
+
+                            Rectangle {
+                                visible: root.selectedCommandIndex === index
+                                width: 2
+                                height: 14
+                                radius: 1
+                                anchors.left: parent.left
+                                anchors.leftMargin: 4
+                                anchors.verticalCenter: parent.verticalCenter
+                                color: "#AFAFAF"
+                            }
 
                             Text {
                                 anchors.left: parent.left
                                 anchors.leftMargin: 14
+                                anchors.right: parent.right
+                                anchors.rightMargin: 38
                                 anchors.verticalCenter: parent.verticalCenter
                                 text: "/" + modelData.name
-                                color: root.primaryText
+                                color: root.selectedCommandIndex === index ? "#FFFFFF" : "#8D8D8D"
                                 font.pixelSize: 12
                                 font.weight: root.selectedCommandIndex === index
                                     ? Font.DemiBold
                                     : Font.Normal
+                                elide: Text.ElideRight
+                            }
+
+                            Text {
+                                anchors.right: parent.right
+                                anchors.rightMargin: 13
+                                anchors.verticalCenter: parent.verticalCenter
+                                text: root.selectedCommandIndex === index ? "↵" : ""
+                                color: "#666666"
+                                font.pixelSize: 13
                             }
 
                             MouseArea {
@@ -962,14 +975,16 @@ PanelWindow {
                         }
                     }
 
-                    Text {
-                        width: parent.width
-                        visible: root.filteredCommands.length === 0
-                        text: "No command"
-                        color: root.secondaryText
-                        font.pixelSize: 10
-                        horizontalAlignment: Text.AlignHCenter
-                    }
+                }
+                Text {
+                    anchors.fill: parent
+                    anchors.margins: 12
+                    visible: root.filteredCommands.length === 0
+                    text: "No matching command"
+                    color: root.secondaryText
+                    font.pixelSize: 11
+                    horizontalAlignment: Text.AlignHCenter
+                    verticalAlignment: Text.AlignVCenter
                 }
             }
         }
@@ -1586,6 +1601,8 @@ PanelWindow {
         if (!command)
             return
 
+        root.recordCommandUsage(command.id)
+
         switch (command.id) {
         case "wallpaper":
             root.closeRequested()
@@ -1602,10 +1619,6 @@ PanelWindow {
         case "launcher":
             root.closeRequested()
             root.launcherRequested()
-            break
-        case "dashboard":
-            root.closeRequested()
-            root.dashboardRequested()
             break
         case "overview":
             root.closeRequested()
@@ -1640,11 +1653,11 @@ PanelWindow {
             break
         case "restart-shell":
             root.closeRequested()
-            Quickshell.execDetached(["a16een", "restart-shell"])
+            Quickshell.execDetached(["a16", "-r"])
             break
         case "doctor":
             root.closeRequested()
-            Quickshell.execDetached(["a16een-doctor"])
+            Quickshell.execDetached(["a16", "-d"])
             break
         }
     }
