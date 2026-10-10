@@ -476,7 +476,14 @@ jobs:
           grep -Fq 'id: "night-light"' quickshell/a16een/ui/CommandCenter.qml
           grep -Fq 'id: "battery"' quickshell/a16een/ui/CommandCenter.qml
           grep -Fq 'id: "dnd"' quickshell/a16een/ui/CommandCenter.qml
-          grep -Fq 'lucide-sliders-horizontal.svg' quickshell/a16een/ui/CommandCenter.qml
+          ! grep -Fq 'id: iconThemeButton' quickshell/a16een/ui/CommandCenter.qml
+          ! grep -Fq 'id: workspacePresetButton' quickshell/a16een/ui/CommandCenter.qml
+          ! grep -Fq 'id: controlsButton' quickshell/a16een/ui/CommandCenter.qml
+          ! grep -Fq 'id: "dashboard"' quickshell/a16een/ui/CommandCenter.qml
+          grep -Fq 'return matches.slice(0, 5).map(entry => entry.command)' quickshell/a16een/ui/CommandCenter.qml
+          grep -Fq 'sort((a, b) => b.usage - a.usage || a.index - b.index)' quickshell/a16een/ui/CommandCenter.qml
+          grep -Fq 'command-center-usage.json' quickshell/a16een/ui/CommandCenter.qml
+          grep -Fq 'function recordCommandUsage(commandId)' quickshell/a16een/ui/CommandCenter.qml
           grep -Fq 'id: "screenshot"' quickshell/a16een/ui/CommandCenter.qml
           grep -Fq 'text: "/"' quickshell/a16een/ui/CommandCenter.qml
           grep -Fq 'text: "search commands"' quickshell/a16een/ui/CommandCenter.qml
