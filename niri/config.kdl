@@ -11,6 +11,9 @@ workspace "studio"
 workspace "music"
 // A16EEN WORKSPACES END
 
+// Off-screen workspace used by the A16EEN App Stash.
+workspace "app-stash"
+
 input {
     keyboard {
         xkb {}
@@ -102,7 +105,9 @@ binds {
     Mod+Up { focus-window-up; }
     Mod+Down { focus-window-down; }
 
-    Mod+H { focus-column-left; }
+    // Keep hidden windows alive on a dedicated workspace; restore them from App Stash.
+    Super+H repeat=false hotkey-overlay-title="A16EEN Hide Window to App Stash" { spawn-sh "qs -c \"$HOME/.config/a16een/quickshell/a16een\" ipc call app-stash hide"; }
+    Super+Ctrl+H repeat=false hotkey-overlay-title="A16EEN App Stash" { spawn-sh "qs -c \"$HOME/.config/a16een/quickshell/a16een\" ipc call app-stash toggle"; }
     Mod+L { focus-column-right; }
     Mod+J { focus-window-down; }
     Mod+K { focus-window-up; }

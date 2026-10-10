@@ -121,6 +121,8 @@ ShellRoot {
         root.lockErrorMessage = ""
         root.notificationCenterOpen = false
         root.toolsPanelOpen = false
+        root.toolsPanelPage = "tools"
+        root.calculatorOpen = false
         root.quickNotesOpen = false
         root.quickTasksOpen = false
         root.quickPresetsOpen = false
@@ -290,6 +292,9 @@ ShellRoot {
         && !root.wallpaperPickerOpen
         && !root.widgetsCenterOpen
         && !root.screenshotCenterOpen
+        && !root.notificationCenterOpen
+        && !root.toolsPanelOpen
+        && !root.calculatorOpen
         && !root.quickNotesOpen
         && !root.quickTasksOpen
         && !root.quickUtilitiesOpen
@@ -333,6 +338,12 @@ ShellRoot {
     property var latestNotification: null
     property bool notificationCenterOpen: false
     property bool toolsPanelOpen: false
+    property bool calculatorOpen: false
+    property string toolsPanelPage: "tools"
+    property var appStashEntries: []
+    property bool appStashStorageReady: false
+    property bool niriWindowsSnapshotReady: false
+    readonly property string appStashPath: Quickshell.stateDir + "/app-stash.json"
     property var notificationHistory: []
     property bool notificationHistoryReady: false
     readonly property int unreadNotificationCount:
@@ -363,6 +374,33 @@ ShellRoot {
                 notificationHistoryFile.setText(JSON.stringify({
                     version: 1,
                     notifications: root.notificationHistory
+                }))
+            }
+        }
+    }
+
+    FileView {
+        id: appStashFile
+        path: root.appStashPath
+        preload: true
+        printErrors: false
+        atomicWrites: true
+        onLoaded: root.loadAppStash()
+        onLoadFailed: {
+            root.appStashStorageReady = true
+            root.reconcileAppStash()
+        }
+    }
+
+    Timer {
+        id: appStashSaveTimer
+        interval: 200
+        repeat: false
+        onTriggered: {
+            if (root.appStashStorageReady) {
+                appStashFile.setText(JSON.stringify({
+                    version: 1,
+                    windows: root.appStashEntries
                 }))
             }
         }
@@ -442,6 +480,7 @@ ShellRoot {
                 )
                 if (focused)
                     root.focusedWorkspaceId = focused.id
+                root.reconcileAppStash()
 
                 return
             }
@@ -451,6 +490,8 @@ ShellRoot {
                 const focused = root.windows.find(window => window.is_focused === true)
                 if (focused)
                     root.focusedWindowId = focused.id
+                root.niriWindowsSnapshotReady = true
+                root.reconcileAppStash()
                 return
             }
 
@@ -461,6 +502,8 @@ ShellRoot {
                 root.windows = next
                 if (incoming.is_focused)
                     root.focusedWindowId = incoming.id
+                root.niriWindowsSnapshotReady = true
+                root.reconcileAppStash()
                 return
             }
 
@@ -469,6 +512,8 @@ ShellRoot {
                 if (root.focusedWindowId === event.WindowClosed.id) {
                     root.focusedWindowId = -1
                 }
+                root.niriWindowsSnapshotReady = true
+                root.reconcileAppStash()
                 return
             }
 
@@ -522,6 +567,27 @@ ShellRoot {
 
         function close(): void {
             root.launcherOpen = false
+        }
+    }
+
+    IpcHandler {
+        target: "app-stash"
+
+        function hide(): void {
+            root.hideFocusedWindow()
+        }
+
+        function toggle(): void {
+            root.toggleAppStash()
+        }
+
+        function open(): void {
+            root.openAppStash()
+        }
+
+        function close(): void {
+            root.toolsPanelOpen = false
+            root.toolsPanelPage = "tools"
         }
     }
 
@@ -820,6 +886,187 @@ ShellRoot {
             notificationHistorySaveTimer.restart()
     }
 
+    function desktopIdKey(value) {
+        return String(value || "").toLowerCase().split("/").pop().replace(/\.desktop$/i, "")
+    }
+
+    function desktopEntryForWindow(window) {
+        if (!window)
+            return null
+
+        const entries = [...DesktopEntries.applications.values]
+        const appId = root.desktopIdKey(window.app_id)
+        const title = String(window.title || "").trim().toLowerCase()
+        let found = entries.find(entry => root.desktopIdKey(entry.id) === appId)
+        if (found)
+            return found
+        found = entries.find(entry => String(entry.name || "").trim().toLowerCase() === title)
+        return found || null
+    }
+
+    function windowWorkspaceName(window) {
+        if (!window || window.workspace_id === undefined || window.workspace_id === null)
+            return ""
+        const workspace = root.workspaces.find(item => String(item.id) === String(window.workspace_id))
+        return workspace ? String(workspace.name || "") : ""
+    }
+
+    function loadAppStash() {
+        let items = []
+        try {
+            const parsed = JSON.parse(String(appStashFile.text() || "{}"))
+            if (parsed && Array.isArray(parsed.windows)) {
+                items = parsed.windows
+                    .filter(item => item && String(item.windowId || "").length)
+                    .map(item => ({
+                        windowId: String(item.windowId),
+                        restoreWorkspace: String(item.restoreWorkspace || "home"),
+                        restoreLabel: String(item.restoreLabel || "Home"),
+                        appId: String(item.appId || ""),
+                        appName: String(item.appName || item.title || "Application"),
+                        title: String(item.title || item.appName || "Application"),
+                        icon: String(item.icon || "application-x-executable"),
+                        timestamp: Number(item.timestamp) || Date.now()
+                    }))
+            }
+        } catch (error) {
+            items = []
+            console.warn("A16EEN App Stash metadata could not be read:", error)
+        }
+        root.appStashEntries = items
+        root.appStashStorageReady = true
+        root.reconcileAppStash()
+    }
+
+    function saveAppStash() {
+        if (root.appStashStorageReady)
+            appStashSaveTimer.restart()
+    }
+
+    function reconcileAppStash() {
+        if (!root.appStashStorageReady || !root.niriWindowsSnapshotReady)
+            return
+
+        const liveWindows = root.windows
+        let next = root.appStashEntries.filter(entry =>
+            liveWindows.some(window => String(window.id) === String(entry.windowId)))
+
+        // Recover if the shell restarted while a window was already in the
+        // stash workspace but its metadata file was missing or incomplete.
+        const ids = ({})
+        next.forEach(entry => ids[String(entry.windowId)] = true)
+        liveWindows.forEach(window => {
+            if (root.windowWorkspaceName(window) !== "app-stash" || ids[String(window.id)])
+                return
+
+            const desktopEntry = root.desktopEntryForWindow(window)
+            next.push({
+                windowId: String(window.id),
+                restoreWorkspace: "home",
+                restoreLabel: "Home",
+                appId: String(window.app_id || ""),
+                appName: String(desktopEntry ? desktopEntry.name : (window.app_id || window.title || "Application")),
+                title: String(window.title || window.app_id || "Application"),
+                icon: String(desktopEntry && desktopEntry.icon ? desktopEntry.icon : "application-x-executable"),
+                timestamp: Date.now()
+            })
+            ids[String(window.id)] = true
+        })
+
+        next.sort((a, b) => Number(b.timestamp || 0) - Number(a.timestamp || 0))
+        if (JSON.stringify(next) !== JSON.stringify(root.appStashEntries)) {
+            root.appStashEntries = next
+            root.saveAppStash()
+        }
+    }
+
+    function hideFocusedWindow() {
+        const focused = root.windows.find(window => window.is_focused === true)
+            || root.windows.find(window => String(window.id) === String(root.focusedWindowId))
+        if (!focused)
+            return
+
+        if (root.windowWorkspaceName(focused) === "app-stash") {
+            root.openAppStash()
+            return
+        }
+
+        const workspace = root.workspaces.find(item => String(item.id) === String(focused.workspace_id))
+            || root.workspaces.find(item => item.is_focused === true)
+        let restoreWorkspace = "home"
+        if (workspace) {
+            if (workspace.name)
+                restoreWorkspace = String(workspace.name)
+            else if (workspace.idx !== undefined && workspace.idx !== null)
+                restoreWorkspace = String(workspace.idx)
+        }
+        const restoreLabel = workspace
+            ? String(workspace.name || ("Workspace " + String(workspace.idx === undefined ? "" : workspace.idx)))
+            : "Home"
+        const desktopEntry = root.desktopEntryForWindow(focused)
+        const entry = {
+            windowId: String(focused.id),
+            restoreWorkspace: restoreWorkspace,
+            restoreLabel: restoreLabel,
+            appId: String(focused.app_id || ""),
+            appName: String(desktopEntry ? desktopEntry.name : (focused.app_id || focused.title || "Application")),
+            title: String(focused.title || focused.app_id || "Application"),
+            icon: String(desktopEntry && desktopEntry.icon ? desktopEntry.icon : "application-x-executable"),
+            timestamp: Date.now()
+        }
+
+        root.appStashEntries = [entry, ...root.appStashEntries.filter(item =>
+            String(item.windowId) !== String(entry.windowId))]
+        root.saveAppStash()
+
+        Quickshell.execDetached([
+            "niri", "msg", "action", "move-window-to-workspace",
+            "--window-id", String(focused.id),
+            "--focus", "false",
+            "app-stash"
+        ])
+    }
+
+    function restoreStashedWindow(windowId) {
+        const key = String(windowId)
+        const entry = root.appStashEntries.find(item => String(item.windowId) === key)
+        if (!entry)
+            return
+
+        if (!root.windows.some(window => String(window.id) === key)) {
+            root.appStashEntries = root.appStashEntries.filter(item => String(item.windowId) !== key)
+            root.saveAppStash()
+            return
+        }
+
+        root.appStashEntries = root.appStashEntries.filter(item => String(item.windowId) !== key)
+        root.saveAppStash()
+        root.toolsPanelOpen = false
+        root.toolsPanelPage = "tools"
+
+        Quickshell.execDetached([
+            "niri", "msg", "action", "move-window-to-workspace",
+            "--window-id", key,
+            "--focus", "true",
+            String(entry.restoreWorkspace || "home")
+        ])
+    }
+
+    function openAppStash() {
+        root.closeTransientPanels()
+        root.toolsPanelPage = "stash"
+        root.toolsPanelOpen = true
+    }
+
+    function toggleAppStash() {
+        if (root.toolsPanelOpen && root.toolsPanelPage === "stash") {
+            root.toolsPanelOpen = false
+            root.toolsPanelPage = "tools"
+            return
+        }
+        root.openAppStash()
+    }
+
     function closeTransientPanels() {
         root.quickNotesOpen = false
         root.quickTasksOpen = false
@@ -828,6 +1075,8 @@ ShellRoot {
         root.utilitiesExpanded = false
         root.notificationCenterOpen = false
         root.toolsPanelOpen = false
+        root.toolsPanelPage = "tools"
+        root.calculatorOpen = false
         root.commandCenterOpen = false
         root.launcherOpen = false
         root.dashboardOpen = false
@@ -851,9 +1100,11 @@ ShellRoot {
     function openToolsPanel() {
         if (root.toolsPanelOpen) {
             root.toolsPanelOpen = false
+            root.toolsPanelPage = "tools"
             return
         }
         root.closeTransientPanels()
+        root.toolsPanelPage = "tools"
         root.toolsPanelOpen = true
     }
 
@@ -871,8 +1122,8 @@ ShellRoot {
             root.utilitiesExpanded = true
             root.utilitiesMode = "clipboard"
             break
-        case "command-center":
-            root.commandCenterOpen = true
+        case "calculator":
+            root.calculatorOpen = true
             break
         }
     }
@@ -1118,7 +1369,9 @@ ShellRoot {
     function handleUtilitiesRequest(mode) {
         root.notificationCenterOpen = false
         root.toolsPanelOpen = false
-        if (mode === "toggle" && root.quickUtilitiesOpen) {
+        root.toolsPanelPage = "tools"
+        root.calculatorOpen = false
+        if (mode === "toggle" && root.quickUtilitiesOpen)
             root.quickUtilitiesOpen = false
             root.utilitiesExpanded = false
             return
@@ -1143,6 +1396,8 @@ ShellRoot {
     function openQuickTasks() {
         root.notificationCenterOpen = false
         root.toolsPanelOpen = false
+        root.toolsPanelPage = "tools"
+        root.calculatorOpen = false
         root.quickTasksOpen = true
         root.quickPresetsOpen = false
         root.quickUtilitiesOpen = false
@@ -1162,6 +1417,8 @@ ShellRoot {
     function openQuickPresets() {
         root.notificationCenterOpen = false
         root.toolsPanelOpen = false
+        root.toolsPanelPage = "tools"
+        root.calculatorOpen = false
         root.quickPresetsOpen = true
         root.quickUtilitiesOpen = false
         root.utilitiesExpanded = false
@@ -1208,6 +1465,8 @@ ShellRoot {
             root.screenshotSettingsOpen = false
             root.notificationCenterOpen = false
             root.toolsPanelOpen = false
+            root.toolsPanelPage = "tools"
+            root.calculatorOpen = false
         }
 
         onTasksRequested: root.openQuickTasks()
@@ -1230,8 +1489,23 @@ ShellRoot {
         modelData: root.primaryScreen
         navbarPosition: root.navbarPosition
         opened: root.toolsPanelOpen
-        onCloseRequested: root.toolsPanelOpen = false
+        page: root.toolsPanelPage
+        stashedApps: root.appStashEntries
+        onCloseRequested: {
+            root.toolsPanelOpen = false
+            root.toolsPanelPage = "tools"
+        }
         onToolRequested: toolId => root.activateHubTool(toolId)
+        onAppStashRequested: root.openAppStash()
+        onBackRequested: root.toolsPanelPage = "tools"
+        onRestoreRequested: windowId => root.restoreStashedWindow(windowId)
+    }
+
+    CalculatorPanel {
+        modelData: root.primaryScreen
+        navbarPosition: root.navbarPosition
+        opened: root.calculatorOpen
+        onCloseRequested: root.calculatorOpen = false
     }
 
     QuickNotes {
