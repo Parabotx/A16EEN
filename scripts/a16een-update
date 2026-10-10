@@ -11,18 +11,18 @@ confirm=0
 usage() {
     cat <<'EOF'
 Usage:
-  a16een-update                 Check for and apply the latest A16EEN revision
-  a16een-update --status        Show installed/source revision state
-  a16een-update --rollback      Restore the most recent known-good A16EEN revision
-  a16een-update --rollback -y   Roll back without the confirmation prompt
-  a16een-update --help
+  a16-update                    Check for and apply the latest A16 revision
+  a16-update -s, --status       Show installed/source revision state
+  a16-update -r, --rollback     Restore the most recent known-good revision
+  a16-update -r -y              Roll back without the confirmation prompt
+  a16-update -h, --help
 EOF
 }
 
 for arg in "$@"; do
     case "$arg" in
-        --rollback) action="rollback" ;;
-        --status) action="status" ;;
+        --rollback|-r) action="rollback" ;;
+        --status|-s) action="status" ;;
         --yes|-y) confirm=1 ;;
         --help|-h) usage; exit 0 ;;
         *) echo "Unknown option: $arg" >&2; usage >&2; exit 1 ;;
@@ -30,7 +30,7 @@ for arg in "$@"; do
 done
 
 if [[ $EUID -eq 0 ]]; then
-    echo "Run a16een-update as your normal desktop user, not root."
+    echo "Run a16-update as your normal desktop user, not root."
     exit 1
 fi
 
@@ -180,7 +180,7 @@ if [[ "$action" == "rollback" ]]; then
     echo "Re-enter A16EEN through your display manager to use the restored revision."
     exit 0
 fi
-echo "==> Checking A16EEN for updates..."
+echo "==> Checking A16 for updates..."
 
 if [[ "$(git -C "$SOURCE_DIR" rev-parse --is-shallow-repository)" == "true" ]]; then
     git -C "$SOURCE_DIR" fetch --unshallow origin main
@@ -192,9 +192,9 @@ current_source="$(git -C "$SOURCE_DIR" rev-parse HEAD)"
 remote_commit="$(git -C "$SOURCE_DIR" rev-parse origin/main)"
 
 if [[ "$current_source" == "$remote_commit" ]]; then
-    echo "A16EEN source is already up to date."
+    echo "A16 is already up to date."
 else
-    echo "==> Applying A16EEN update..."
+    echo "==> Applying A16 update..."
     git -C "$SOURCE_DIR" merge --ff-only origin/main
 fi
 
