@@ -88,17 +88,6 @@ Item {
             anchors.margins: 0
             spacing: 6
 
-            Text {
-                width: 110
-                height: parent.height
-                verticalAlignment: Text.AlignVCenter
-                text: "NAVBAR POSITION"
-                color: root.muted
-                font.pixelSize: 9
-                font.weight: Font.DemiBold
-                font.letterSpacing: 0.7
-            }
-
             Repeater {
                 model: [
                     { id: "left", name: "LEFT", glyph: "←" },
@@ -108,7 +97,7 @@ Item {
                 ]
 
                 delegate: Rectangle {
-                    width: (parent.width - 185) / 4
+                    width: (parent.width - 69) / 4
                     height: 34
                     radius: 7
                     color: root.position === modelData.id ? root.selected
@@ -148,6 +137,7 @@ Item {
             Text {
                 width: 45
                 height: parent.height
+                visible: root.statusText !== "READY"
                 verticalAlignment: Text.AlignVCenter
                 horizontalAlignment: Text.AlignRight
                 text: root.statusText
