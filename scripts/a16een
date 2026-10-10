@@ -71,9 +71,24 @@ Other
   version                     Show A16EEN CLI version
   help                        Show this help
 
+Shortcuts
+  -u, --update                Update A16
+  -h, --help                  Show help
+  -r, --restart               Restart the shell
+  -s, --status                Show installed/source status
+  -d, --doctor                Run diagnostics
+  -b, --rollback              Restore the previous known-good revision
+  -v, --version               Show versions
+
+Easy-to-remember commands
+  a16 shell restart           Restart the shell
+  a16 app open                Open the app launcher
+  a16 control open            Open the control center
+  a16 screen shot             Open the screenshot UI
+  a16 system update           Update A16
+
 Options
   --yes, -y                   Skip confirmation for reboot/poweroff
-  --help, -h                  Show command help
 
 Examples:
   a16 launcher
@@ -82,7 +97,8 @@ Examples:
   a16 screenshot-window
   a16 wallpaper set studio.png
   a16 doctor
-  a16 update
+  a16 -u
+  a16-update
 EOF
 }
 
@@ -231,6 +247,56 @@ restart_shell() {
 
 command="${1:-help}"
 shift || true
+
+# Short flags and natural two-word aliases are normalized to the existing
+# fixed command set. They never evaluate user-supplied text as a shell command.
+case "$command" in
+    -h|--help) command="help" ;;
+    -u|--update) command="update" ;;
+    -r|--restart|--reload) command="restart-shell" ;;
+    -s|--status) command="status" ;;
+    -d|--doctor|--diagnose) command="doctor" ;;
+    -b|--rollback) command="rollback" ;;
+    -v|--version) command="version" ;;
+    -l|--launcher) command="launcher" ;;
+esac
+
+case "$command" in
+    shell)
+        case "${1:-}" in
+            restart|reload) command="restart-shell"; shift ;;
+            status) command="status"; shift ;;
+            *) die "usage: a16 shell restart|status" ;;
+        esac
+        ;;
+    app)
+        case "${1:-}" in
+            open|launch|launcher) command="launcher"; shift ;;
+            *) die "usage: a16 app open" ;;
+        esac
+        ;;
+    control|controls)
+        case "${1:-}" in
+            open|show|dashboard) command="dashboard"; shift ;;
+            *) die "usage: a16 control open" ;;
+        esac
+        ;;
+    screen)
+        case "${1:-}" in
+            shot|screenshot) command="screenshot"; shift ;;
+            *) die "usage: a16 screen shot" ;;
+        esac
+        ;;
+    system)
+        case "${1:-}" in
+            update) command="update"; shift ;;
+            status) command="status"; shift ;;
+            rollback) command="rollback"; shift ;;
+            doctor|diagnose) command="doctor"; shift ;;
+            *) die "usage: a16 system update|status|rollback|doctor" ;;
+        esac
+        ;;
+esac
 
 assume_yes=0
 while [[ $# -gt 0 ]]; do
@@ -502,17 +568,22 @@ case "$command" in
 
     update)
         require_no_args "$@"
-        [[ -x "$SOURCE_DIR/scripts/a16een-update" ]] || die "A16EEN source checkout is missing. Run the installer first."
+        if [[ -x /usr/local/bin/a16-update ]]; then
+            exec /usr/local/bin/a16-update
+        fi
+        [[ -x "$SOURCE_DIR/scripts/a16een-update" ]] || die "A16 source checkout is missing. Run the installer first."
         exec "$SOURCE_DIR/scripts/a16een-update"
         ;;
 
     rollback)
         [[ $# -le 0 ]] || die "rollback takes no arguments other than --yes."
-        [[ -x "$SOURCE_DIR/scripts/a16een-update" ]] || die "A16EEN source checkout is missing. Run the installer first."
+        updater="/usr/local/bin/a16-update"
+        [[ -x "$updater" ]] || updater="$SOURCE_DIR/scripts/a16een-update"
+        [[ -x "$updater" ]] || die "A16 update tools are not installed. Run the installer first."
         if [[ "$assume_yes" -eq 1 ]]; then
-            exec "$SOURCE_DIR/scripts/a16een-update" --rollback --yes
+            exec "$updater" --rollback --yes
         else
-            exec "$SOURCE_DIR/scripts/a16een-update" --rollback
+            exec "$updater" --rollback
         fi
         ;;
 
@@ -527,10 +598,13 @@ case "$command" in
 
     status)
         require_no_args "$@"
+        if [[ -x /usr/local/bin/a16-update ]]; then
+            exec /usr/local/bin/a16-update --status
+        fi
         if [[ -x "$SOURCE_DIR/scripts/a16een-update" ]]; then
             exec "$SOURCE_DIR/scripts/a16een-update" --status
         fi
-        die "A16EEN update tools are not installed."
+        die "A16 update tools are not installed."
         ;;
 
     version)
@@ -549,6 +623,6 @@ case "$command" in
         ;;
 
     *)
-        die "unknown command '$command'. Use 'a16een help'."
+        die "unknown command '$command'. Use 'a16 -h'."
         ;;
 esac
