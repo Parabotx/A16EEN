@@ -76,11 +76,20 @@ def interface_candidates(class_root: Path = Path("/sys/class/net"),
 
 def update_usage(previous: dict[str, Any], samples: list[dict[str, Any]],
                  today: str, now_ms: int) -> tuple[dict[str, Any], dict[str, Any]]:
-    same_day = previous.get("date") == today
-    old_map = previous.get("interfaces", {}) if same_day else {}
-    records = {k: dict(v) for k, v in old_map.items() if isinstance(v, dict)} if isinstance(old_map, dict) else {}
-    touched, down_bps, up_bps = set(), 0.0, 0.0
-    active_name = next((str(x["name"]) for x in samples if x.get("is_default")), "")
+    month_key = today[:7]
+    same_month = previous.get("month") == month_key
+    same_day = same_month and previous.get("date") == today
+    old_map = previous.get("interfaces", {}) if same_month else {}
+    records = {
+        key: dict(value)
+        for key, value in old_map.items()
+        if isinstance(value, dict)
+    } if isinstance(old_map, dict) else {}
+
+    touched: set[str] = set()
+    down_bps, up_bps = 0.0, 0.0
+    active_name = next((str(item["name"]) for item in samples if item.get("is_default")), "")
+
     for sample in samples:
         name = str(sample.get("name") or "")
         if not name:
@@ -88,46 +97,90 @@ def update_usage(previous: dict[str, Any], samples: list[dict[str, Any]],
         touched.add(name)
         rx, tx = max(0, int(sample.get("rx", 0))), max(0, int(sample.get("tx", 0)))
         old = records.get(name)
+
         if old:
-            old_rx, old_tx = max(0, int(old.get("last_rx", rx))), max(0, int(old.get("last_tx", tx)))
+            old_rx = max(0, int(old.get("last_rx", rx)))
+            old_tx = max(0, int(old.get("last_tx", tx)))
             drx = rx - old_rx if rx >= old_rx else rx
             dtx = tx - old_tx if tx >= old_tx else tx
             elapsed = max(0.05, (now_ms - int(old.get("last_sample_ms", now_ms))) / 1000)
-            rx_today = max(0, int(old.get("rx_today", 0))) + drx
-            tx_today = max(0, int(old.get("tx_today", 0))) + dtx
+            rx_today = (max(0, int(old.get("rx_today", 0))) if same_day else 0) + drx
+            tx_today = (max(0, int(old.get("tx_today", 0))) if same_day else 0) + dtx
+            rx_month = max(0, int(old.get("rx_month", 0))) + drx
+            tx_month = max(0, int(old.get("tx_month", 0))) + dtx
             in_rate, out_rate = drx / elapsed, dtx / elapsed
         else:
-            rx_today = tx_today = in_rate = out_rate = 0
+            # First observation is a counter baseline; earlier traffic cannot be recovered
+            # reliably from kernel counters without a prior sample.
+            rx_today = tx_today = rx_month = tx_month = 0
+            in_rate = out_rate = 0.0
+
         records[name] = {
-            "name": name, "type": str(sample.get("type") or "Network"),
+            "name": name,
+            "type": str(sample.get("type") or "Network"),
             "connection": str(sample.get("connection") or name),
-            "last_rx": rx, "last_tx": tx, "rx_today": rx_today, "tx_today": tx_today,
-            "last_sample_ms": now_ms, "rx_bps": round(in_rate, 1), "tx_bps": round(out_rate, 1),
+            "last_rx": rx,
+            "last_tx": tx,
+            "rx_today": rx_today,
+            "tx_today": tx_today,
+            "rx_month": rx_month,
+            "tx_month": tx_month,
+            "last_sample_ms": now_ms,
+            "rx_bps": round(in_rate, 1),
+            "tx_bps": round(out_rate, 1),
             "is_default": bool(sample.get("is_default")),
         }
         down_bps += in_rate
         up_bps += out_rate
+
     for name, item in records.items():
         if name not in touched:
             item["rx_bps"] = item["tx_bps"] = 0.0
             item["is_default"] = False
-    items = sorted(records.values(), key=lambda x: (not x.get("is_default", False),
-                    -int(x.get("rx_today", 0)) - int(x.get("tx_today", 0))))
-    active = next((x for x in items if x.get("name") == active_name), None)
-    rx_total = sum(max(0, int(x.get("rx_today", 0))) for x in items)
-    tx_total = sum(max(0, int(x.get("tx_today", 0))) for x in items)
-    state = {"version": 1, "date": today, "interfaces": records}
+
+    items = sorted(
+        records.values(),
+        key=lambda item: (
+            not item.get("is_default", False),
+            -int(item.get("rx_today", 0)) - int(item.get("tx_today", 0)),
+        ),
+    )
+    active = next((item for item in items if item.get("name") == active_name), None)
+    rx_today_total = sum(max(0, int(item.get("rx_today", 0))) for item in items)
+    tx_today_total = sum(max(0, int(item.get("tx_today", 0))) for item in items)
+    rx_month_total = sum(max(0, int(item.get("rx_month", 0))) for item in items)
+    tx_month_total = sum(max(0, int(item.get("tx_month", 0))) for item in items)
+
+    state = {"version": 2, "date": today, "month": month_key, "interfaces": records}
     output = {
-        "date": today, "active_interface": active_name,
+        "date": today,
+        "month": month_key,
+        "active_interface": active_name,
         "connection_name": str(active.get("connection") if active else "No active connection"),
         "connection_type": str(active.get("type") if active else "Network"),
-        "down_bps": round(down_bps, 1), "up_bps": round(up_bps, 1),
-        "today_download_bytes": rx_total, "today_upload_bytes": tx_total,
-        "today_total_bytes": rx_total + tx_total,
-        "interfaces": [{"name": x["name"], "type": x["type"], "connection": x["connection"],
-            "is_default": bool(x.get("is_default")), "rx_today_bytes": int(x.get("rx_today", 0)),
-            "tx_today_bytes": int(x.get("tx_today", 0)), "rx_bps": float(x.get("rx_bps", 0)),
-            "tx_bps": float(x.get("tx_bps", 0))} for x in items],
+        "down_bps": round(down_bps, 1),
+        "up_bps": round(up_bps, 1),
+        "today_download_bytes": rx_today_total,
+        "today_upload_bytes": tx_today_total,
+        "today_total_bytes": rx_today_total + tx_today_total,
+        "month_download_bytes": rx_month_total,
+        "month_upload_bytes": tx_month_total,
+        "month_total_bytes": rx_month_total + tx_month_total,
+        "interfaces": [
+            {
+                "name": item["name"],
+                "type": item["type"],
+                "connection": item["connection"],
+                "is_default": bool(item.get("is_default")),
+                "rx_today_bytes": int(item.get("rx_today", 0)),
+                "tx_today_bytes": int(item.get("tx_today", 0)),
+                "rx_month_bytes": int(item.get("rx_month", 0)),
+                "tx_month_bytes": int(item.get("tx_month", 0)),
+                "rx_bps": float(item.get("rx_bps", 0)),
+                "tx_bps": float(item.get("tx_bps", 0)),
+            }
+            for item in items
+        ],
         "sampled_at": now_ms,
     }
     return state, output
