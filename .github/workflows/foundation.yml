@@ -48,7 +48,7 @@ jobs:
           grep -Fq 'signal toolRequested(string toolId)' quickshell/a16een/ui/ToolsPanel.qml
           grep -Fq "You're all caught up" quickshell/a16een/ui/NotificationCenter.qml
           grep -Fq 'implicitWidth: 322' quickshell/a16een/ui/NotificationToast.qml
-          grep -Fq 'modeRequested("clipboard")' quickshell/a16een/ui/UtilitiesPanel.qml
+          grep -Fq 'root.modeRequested(tabButton.modelData.id)' quickshell/a16een/ui/UtilitiesPanel.qml
           grep -Fq '{ id: "clipboard", label: "Clipboard", icon: "clipboard" }' quickshell/a16een/ui/UtilitiesPanel.qml
           grep -Fq 'width: (modeTabs.width - modeTabs.spacing * 2) / 3' quickshell/a16een/ui/UtilitiesPanel.qml
           grep -Fq 'Copied to clipboard' quickshell/a16een/ui/UtilitiesPanel.qml
