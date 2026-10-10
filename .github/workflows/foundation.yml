@@ -38,10 +38,15 @@ jobs:
           grep -Fq 'a16een-clipboard' scripts/install.sh
           grep -Fq 'clipboardHistoryWatcher' quickshell/a16een/shell.qml
           grep -Fq 'modeRequested("clipboard")' quickshell/a16een/ui/UtilitiesPanel.qml
+          grep -Fq '{ id: "clipboard", label: "Clipboard", icon: "clipboard" }' quickshell/a16een/ui/UtilitiesPanel.qml
+          grep -Fq 'width: (modeTabs.width - modeTabs.spacing * 2) / 3' quickshell/a16een/ui/UtilitiesPanel.qml
+          grep -Fq 'Copied to clipboard' quickshell/a16een/ui/UtilitiesPanel.qml
+          grep -Fq 'clipboardPendingAction === "copy"' quickshell/a16een/ui/UtilitiesPanel.qml
+          ! grep -Fq 'id: clipboardButton' quickshell/a16een/ui/UtilitiesPanel.qml
           grep -Fq 'import Quickshell.Io' quickshell/a16een/ui/UtilitiesPanel.qml
           ! grep -Fq 'placeholderText:' quickshell/a16een/ui/UtilitiesPanel.qml
           grep -Fq '"--type",' scripts/a16een-clipboard
-          grep -Fq 'popupHeight: root.selectedMode === "clipboard" ? 440 : 340' quickshell/a16een/ui/UtilitiesPanel.qml
+          grep -Fq 'popupHeight: root.selectedMode === "clipboard" ? 410 : 340' quickshell/a16een/ui/UtilitiesPanel.qml
           grep -Fq 'RETENTION_SECONDS = 24 * 60 * 60' scripts/a16een-clipboard
           grep -Fq '"--watch"' scripts/a16een-clipboard
           grep -Fq 'clipboard-history.json' scripts/a16een-clipboard

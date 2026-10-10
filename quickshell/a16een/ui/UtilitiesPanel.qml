@@ -21,7 +21,7 @@ PanelWindow {
     readonly property real screenWidth: root.modelData ? root.modelData.width : 1920
     readonly property real screenHeight: root.modelData ? root.modelData.height : 1080
     readonly property int popupWidth: 360
-    readonly property int popupHeight: root.selectedMode === "clipboard" ? 440 : 340
+    readonly property int popupHeight: root.selectedMode === "clipboard" ? 410 : 340
     readonly property real popupX: root.horizontalNavbar
         ? 100
         : (root.navbarPosition === "left"
@@ -138,13 +138,14 @@ PanelWindow {
                     Repeater {
                         model: [
                             { id: "wifi", label: "Wi-Fi", icon: "wifi" },
-                            { id: "bluetooth", label: "Bluetooth", icon: "bluetooth" }
+                            { id: "bluetooth", label: "Bluetooth", icon: "bluetooth" },
+                            { id: "clipboard", label: "Clipboard", icon: "clipboard" }
                         ]
 
                         delegate: Rectangle {
                             id: tabButton
                             required property var modelData
-                            width: (modeTabs.width - modeTabs.spacing) / 2
+                            width: (modeTabs.width - modeTabs.spacing * 2) / 3
                             height: 29
                             radius: 9
                             color: root.selectedMode === tabButton.modelData.id
@@ -196,69 +197,10 @@ PanelWindow {
                     }
                 }
 
-                Rectangle {
-                    id: clipboardButton
-                    width: parent.width
-                    height: 29
-                    radius: 9
-                    color: root.selectedMode === "clipboard"
-                        ? "#20262E"
-                        : (clipboardButtonMouse.containsMouse ? "#EEF1F4" : "#F6F7F9")
-                    border.width: 1
-                    border.color: root.selectedMode === "clipboard" ? "#20262E" : "#E3E8ED"
-
-                    Row {
-                        anchors.left: parent.left
-                        anchors.leftMargin: 10
-                        anchors.verticalCenter: parent.verticalCenter
-                        spacing: 7
-
-                        Image {
-                            width: 14
-                            height: 14
-                            anchors.verticalCenter: parent.verticalCenter
-                            source: Qt.resolvedUrl("../assets/icons/lucide-clipboard"
-                                + (root.selectedMode === "clipboard"
-                                    ? "-refined.svg" : "-refined-dark.svg"))
-                            sourceSize.width: 28
-                            sourceSize.height: 28
-                            smooth: true
-                        }
-
-                        Text {
-                            anchors.verticalCenter: parent.verticalCenter
-                            text: "Clipboard"
-                            color: root.selectedMode === "clipboard" ? "#FFFFFF" : "#5D6875"
-                            font.pixelSize: 10
-                            font.weight: Font.DemiBold
-                        }
-                    }
-
-                    Text {
-                        anchors.right: parent.right
-                        anchors.rightMargin: 10
-                        anchors.verticalCenter: parent.verticalCenter
-                        text: "24H"
-                        color: root.selectedMode === "clipboard" ? "#CBD2DB" : "#8A939E"
-                        font.pixelSize: 8
-                        font.weight: Font.DemiBold
-                        font.letterSpacing: 0.6
-                    }
-
-                    MouseArea {
-                        id: clipboardButtonMouse
-                        anchors.fill: parent
-                        hoverEnabled: true
-                        cursorShape: Qt.PointingHandCursor
-                        onClicked: root.modeRequested("clipboard")
-                    }
-                }
-
                 Item {
                     id: detailPane
                     width: parent.width
-                    height: parent.height - modeTabs.height - clipboardButton.height
-                        - cardContent.spacing * 2
+                    height: parent.height - modeTabs.height - cardContent.spacing
 
                     ControlDetailSection {
                         id: details
@@ -279,6 +221,7 @@ PanelWindow {
                         property var clipboardItems: []
                         property string clipboardSearch: ""
                         property string clipboardActionMessage: ""
+                        property string clipboardPendingAction: ""
 
                         readonly property var filteredClipboardItems:
                             rootFilter(clipboardItems, clipboardSearch)
@@ -312,8 +255,10 @@ PanelWindow {
                         function runAction(action, entryId) {
                             if (clipboardActionProcess.running)
                                 return
+                            clipboardContent.clipboardPendingAction = action
                             clipboardContent.clipboardActionMessage = action === "copy"
-                                ? "Copied" : (action === "delete" ? "Removed" : "History cleared")
+                                ? "Copying to clipboard…"
+                                : (action === "delete" ? "Removing item…" : "Clearing history…")
                             clipboardActionProcess.command = entryId
                                 ? ["/usr/local/bin/a16een-clipboard", action, String(entryId)]
                                 : ["/usr/local/bin/a16een-clipboard", action]
@@ -343,8 +288,18 @@ PanelWindow {
                             running: false
 
                             onExited: (exitCode, exitStatus) => {
-                                if (exitCode !== 0)
-                                    clipboardContent.clipboardActionMessage = "Action failed"
+                                if (exitCode === 0) {
+                                    clipboardContent.clipboardActionMessage =
+                                        clipboardContent.clipboardPendingAction === "copy"
+                                            ? "Copied to clipboard"
+                                            : (clipboardContent.clipboardPendingAction === "delete"
+                                                ? "Item removed" : "History cleared")
+                                } else {
+                                    clipboardContent.clipboardActionMessage =
+                                        clipboardContent.clipboardPendingAction === "copy"
+                                            ? "Could not copy text" : "Action failed"
+                                }
+                                clipboardContent.clipboardPendingAction = ""
                                 clipboardStatusReset.restart()
                                 clipboardContent.refreshHistory()
                             }
@@ -477,7 +432,7 @@ PanelWindow {
 
                             Item {
                                 width: parent.width
-                                height: Math.max(0, parent.height - 15 - 31 - 14)
+                                height: Math.max(0, parent.height - 87)
 
                                 ListView {
                                     id: clipboardHistoryList
@@ -583,15 +538,52 @@ PanelWindow {
                                 }
                             }
 
-                            Text {
+                            Rectangle {
                                 width: parent.width
-                                height: 12
-                                text: clipboardContent.clipboardActionMessage.length
-                                    ? clipboardContent.clipboardActionMessage
-                                    : "Click an item to copy it again"
-                                color: "#97A1AD"
-                                font.pixelSize: 8
-                                elide: Text.ElideRight
+                                height: 20
+                                radius: 7
+                                color: clipboardContent.clipboardActionMessage.length
+                                    ? (clipboardContent.clipboardActionMessage === "Copied to clipboard"
+                                        ? "#EAF5EE" : "#F1F4F7")
+                                    : "transparent"
+                                border.width: clipboardContent.clipboardActionMessage.length ? 1 : 0
+                                border.color: clipboardContent.clipboardActionMessage === "Copied to clipboard"
+                                    ? "#CDE8D5" : "#E3E8ED"
+
+                                Row {
+                                    anchors.left: parent.left
+                                    anchors.leftMargin: 7
+                                    anchors.right: parent.right
+                                    anchors.rightMargin: 7
+                                    anchors.verticalCenter: parent.verticalCenter
+                                    spacing: 5
+
+                                    Image {
+                                        width: 11
+                                        height: 11
+                                        anchors.verticalCenter: parent.verticalCenter
+                                        visible: clipboardContent.clipboardActionMessage === "Copied to clipboard"
+                                        source: Qt.resolvedUrl("../assets/icons/lucide-check-refined-dark.svg")
+                                        sourceSize.width: 22
+                                        sourceSize.height: 22
+                                        smooth: true
+                                    }
+
+                                    Text {
+                                        width: parent.width - (clipboardContent.clipboardActionMessage === "Copied to clipboard" ? 16 : 0)
+                                        height: parent.height
+                                        verticalAlignment: Text.AlignVCenter
+                                        text: clipboardContent.clipboardActionMessage.length
+                                            ? clipboardContent.clipboardActionMessage
+                                            : "Click an item to copy it again"
+                                        color: clipboardContent.clipboardActionMessage === "Copied to clipboard"
+                                            ? "#2F6B42" : "#77818D"
+                                        font.pixelSize: 8
+                                        font.weight: clipboardContent.clipboardActionMessage === "Copied to clipboard"
+                                            ? Font.DemiBold : Font.Normal
+                                        elide: Text.ElideRight
+                                    }
+                                }
                             }
                         }
                     }
