@@ -22,10 +22,8 @@ jobs:
           sudo apt-get update
           sudo apt-get install -y qt6-declarative-dev-tools
           export PATH="/usr/lib/qt6/bin:$PATH"
-          qmlformat quickshell/a16een/shell.qml >/dev/null
-          qmlformat quickshell/a16een/ui/ToolsPanel.qml >/dev/null
-          qmlformat quickshell/a16een/ui/CalculatorPanel.qml >/dev/null
-          qmlformat quickshell/a16een/ui/DataMeterIndicator.qml >/dev/null
+          # Parse every QML component: checking shell.qml alone does not validate its children.
+          find quickshell/a16een -type f -name '*.qml' -print0 | xargs -0 -n1 qmlformat >/dev/null
 
       - name: Validate shell scripts
         run: |
@@ -155,8 +153,13 @@ jobs:
           test -f quickshell/a16een/shell.qml
           test -f quickshell/a16een/ui/Launcher.qml
           test -f quickshell/a16een/ui/Dock.qml
-          test -f quickshell/a16een/ui/Dashboard.qml
           test -f quickshell/a16een/ui/CommandCenter.qml
+          test ! -e quickshell/a16een/ui/Dashboard.qml
+          ! grep -Fq 'dashboardOpen' quickshell/a16een/shell.qml
+          ! grep -Fq 'target: "dashboard"' quickshell/a16een/shell.qml
+          ! grep -Fq 'dashboard' scripts/a16een
+          ! grep -Fq 'dashboard' README.md
+          ! grep -Fq 'Mod+P' niri/config.kdl
           test -f quickshell/a16een/ui/ScreenshotCenter.qml
           test -f quickshell/a16een/ui/ScreenshotSettings.qml
           test -f quickshell/a16een/ui/ScreenshotPreview.qml
