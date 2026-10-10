@@ -757,7 +757,9 @@ PanelWindow {
             left: root.horizontalNavbar ? 124 : (root.navbarPosition === "left" ? 16 : 12)
             right: root.horizontalNavbar ? 12 : (root.navbarPosition === "right" ? 16 : 12)
             top: root.navbarPosition === "top" ? 0 : (root.horizontalNavbar ? 12 : 136)
-            bottom: root.navbarPosition === "bottom" ? 12 : 0
+            // Pin the utility control to the bottom edge only in bottom-navbar mode.
+            // Other dock positions use different anchors and keep their existing offsets.
+            bottom: 0
         }
 
         WlrLayershell.layer: WlrLayer.Overlay
