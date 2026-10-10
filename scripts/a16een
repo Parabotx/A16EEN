@@ -1,12 +1,12 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-SELF_NAME="a16"
+
 SOURCE_DIR="${XDG_DATA_HOME:-$HOME/.local/share}/a16een/source"
 
 usage() {
     cat <<'EOF'
-A16EEN command center
+A16 command line
 
 Usage:
   a16 <command> [options]
@@ -87,7 +87,7 @@ EOF
 }
 
 die() {
-    printf 'A16EEN: %s\n' "$*" >&2
+    printf 'A16: %s\n' "$*" >&2
     exit 1
 }
 
@@ -535,7 +535,7 @@ case "$command" in
 
     version)
         require_no_args "$@"
-        echo "A16EEN CLI 0.1"
+        echo "A16 CLI 0.1"
         if command -v niri >/dev/null 2>&1; then
             printf 'Niri: %s\n' "$(niri --version 2>/dev/null || echo unknown)"
         fi
