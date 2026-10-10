@@ -435,6 +435,19 @@ ShellRoot {
         }
     }
 
+    // One startup snapshot seeds today's counters; this timer stops by itself.
+    // Continuous sampling only begins while the Data Meter page or speed pill is enabled.
+    Timer {
+        id: dataMeterBootstrapTimer
+        interval: 250
+        repeat: false
+        running: true
+        onTriggered: {
+            if (!dataMeterProcess.running)
+                dataMeterProcess.running = true
+        }
+    }
+
     Timer {
         id: dataMeterTimer
         interval: 3000

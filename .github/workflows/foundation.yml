@@ -70,6 +70,7 @@ jobs:
           grep -Fq 'label: "Data Meter"' quickshell/a16een/ui/ToolsPanel.qml
           grep -Fq 'DataMeterIndicator {' quickshell/a16een/shell.qml
           grep -Fq 'data-meter-settings.json' quickshell/a16een/shell.qml
+          grep -Fq 'dataMeterBootstrapTimer' quickshell/a16een/shell.qml
           grep -Fq 'function openToolsPage(pageName)' quickshell/a16een/shell.qml
           grep -Fq 'a16een-data-meter' scripts/install.sh
           grep -Fq 'id: "stash", label: "Nest"' quickshell/a16een/ui/ToolsPanel.qml
