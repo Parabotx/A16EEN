@@ -267,8 +267,8 @@ else
     # Replace only after every staged file was copied and the compositor config validated.
     cp "$TMP_DEPLOY/config.kdl" "$NIRI_DIR/config.kdl"
     cp "$TMP_DEPLOY/shell.qml" "$QS_DIR/shell.qml"
-    # Remove obsolete experimental navbar renderers from older A16EEN revisions.
-    rm -f "$QS_DIR/ui/ArtGlyph.qml"
+    # Remove components retired from the source so stale local copies are not kept deployed.
+    rm -f "$QS_DIR/ui/ArtGlyph.qml" "$QS_DIR/ui/Dashboard.qml"
     cp "$TMP_DEPLOY/ui/"*.qml "$QS_DIR/ui/"
     cp "$TMP_DEPLOY/ui/"*.js "$QS_DIR/ui/"
 
