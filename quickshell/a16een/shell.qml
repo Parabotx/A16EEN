@@ -1545,12 +1545,6 @@ ShellRoot {
             root.launcherOpen = true
         }
 
-        onDashboardRequested: {
-            root.commandCenterOpen = false
-            root.wallpaperPickerOpen = false
-            root.dashboardOpen = true
-        }
-
         onWallpaperRequested: {
             root.commandCenterOpen = false
             root.wallpaperPickerOpen = true
