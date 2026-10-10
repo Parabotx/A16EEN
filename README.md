@@ -32,7 +32,7 @@ The project is being designed as a cohesive desktop product rather than a conven
 - Volume, microphone, media, and brightness keybindings
 - Dedicated **A16EEN** Wayland session entry
 - Lightweight curated font set for UI, display, text, and mono use
-- Persistent user wallpaper collection with `a16een wallpaper`
+- Persistent user wallpaper collection with `a16 wallpaper`
 - Isolated configuration under `~/.config/a16een/`
 
 ## Clipboard history
@@ -53,10 +53,10 @@ Curated themes include **System Default**, **Papirus**, **Papirus Dark**, **Bree
 
 CLI equivalents:
 
-    a16een icons theme list
-    a16een icons theme current
-    a16een icons theme set papirus-dark
-    a16een icons theme cleanup
+    a16 icons theme list
+    a16 icons theme current
+    a16 icons theme set papirus-dark
+    a16 icons theme cleanup
 
 Existing applications may need to be restarted before they redraw with the new icon theme.
 
@@ -87,7 +87,7 @@ The feature only uses applications exposed through the XDG desktop-entry index. 
 
 The CLI entry point is:
 
-    a16een presets
+    a16 presets
 
 ## Wallpaper
 
@@ -126,15 +126,15 @@ A16EEN opens a clean visual picker with minimal previews and the real image file
 The wallpaper manager also supports:
 
 ```
-a16een wallpaper list
-a16een wallpaper current
-a16een wallpaper current-path
-a16een wallpaper catalog
-a16een wallpaper set <filename>
-a16een wallpaper set <builtin|custom> <filename>
-a16een wallpaper next
-a16een wallpaper previous
-a16een wallpaper reset
+a16 wallpaper list
+a16 wallpaper current
+a16 wallpaper current-path
+a16 wallpaper catalog
+a16 wallpaper set <filename>
+a16 wallpaper set <builtin|custom> <filename>
+a16 wallpaper next
+a16 wallpaper previous
+a16 wallpaper reset
 ```
 
 Supported static image formats include PNG, JPG, JPEG, WEBP, BMP, TIFF, TGA, SVG, PPM, PGM, PBM, XPM, and XBM. Animated GIF and animated WebP files play in the Animated tab; still WebP images remain in the static Wallpaper tab. MP4, WEBM, MOV, M4V, and MKV wallpapers use Qt Multimedia's video renderer, loop silently, and pause or resume with A16EEN's desktop animation policy. Video previews play muted only while their tile is hovered, so opening the picker does not start every video at once. The installed `qt6-imageformats` and `qt6-multimedia` modules provide the image and video loading backends.
@@ -189,22 +189,22 @@ The normal installer is also the updater. Running the command again checks GitHu
 curl -fL https://raw.githubusercontent.com/Parabotx/A16EEN/main/install.sh -o /tmp/a16een-install.sh && bash /tmp/a16een-install.sh && rm -f /tmp/a16een-install.sh
 ```
 
-After installation, the shorter updater command is:
+After installation, use the short A16 command for updates:
 
 ```sh
-a16een-update
+a16 update
 ```
 
 Inspect the current revision state and rollback availability:
 
 ```sh
-a16een-update --status
+a16 status
 ```
 
 Roll back to the latest known-good revision:
 
 ```sh
-a16een-update --rollback
+a16 rollback
 ```
 
 Use `-y` only when you intentionally want to skip the rollback confirmation.
@@ -215,7 +215,7 @@ Updates are fast-forward-only. If the local A16EEN source has uncommitted change
 Use:
 
 ```sh
-a16een-doctor
+a16 doctor
 ```
 
 to run read-only diagnostics, including Niri configuration validation.
@@ -262,44 +262,44 @@ Lucide is used as a generic UI icon source because it provides a large open-sour
 You can manually refresh the icon set with:
 
 ```sh
-a16een icons
+a16 icons
 ```
 
-## A16EEN terminal command
+## A16 terminal command
 
-A16EEN installs a unified `a16een` command for terminal control:
+A16 installs a unified `a16` command for terminal control:
 
 ```sh
-a16een launcher
-a16een dashboard
-a16een overview
-a16een close
-a16een maximize
-a16een fullscreen
-a16een float
-a16een center
-a16een workspace 2
-a16een lock
-a16een logout
-a16een reboot
-a16een poweroff
-a16een suspend
-a16een hibernate
-a16een volume up
-a16een volume down
-a16een volume mute
-a16een brightness up
-a16een brightness down
-a16een media toggle
-a16een media next
-a16een screenshot
-a16een screenshot-screen
-a16een screenshot-window
-a16een restart-shell
-a16een update
-a16een rollback
-a16een doctor
-a16een status
+a16 launcher
+a16 dashboard
+a16 overview
+a16 close
+a16 maximize
+a16 fullscreen
+a16 float
+a16 center
+a16 workspace 2
+a16 lock
+a16 logout
+a16 reboot
+a16 poweroff
+a16 suspend
+a16 hibernate
+a16 volume up
+a16 volume down
+a16 volume mute
+a16 brightness up
+a16 brightness down
+a16 media toggle
+a16 media next
+a16 screenshot
+a16 screenshot-screen
+a16 screenshot-window
+a16 restart-shell
+a16 update
+a16 rollback
+a16 doctor
+a16 status
 ```
 
 Reboot and power-off require confirmation unless `--yes` / `-y` is explicitly supplied. Logout uses Niri's IPC action, which retains Niri's own confirmation behavior. The CLI keeps desktop actions behind fixed commands and arguments rather than accepting arbitrary shell input.
