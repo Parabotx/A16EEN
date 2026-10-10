@@ -558,15 +558,15 @@ PanelWindow {
                                     anchors.verticalCenter: parent.verticalCenter
                                     spacing: 5
 
-                                    Image {
+                                    Text {
                                         width: 11
-                                        height: 11
-                                        anchors.verticalCenter: parent.verticalCenter
+                                        height: parent.height
+                                        verticalAlignment: Text.AlignVCenter
                                         visible: clipboardContent.clipboardActionMessage === "Copied to clipboard"
-                                        source: Qt.resolvedUrl("../assets/icons/lucide-check-refined-dark.svg")
-                                        sourceSize.width: 22
-                                        sourceSize.height: 22
-                                        smooth: true
+                                        text: "✓"
+                                        color: "#2F6B42"
+                                        font.pixelSize: 10
+                                        font.weight: Font.DemiBold
                                     }
 
                                     Text {
