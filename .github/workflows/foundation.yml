@@ -598,7 +598,7 @@ jobs:
           grep -Fq '*.tiff' scripts/a16een-wallpaper
           grep -Fq '*.tga' scripts/a16een-wallpaper
           grep -Fq 'USER_WALLPAPER_DIR="$HOME/Pictures/a16een"' scripts/a16een-wallpaper
-          grep -Fq 'a16 update' README.md
+          grep -Fq 'a16 -u' README.md
           grep -Fq 'A16 terminal command' README.md
           grep -Fq 'a16 <command> [options]' scripts/a16een
           grep -Fq -- '-u|--update) command="update" ;;' scripts/a16een
