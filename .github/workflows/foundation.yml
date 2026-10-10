@@ -22,9 +22,9 @@ jobs:
           sudo apt-get update
           sudo apt-get install -y qt6-declarative-dev-tools
           export PATH="/usr/lib/qt6/bin:$PATH"
-          qmlformat --stdout quickshell/a16een/shell.qml >/dev/null
-          qmlformat --stdout quickshell/a16een/ui/ToolsPanel.qml >/dev/null
-          qmlformat --stdout quickshell/a16een/ui/CalculatorPanel.qml >/dev/null
+          qmlformat quickshell/a16een/shell.qml >/dev/null
+          qmlformat quickshell/a16een/ui/ToolsPanel.qml >/dev/null
+          qmlformat quickshell/a16een/ui/CalculatorPanel.qml >/dev/null
 
       - name: Validate shell scripts
         run: |
