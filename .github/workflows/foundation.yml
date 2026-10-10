@@ -31,12 +31,19 @@ jobs:
           bash -n scripts/a16een-icons
           bash -n scripts/a16een-screenshot
           bash -n scripts/a16een-control
-          python3 -m py_compile scripts/a16een-clipboard
+          python3 -m py_compile scripts/a16een-clipboard scripts/a16een-app-stash
+          python3 -m unittest tests.test_app_stash
           bash -n scripts/a16een-icon-theme
           bash -n scripts/a16een-workspace-preset
           python3 -m py_compile scripts/a16een-music scripts/a16een-widget-settings
           grep -Fq 'a16een-workspace-preset' scripts/install.sh
           grep -Fq 'a16een-clipboard' scripts/install.sh
+          grep -Fq 'a16een-app-stash' scripts/install.sh
+          grep -Fq 'workspace "app-stash"' niri/config.kdl
+          grep -Fq 'Super+H repeat=false hotkey-overlay-title="A16EEN Hide Window to App Stash"' niri/config.kdl
+          grep -Fq 'Super+Ctrl+H repeat=false hotkey-overlay-title="A16EEN App Stash"' niri/config.kdl
+          grep -Fq 'target: "app-stash"' quickshell/a16een/shell.qml
+          grep -Fq 'CalculatorPanel {' quickshell/a16een/shell.qml
           grep -Fq 'clipboardHistoryWatcher' quickshell/a16een/shell.qml
           grep -Fq 'notification-history.json' quickshell/a16een/shell.qml
           grep -Fq 'function rememberNotification(notification)' quickshell/a16een/shell.qml

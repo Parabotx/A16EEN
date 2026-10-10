@@ -121,6 +121,8 @@ ShellRoot {
         root.lockErrorMessage = ""
         root.notificationCenterOpen = false
         root.toolsPanelOpen = false
+        root.toolsPanelPage = "tools"
+        root.calculatorOpen = false
         root.quickNotesOpen = false
         root.quickTasksOpen = false
         root.quickPresetsOpen = false
@@ -290,6 +292,9 @@ ShellRoot {
         && !root.wallpaperPickerOpen
         && !root.widgetsCenterOpen
         && !root.screenshotCenterOpen
+        && !root.notificationCenterOpen
+        && !root.toolsPanelOpen
+        && !root.calculatorOpen
         && !root.quickNotesOpen
         && !root.quickTasksOpen
         && !root.quickUtilitiesOpen
@@ -333,6 +338,8 @@ ShellRoot {
     property var latestNotification: null
     property bool notificationCenterOpen: false
     property bool toolsPanelOpen: false
+    property bool calculatorOpen: false
+    property string toolsPanelPage: "tools"
     property var notificationHistory: []
     property bool notificationHistoryReady: false
     readonly property int unreadNotificationCount:
@@ -522,6 +529,36 @@ ShellRoot {
 
         function close(): void {
             root.launcherOpen = false
+        }
+    }
+
+    IpcHandler {
+        target: "app-stash"
+
+        function hide(): void {
+            Quickshell.execDetached(["a16een-app-stash", "hide"])
+        }
+
+        function toggle(): void {
+            if (root.toolsPanelOpen && root.toolsPanelPage === "stash") {
+                root.toolsPanelOpen = false
+                root.toolsPanelPage = "tools"
+                return
+            }
+            root.closeTransientPanels()
+            root.toolsPanelPage = "stash"
+            root.toolsPanelOpen = true
+        }
+
+        function open(): void {
+            root.closeTransientPanels()
+            root.toolsPanelPage = "stash"
+            root.toolsPanelOpen = true
+        }
+
+        function close(): void {
+            root.toolsPanelOpen = false
+            root.toolsPanelPage = "tools"
         }
     }
 
@@ -828,6 +865,8 @@ ShellRoot {
         root.utilitiesExpanded = false
         root.notificationCenterOpen = false
         root.toolsPanelOpen = false
+        root.toolsPanelPage = "tools"
+        root.calculatorOpen = false
         root.commandCenterOpen = false
         root.launcherOpen = false
         root.dashboardOpen = false
@@ -851,9 +890,11 @@ ShellRoot {
     function openToolsPanel() {
         if (root.toolsPanelOpen) {
             root.toolsPanelOpen = false
+            root.toolsPanelPage = "tools"
             return
         }
         root.closeTransientPanels()
+        root.toolsPanelPage = "tools"
         root.toolsPanelOpen = true
     }
 
@@ -871,8 +912,8 @@ ShellRoot {
             root.utilitiesExpanded = true
             root.utilitiesMode = "clipboard"
             break
-        case "command-center":
-            root.commandCenterOpen = true
+        case "calculator":
+            root.calculatorOpen = true
             break
         }
     }
@@ -1118,7 +1159,9 @@ ShellRoot {
     function handleUtilitiesRequest(mode) {
         root.notificationCenterOpen = false
         root.toolsPanelOpen = false
-        if (mode === "toggle" && root.quickUtilitiesOpen) {
+        root.toolsPanelPage = "tools"
+        root.calculatorOpen = false
+        if (mode === "toggle" && root.quickUtilitiesOpen)
             root.quickUtilitiesOpen = false
             root.utilitiesExpanded = false
             return
@@ -1143,6 +1186,8 @@ ShellRoot {
     function openQuickTasks() {
         root.notificationCenterOpen = false
         root.toolsPanelOpen = false
+        root.toolsPanelPage = "tools"
+        root.calculatorOpen = false
         root.quickTasksOpen = true
         root.quickPresetsOpen = false
         root.quickUtilitiesOpen = false
@@ -1162,6 +1207,8 @@ ShellRoot {
     function openQuickPresets() {
         root.notificationCenterOpen = false
         root.toolsPanelOpen = false
+        root.toolsPanelPage = "tools"
+        root.calculatorOpen = false
         root.quickPresetsOpen = true
         root.quickUtilitiesOpen = false
         root.utilitiesExpanded = false
@@ -1230,8 +1277,26 @@ ShellRoot {
         modelData: root.primaryScreen
         navbarPosition: root.navbarPosition
         opened: root.toolsPanelOpen
-        onCloseRequested: root.toolsPanelOpen = false
+        page: root.toolsPanelPage
+        onCloseRequested: {
+            root.toolsPanelOpen = false
+            root.toolsPanelPage = "tools"
+        }
         onToolRequested: toolId => root.activateHubTool(toolId)
+        onAppStashRequested: root.toolsPanelPage = "stash"
+        onBackRequested: root.toolsPanelPage = "tools"
+        onRestoreRequested: windowId => {
+            Quickshell.execDetached(["a16een-app-stash", "restore", String(windowId)])
+            root.toolsPanelOpen = false
+            root.toolsPanelPage = "tools"
+        }
+    }
+
+    CalculatorPanel {
+        modelData: root.primaryScreen
+        navbarPosition: root.navbarPosition
+        opened: root.calculatorOpen
+        onCloseRequested: root.calculatorOpen = false
     }
 
     QuickNotes {
