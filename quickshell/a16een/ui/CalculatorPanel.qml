@@ -375,7 +375,7 @@ PanelWindow {
                     width: parent.width
                     columns: 4
                     spacing: 6
-                    height: 5 * 47 + 4 * spacing
+                    height: 5 * 45 + 4 * spacing
 
                     Repeater {
                         model: root.keys
@@ -384,7 +384,7 @@ PanelWindow {
                             id: keyTile
                             required property var modelData
                             width: (keypad.width - keypad.spacing * 3) / 4
-                            height: 47
+                            height: 45
                             radius: 11
                             color: keyTile.modelData.kind === "equals"
                                 ? "#171B21"
@@ -419,7 +419,7 @@ PanelWindow {
                 Text {
                     width: parent.width
                     height: 11
-                    text: "Basic arithmetic · parentheses supported in expressions"
+                    text: "Basic arithmetic · clear and backspace included"
                     color: "#9AA3AE"
                     font.pixelSize: 7
                     elide: Text.ElideRight

@@ -52,6 +52,7 @@ jobs:
           test -f quickshell/a16een/ui/CalculatorPanel.qml
           test -f quickshell/a16een/assets/icons/lucide-calculator.svg
           test -f quickshell/a16een/assets/icons/lucide-archive.svg
+          grep -Fq 'import Quickshell.Widgets' quickshell/a16een/shell.qml
           grep -Fq 'function hideFocusedWindow()' quickshell/a16een/shell.qml
           grep -Fq 'function restoreStashedWindow(windowId)' quickshell/a16een/shell.qml
           grep -Fq 'move-window-to-workspace' quickshell/a16een/shell.qml

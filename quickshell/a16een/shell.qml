@@ -6,6 +6,7 @@ import Quickshell.Io
 import Quickshell.Wayland
 import Quickshell.Services.Notifications
 import Quickshell.Services.UPower
+import Quickshell.Widgets
 import qs.ui
 
 ShellRoot {
@@ -547,6 +548,7 @@ ShellRoot {
         function toggle(): void {
             root.launcherOpen = !root.launcherOpen
             if (root.launcherOpen) {
+                root.calculatorOpen = false
                 root.dashboardOpen = false
                 root.commandCenterOpen = false
                 root.wallpaperPickerOpen = false
@@ -628,6 +630,7 @@ ShellRoot {
         function toggle(): void {
             root.dashboardOpen = !root.dashboardOpen
             if (root.dashboardOpen) {
+                root.calculatorOpen = false
                 root.launcherOpen = false
                 root.commandCenterOpen = false
                 root.wallpaperPickerOpen = false
@@ -669,6 +672,7 @@ ShellRoot {
             }
 
             root.widgetsCenterOpen = true
+            root.calculatorOpen = false
             root.commandCenterOpen = true
             root.launcherOpen = false
             root.dashboardOpen = false
@@ -678,6 +682,7 @@ ShellRoot {
 
         function open(): void {
             root.widgetsCenterOpen = true
+            root.calculatorOpen = false
             root.commandCenterOpen = true
             root.launcherOpen = false
             root.dashboardOpen = false
@@ -702,6 +707,7 @@ ShellRoot {
             }
 
             root.screenshotCenterOpen = true
+            root.calculatorOpen = false
             root.screenshotSettingsOpen = false
             root.launcherOpen = false
             root.dashboardOpen = false
@@ -712,6 +718,7 @@ ShellRoot {
 
         function open(): void {
             root.screenshotCenterOpen = true
+            root.calculatorOpen = false
             root.screenshotSettingsOpen = false
             root.launcherOpen = false
             root.dashboardOpen = false
@@ -728,6 +735,7 @@ ShellRoot {
         function settings(): void {
             root.screenshotCenterOpen = false
             root.screenshotSettingsOpen = true
+            root.calculatorOpen = false
             root.launcherOpen = false
             root.dashboardOpen = false
             root.commandCenterOpen = false
