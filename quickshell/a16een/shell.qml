@@ -162,6 +162,7 @@ ShellRoot {
     property bool workspaceWidgetEnabled: false
     property bool tasksWidgetEnabled: false
     property bool musicWidgetEnabled: false
+    property bool quotesWidgetEnabled: false
     property bool timeUse24Hour: true
     property bool timeShowSeconds: false
     property bool widgetSettingsLoaded: false
@@ -175,6 +176,7 @@ ShellRoot {
             workspaceWidgetEnabled: root.workspaceWidgetEnabled,
             tasksWidgetEnabled: root.tasksWidgetEnabled,
             musicWidgetEnabled: root.musicWidgetEnabled,
+            quotesWidgetEnabled: root.quotesWidgetEnabled,
             timeUse24Hour: root.timeUse24Hour,
             timeShowSeconds: root.timeShowSeconds
         }
@@ -192,6 +194,7 @@ ShellRoot {
     onWorkspaceWidgetEnabledChanged: root.requestWidgetSettingsSave()
     onTasksWidgetEnabledChanged: root.requestWidgetSettingsSave()
     onMusicWidgetEnabledChanged: root.requestWidgetSettingsSave()
+    onQuotesWidgetEnabledChanged: root.requestWidgetSettingsSave()
     onTimeUse24HourChanged: root.requestWidgetSettingsSave()
     onTimeShowSecondsChanged: root.requestWidgetSettingsSave()
 
@@ -207,7 +210,7 @@ ShellRoot {
                     const keys = [
                         "editorialTimeWidgetEnabled", "calendarWidgetEnabled",
                         "pulseWidgetEnabled", "workspaceWidgetEnabled",
-                        "tasksWidgetEnabled", "musicWidgetEnabled",
+                        "tasksWidgetEnabled", "musicWidgetEnabled", "quotesWidgetEnabled",
                         "timeUse24Hour", "timeShowSeconds"
                     ]
                     for (let i = 0; i < keys.length; i++) {
@@ -866,6 +869,16 @@ ShellRoot {
     Variants {
         model: Quickshell.screens
 
+        QuotesWidget {
+            modelData: modelData
+            widgetEnabled: root.quotesWidgetEnabled && !root.secureLockActive
+            navbarPosition: root.navbarPosition
+        }
+    }
+
+    Variants {
+        model: Quickshell.screens
+
         MusicWidget {
             modelData: modelData
             widgetEnabled: root.musicWidgetEnabled && !root.secureLockActive
@@ -1036,6 +1049,7 @@ ShellRoot {
         workspaceWidgetEnabled: root.workspaceWidgetEnabled
         tasksWidgetEnabled: root.tasksWidgetEnabled
         musicWidgetEnabled: root.musicWidgetEnabled
+        quotesWidgetEnabled: root.quotesWidgetEnabled
         timeUse24Hour: root.timeUse24Hour
         timeShowSeconds: root.timeShowSeconds
         doNotDisturb: root.doNotDisturb
@@ -1125,6 +1139,10 @@ ShellRoot {
         }
         onMusicWidgetEnabledRequested: {
             root.musicWidgetEnabled = enabled
+            root.requestWidgetSettingsSave()
+        }
+        onQuotesWidgetEnabledRequested: {
+            root.quotesWidgetEnabled = enabled
             root.requestWidgetSettingsSave()
         }
         onTimeUse24HourRequested: {

@@ -55,6 +55,10 @@ PanelWindow {
         : 0
     readonly property real displayedProgress: root.seekDragging
         ? root.seekFraction : root.progress
+    readonly property int libraryPopupRightMargin: root.navbarPosition === "right" ? 88 : 12
+    // Keep the song library beside the player so it never covers the Quotes card above it.
+    readonly property bool libraryPopupOpensRight: root.modelData !== null
+        && root.modelData.width - card.x - card.width - 8 - root.libraryPopupRightMargin >= 180
 
     screen: modelData
     visible: root.widgetEnabled
@@ -699,9 +703,13 @@ PanelWindow {
     // The library floats above the player. Opening it never resizes or nudges the card.
     Rectangle {
         id: libraryPopup
-        x: card.x
-        y: Math.max(12, card.y - height - 8)
-        width: card.width
+        x: root.libraryPopupOpensRight ? card.x + card.width + 8 : card.x
+        y: root.libraryPopupOpensRight
+            ? card.y + card.height - height
+            : Math.max(12, card.y - height - 8)
+        width: root.libraryPopupOpensRight
+            ? Math.min(card.width, Math.max(180, parent.width - card.x - card.width - 8 - root.libraryPopupRightMargin))
+            : card.width
         height: 128
         radius: 16
         color: root.cream

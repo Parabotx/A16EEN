@@ -15,6 +15,7 @@ DEFAULTS = {
     "workspaceWidgetEnabled": False,
     "tasksWidgetEnabled": False,
     "musicWidgetEnabled": False,
+    "quotesWidgetEnabled": False,
     "timeUse24Hour": True,
     "timeShowSeconds": False,
 }

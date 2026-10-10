@@ -42,5 +42,12 @@ var definitions = [
         subtitle: "Local music library",
         detail: "Play, pause, skip and seek songs in ~/Music",
         defaultEnabled: false
+    },
+    {
+        id: "quotes",
+        title: "QUOTES",
+        subtitle: "Daily perspective",
+        detail: "A curated quote collection with one-tap rotation",
+        defaultEnabled: false
     }
 ]

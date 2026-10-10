@@ -210,6 +210,7 @@ else
     cp "$ROOT_DIR/quickshell/a16een/ui/"*.qml "$TMP_DEPLOY/ui/"
     cp "$ROOT_DIR/quickshell/a16een/ui/"*.js "$TMP_DEPLOY/ui/"
     cp "$ROOT_DIR/quickshell/a16een/assets/icons/"*.svg "$TMP_DEPLOY/assets/icons/"
+    cp "$ROOT_DIR/quickshell/a16een/assets/quotes.json" "$TMP_DEPLOY/assets/quotes.json"
 
     # Ship every supported built-in wallpaper from the dedicated repository folder.
     BUILTIN_SOURCE_DIR="$ROOT_DIR/quickshell/a16een/assets/wallpapers"
@@ -278,8 +279,9 @@ else
     find "$QS_DIR/assets/animated" -type f -delete
     cp -a "$TMP_DEPLOY/assets/animated/." "$QS_DIR/assets/animated/"
 
-    mkdir -p "$QS_DIR/assets/icons"
+    mkdir -p "$QS_DIR/assets/icons" "$QS_DIR/assets"
     cp "$TMP_DEPLOY/assets/icons/"*.svg "$QS_DIR/assets/icons/"
+    cp "$TMP_DEPLOY/assets/quotes.json" "$QS_DIR/assets/quotes.json"
 
     rm -rf "$TMP_DEPLOY"
     trap - EXIT INT TERM

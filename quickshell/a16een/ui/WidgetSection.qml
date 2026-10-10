@@ -10,6 +10,7 @@ Item {
     property bool workspaceEnabled: false
     property bool tasksEnabled: false
     property bool musicEnabled: false
+    property bool quotesEnabled: false
     property bool timeUse24Hour: true
     property bool timeShowSeconds: false
 
@@ -29,6 +30,7 @@ Item {
     signal workspaceWidgetEnabledRequested(bool enabled)
     signal tasksWidgetEnabledRequested(bool enabled)
     signal musicWidgetEnabledRequested(bool enabled)
+    signal quotesWidgetEnabledRequested(bool enabled)
     signal timeUse24HourRequested(bool enabled)
     signal timeShowSecondsRequested(bool enabled)
 
@@ -39,6 +41,7 @@ Item {
         if (id === "workspaces") return root.workspaceEnabled
         if (id === "tasks") return root.tasksEnabled
         if (id === "music") return root.musicEnabled
+        if (id === "quotes") return root.quotesEnabled
         return false
     }
 
@@ -49,6 +52,7 @@ Item {
         + (root.workspaceEnabled ? 1 : 0)
         + (root.tasksEnabled ? 1 : 0)
         + (root.musicEnabled ? 1 : 0)
+        + (root.quotesEnabled ? 1 : 0)
 
     function toggleWidget(id) {
         const next = !root.widgetEnabled(id)
@@ -65,6 +69,8 @@ Item {
             root.tasksWidgetEnabledRequested(next)
         else if (id === "music")
             root.musicWidgetEnabledRequested(next)
+        else if (id === "quotes")
+            root.quotesWidgetEnabledRequested(next)
     }
 
     focus: visible
@@ -197,113 +203,123 @@ Item {
                     maximumLineCount: 2
                 }
 
-                Column {
-                    id: registryList
+                Flickable {
+                    id: registryScroll
                     width: parent.width
-                    spacing: 7
+                    height: Math.max(120, parent.height - 52)
+                    contentHeight: registryContent.implicitHeight
+                    clip: true
+                    boundsBehavior: Flickable.StopAtBounds
+                    flickableDirection: Flickable.VerticalFlick
 
-                    Repeater {
-                        model: WidgetCatalog.definitions
+                    Column {
+                        id: registryContent
+                        width: registryScroll.width
+                        spacing: 7
 
-                        delegate: Rectangle {
-                            required property var modelData
+                        Repeater {
+                            model: WidgetCatalog.definitions
 
-                            width: registryList.width
-                            height: Math.min(70, Math.max(58, (registryPanel.height - 190) / 6))
-                            radius: 13
-                            color: root.widgetEnabled(modelData.id) ? "#F0F5FB" : "#FFFFFF"
-                            border.width: 1
-                            border.color: root.widgetEnabled(modelData.id) ? "#C8D9EA" : root.borderColor
+                            delegate: Rectangle {
+                                required property var modelData
+                                width: registryContent.width
+                                height: 58
+                                radius: 13
+                                color: root.widgetEnabled(modelData.id) ? "#F0F5FB" : "#FFFFFF"
+                                border.width: 1
+                                border.color: root.widgetEnabled(modelData.id) ? "#C8D9EA" : root.borderColor
 
-                            Row {
-                                anchors.fill: parent
-                                anchors.leftMargin: 11
-                                anchors.rightMargin: 10
-                                spacing: 9
-
-                                Rectangle {
-                                    width: 34
-                                    height: 34
-                                    anchors.verticalCenter: parent.verticalCenter
-                                    radius: 10
-                                    color: root.widgetEnabled(modelData.id) ? "#EAF3FF" : "#F4F7FA"
-                                    border.width: 1
-                                    border.color: root.widgetEnabled(modelData.id) ? "#D3E5F9" : "#E6EBF0"
-
-                                    Text {
-                                        anchors.centerIn: parent
-                                        text: modelData.id === "editorial-time"
-                                            ? "T"
-                                            : modelData.id === "calendar"
-                                                ? "C"
-                                                : modelData.id === "pulse"
-                                                    ? "P"
-                                                    : modelData.id === "tasks"
-                                                        ? "✓"
-                                                        : modelData.id === "music"
-                                                            ? "♫"
-                                                            : "W"
-                                        color: root.widgetEnabled(modelData.id) ? root.accent : root.mutedText
-                                        font.pixelSize: 10
-                                        font.weight: Font.DemiBold
-                                    }
-                                }
-
-                                Column {
-                                    width: Math.max(90, parent.width - 116)
-                                    anchors.verticalCenter: parent.verticalCenter
-                                    spacing: 3
-
-                                    Text {
-                                        width: parent.width
-                                        text: modelData.title
-                                        color: root.strongText
-                                        font.pixelSize: 8
-                                        font.weight: Font.DemiBold
-                                        elide: Text.ElideRight
-                                    }
-
-                                    Text {
-                                        width: parent.width
-                                        text: modelData.subtitle
-                                        color: root.secondaryText
-                                        font.pixelSize: 6
-                                        elide: Text.ElideRight
-                                    }
-
-                                    Text {
-                                        width: parent.width
-                                        text: modelData.detail
-                                        color: root.mutedText
-                                        font.pixelSize: 6
-                                        elide: Text.ElideRight
-                                    }
-                                }
-
-                                Rectangle {
-                                    width: 42
-                                    height: 24
-                                    anchors.verticalCenter: parent.verticalCenter
-                                    radius: 12
-                                    color: root.widgetEnabled(modelData.id) ? root.accent : "#D9E1E9"
+                                Row {
+                                    anchors.fill: parent
+                                    anchors.leftMargin: 11
+                                    anchors.rightMargin: 10
+                                    spacing: 9
 
                                     Rectangle {
-                                        width: 18
-                                        height: 18
-                                        y: 3
-                                        x: root.widgetEnabled(modelData.id) ? 21 : 3
-                                        radius: 9
-                                        color: "#FFFFFF"
+                                        width: 34
+                                        height: 34
+                                        anchors.verticalCenter: parent.verticalCenter
+                                        radius: 10
+                                        color: root.widgetEnabled(modelData.id) ? "#EAF3FF" : "#F4F7FA"
+                                        border.width: 1
+                                        border.color: root.widgetEnabled(modelData.id) ? "#D3E5F9" : "#E6EBF0"
 
-                                        Behavior on x {
-                                            NumberAnimation { duration: 130; easing.type: Easing.OutCubic }
+                                        Text {
+                                            anchors.centerIn: parent
+                                            text: modelData.id === "quotes"
+                                                ? "“"
+                                                : modelData.id === "editorial-time"
+                                                    ? "T"
+                                                    : modelData.id === "calendar"
+                                                        ? "C"
+                                                        : modelData.id === "pulse"
+                                                            ? "P"
+                                                            : modelData.id === "tasks"
+                                                                ? "✓"
+                                                                : modelData.id === "music"
+                                                                    ? "♫"
+                                                                    : "W"
+                                            color: root.widgetEnabled(modelData.id) ? root.accent : root.mutedText
+                                            font.pixelSize: 12
+                                            font.weight: Font.DemiBold
                                         }
                                     }
 
-                                    MouseArea {
-                                        anchors.fill: parent
-                                        cursorShape: Qt.PointingHandCursor
-                                        onClicked: root.toggleWidget(modelData.id)
+                                    Column {
+                                        width: Math.max(90, parent.width - 116)
+                                        anchors.verticalCenter: parent.verticalCenter
+                                        spacing: 3
+
+                                        Text {
+                                            width: parent.width
+                                            text: modelData.title
+                                            color: root.strongText
+                                            font.pixelSize: 8
+                                            font.weight: Font.DemiBold
+                                            elide: Text.ElideRight
+                                        }
+
+                                        Text {
+                                            width: parent.width
+                                            text: modelData.subtitle
+                                            color: root.secondaryText
+                                            font.pixelSize: 6
+                                            elide: Text.ElideRight
+                                        }
+
+                                        Text {
+                                            width: parent.width
+                                            text: modelData.detail
+                                            color: root.mutedText
+                                            font.pixelSize: 6
+                                            elide: Text.ElideRight
+                                        }
+                                    }
+
+                                    Rectangle {
+                                        width: 42
+                                        height: 24
+                                        anchors.verticalCenter: parent.verticalCenter
+                                        radius: 12
+                                        color: root.widgetEnabled(modelData.id) ? root.accent : "#D9E1E9"
+
+                                        Rectangle {
+                                            width: 18
+                                            height: 18
+                                            y: 3
+                                            x: root.widgetEnabled(modelData.id) ? 21 : 3
+                                            radius: 9
+                                            color: "#FFFFFF"
+                                            Behavior on x {
+                                                NumberAnimation { duration: 130; easing.type: Easing.OutCubic }
+                                            }
+                                        }
+
+                                        MouseArea {
+                                            anchors.fill: parent
+                                            cursorShape: Qt.PointingHandCursor
+                                            onClicked: root.toggleWidget(modelData.id)
+                                        }
                                     }
                                 }
                             }

@@ -25,6 +25,7 @@ PanelWindow {
     property bool workspaceWidgetEnabled: false
     property bool tasksWidgetEnabled: false
     property bool musicWidgetEnabled: false
+    property bool quotesWidgetEnabled: false
     property bool timeUse24Hour: true
     property bool timeShowSeconds: false
 
@@ -55,6 +56,7 @@ PanelWindow {
     signal workspaceWidgetEnabledRequested(bool enabled)
     signal tasksWidgetEnabledRequested(bool enabled)
     signal musicWidgetEnabledRequested(bool enabled)
+    signal quotesWidgetEnabledRequested(bool enabled)
     signal timeUse24HourRequested(bool enabled)
     signal timeShowSecondsRequested(bool enabled)
     signal iconThemeChanged(string themeId)
@@ -708,6 +710,7 @@ PanelWindow {
             workspaceEnabled: root.workspaceWidgetEnabled
             tasksEnabled: root.tasksWidgetEnabled
             musicEnabled: root.musicWidgetEnabled
+            quotesEnabled: root.quotesWidgetEnabled
             timeUse24Hour: root.timeUse24Hour
             timeShowSeconds: root.timeShowSeconds
 
@@ -718,6 +721,7 @@ PanelWindow {
             onWorkspaceWidgetEnabledRequested: root.workspaceWidgetEnabledRequested(enabled)
             onTasksWidgetEnabledRequested: root.tasksWidgetEnabledRequested(enabled)
             onMusicWidgetEnabledRequested: root.musicWidgetEnabledRequested(enabled)
+            onQuotesWidgetEnabledRequested: root.quotesWidgetEnabledRequested(enabled)
             onTimeUse24HourRequested: root.timeUse24HourRequested(enabled)
             onTimeShowSecondsRequested: root.timeShowSecondsRequested(enabled)
         }
