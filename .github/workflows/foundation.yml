@@ -106,6 +106,7 @@ jobs:
           XDG_STATE_HOME="$CLIPBOARD_TEST_HOME" python3 scripts/a16een-clipboard list | python3 -c 'import json,sys; assert json.load(sys.stdin)==[]'
           rm -rf "$CLIPBOARD_TEST_HOME"
           grep -Fq 'cp "$ROOT_DIR/quickshell/a16een/ui/"*.qml "$TMP_DEPLOY/ui/"' scripts/install.sh
+          grep -Fq 'rm -f "$QS_DIR/ui/ArtGlyph.qml" "$QS_DIR/ui/Dashboard.qml"' scripts/install.sh
           grep -Fq 'workspace presets' quickshell/a16een/ui/CommandCenter.qml
           grep -Fq 'id: "presets"' quickshell/a16een/ui/CommandCenter.qml
           grep -Fq 'WorkspacePresetsSection {' quickshell/a16een/ui/CommandCenter.qml
