@@ -10,6 +10,8 @@ Item {
     property var navbarSettings: ({})
     property int navbarIconRevision: 0
     property string selectedSlot: "home"
+    property string currentSection: "workspace"
+    property string pendingSection: "workspace"
     property string statusText: "READY"
     property string pendingIcon: "house.svg"
     property string pendingColor: "#111318"
@@ -28,7 +30,7 @@ Item {
     readonly property string settingsPath: root.stateDir + "/navbar.json"
 
 
-    readonly property color page: "#FFFFFF"
+    readonly property color page: "transparent"
     readonly property color card: "#FFFFFF"
     readonly property color cardHover: "#F3F4F6"
     readonly property color border: "#E6E8EB"
@@ -169,6 +171,38 @@ Item {
         })
     }
 
+    function selectSection(section) {
+        if (root.currentSection === section)
+            return
+        root.pendingSection = section
+        if (!sectionTransition.running)
+            sectionTransition.start()
+    }
+
+    SequentialAnimation {
+        id: sectionTransition
+
+        NumberAnimation {
+            target: sectionContent
+            property: "opacity"
+            to: 0
+            duration: 90
+            easing.type: Easing.OutCubic
+        }
+
+        ScriptAction {
+            script: root.currentSection = root.pendingSection
+        }
+
+        NumberAnimation {
+            target: sectionContent
+            property: "opacity"
+            to: 1
+            duration: 140
+            easing.type: Easing.OutCubic
+        }
+    }
+
     FileView {
         id: settingsFile
         path: root.settingsPath
@@ -254,13 +288,6 @@ Item {
                     font.letterSpacing: 1.3
                 }
 
-                Text {
-                    text: "POSITION · ICONS · COLOR"
-                    color: root.textMuted
-                    font.pixelSize: 8
-                    font.weight: Font.Normal
-                    font.letterSpacing: 0.3
-                }
             }
         }
 
@@ -271,6 +298,65 @@ Item {
             active: root.active
             onPositionApplied: root.navbarPositionChanged(position)
         }
+
+        RowLayout {
+            Layout.fillWidth: true
+            Layout.preferredHeight: 32
+            spacing: 6
+
+            Repeater {
+                model: [
+                    { id: "workspace", label: "Workspace" },
+                    { id: "position", label: "Position" },
+                    { id: "appearance", label: "Appearance" },
+                    { id: "customize", label: "Customize" }
+                ]
+
+                delegate: Rectangle {
+                    required property var modelData
+                    Layout.fillWidth: true
+                    Layout.fillHeight: true
+                    radius: 9
+                    color: root.currentSection === modelData.id
+                        ? "#20262E"
+                        : (tabMouse.containsMouse ? "#EEF1F4" : "#F6F7F9")
+                    border.width: 1
+                    border.color: root.currentSection === modelData.id
+                        ? "#20262E" : "#E3E8ED"
+
+                    Text {
+                        anchors.centerIn: parent
+                        text: modelData.label
+                        color: root.currentSection === modelData.id
+                            ? "#FFFFFF" : "#5D6875"
+                        font.pixelSize: 10
+                        font.weight: Font.DemiBold
+                    }
+
+                    MouseArea {
+                        id: tabMouse
+                        anchors.fill: parent
+                        hoverEnabled: true
+                        enabled: !sectionTransition.running
+                        cursorShape: Qt.PointingHandCursor
+                        onClicked: root.selectSection(modelData.id)
+                    }
+                }
+            }
+        }
+
+        Item {
+            id: sectionContent
+            Layout.fillWidth: true
+            Layout.fillHeight: true
+            opacity: 1
+            clip: true
+
+            StackLayout {
+                anchors.fill: parent
+                currentIndex: root.currentSection === "workspace" ? 0
+                    : root.currentSection === "position" ? 1
+                    : root.currentSection === "appearance" ? 2 : 3
 
         RowLayout {
             Layout.fillWidth: true
@@ -347,12 +433,6 @@ Item {
                                         font.weight: Font.Medium
                                     }
 
-                                    Text {
-                                        text: modelData.description
-                                        color: root.textMuted
-                                        font.pixelSize: 8
-                                        elide: Text.ElideRight
-                                    }
                                 }
                             }
 
@@ -368,14 +448,6 @@ Item {
 
                     Item { Layout.fillHeight: true }
 
-                    Text {
-                        Layout.leftMargin: 7
-                        text: "CHANGES APPLY INSTANTLY"
-                        color: root.textMuted
-                        font.pixelSize: 6
-                        font.weight: Font.DemiBold
-                        font.letterSpacing: 0.7
-                    }
                 }
             }
 
@@ -585,17 +657,61 @@ Item {
                         Item { Layout.fillWidth: true }
                     }
 
-                    Text {
-                        Layout.fillWidth: true
-                        text: "Changes apply immediately."
-                        color: root.textMuted
-                        font.pixelSize: 7
-                        wrapMode: Text.WordWrap
+                }
+            }
+        }
+
+                Item {
+                    id: positionPage
+
+                    ColumnLayout {
+                        anchors.fill: parent
+                        anchors.margins: 4
+                        spacing: 0
+
+                        NavbarPlacement {
+                            id: placementControl
+                            Layout.fillWidth: true
+                            Layout.preferredHeight: 42
+                            active: root.active
+                            onPositionApplied: root.navbarPositionChanged(position)
+                        }
+
+                        Item { Layout.fillWidth: true; Layout.fillHeight: true }
+                    }
+                }
+
+                Item {
+                    Column {
+                        anchors.centerIn: parent
+
+                        Text {
+                            anchors.horizontalCenter: parent.horizontalCenter
+                            text: "COMING SOON"
+                            color: "#6B7280"
+                            font.pixelSize: 9
+                            font.weight: Font.DemiBold
+                            font.letterSpacing: 1.0
+                        }
+                    }
+                }
+
+                Item {
+                    Column {
+                        anchors.centerIn: parent
+
+                        Text {
+                            anchors.horizontalCenter: parent.horizontalCenter
+                            text: "COMING SOON"
+                            color: "#6B7280"
+                            font.pixelSize: 9
+                            font.weight: Font.DemiBold
+                            font.letterSpacing: 1.0
+                        }
                     }
                 }
             }
         }
-    }
 
     onActiveChanged: {
         if (root.active) {
