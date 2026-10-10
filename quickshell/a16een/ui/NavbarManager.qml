@@ -28,15 +28,15 @@ Item {
     readonly property string settingsPath: root.stateDir + "/navbar.json"
 
 
-    readonly property color page: "#F3F5F7"
-    readonly property color card: "#F7F8FA"
-    readonly property color cardHover: "#EEF2F6"
-    readonly property color border: "#D9DEE5"
-    readonly property color borderStrong: "#B8C1CC"
+    readonly property color page: "#FFFFFF"
+    readonly property color card: "#FFFFFF"
+    readonly property color cardHover: "#F3F4F6"
+    readonly property color border: "#E6E8EB"
+    readonly property color borderStrong: "#D4D8DE"
     readonly property color textPrimary: "#111318"
     readonly property color textSecondary: "#5C6673"
-    readonly property color textMuted: "#66707C"
-    readonly property color accent: "#3B82F6"
+    readonly property color textMuted: "#777B82"
+    readonly property color accent: "#303238"
 
     readonly property var slots: [
         { id: "home", name: "HOME", description: "Main workspace" },
@@ -211,28 +211,28 @@ Item {
 
     ColumnLayout {
         anchors.fill: parent
-        anchors.margins: 26
-        spacing: 12
+        anchors.margins: 20
+        spacing: 10
 
         RowLayout {
             Layout.fillWidth: true
-            Layout.preferredHeight: 54
-            spacing: 14
+            Layout.preferredHeight: 42
+            spacing: 12
 
             Rectangle {
-                Layout.preferredWidth: 38
-                Layout.preferredHeight: 38
-                radius: 11
-                color: root.card
-                border.width: 1
-                border.color: root.border
+                Layout.preferredWidth: 30
+                Layout.preferredHeight: 30
+                radius: 8
+                color: "transparent"
+                border.width: 0
+                border.color: "transparent"
 
                 Text {
                     anchors.centerIn: parent
                     text: "←"
                     color: root.textSecondary
-                    font.pixelSize: 15
-                    font.weight: Font.DemiBold
+                    font.pixelSize: 17
+                    font.weight: Font.Normal
                 }
 
                 MouseArea {
@@ -255,11 +255,11 @@ Item {
                 }
 
                 Text {
-                    text: "LUCIDE ICONS • COLOR • WORKSPACE APPEARANCE"
+                    text: "POSITION · ICONS · COLOR"
                     color: root.textMuted
                     font.pixelSize: 8
-                    font.weight: Font.Medium
-                    font.letterSpacing: 0.7
+                    font.weight: Font.Normal
+                    font.letterSpacing: 0.3
                 }
             }
         }
@@ -267,7 +267,7 @@ Item {
         NavbarPlacement {
             id: placementControl
             Layout.fillWidth: true
-            Layout.preferredHeight: 58
+            Layout.preferredHeight: 44
             active: root.active
             onPositionApplied: root.navbarPositionChanged(position)
         }
@@ -275,20 +275,20 @@ Item {
         RowLayout {
             Layout.fillWidth: true
             Layout.fillHeight: true
-            spacing: 12
+            spacing: 14
 
             Rectangle {
-                Layout.preferredWidth: 196
+                Layout.preferredWidth: 150
                 Layout.fillHeight: true
-                radius: 17
-                color: "#F7F8FA"
-                border.width: 1
-                border.color: root.border
+                radius: 0
+                color: "transparent"
+                border.width: 0
+                border.color: "transparent"
 
                 ColumnLayout {
                     anchors.fill: parent
-                    anchors.margins: 9
-                    spacing: 4
+                    anchors.margins: 0
+                    spacing: 3
 
                     Text {
                         Layout.leftMargin: 7
@@ -305,25 +305,25 @@ Item {
 
                         delegate: Rectangle {
                             Layout.fillWidth: true
-                            Layout.preferredHeight: 62
-                            radius: 13
+                            Layout.preferredHeight: 44
+                            radius: 7
                             color: root.selectedSlot === modelData.id
-                                ? "#E4EAF1"
+                                ? "#E9EDF2"
                                 : (slotMouse.containsMouse ? root.cardHover : "transparent")
 
                             RowLayout {
                                 anchors.fill: parent
                                 anchors.leftMargin: 10
                                 anchors.rightMargin: 10
-                                spacing: 10
+                                spacing: 8
 
                                 Rectangle {
-                                    Layout.preferredWidth: 36
-                                    Layout.preferredHeight: 36
-                                    radius: 11
-                                    color: root.selectedSlot === modelData.id ? "#E7EDF4" : "#FFFFFF"
-                                    border.width: 1
-                                    border.color: root.selectedSlot === modelData.id ? "#B8C1CC" : root.border
+                                    Layout.preferredWidth: 26
+                                    Layout.preferredHeight: 26
+                                    radius: 0
+                                    color: "transparent"
+                                    border.width: 0
+                                    border.color: "transparent"
 
                                     NavbarIcon {
                                         anchors.centerIn: parent
@@ -343,14 +343,14 @@ Item {
                                     Text {
                                         text: modelData.name
                                         color: root.textPrimary
-                                        font.pixelSize: 9
-                                        font.weight: Font.DemiBold
+                                        font.pixelSize: 10
+                                        font.weight: Font.Medium
                                     }
 
                                     Text {
                                         text: modelData.description
                                         color: root.textMuted
-                                        font.pixelSize: 7
+                                        font.pixelSize: 8
                                         elide: Text.ElideRight
                                     }
                                 }
@@ -382,32 +382,32 @@ Item {
             Rectangle {
                 Layout.fillWidth: true
                 Layout.fillHeight: true
-                radius: 17
-                color: "#F7F8FA"
-                border.width: 1
-                border.color: root.border
+                radius: 0
+                color: "transparent"
+                border.width: 0
+                border.color: "transparent"
 
                 ColumnLayout {
                     anchors.fill: parent
-                    anchors.margins: 17
-                    spacing: 9
+                    anchors.margins: 12
+                    spacing: 7
 
                     RowLayout {
                         Layout.fillWidth: true
                         spacing: 12
 
                         Rectangle {
-                            Layout.preferredWidth: 46
-                            Layout.preferredHeight: 46
-                            radius: 13
-                            color: "#FFFFFF"
-                            border.width: 1
-                            border.color: root.border
+                            Layout.preferredWidth: 34
+                            Layout.preferredHeight: 34
+                            radius: 8
+                            color: "transparent"
+                            border.width: 0
+                            border.color: "transparent"
 
                             NavbarIcon {
                                 anchors.centerIn: parent
-                                width: 22
-                                height: 22
+                                width: 20
+                                height: 20
                                 iconName: root.settingFor(root.selectedSlot).icon
                                 iconColor: root.previewIconColor(root.selectedSlot)
                                 refreshRevision: root.navbarIconRevision
@@ -421,9 +421,9 @@ Item {
                             Text {
                                 text: root.selectedSlot.toUpperCase()
                                 color: root.textPrimary
-                                font.pixelSize: 13
+                                font.pixelSize: 12
                                 font.weight: Font.DemiBold
-                                font.letterSpacing: 1
+                                font.letterSpacing: 0.5
                             }
 
                             Text {
@@ -439,20 +439,20 @@ Item {
                         }
 
                         Rectangle {
-                            Layout.preferredWidth: 78
-                            Layout.preferredHeight: 30
-                            radius: 10
-                            color: resetMouse.containsMouse ? "#EEF2F6" : "#FFFFFF"
-                            border.width: 1
-                            border.color: root.borderStrong
+                            Layout.preferredWidth: 64
+                            Layout.preferredHeight: 26
+                            radius: 7
+                            color: resetMouse.containsMouse ? "#F0F1F3" : "transparent"
+                            border.width: 0
+                            border.color: "transparent"
 
                             Text {
                                 anchors.centerIn: parent
                                 text: "RESET"
                                 color: root.textPrimary
-                                font.pixelSize: 7
-                                font.weight: Font.DemiBold
-                                font.letterSpacing: 0.9
+                                font.pixelSize: 8
+                                font.weight: Font.Medium
+                                font.letterSpacing: 0.3
                             }
 
                             MouseArea {
@@ -476,7 +476,7 @@ Item {
                     Flickable {
                         id: iconScroll
                         Layout.fillWidth: true
-                        Layout.preferredHeight: 248
+                        Layout.preferredHeight: 225
                         clip: true
                         contentWidth: width
                         contentHeight: iconGrid.height
@@ -485,25 +485,25 @@ Item {
                             id: iconGrid
 
                             width: iconScroll.width
-                            height: Math.ceil(root.iconChoices.length / 6) * 57
-                                + Math.max(0, Math.ceil(root.iconChoices.length / 6) - 1) * 7
+                            height: Math.ceil(root.iconChoices.length / 6) * 41
+                                + Math.max(0, Math.ceil(root.iconChoices.length / 6) - 1) * 4
                             columns: 6
-                            rowSpacing: 7
-                            columnSpacing: 7
+                            rowSpacing: 4
+                            columnSpacing: 5
 
                             Repeater {
                                 model: root.iconChoices
 
                                 delegate: Rectangle {
-                                    Layout.preferredWidth: (iconGrid.width - 35) / 6
-                                    Layout.preferredHeight: 57
-                                    radius: 12
+                                    Layout.preferredWidth: (iconGrid.width - 25) / 6
+                                    Layout.preferredHeight: 41
+                                    radius: 7
                                     color: root.settingFor(root.selectedSlot).icon === modelData.id
-                                        ? "#E4EAF1"
-                                        : (iconMouse.containsMouse ? root.cardHover : "#FFFFFF")
-                                    border.width: root.settingFor(root.selectedSlot).icon === modelData.id ? 1.3 : 1
+                                        ? "#E9EDF2"
+                                        : (iconMouse.containsMouse ? root.cardHover : "transparent")
+                                    border.width: root.settingFor(root.selectedSlot).icon === modelData.id ? 1 : 0
                                     border.color: root.settingFor(root.selectedSlot).icon === modelData.id
-                                        ? "#8E9AA8" : root.border
+                                        ? "#D4D8DE" : "transparent"
 
                                     Column {
                                         anchors.centerIn: parent
@@ -511,8 +511,8 @@ Item {
 
                                         NavbarIcon {
                                             anchors.horizontalCenter: parent.horizontalCenter
-                                            width: 20
-                                            height: 20
+                                            width: 18
+                                            height: 18
                                             iconName: modelData.id
                                             iconColor: root.previewIconColor(root.selectedSlot)
                                         }
@@ -522,7 +522,7 @@ Item {
                                             horizontalAlignment: Text.AlignHCenter
                                             text: modelData.name
                                             color: root.textPrimary
-                                            font.pixelSize: 6
+                                            font.pixelSize: 7
                                             font.weight: root.settingFor(root.selectedSlot).icon === modelData.id
                                                 ? Font.DemiBold : Font.Normal
                                             elide: Text.ElideRight
@@ -557,20 +557,20 @@ Item {
                             model: root.colorChoices
 
                             delegate: Rectangle {
-                                Layout.preferredWidth: 29
-                                Layout.preferredHeight: 29
-                                radius: 9
-                                color: "#FFFFFF"
+                                Layout.preferredWidth: 24
+                                Layout.preferredHeight: 24
+                                radius: 12
+                                color: "transparent"
                                 border.width: root.colorHexFromStyle(root.settingFor(root.selectedSlot).color) === modelData.id.toUpperCase()
-                                    ? 1.5 : 1
+                                    ? 1.5 : 0
                                 border.color: root.colorHexFromStyle(root.settingFor(root.selectedSlot).color) === modelData.id.toUpperCase()
-                                    ? root.accent : root.border
+                                    ? root.accent : "transparent"
 
                                 Rectangle {
                                     anchors.centerIn: parent
-                                    width: 16
-                                    height: 16
-                                    radius: 8
+                                    width: 14
+                                    height: 14
+                                    radius: 7
                                     color: modelData.id
                                 }
 
@@ -587,7 +587,7 @@ Item {
 
                     Text {
                         Layout.fillWidth: true
-                        text: "The selected icon and color are used directly by the right-side navbar."
+                        text: "Changes apply immediately."
                         color: root.textMuted
                         font.pixelSize: 7
                         wrapMode: Text.WordWrap
