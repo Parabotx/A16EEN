@@ -17,7 +17,6 @@ from pathlib import Path
 from typing import Any
 
 RETENTION_SECONDS = 24 * 60 * 60
-MAX_ITEMS = 100
 STATE_HOME = Path(os.environ.get("XDG_STATE_HOME") or (Path.home() / ".local" / "state"))
 STATE_DIR = STATE_HOME / "a16een"
 HISTORY_FILE = STATE_DIR / "clipboard-history.json"
@@ -53,7 +52,7 @@ def load_entries() -> list[dict[str, Any]]:
 
 def store_entries(entries: list[dict[str, Any]]) -> None:
     STATE_DIR.mkdir(parents=True, exist_ok=True, mode=0o700)
-    clean_entries = entries[:MAX_ITEMS]
+    clean_entries = entries
     handle = tempfile.NamedTemporaryFile(
         mode="w",
         encoding="utf-8",
@@ -82,7 +81,7 @@ def prune_entries(entries: list[dict[str, Any]], now: int | None = None) -> list
     cutoff = current - RETENTION_SECONDS * 1000
     fresh = [entry for entry in entries if entry["timestamp"] > cutoff]
     fresh.sort(key=lambda entry: entry["timestamp"], reverse=True)
-    return fresh[:MAX_ITEMS]
+    return fresh
 
 
 def prune_and_store() -> list[dict[str, Any]]:

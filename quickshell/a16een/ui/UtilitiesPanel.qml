@@ -472,7 +472,7 @@ PanelWindow {
                                     clip: true
                                     spacing: 3
                                     model: clipboardContent.filteredClipboardItems
-                                    visible: model.length > 0
+                                    visible: clipboardContent.filteredClipboardItems.length > 0
                                     boundsBehavior: Flickable.StopAtBounds
 
                                     delegate: Rectangle {
