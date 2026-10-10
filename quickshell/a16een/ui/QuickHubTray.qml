@@ -88,11 +88,11 @@ PanelWindow {
 
                         Image {
                             anchors.centerIn: parent
-                            width: 14
-                            height: 14
+                            width: 16
+                            height: 16
                             source: Qt.resolvedUrl("../assets/icons/" + actionItem.modelData.icon)
-                            sourceSize.width: 28
-                            sourceSize.height: 28
+                            sourceSize.width: 64
+                            sourceSize.height: 64
                             fillMode: Image.PreserveAspectFit
                             smooth: true
                         }
@@ -159,11 +159,11 @@ PanelWindow {
 
                         Image {
                             anchors.centerIn: parent
-                            width: 14
-                            height: 14
+                            width: 16
+                            height: 16
                             source: Qt.resolvedUrl("../assets/icons/" + actionItem.modelData.icon)
-                            sourceSize.width: 28
-                            sourceSize.height: 28
+                            sourceSize.width: 64
+                            sourceSize.height: 64
                             fillMode: Image.PreserveAspectFit
                             smooth: true
                         }

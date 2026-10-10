@@ -61,6 +61,7 @@ jobs:
           grep -Fq 'ToolsPanel {' quickshell/a16een/shell.qml
           grep -Fq 'id: "notifications", icon: "lucide-bell.svg"' quickshell/a16een/ui/QuickHubTray.qml
           grep -Fq 'id: "tools", icon: "lucide-wrench.svg"' quickshell/a16een/ui/QuickHubTray.qml
+          test "$(grep -c 'sourceSize.width: 64' quickshell/a16een/ui/QuickHubTray.qml)" -eq 2
           grep -Fq 'signal toolRequested(string toolId)' quickshell/a16een/ui/ToolsPanel.qml
           grep -Fq "You're all caught up" quickshell/a16een/ui/NotificationCenter.qml
           grep -Fq 'implicitWidth: 322' quickshell/a16een/ui/NotificationToast.qml
