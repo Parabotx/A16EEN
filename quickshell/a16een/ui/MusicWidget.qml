@@ -31,12 +31,12 @@ PanelWindow {
     property bool seekDragging: false
     property real seekFraction: 0
 
-    readonly property color ink: "#493C31"
-    readonly property color secondary: "#837264"
-    readonly property color muted: "#AA9A87"
-    readonly property color border: "#E8D9C5"
-    readonly property color cream: "#FFF5E7"
-    readonly property color accent: "#C98765"
+    readonly property color ink: "#1D2938"
+    readonly property color secondary: "#5F7186"
+    readonly property color muted: "#8391A1"
+    readonly property color border: "#64869FB8"
+    readonly property color cream: "#EAF4F7FB"
+    readonly property color accent: "#7E9BC7"
     readonly property int activeIndex: root.indexForPath(root.playback.path)
     readonly property bool isPlaying: root.playback.running
         && String(root.playback.path || "").length > 0
@@ -65,6 +65,15 @@ PanelWindow {
     color: "transparent"
     aboveWindows: false
     exclusiveZone: 0
+
+    // Only the actual player and its open library receive pointer input.
+    mask: Region {
+        Region { item: card }
+        Region {
+            item: libraryPopup
+            intersection: root.libraryOpen ? Intersection.Combine : Intersection.Subtract
+        }
+    }
 
     anchors {
         top: true
@@ -280,7 +289,7 @@ PanelWindow {
         x: card.x
         y: card.y + 5
         radius: card.radius
-        color: "#72563D"
+        color: "#172437"
         opacity: 0.075
         z: 0
     }
@@ -291,7 +300,7 @@ PanelWindow {
         x: card.x
         y: card.y + 2
         radius: card.radius
-        color: "#A38A6E"
+        color: "#273A52"
         opacity: 0.055
         z: 0
     }
@@ -319,9 +328,9 @@ PanelWindow {
             radius: 1
             z: 3
             gradient: Gradient {
-                GradientStop { position: 0.0; color: "#D9A66A" }
-                GradientStop { position: 0.52; color: "#D98D80" }
-                GradientStop { position: 1.0; color: "#A992CF" }
+                GradientStop { position: 0.0; color: "#8AB8D8" }
+                GradientStop { position: 0.52; color: "#A9A5DF" }
+                GradientStop { position: 1.0; color: "#82CBC5" }
             }
         }
 
@@ -342,9 +351,9 @@ PanelWindow {
                     height: 68
                     anchors.verticalCenter: parent.verticalCenter
                     radius: 14
-                    color: "#EAD7BB"
+                    color: "#DCE6F0"
                     border.width: 1
-                    border.color: "#E2CEB2"
+                    border.color: "#B8C8DA"
                     clip: true
 
                     Rectangle {
@@ -355,7 +364,7 @@ PanelWindow {
                         anchors.bottom: parent.bottom
                         anchors.leftMargin: -16
                         anchors.bottomMargin: -20
-                        color: "#F6E9D6"
+                        color: "#EEF3F8"
                     }
 
                     Rectangle {
@@ -366,13 +375,13 @@ PanelWindow {
                         anchors.top: parent.top
                         anchors.rightMargin: -7
                         anchors.topMargin: -7
-                        color: "#D6BBA0"
+                        color: "#CAD9E8"
                     }
 
                     Text {
                         anchors.centerIn: parent
                         text: "♫"
-                        color: "#8A6449"
+                        color: "#5E7591"
                         font.pixelSize: 31
                         font.weight: Font.Light
                         visible: albumCover.status !== Image.Ready
@@ -396,9 +405,9 @@ PanelWindow {
                         anchors.rightMargin: 5
                         anchors.topMargin: 5
                         radius: 4
-                        color: "#FFF9F0"
+                        color: "#F9FCFF"
                         border.width: 1
-                        border.color: "#D7B28F"
+                        border.color: "#BDD0E2"
                         visible: root.isPlaying
                         z: 4
 
@@ -407,7 +416,7 @@ PanelWindow {
                             width: 4
                             height: 4
                             radius: 2
-                            color: "#C98765"
+                            color: "#7E9BC7"
                         }
                     }
                 }
@@ -428,7 +437,7 @@ PanelWindow {
                             height: 4
                             anchors.verticalCenter: parent.verticalCenter
                             radius: 2
-                            color: root.isPlaying ? "#C98765" : "#BBA997"
+                            color: root.isPlaying ? "#7E9BC7" : "#9BAABD"
                             opacity: root.isPlaying ? 1 : 0.75
 
                             Behavior on color { ColorAnimation { duration: 180 } }
@@ -487,6 +496,7 @@ PanelWindow {
                     width: 98
                     height: 76
                     anchors.verticalCenter: parent.verticalCenter
+                    playing: root.isPlaying
                 }
             }
 
@@ -504,9 +514,9 @@ PanelWindow {
                         width: elapsedTime.implicitWidth + 12
                         height: 15
                         radius: 7.5
-                        color: "#F0E2D0"
+                        color: "#DCE8F3"
                         border.width: 1
-                        border.color: "#E7D3BA"
+                        border.color: "#CBD9E9"
 
                         Text {
                             id: elapsedTime
@@ -514,7 +524,7 @@ PanelWindow {
                             text: root.formatTime(root.seekDragging
                                 ? root.seekFraction * root.playback.duration
                                 : root.playback.time)
-                            color: "#6F4E3C"
+                            color: "#43586E"
                             font.pixelSize: 8
                             font.family: "Inter"
                             font.weight: Font.DemiBold
@@ -533,15 +543,15 @@ PanelWindow {
                         width: totalTime.implicitWidth + 12
                         height: 15
                         radius: 7.5
-                        color: "#FBF7F0"
+                        color: "#F6F9FC"
                         border.width: 1
-                        border.color: "#EAE0D3"
+                        border.color: "#D9E4EF"
 
                         Text {
                             id: totalTime
                             anchors.centerIn: parent
                             text: root.formatTime(root.playback.duration)
-                            color: "#8C7B6C"
+                            color: "#6A7D91"
                             font.pixelSize: 8
                             font.family: "Inter"
                             font.weight: Font.Medium
@@ -562,7 +572,7 @@ PanelWindow {
                         width: Math.max(0, parent.width - 2)
                         height: 4
                         radius: 2
-                        color: "#E8D9C6"
+                        color: "#DCE6F0"
                         border.width: 0
                         clip: true
 
@@ -571,9 +581,9 @@ PanelWindow {
                             height: progressRail.height
                             radius: 2
                             gradient: Gradient {
-                                GradientStop { position: 0.0; color: "#D9A66A" }
-                                GradientStop { position: 0.48; color: "#D98D80" }
-                                GradientStop { position: 1.0; color: "#A992CF" }
+                                GradientStop { position: 0.0; color: "#8AB8D8" }
+                                GradientStop { position: 0.48; color: "#A9A5DF" }
+                                GradientStop { position: 1.0; color: "#82CBC5" }
                             }
 
                             Behavior on width {
@@ -592,9 +602,9 @@ PanelWindow {
                             1 + (parent.width - 2) * root.displayedProgress - width / 2))
                         y: 4
                         radius: 5
-                        color: "#FFFCF7"
+                        color: "#FAFCFF"
                         border.width: 1
-                        border.color: "#B98B79"
+                        border.color: "#95A9C2"
                         visible: root.playback.duration > 0
                         z: 2
 
@@ -603,7 +613,7 @@ PanelWindow {
                             width: 2.5
                             height: 2.5
                             radius: 1.25
-                            color: "#C58B75"
+                            color: "#8DA6CC"
                         }
 
                         Behavior on x {
@@ -779,9 +789,9 @@ PanelWindow {
                             width: trackList.width
                             height: 26
                             radius: 8
-                            color: currentTrack ? "#F0E2CE" : trackHover.containsMouse ? "#F7EBDD" : "transparent"
+                            color: currentTrack ? "#E4EDF6" : trackHover.containsMouse ? "#EEF4F9" : "transparent"
                             border.width: currentTrack ? 1 : 0
-                            border.color: "#E4CEB1"
+                            border.color: "#CAD8E8"
 
                             Row {
                                 anchors.fill: parent
@@ -867,10 +877,10 @@ PanelWindow {
         height: 30
         radius: primary ? 11 : 9
         color: primary
-            ? "#57483B"
-            : selected ? "#EBD8C0" : buttonHover.containsMouse ? "#F5E7D4" : "#FFFBF4"
+            ? "#2D3A4D"
+            : selected ? "#DBE7F4" : buttonHover.containsMouse ? "#EDF3F9" : "#F6FAFD"
         border.width: primary ? 0 : 1
-        border.color: selected ? "#DCC2A3" : "#E9DCCB"
+        border.color: selected ? "#B6C8DB" : "#DDE6F0"
         opacity: enabledControl ? 1 : 0.48
 
         Image {
@@ -894,15 +904,15 @@ PanelWindow {
             width: 10
             height: 10
             radius: 5
-            color: "#FFFFFF"
+            color: "#F9FCFF"
             border.width: 1
-            border.color: "#D9C8B4"
+            border.color: "#D7E2ED"
             z: 2
 
             Text {
                 anchors.centerIn: parent
                 text: parent.parent.repeatIndicatorMode === 1 ? "1" : "∞"
-                color: "#57483B"
+                color: "#2D3A4D"
                 font.pixelSize: 7
                 font.weight: Font.Bold
             }

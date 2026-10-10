@@ -1,24 +1,241 @@
 {
-  "version": 2,
-  "title": "A16EEN Quote Library",
-  "description": "A curated offline collection of practical, reflective quotes. Each entry includes an author and a source or attribution note. Edit this file to customize the widget.",
+  "version": 3,
+  "title": "A16EEN — Notes for a Brighter Day",
+  "description": "An offline collection of uplifting classics and original A16EEN reminders. Quotes rotate randomly every six hours while the widget is enabled.",
   "quotes": [
     {
-      "id": "douglass-progress",
-      "text": "If there is no struggle, there is no progress.",
-      "author": "Frederick Douglass",
-      "source": "West India Emancipation speech, 1857",
-      "category": "Perseverance"
+      "id": "dickinson-possibility",
+      "text": "I dwell in Possibility — a fairer house than prose.",
+      "author": "Emily Dickinson",
+      "source": "Poem beginning “I dwell in Possibility”",
+      "category": "Hope"
     },
     {
-      "id": "douglass-power",
-      "text": "Power concedes nothing without a demand. It never did and it never will.",
-      "author": "Frederick Douglass",
-      "source": "West India Emancipation speech, 1857",
+      "id": "dickinson-hope",
+      "text": "Hope is the thing with feathers that perches in the soul.",
+      "author": "Emily Dickinson",
+      "source": "Poem beginning “Hope is the thing with feathers”",
+      "category": "Hope"
+    },
+    {
+      "id": "dickinson-nows",
+      "text": "Forever is composed of nows.",
+      "author": "Emily Dickinson",
+      "source": "Poem beginning “Forever is composed of nows”",
+      "category": "Presence"
+    },
+    {
+      "id": "dickens-sunrise",
+      "text": "The sun himself is weak when he first rises, and gathers strength and courage as the day gets on.",
+      "author": "Charles Dickens",
+      "source": "The Old Curiosity Shop",
+      "category": "Growth"
+    },
+    {
+      "id": "keller-sunshine",
+      "text": "Keep your face to the sunshine and you cannot see a shadow.",
+      "author": "Helen Keller",
+      "source": "Optimism: An Essay",
+      "category": "Perspective"
+    },
+    {
+      "id": "keller-adventure",
+      "text": "Life is either a daring adventure or nothing.",
+      "author": "Helen Keller",
+      "source": "The Open Door",
       "category": "Courage"
     },
     {
-      "id": "franklin-actions",
+      "id": "angelou-light",
+      "text": "Nothing can dim the light that shines from within.",
+      "author": "Maya Angelou",
+      "source": "Letter to My Daughter",
+      "category": "Self-belief"
+    },
+    {
+      "id": "angelou-rainbow",
+      "text": "Try to be a rainbow in someone’s cloud.",
+      "author": "Maya Angelou",
+      "source": "Letter to My Daughter",
+      "category": "Kindness"
+    },
+    {
+      "id": "angelou-work",
+      "text": "Nothing will work unless you do.",
+      "author": "Maya Angelou",
+      "source": "Wouldn’t Take Nothing for My Journey Now",
+      "category": "Action"
+    },
+    {
+      "id": "roosevelt-courage",
+      "text": "You must do the thing you think you cannot do.",
+      "author": "Eleanor Roosevelt",
+      "source": "You Learn by Living",
+      "category": "Courage"
+    },
+    {
+      "id": "frost-through",
+      "text": "The best way out is always through.",
+      "author": "Robert Frost",
+      "source": "A Servant to Servants",
+      "category": "Resilience"
+    },
+    {
+      "id": "thoreau-dreams",
+      "text": "Go confidently in the direction of your dreams. Live the life you have imagined.",
+      "author": "Henry David Thoreau",
+      "source": "Walden, conclusion",
+      "category": "Purpose"
+    },
+    {
+      "id": "tolkien-wander",
+      "text": "Not all those who wander are lost.",
+      "author": "J. R. R. Tolkien",
+      "source": "The Fellowship of the Ring",
+      "category": "Discovery"
+    },
+    {
+      "id": "tolkien-time",
+      "text": "All we have to decide is what to do with the time that is given us.",
+      "author": "J. R. R. Tolkien",
+      "source": "The Fellowship of the Ring",
+      "category": "Choice"
+    },
+    {
+      "id": "austen-tenderness",
+      "text": "There is no charm equal to tenderness of heart.",
+      "author": "Jane Austen",
+      "source": "Emma",
+      "category": "Kindness"
+    },
+    {
+      "id": "austen-reading",
+      "text": "I declare after all there is no enjoyment like reading!",
+      "author": "Jane Austen",
+      "source": "Pride and Prejudice",
+      "category": "Joy"
+    },
+    {
+      "id": "shakespeare-greatness",
+      "text": "Be not afraid of greatness.",
+      "author": "William Shakespeare",
+      "source": "Twelfth Night, Act II, Scene V",
+      "category": "Courage"
+    },
+    {
+      "id": "shakespeare-adversity",
+      "text": "Sweet are the uses of adversity.",
+      "author": "William Shakespeare",
+      "source": "As You Like It, Act II, Scene I",
+      "category": "Perspective"
+    },
+    {
+      "id": "shakespeare-possibility",
+      "text": "We know what we are, but know not what we may be.",
+      "author": "William Shakespeare",
+      "source": "Hamlet, Act IV, Scene V",
+      "category": "Possibility"
+    },
+    {
+      "id": "shakespeare-integrity",
+      "text": "To thine own self be true.",
+      "author": "William Shakespeare",
+      "source": "Hamlet, Act I, Scene III",
+      "category": "Integrity"
+    },
+    {
+      "id": "shakespeare-honesty",
+      "text": "No legacy is so rich as honesty.",
+      "author": "William Shakespeare",
+      "source": "All’s Well That Ends Well, Act III, Scene V",
+      "category": "Integrity"
+    },
+    {
+      "id": "vangogh-small-things",
+      "text": "Great things are done by a series of small things brought together.",
+      "author": "Vincent van Gogh",
+      "source": "Letters to Theo",
+      "category": "Patience"
+    },
+    {
+      "id": "vangogh-attempt",
+      "text": "What would life be if we had no courage to attempt anything?",
+      "author": "Vincent van Gogh",
+      "source": "Letters to Theo",
+      "category": "Courage"
+    },
+    {
+      "id": "marcus-thoughts",
+      "text": "The happiness of your life depends upon the quality of your thoughts.",
+      "author": "Marcus Aurelius",
+      "source": "Meditations, 4.3 (translation)",
+      "category": "Perspective"
+    },
+    {
+      "id": "epictetus-become",
+      "text": "First say to yourself what you would be; and then do what you have to do.",
+      "author": "Epictetus",
+      "source": "Enchiridion, 51 (translation)",
+      "category": "Action"
+    },
+    {
+      "id": "lao-step",
+      "text": "A journey of a thousand miles begins with a single step.",
+      "author": "Lao Tzu",
+      "source": "Tao Te Ching, chapter 64 (traditional translation)",
+      "category": "Beginnings"
+    },
+    {
+      "id": "tagore-faith",
+      "text": "Faith is the bird that feels the light when the dawn is still dark.",
+      "author": "Rabindranath Tagore",
+      "source": "Fireflies",
+      "category": "Hope"
+    },
+    {
+      "id": "proust-grateful",
+      "text": "Let us be grateful to people who make us happy; they are the charming gardeners who make our souls blossom.",
+      "author": "Marcel Proust",
+      "source": "In Search of Lost Time (translation)",
+      "category": "Gratitude"
+    },
+    {
+      "id": "dalai-actions",
+      "text": "Happiness is not something ready made. It comes from your own actions.",
+      "author": "Dalai Lama",
+      "source": "The Art of Happiness",
+      "category": "Joy"
+    },
+    {
+      "id": "dalai-purpose",
+      "text": "The purpose of our lives is to be happy.",
+      "author": "Dalai Lama",
+      "source": "The Art of Happiness",
+      "category": "Purpose"
+    },
+    {
+      "id": "collier-effort",
+      "text": "Success is the sum of small efforts, repeated day in and day out.",
+      "author": "Robert Collier",
+      "source": "The Secret of the Ages",
+      "category": "Consistency"
+    },
+    {
+      "id": "malala-world",
+      "text": "One child, one teacher, one book, one pen can change the world.",
+      "author": "Malala Yousafzai",
+      "source": "United Nations Youth Assembly speech, 2013",
+      "category": "Possibility"
+    },
+    {
+      "id": "aesop-kindness",
+      "text": "No act of kindness, no matter how small, is ever wasted.",
+      "author": "Aesop",
+      "source": "The Lion and the Mouse (traditional attribution)",
+      "category": "Kindness"
+    },
+    {
+      "id": "franklin-action",
       "text": "Well done is better than well said.",
       "author": "Benjamin Franklin",
       "source": "Poor Richard’s Almanack",
@@ -29,230 +246,34 @@
       "text": "Lost time is never found again.",
       "author": "Benjamin Franklin",
       "source": "Poor Richard’s Almanack",
-      "category": "Time"
+      "category": "Presence"
     },
     {
-      "id": "seneca-time",
-      "text": "It is not that we have a short time to live, but that we waste much of it.",
-      "author": "Seneca",
-      "source": "On the Shortness of Life",
-      "category": "Time"
-    },
-    {
-      "id": "seneca-imagination",
-      "text": "We suffer more often in imagination than in reality.",
-      "author": "Seneca",
-      "source": "Moral Letters to Lucilius, Letter 13",
-      "category": "Perspective"
-    },
-    {
-      "id": "marcus-mind",
-      "text": "You have power over your mind—not outside events. Realize this, and you will find strength.",
-      "author": "Marcus Aurelius",
-      "source": "Meditations, 12.36 (translation)",
-      "category": "Self-mastery"
-    },
-    {
-      "id": "marcus-be-one",
-      "text": "Waste no more time arguing what a good person should be. Be one.",
-      "author": "Marcus Aurelius",
-      "source": "Meditations, 10.16",
-      "category": "Character"
-    },
-    {
-      "id": "epictetus-action",
-      "text": "First say to yourself what you would be; and then do what you have to do.",
-      "author": "Epictetus",
-      "source": "Enchiridion, 51",
-      "category": "Action"
-    },
-    {
-      "id": "socrates-examined",
-      "text": "The unexamined life is not worth living.",
-      "author": "Socrates",
-      "source": "Plato, Apology, 38a",
-      "category": "Reflection"
-    },
-    {
-      "id": "lao-journey",
-      "text": "A journey of a thousand miles begins with a single step.",
-      "author": "Lao Tzu",
-      "source": "Tao Te Ching, chapter 64 (traditional translation)",
-      "category": "Beginnings"
-    },
-    {
-      "id": "lao-know-yourself",
-      "text": "Knowing others is intelligence; knowing yourself is true wisdom.",
-      "author": "Lao Tzu",
-      "source": "Tao Te Ching, chapter 33 (traditional translation)",
-      "category": "Self-knowledge"
-    },
-    {
-      "id": "confucius-actions",
-      "text": "The superior person is modest in speech, but exceeds in actions.",
-      "author": "Confucius",
-      "source": "Analects, 14.29 (translation)",
-      "category": "Action"
-    },
-    {
-      "id": "shakespeare-agency",
-      "text": "The fault, dear Brutus, is not in our stars, but in ourselves.",
-      "author": "William Shakespeare",
-      "source": "Julius Caesar, Act I, Scene II",
-      "category": "Agency"
-    },
-    {
-      "id": "shakespeare-doubt",
-      "text": "Our doubts are traitors, and make us lose the good we oft might win, by fearing to attempt.",
-      "author": "William Shakespeare",
-      "source": "Measure for Measure, Act I, Scene IV",
-      "category": "Courage"
-    },
-    {
-      "id": "shakespeare-true",
-      "text": "To thine own self be true.",
-      "author": "William Shakespeare",
-      "source": "Hamlet, Act I, Scene III",
-      "category": "Integrity"
-    },
-    {
-      "id": "shakespeare-potential",
-      "text": "We know what we are, but know not what we may be.",
-      "author": "William Shakespeare",
-      "source": "Hamlet, Act IV, Scene V",
-      "category": "Possibility"
-    },
-    {
-      "id": "bronte-free",
-      "text": "I am no bird; and no net ensnares me: I am a free human being with an independent will.",
-      "author": "Charlotte Brontë",
-      "source": "Jane Eyre",
-      "category": "Freedom"
-    },
-    {
-      "id": "shelley-change",
-      "text": "Nothing is so painful to the human mind as a great and sudden change.",
-      "author": "Mary Shelley",
-      "source": "Frankenstein",
-      "category": "Change"
-    },
-    {
-      "id": "tolkien-time",
-      "text": "All we have to decide is what to do with the time that is given us.",
-      "author": "J. R. R. Tolkien",
-      "source": "The Fellowship of the Ring",
-      "category": "Choice"
-    },
-    {
-      "id": "tolkien-wander",
-      "text": "Not all those who wander are lost.",
-      "author": "J. R. R. Tolkien",
-      "source": "The Fellowship of the Ring",
-      "category": "Discovery"
-    },
-    {
-      "id": "thoreau-simplify",
-      "text": "Our life is frittered away by detail. Simplify, simplify.",
-      "author": "Henry David Thoreau",
-      "source": "Walden",
-      "category": "Focus"
-    },
-    {
-      "id": "thoreau-truth",
-      "text": "Rather than love, than money, than fame, give me truth.",
-      "author": "Henry David Thoreau",
-      "source": "Walden",
-      "category": "Integrity"
-    },
-    {
-      "id": "austen-kindness",
-      "text": "There is no charm equal to tenderness of heart.",
-      "author": "Jane Austen",
-      "source": "Emma",
-      "category": "Kindness"
-    },
-    {
-      "id": "baldwin-change",
-      "text": "Not everything that is faced can be changed, but nothing can be changed until it is faced.",
-      "author": "James Baldwin",
-      "source": "As Much Truth as One Can Bear",
-      "category": "Courage"
-    },
-    {
-      "id": "eleanor-consent",
-      "text": "No one can make you feel inferior without your consent.",
-      "author": "Eleanor Roosevelt",
-      "source": "This Is My Story, 1937",
-      "category": "Self-respect"
-    },
-    {
-      "id": "fdr-fear",
-      "text": "The only thing we have to fear is fear itself.",
-      "author": "Franklin D. Roosevelt",
-      "source": "First Inaugural Address, 1933",
-      "category": "Courage"
-    },
-    {
-      "id": "paine-triumph",
-      "text": "The harder the conflict, the more glorious the triumph.",
-      "author": "Thomas Paine",
-      "source": "The American Crisis, No. 1",
-      "category": "Perseverance"
-    },
-    {
-      "id": "einstein-imagination",
-      "text": "Imagination is more important than knowledge.",
-      "author": "Albert Einstein",
-      "source": "Saturday Evening Post interview, 1929",
-      "category": "Creativity"
-    },
-    {
-      "id": "dickinson-hope",
-      "text": "“Hope” is the thing with feathers that perches in the soul.",
-      "author": "Emily Dickinson",
-      "source": "Poem 314",
+      "id": "wilde-stars",
+      "text": "We are all in the gutter, but some of us are looking at the stars.",
+      "author": "Oscar Wilde",
+      "source": "Lady Windermere’s Fan, Act III",
       "category": "Hope"
     },
     {
-      "id": "dickinson-nows",
-      "text": "Forever is composed of nows.",
-      "author": "Emily Dickinson",
-      "source": "Poem 690",
-      "category": "Presence"
+      "id": "woolf-flow",
+      "text": "I am rooted, but I flow.",
+      "author": "Virginia Woolf",
+      "source": "The Waves",
+      "category": "Growth"
     },
     {
-      "id": "frost-through",
-      "text": "The best way out is always through.",
-      "author": "Robert Frost",
-      "source": "A Servant to Servants",
-      "category": "Resilience"
+      "id": "muir-nature",
+      "text": "In every walk with nature one receives far more than he seeks.",
+      "author": "John Muir",
+      "source": "John of the Mountains",
+      "category": "Wonder"
     },
     {
-      "id": "oliver-life",
-      "text": "Tell me, what is it you plan to do with your one wild and precious life?",
-      "author": "Mary Oliver",
-      "source": "The Summer Day",
-      "category": "Purpose"
-    },
-    {
-      "id": "angelou-work",
-      "text": "Nothing will work unless you do.",
-      "author": "Maya Angelou",
-      "source": "Wouldn’t Take Nothing for My Journey Now",
-      "category": "Action"
-    },
-    {
-      "id": "horace-day",
-      "text": "Seize the day, trusting as little as possible in tomorrow.",
-      "author": "Horace",
-      "source": "Odes, 1.11 (translation)",
-      "category": "Presence"
-    },
-    {
-      "id": "virgil-bold",
-      "text": "Fortune favors the bold.",
-      "author": "Virgil",
-      "source": "Aeneid, 10.284 (traditional translation)",
+      "id": "king-first-step",
+      "text": "Faith is taking the first step even when you don’t see the whole staircase.",
+      "author": "Martin Luther King Jr.",
+      "source": "Speech at Ebenezer Baptist Church, 1968",
       "category": "Courage"
     },
     {
@@ -263,11 +284,137 @@
       "category": "Integrity"
     },
     {
-      "id": "a16een-begin",
-      "text": "Start where you are. Use what you have. Take the next honest step.",
+      "id": "seneca-learning",
+      "text": "As long as you live, keep learning how to live.",
+      "author": "Seneca",
+      "source": "Moral Letters to Lucilius, Letter 76 (translation)",
+      "category": "Growth"
+    },
+    {
+      "id": "a16een-begin-again",
+      "text": "You can begin again without starting from nothing.",
       "author": "A16EEN",
-      "source": "A reminder to keep moving",
+      "source": "A daily reminder",
+      "category": "Renewal"
+    },
+    {
+      "id": "a16een-shine",
+      "text": "You don’t have to shine loudly to make the world brighter.",
+      "author": "A16EEN",
+      "source": "A daily reminder",
+      "category": "Kindness"
+    },
+    {
+      "id": "a16een-wonder",
+      "text": "Make room for wonder. It has a way of finding you.",
+      "author": "A16EEN",
+      "source": "A daily reminder",
+      "category": "Wonder"
+    },
+    {
+      "id": "a16een-promises",
+      "text": "Keep the promises you make to yourself, especially the small ones.",
+      "author": "A16EEN",
+      "source": "A daily reminder",
+      "category": "Self-trust"
+    },
+    {
+      "id": "a16een-garden",
+      "text": "Your attention is a garden; give beautiful things room to grow.",
+      "author": "A16EEN",
+      "source": "A daily reminder",
+      "category": "Presence"
+    },
+    {
+      "id": "a16een-good-practice",
+      "text": "The good you practice becomes the good the world remembers.",
+      "author": "A16EEN",
+      "source": "A daily reminder",
+      "category": "Kindness"
+    },
+    {
+      "id": "a16een-gentle-beginning",
+      "text": "A gentle beginning can still grow into something extraordinary.",
+      "author": "A16EEN",
+      "source": "A daily reminder",
       "category": "Beginnings"
+    },
+    {
+      "id": "a16een-timing",
+      "text": "May you be proud of your effort and gentle with your timing.",
+      "author": "A16EEN",
+      "source": "A daily reminder",
+      "category": "Self-kindness"
+    },
+    {
+      "id": "a16een-curiosity",
+      "text": "Let curiosity lead, courage steady you, and kindness guide you.",
+      "author": "A16EEN",
+      "source": "A daily reminder",
+      "category": "Courage"
+    },
+    {
+      "id": "a16een-nurture",
+      "text": "Notice what is good. Nurture what is growing. Keep going.",
+      "author": "A16EEN",
+      "source": "A daily reminder",
+      "category": "Growth"
+    },
+    {
+      "id": "a16een-hours",
+      "text": "Make something beautiful from the hours you are given.",
+      "author": "A16EEN",
+      "source": "A daily reminder",
+      "category": "Purpose"
+    },
+    {
+      "id": "a16een-small-courage",
+      "text": "A small act of courage can open an entirely new world.",
+      "author": "A16EEN",
+      "source": "A daily reminder",
+      "category": "Courage"
+    },
+    {
+      "id": "a16een-today",
+      "text": "Let today hold a little more wonder, kindness, and possibility.",
+      "author": "A16EEN",
+      "source": "A daily reminder",
+      "category": "Joy"
+    },
+    {
+      "id": "a16een-next-step",
+      "text": "You do not need the whole road lit; the next step is enough.",
+      "author": "A16EEN",
+      "source": "A daily reminder",
+      "category": "Hope"
+    },
+    {
+      "id": "a16een-ordinary-moments",
+      "text": "The life you want is built in ordinary moments, lovingly repeated.",
+      "author": "A16EEN",
+      "source": "A daily reminder",
+      "category": "Consistency"
+    },
+    {
+      "id": "a16een-kindness-light",
+      "text": "Carry kindness like light: it costs little and changes everything.",
+      "author": "A16EEN",
+      "source": "A daily reminder",
+      "category": "Kindness"
+    },
+    {
+      "id": "a16een-next-chapter",
+      "text": "Your next chapter does not need permission from your last.",
+      "author": "A16EEN",
+      "source": "A daily reminder",
+      "category": "Renewal"
+    },
+    {
+      "id": "a16een-growing-quietly",
+      "text": "Some of the strongest growth happens where nobody is watching.",
+      "author": "A16EEN",
+      "source": "A daily reminder",
+      "category": "Growth"
     }
   ]
 }

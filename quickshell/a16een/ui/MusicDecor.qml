@@ -3,72 +3,99 @@ import QtQuick
 Item {
     id: root
 
-    readonly property real recordSize: Math.min(width, height) - 10
+    property bool playing: false
+    readonly property real recordSize: Math.min(width, height) - 8
 
-    // A quiet, monochrome vinyl-inspired mark: purely decorative and static.
-    Rectangle {
-        id: record
+    Item {
+        id: spinningDisc
         anchors.centerIn: parent
         width: root.recordSize
         height: root.recordSize
-        radius: width / 2
-        color: "transparent"
-        border.width: 1.2
-        border.color: "#171717"
+        rotation: 0
+        opacity: root.playing ? 1.0 : 0.68
 
-        Rectangle {
-            anchors.centerIn: parent
-            width: parent.width * 0.76
-            height: width
-            radius: width / 2
-            color: "transparent"
-            border.width: 1
-            border.color: "#C7B8A4"
+        // CD-inspired metallic disc: a slow, uninterrupted turn without
+        // a spectrum visualizer, per-frame calculations, or external processes.
+        RotationAnimation on rotation {
+            from: 0
+            to: 360
+            duration: 8200
+            loops: Animation.Infinite
+            running: root.playing
+            easing.type: Easing.Linear
         }
 
         Rectangle {
-            anchors.centerIn: parent
-            width: parent.width * 0.52
-            height: width
+            id: discFace
+            anchors.fill: parent
             radius: width / 2
-            color: "transparent"
             border.width: 1
-            border.color: "#DED2C2"
-        }
-
-        Rectangle {
-            anchors.centerIn: parent
-            width: 13
-            height: 13
-            radius: width / 2
-            color: "#171717"
-
-            Rectangle {
-                anchors.centerIn: parent
-                width: 3
-                height: 3
-                radius: width / 2
-                color: "#FFF5E7"
+            border.color: "#78FFFFFF"
+            gradient: Gradient {
+                GradientStop { position: 0.0; color: "#DCECF6" }
+                GradientStop { position: 0.27; color: "#B6B9EE" }
+                GradientStop { position: 0.62; color: "#EABDD6" }
+                GradientStop { position: 1.0; color: "#8DD6CF" }
             }
         }
-    }
 
-    Rectangle {
-        width: 12
-        height: 2
-        radius: 1
-        x: root.width / 2 + root.recordSize * 0.30
-        y: root.height / 2 - root.recordSize * 0.34
-        rotation: 42
-        color: "#171717"
-    }
+        // Fine, translucent grooves sit inside the filled metallic disc.
+        Rectangle {
+            anchors.centerIn: parent
+            width: spinningDisc.width * 0.78
+            height: width
+            radius: width / 2
+            color: "transparent"
+            border.width: 1
+            border.color: "#72FFFFFF"
+        }
 
-    Rectangle {
-        width: 4
-        height: 4
-        radius: width / 2
-        x: root.width / 2 + root.recordSize * 0.39
-        y: root.height / 2 - root.recordSize * 0.40
-        color: "#171717"
+        Rectangle {
+            anchors.centerIn: parent
+            width: spinningDisc.width * 0.56
+            height: width
+            radius: width / 2
+            color: "transparent"
+            border.width: 1
+            border.color: "#52617F98"
+        }
+
+        Rectangle {
+            anchors.centerIn: parent
+            width: spinningDisc.width * 0.32
+            height: width
+            radius: width / 2
+            border.width: 1
+            border.color: "#A8FFFFFF"
+            gradient: Gradient {
+                GradientStop { position: 0.0; color: "#F8FBFF" }
+                GradientStop { position: 0.5; color: "#C9D9F0" }
+                GradientStop { position: 1.0; color: "#A8D6D7" }
+            }
+        }
+
+        Rectangle {
+            anchors.centerIn: parent
+            width: 5
+            height: 5
+            radius: width / 2
+            color: "#243349"
+            border.width: 1
+            border.color: "#D9FFFFFF"
+        }
+
+        Rectangle {
+            width: spinningDisc.width * 0.23
+            height: 2
+            x: spinningDisc.width * 0.60
+            y: spinningDisc.height * 0.25
+            rotation: -42
+            radius: 1
+            color: "#58FFFFFF"
+        }
+
+        Behavior on opacity {
+            NumberAnimation { duration: 220; easing.type: Easing.OutCubic }
+        }
     }
 }

@@ -16,16 +16,16 @@ PanelWindow {
     readonly property color secondary: "#BAC4D0"
     readonly property color muted: "#7F8A98"
     readonly property color border: "#3AFFFFFF"
-    readonly property color accent: "#C8D5E4"
-    readonly property int widgetRightMargin: root.navbarPosition === "right" ? 88 : 26
+    readonly property int widgetLeftMargin: root.navbarPosition === "left" ? 88 : 26
+    readonly property int widgetTopMargin: root.navbarPosition === "top" ? 72 : 30
 
     readonly property var currentQuote: root.quotes.length > 0
         ? root.quotes[root.quoteIndex % root.quotes.length]
         : ({
-            text: "Well done is better than well said.",
-            author: "Benjamin Franklin",
-            source: "Poor Richard’s Almanack",
-            category: "Action"
+            text: "A gentle beginning can still grow into something extraordinary.",
+            author: "A16EEN",
+            source: "A daily reminder",
+            category: "Beginnings"
         })
 
     screen: root.modelData
@@ -36,25 +36,27 @@ PanelWindow {
 
     anchors {
         top: true
-        right: true
-        bottom: true
         left: true
+        bottom: true
+        right: true
     }
+
+    // The quote panel is decorative. Restrict its input region to the card so
+    // its full-screen Wayland surface cannot intercept clicks on other widgets.
+    mask: Region { item: card }
 
     WlrLayershell.layer: WlrLayer.Bottom
     WlrLayershell.namespace: "a16een-widget-quotes"
 
-    // Upper-right, below the editorial clock and opposite the lower-left Music card.
-    // The quote surface uses translucent fills only; no blur or continuous animation.
     Rectangle {
         id: card
-        width: Math.min(380, Math.max(300, parent.width - root.widgetRightMargin - 28))
-        height: 160
+        width: Math.min(318, Math.max(245, parent.width - root.widgetLeftMargin - 28))
+        height: 138
         anchors.top: parent.top
-        anchors.right: parent.right
-        anchors.topMargin: Math.max(250, Math.min(360, parent.height * 0.40))
-        anchors.rightMargin: root.widgetRightMargin
-        radius: 18
+        anchors.left: parent.left
+        anchors.topMargin: root.widgetTopMargin
+        anchors.leftMargin: root.widgetLeftMargin
+        radius: 17
         border.width: 1
         border.color: root.border
         clip: true
@@ -67,7 +69,7 @@ PanelWindow {
         Rectangle {
             anchors.fill: parent
             anchors.margins: 1
-            radius: 17
+            radius: 16
             color: "transparent"
             border.width: 1
             border.color: "#12FFFFFF"
@@ -75,30 +77,30 @@ PanelWindow {
 
         Column {
             anchors.fill: parent
-            anchors.margins: 14
-            spacing: 6
+            anchors.margins: 12
+            spacing: 4
 
             Row {
                 width: parent.width
-                height: 20
-                spacing: 9
+                height: 18
+                spacing: 8
 
                 Rectangle {
-                    width: 25
-                    height: 25
+                    width: 22
+                    height: 22
                     anchors.verticalCenter: parent.verticalCenter
-                    radius: 8
+                    radius: 7
                     color: "#1FFFFFFF"
                     border.width: 1
                     border.color: "#24FFFFFF"
 
                     Image {
                         anchors.centerIn: parent
-                        width: 17
-                        height: 17
+                        width: 15
+                        height: 15
                         source: Qt.resolvedUrl("../assets/icons/quote-mark.svg")
-                        sourceSize.width: 34
-                        sourceSize.height: 34
+                        sourceSize.width: 30
+                        sourceSize.height: 30
                         asynchronous: true
                         smooth: true
                         fillMode: Image.PreserveAspectFit
@@ -112,23 +114,23 @@ PanelWindow {
                     font.family: "Inter"
                     font.pixelSize: 8
                     font.weight: Font.DemiBold
-                    font.letterSpacing: 1.25
+                    font.letterSpacing: 1.15
                     renderType: Text.NativeRendering
                 }
             }
 
             Text {
                 width: parent.width
-                height: 77
+                height: 61
                 text: root.currentQuote.text
                 color: root.ink
                 font.family: "Inter"
-                font.pixelSize: 14
+                font.pixelSize: 13
                 font.weight: Font.Medium
-                lineHeight: 1.12
+                lineHeight: 1.1
                 lineHeightMode: Text.ProportionalHeight
                 wrapMode: Text.WordWrap
-                maximumLineCount: 4
+                maximumLineCount: 3
                 elide: Text.ElideRight
                 verticalAlignment: Text.AlignVCenter
                 renderType: Text.NativeRendering
@@ -136,8 +138,8 @@ PanelWindow {
 
             Column {
                 width: parent.width
-                height: 20
-                spacing: 3
+                height: 18
+                spacing: 2
 
                 Text {
                     width: parent.width
@@ -162,6 +164,15 @@ PanelWindow {
                 }
             }
         }
+    }
+
+    // Six-hour rotation stays local/offline and consumes no background CPU while disabled.
+    Timer {
+        id: quoteRotationTimer
+        interval: 6 * 60 * 60 * 1000
+        repeat: true
+        running: root.widgetEnabled && root.quotes.length > 1
+        onTriggered: root.pickRandomQuote()
     }
 
     FileView {
@@ -191,7 +202,7 @@ PanelWindow {
                     .map(item => ({
                         id: String(item.id || ""),
                         text: item.text.trim(),
-                        author: item.author.trim() || "Unknown",
+                        author: item.author.trim() || "A16EEN",
                         source: String(item.source || ""),
                         category: String(item.category || "Reflection")
                     }))
@@ -222,17 +233,17 @@ PanelWindow {
         const previous = root.quoteIndex
         let next = Math.floor(Math.random() * root.quotes.length)
         if (next === previous)
-            next = (next + 1 + Math.floor(Math.random() * (root.quotes.length - 1))) % root.quotes.length
+            next = (previous + 1 + Math.floor(Math.random() * (root.quotes.length - 1))) % root.quotes.length
         root.quoteIndex = next
     }
 
     function useFallbackQuote() {
         root.quotes = [{
-            id: "franklin-actions",
-            text: "Well done is better than well said.",
-            author: "Benjamin Franklin",
-            source: "Poor Richard’s Almanack",
-            category: "Action"
+            id: "a16een-begin-again",
+            text: "You can begin again without starting from nothing.",
+            author: "A16EEN",
+            source: "A daily reminder",
+            category: "Renewal"
         }]
         root.quoteIndex = 0
     }
