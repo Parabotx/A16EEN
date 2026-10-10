@@ -46,10 +46,14 @@ PanelWindow {
         bottom: root.navbarPosition === "bottom"
     }
     margins {
-        left: root.horizontalNavbar ? 34 : (root.navbarPosition === "left" ? 50 : 0)
+        // Keep left/right rails exactly where they were. On horizontal rails,
+        // stack the speed pill below the power button at the top or above it at the bottom.
+        left: root.horizontalNavbar ? 0 : (root.navbarPosition === "left" ? 50 : 0)
         right: !root.horizontalNavbar && root.navbarPosition === "right" ? 50 : 0
-        top: root.horizontalNavbar ? 0 : 12
-        bottom: 0
+        top: root.horizontalNavbar
+            ? (root.navbarPosition === "top" ? 34 : 0)
+            : 12
+        bottom: root.horizontalNavbar && root.navbarPosition === "bottom" ? 34 : 0
     }
 
     WlrLayershell.layer: WlrLayer.Overlay
@@ -75,12 +79,70 @@ PanelWindow {
             anchors.centerIn: parent
             spacing: 5
 
-            Text {
+            Rectangle {
+                id: directionBadge
+                width: 22
+                height: 22
+                radius: 7
                 anchors.verticalCenter: parent.verticalCenter
-                text: root.showingDownload ? "↓" : "↑"
-                color: root.showingDownload ? "#252B34" : "#687381"
-                font.pixelSize: 13
-                font.weight: Font.DemiBold
+                color: root.showingDownload ? "#E9EDF2" : "#F2F4F7"
+                border.width: 1
+                border.color: "#E3E7EC"
+
+                Item {
+                    id: directionGlyph
+                    width: 18
+                    height: 18
+                    anchors.centerIn: parent
+                    rotation: root.showingDownload ? 180 : 0
+                    Behavior on rotation {
+                        NumberAnimation { duration: 190; easing.type: Easing.OutCubic }
+                    }
+
+                    // Fine motion trails sit behind a crisp, rounded arrow.
+                    Rectangle {
+                        x: 1
+                        y: 7
+                        width: 3
+                        height: 1.5
+                        radius: 1
+                        color: "#A6B0BC"
+                    }
+                    Rectangle {
+                        x: 2
+                        y: 11
+                        width: 2
+                        height: 1.5
+                        radius: 1
+                        color: "#C0C7D0"
+                    }
+                    Rectangle {
+                        x: 8
+                        y: 5
+                        width: 2
+                        height: 9
+                        radius: 1
+                        color: "#252B34"
+                    }
+                    Rectangle {
+                        x: 4
+                        y: 3
+                        width: 2
+                        height: 6
+                        radius: 1
+                        rotation: -45
+                        color: "#252B34"
+                    }
+                    Rectangle {
+                        x: 10
+                        y: 3
+                        width: 2
+                        height: 6
+                        radius: 1
+                        rotation: 45
+                        color: "#252B34"
+                    }
+                }
             }
 
             Item {
