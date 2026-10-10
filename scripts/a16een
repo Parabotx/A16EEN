@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-SELF_NAME="a16een"
+SELF_NAME="a16"
 SOURCE_DIR="${XDG_DATA_HOME:-$HOME/.local/share}/a16een/source"
 
 usage() {
@@ -9,7 +9,7 @@ usage() {
 A16EEN command center
 
 Usage:
-  a16een <command> [options]
+  a16 <command> [options]
 
 Desktop
   launcher                    Open the A16EEN application launcher
@@ -76,13 +76,13 @@ Options
   --help, -h                  Show command help
 
 Examples:
-  a16een launcher
-  a16een logout
-  a16een reboot
-  a16een screenshot-window
-  a16een wallpaper set studio.png
-  a16een doctor
-  a16een update
+  a16 launcher
+  a16 logout
+  a16 reboot
+  a16 screenshot-window
+  a16 wallpaper set studio.png
+  a16 doctor
+  a16 update
 EOF
 }
 
@@ -321,14 +321,14 @@ case "$command" in
         ;;
 
     workspace)
-        [[ $# -eq 1 ]] || die "usage: a16een workspace <1-99>"
+        [[ $# -eq 1 ]] || die "usage: a16 workspace <1-99>"
         validate_workspace "$1"
         require_cmd niri
         exec niri msg action focus-workspace "$1"
         ;;
 
     volume)
-        [[ $# -eq 1 ]] || die "usage: a16een volume up|down|mute"
+        [[ $# -eq 1 ]] || die "usage: a16 volume up|down|mute"
         require_cmd wpctl
         case "$1" in
             up)
@@ -349,7 +349,7 @@ case "$command" in
         ;;
 
     brightness)
-        [[ $# -eq 1 ]] || die "usage: a16een brightness up|down"
+        [[ $# -eq 1 ]] || die "usage: a16 brightness up|down"
         require_cmd brightnessctl
         case "$1" in
             up)
@@ -377,7 +377,7 @@ case "$command" in
         ;;
 
     power|power-profile)
-        [[ $# -eq 1 ]] || die "usage: a16een power performance|balanced|eco|status"
+        [[ $# -eq 1 ]] || die "usage: a16 power performance|balanced|eco|status"
         require_cmd powerprofilesctl
         case "$1" in
             performance)
@@ -398,7 +398,7 @@ case "$command" in
         esac
         ;;
     media)
-        [[ $# -eq 1 ]] || die "usage: a16een media play|pause|toggle|next|previous"
+        [[ $# -eq 1 ]] || die "usage: a16 media play|pause|toggle|next|previous"
         require_cmd playerctl
         case "$1" in
             play) exec playerctl play ;;
