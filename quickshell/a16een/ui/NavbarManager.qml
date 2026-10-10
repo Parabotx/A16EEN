@@ -250,7 +250,10 @@ Item {
 
         RowLayout {
             Layout.fillWidth: true
+            Layout.fillHeight: false
+            Layout.minimumHeight: 32
             Layout.preferredHeight: 32
+            Layout.maximumHeight: 32
             spacing: 6
 
             Repeater {
@@ -299,7 +302,6 @@ Item {
             Layout.fillWidth: true
             Layout.fillHeight: true
             Layout.minimumHeight: 0
-            Layout.preferredHeight: 0
             opacity: 1
             clip: true
 
@@ -311,6 +313,8 @@ Item {
 
         Item {
             id: workspacePage
+            Layout.fillWidth: true
+            Layout.fillHeight: true
             implicitWidth: 1
             implicitHeight: 1
 
