@@ -757,6 +757,7 @@ PanelWindow {
                                 ]
 
                                 delegate: Rectangle {
+                                    id: periodChoiceTile
                                     required property var modelData
                                     width: (periodChoices.width - periodChoices.spacing) / 2
                                     height: periodChoices.height
@@ -767,10 +768,10 @@ PanelWindow {
 
                                     Text {
                                         anchors.centerIn: parent
-                                        text: periodChoicesItem.modelData.label
-                                        color: root.dataMeterPeriod === periodChoicesItem.modelData.id ? "#20262E" : "#7D8793"
+                                        text: periodChoiceTile.modelData.label
+                                        color: root.dataMeterPeriod === periodChoiceTile.modelData.id ? "#20262E" : "#7D8793"
                                         font.pixelSize: 10
-                                        font.weight: root.dataMeterPeriod === periodChoicesItem.modelData.id
+                                        font.weight: root.dataMeterPeriod === periodChoiceTile.modelData.id
                                             ? Font.DemiBold : Font.Medium
                                     }
 
@@ -779,11 +780,9 @@ PanelWindow {
                                         anchors.fill: parent
                                         hoverEnabled: true
                                         cursorShape: Qt.PointingHandCursor
-                                        onClicked: root.dataMeterPeriod = periodChoicesItem.modelData.id
+                                        onClicked: root.dataMeterPeriod = periodChoiceTile.modelData.id
                                     }
 
-                                    // Name the delegate explicitly so its state stays unambiguous.
-                                    property var periodChoicesItem: modelData
                                 }
                             }
                         }
