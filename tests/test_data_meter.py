@@ -53,6 +53,55 @@ class DataMeterTests(unittest.TestCase):
         self.assertEqual(output["month_download_bytes"], 8000)
         self.assertEqual(output["month_upload_bytes"], 1300)
 
+    def test_daily_only_state_migrates_without_losing_usage_on_update(self):
+        # State written by the earlier daily-only build has no "month" or
+        # rx_month/tx_month values. Installing the monthly build must preserve it.
+        previous = {
+            "version": 1,
+            "date": "2026-10-10",
+            "interfaces": {
+                "wlp2s0": {
+                    "name": "wlp2s0",
+                    "type": "Wi-Fi",
+                    "connection": "Home Wi-Fi",
+                    "last_rx": 7000,
+                    "last_tx": 1500,
+                    "rx_today": 6000,
+                    "tx_today": 1000,
+                    "last_sample_ms": 12000,
+                    "rx_bps": 0,
+                    "tx_bps": 0,
+                    "is_default": True,
+                }
+            },
+        }
+        state, output = METER.update_usage(previous, [sample(9000, 1800)], "2026-10-10", 14000)
+        self.assertEqual(output["today_download_bytes"], 8000)
+        self.assertEqual(output["today_upload_bytes"], 1300)
+        self.assertEqual(output["month_download_bytes"], 8000)
+        self.assertEqual(output["month_upload_bytes"], 1300)
+        self.assertEqual(state["month"], "2026-10")
+
+    def test_finds_saved_state_if_xdg_state_home_changes(self):
+        old_state_file = METER.STATE_FILE
+        old_default_file = METER.DEFAULT_STATE_FILE
+        try:
+            with tempfile.TemporaryDirectory() as tmp:
+                root = Path(tmp)
+                METER.STATE_FILE = root / "custom-xdg" / "a16een" / "data-meter.json"
+                METER.DEFAULT_STATE_FILE = root / "home" / ".local/state/a16een/data-meter.json"
+                METER.save_state({
+                    "version": 2,
+                    "date": "2026-10-10",
+                    "month": "2026-10",
+                    "interfaces": {"wlp2s0": {"rx_today": 123456, "last_sample_ms": 1000}},
+                }, METER.DEFAULT_STATE_FILE)
+                loaded = METER.load_state()
+                self.assertEqual(loaded["interfaces"]["wlp2s0"]["rx_today"], 123456)
+        finally:
+            METER.STATE_FILE = old_state_file
+            METER.DEFAULT_STATE_FILE = old_default_file
+
     def test_counter_reset_and_month_rollover(self):
         state, _ = METER.update_usage({}, [sample(10000, 800, "enp4s0")], "2026-10-10", 10000)
         state, _ = METER.update_usage(state, [sample(15000, 1200, "enp4s0")], "2026-10-10", 12000)
