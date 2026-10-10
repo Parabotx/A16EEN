@@ -69,7 +69,7 @@ PanelWindow {
             Repeater {
                 model: [
                     { id: "notifications", icon: "lucide-bell.svg", active: root.notificationsOpen },
-                    { id: "tools", icon: "lucide-wrench.svg", active: root.toolsOpen }
+                    { id: "tools", icon: "lucide-toolbox.svg", active: root.toolsOpen }
                 ]
 
                 delegate: Item {
@@ -140,7 +140,7 @@ PanelWindow {
             Repeater {
                 model: [
                     { id: "notifications", icon: "lucide-bell.svg", active: root.notificationsOpen },
-                    { id: "tools", icon: "lucide-wrench.svg", active: root.toolsOpen }
+                    { id: "tools", icon: "lucide-toolbox.svg", active: root.toolsOpen }
                 ]
 
                 delegate: Item {

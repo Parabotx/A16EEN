@@ -932,6 +932,13 @@ ShellRoot {
     }
 
     function activateHubTool(toolId) {
+        if (String(toolId || "") === "monitor") {
+            root.calculatorOpen = false
+            root.toolsPanelPage = "monitor"
+            root.toolsPanelOpen = true
+            return
+        }
+
         root.closeTransientPanels()
         switch (String(toolId || "")) {
         case "screenshot":

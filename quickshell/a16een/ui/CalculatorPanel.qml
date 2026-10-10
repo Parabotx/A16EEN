@@ -210,16 +210,12 @@ PanelWindow {
     Item {
         id: card
         x: Math.max(8, Math.min(root.popupX, root.screenWidth - width - 8))
-        y: Math.max(8, Math.min(root.popupY, root.screenHeight - height - 8)) + (root.opened ? 0 : 6)
+        y: Math.max(8, Math.min(root.popupY, root.screenHeight - height - 8))
         width: Math.min(root.popupWidth, root.screenWidth - 16)
         height: Math.min(root.popupHeight, root.screenHeight - 16)
         z: 1
-        opacity: root.opened ? 1 : 0
-        scale: root.opened ? 1 : 0.97
-
-        Behavior on opacity { NumberAnimation { duration: 160; easing.type: Easing.OutCubic } }
-        Behavior on scale { NumberAnimation { duration: 180; easing.type: Easing.OutCubic } }
-        Behavior on y { NumberAnimation { duration: 180; easing.type: Easing.OutCubic } }
+        opacity: 1
+        scale: 1
 
         Rectangle {
             anchors.fill: parent

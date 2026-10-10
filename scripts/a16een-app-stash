@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""A16EEN App Stash: hide and restore live Niri windows without closing them."""
+"""A16EEN Nest: hide and restore live Niri windows without closing them."""
 
 from __future__ import annotations
 
@@ -163,7 +163,7 @@ def hide_window() -> int:
     workspace_list = workspaces()
     current_workspace = workspace_for_window(focused, workspace_list)
     if current_workspace and str(current_workspace.get("name") or "") == STASH_WORKSPACE:
-        print("That window is already in App Stash.")
+        print("That window is already in Nest.")
         return 0
 
     entries = read_stash()
@@ -223,7 +223,7 @@ def restore_window(window_id: str) -> int:
     entries = read_stash()
     entry = next((item for item in entries if item["window_id"] == normalized_id), None)
     if not entry:
-        raise StashError("That window is no longer in App Stash.")
+        raise StashError("That window is no longer in Nest.")
 
     live_ids = {str(item["id"]) for item in windows()}
     if normalized_id not in live_ids:
@@ -253,7 +253,7 @@ def main(argv: list[str]) -> int:
         print("Usage: a16een-app-stash hide | list | restore WINDOW_ID", file=sys.stderr)
         return 2
     except StashError as error:
-        print(f"A16EEN App Stash: {error}", file=sys.stderr)
+        print(f"A16EEN Nest: {error}", file=sys.stderr)
         return 1
 
 
