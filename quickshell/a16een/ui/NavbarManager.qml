@@ -291,14 +291,6 @@ Item {
             }
         }
 
-        NavbarPlacement {
-            id: placementControl
-            Layout.fillWidth: true
-            Layout.preferredHeight: 44
-            active: root.active
-            onPositionApplied: root.navbarPositionChanged(position)
-        }
-
         RowLayout {
             Layout.fillWidth: true
             Layout.preferredHeight: 32
@@ -712,6 +704,7 @@ Item {
                 }
             }
         }
+    }
 
     onActiveChanged: {
         if (root.active) {
