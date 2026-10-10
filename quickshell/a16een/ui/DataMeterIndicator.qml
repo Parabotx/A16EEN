@@ -34,8 +34,8 @@ PanelWindow {
     aboveWindows: true
     exclusionMode: ExclusionMode.Ignore
     exclusiveZone: 0
-    width: 124
-    height: root.horizontalNavbar ? 32 : 38
+    width: Math.max(70, Math.min(102, speedContent.implicitWidth + 20))
+    height: root.horizontalNavbar ? 30 : 34
 
     // On a vertical dock, match the power button's top position. The capsule
     // sits one gap inward from it rather than following the battery at the bottom.
@@ -71,21 +71,22 @@ PanelWindow {
         }
 
         Row {
+            id: speedContent
             anchors.centerIn: parent
-            spacing: 7
+            spacing: 5
 
             Text {
                 anchors.verticalCenter: parent.verticalCenter
                 text: root.showingDownload ? "↓" : "↑"
                 color: root.showingDownload ? "#252B34" : "#687381"
-                font.pixelSize: 16
+                font.pixelSize: 13
                 font.weight: Font.DemiBold
             }
 
             Item {
                 id: speedValueGroup
-                width: speedNumber.implicitWidth + speedUnit.implicitWidth + 4
-                height: 24
+                width: speedNumber.implicitWidth + speedUnit.implicitWidth + 3
+                height: 22
 
                 Text {
                     id: speedNumber
@@ -98,15 +99,15 @@ PanelWindow {
                         return reading.value
                     }
                     color: "#171B21"
-                    font.pixelSize: 16
+                    font.pixelSize: 14
                     font.weight: Font.DemiBold
                 }
 
                 Text {
                     id: speedUnit
                     anchors.left: speedNumber.right
-                    anchors.leftMargin: 3
-                    y: 3
+                    anchors.leftMargin: 2
+                    y: 4
                     text: {
                         const reading = root.formatRate(root.snapshot
                             ? (root.showingDownload ? root.snapshot.down_bps : root.snapshot.up_bps)
@@ -114,7 +115,7 @@ PanelWindow {
                         return reading.unit
                     }
                     color: "#7D8793"
-                    font.pixelSize: 8
+                    font.pixelSize: 7
                     font.weight: Font.DemiBold
                 }
             }
