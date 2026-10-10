@@ -731,15 +731,17 @@ PanelWindow {
                     }
                 }
 
-                Column {
+                Item {
                     id: dataMeterPage
                     visible: root.page === "data-meter"
                     width: parent.width
-                    spacing: 8
+                    height: Math.max(280, parent.height - 36)
 
                     Rectangle {
                         id: dataMeterPeriodSwitch
-                        width: parent.width
+                        anchors.left: parent.left
+                        anchors.right: parent.right
+                        top: parent.top
                         height: 34
                         radius: 10
                         color: "#F1F3F6"
@@ -776,20 +778,22 @@ PanelWindow {
                                     }
 
                                     MouseArea {
-                                        id: periodChoiceMouse
                                         anchors.fill: parent
                                         hoverEnabled: true
                                         cursorShape: Qt.PointingHandCursor
                                         onClicked: root.dataMeterPeriod = periodChoiceTile.modelData.id
                                     }
-
                                 }
                             }
                         }
                     }
 
                     Row {
-                        width: parent.width
+                        id: dataMeterTotals
+                        anchors.left: parent.left
+                        anchors.right: parent.right
+                        y: 42
+                        height: 79
                         spacing: 8
 
                         Repeater {
@@ -813,8 +817,8 @@ PanelWindow {
                             delegate: Rectangle {
                                 id: trafficTile
                                 required property var modelData
-                                width: (dataMeterPage.width - dataMeterPage.spacing) / 2
-                                height: 79
+                                width: (dataMeterTotals.width - dataMeterTotals.spacing) / 2
+                                height: dataMeterTotals.height
                                 radius: 12
                                 color: "#FAFBFC"
                                 border.width: 1
@@ -851,7 +855,11 @@ PanelWindow {
                     }
 
                     Text {
-                        width: parent.width
+                        id: dataMeterNetworkHeading
+                        anchors.left: parent.left
+                        anchors.right: parent.right
+                        y: 132
+                        height: 12
                         text: "BY NETWORK"
                         color: "#77818D"
                         font.pixelSize: 8
@@ -859,116 +867,133 @@ PanelWindow {
                         font.letterSpacing: 0.65
                     }
 
-                    Column {
-                        id: dataMeterNetworks
-                        width: parent.width
-                        spacing: 3
+                    Item {
+                        id: dataMeterNetworkArea
+                        anchors.left: parent.left
+                        anchors.right: parent.right
+                        anchors.top: dataMeterNetworkHeading.bottom
+                        anchors.topMargin: 6
+                        anchors.bottom: dataMeterToggleRow.top
+                        anchors.bottomMargin: 7
+                        clip: true
 
-                        Repeater {
-                            model: root.dataMeterSnapshot && Array.isArray(root.dataMeterSnapshot.interfaces)
-                                ? root.dataMeterSnapshot.interfaces.slice(0, 3) : []
+                        Column {
+                            anchors.left: parent.left
+                            anchors.right: parent.right
+                            anchors.top: parent.top
+                            spacing: 3
 
-                            delegate: Rectangle {
-                                id: networkRow
-                                required property var modelData
-                                width: dataMeterNetworks.width
-                                height: 24
-                                radius: 7
-                                color: networkRow.modelData.is_default ? "#F4F6F8" : "transparent"
+                            Repeater {
+                                model: root.dataMeterSnapshot && Array.isArray(root.dataMeterSnapshot.interfaces)
+                                    ? root.dataMeterSnapshot.interfaces.slice(0, 3) : []
 
-                                Row {
-                                    anchors.fill: parent
-                                    anchors.leftMargin: 8
-                                    anchors.rightMargin: 8
-                                    spacing: 5
+                                delegate: Rectangle {
+                                    id: networkRow
+                                    required property var modelData
+                                    width: dataMeterNetworkArea.width
+                                    height: 24
+                                    radius: 7
+                                    color: networkRow.modelData.is_default ? "#F4F6F8" : "transparent"
 
-                                    Text {
-                                        width: parent.width * 0.40
-                                        anchors.verticalCenter: parent.verticalCenter
-                                        text: String(networkRow.modelData.connection || networkRow.modelData.name || "Network")
-                                            + (networkRow.modelData.is_default ? "  •" : "")
-                                        color: networkRow.modelData.is_default ? "#27303A" : "#626D79"
-                                        font.pixelSize: 9
-                                        font.weight: networkRow.modelData.is_default ? Font.DemiBold : Font.Normal
-                                        elide: Text.ElideRight
-                                    }
+                                    Row {
+                                        anchors.fill: parent
+                                        anchors.leftMargin: 8
+                                        anchors.rightMargin: 8
+                                        spacing: 5
 
-                                    Text {
-                                        width: parent.width * 0.60 - parent.spacing
-                                        anchors.verticalCenter: parent.verticalCenter
-                                        text: "↓ " + root.formatBytes(root.dataMeterPeriod === "month"
-                                            ? networkRow.modelData.rx_month_bytes : networkRow.modelData.rx_today_bytes)
-                                            + "   ↑ " + root.formatBytes(root.dataMeterPeriod === "month"
-                                            ? networkRow.modelData.tx_month_bytes : networkRow.modelData.tx_today_bytes)
-                                        color: "#586371"
-                                        font.pixelSize: 8
-                                        horizontalAlignment: Text.AlignRight
-                                        elide: Text.ElideLeft
+                                        Text {
+                                            width: parent.width * 0.40
+                                            anchors.verticalCenter: parent.verticalCenter
+                                            text: String(networkRow.modelData.connection || networkRow.modelData.name || "Network")
+                                                + (networkRow.modelData.is_default ? "  •" : "")
+                                            color: networkRow.modelData.is_default ? "#27303A" : "#626D79"
+                                            font.pixelSize: 9
+                                            font.weight: networkRow.modelData.is_default ? Font.DemiBold : Font.Normal
+                                            elide: Text.ElideRight
+                                        }
+
+                                        Text {
+                                            width: parent.width * 0.60 - parent.spacing
+                                            anchors.verticalCenter: parent.verticalCenter
+                                            text: "↓ " + root.formatBytes(root.dataMeterPeriod === "month"
+                                                ? networkRow.modelData.rx_month_bytes : networkRow.modelData.rx_today_bytes)
+                                                + "   ↑ " + root.formatBytes(root.dataMeterPeriod === "month"
+                                                ? networkRow.modelData.tx_month_bytes : networkRow.modelData.tx_today_bytes)
+                                            color: "#586371"
+                                            font.pixelSize: 8
+                                            horizontalAlignment: Text.AlignRight
+                                            elide: Text.ElideLeft
+                                        }
                                     }
                                 }
                             }
                         }
 
                         Text {
+                            anchors.centerIn: parent
+                            width: parent.width - 8
                             visible: !root.dataMeterSnapshotReady || !root.dataMeterSnapshot.interfaces
                                 || root.dataMeterSnapshot.interfaces.length === 0
-                            width: parent.width
                             text: root.dataMeterError.length ? root.dataMeterError : "No network traffic detected yet"
                             color: root.dataMeterError.length ? "#B4534B" : "#939CA7"
                             font.pixelSize: 9
+                            horizontalAlignment: Text.AlignHCenter
                             elide: Text.ElideRight
                         }
                     }
 
                     Rectangle {
-                        width: parent.width
+                        id: dataMeterToggleRow
+                        anchors.left: parent.left
+                        anchors.right: parent.right
+                        anchors.bottom: parent.bottom
                         height: 40
                         radius: 10
                         color: toggleMeterMouse.containsMouse ? "#F4F6F8" : "#FFFFFF"
                         border.width: 1
                         border.color: "#E8ECF0"
 
-                        Row {
-                            anchors.fill: parent
+                        Text {
+                            anchors.left: parent.left
                             anchors.leftMargin: 11
+                            anchors.right: meterToggle.left
                             anchors.rightMargin: 10
+                            anchors.verticalCenter: parent.verticalCenter
+                            text: "Data speed meter on the navbar"
+                            color: "#252D36"
+                            font.pixelSize: 9
+                            font.weight: Font.Medium
+                            elide: Text.ElideRight
+                        }
 
-                            Text {
-                                width: parent.width - 48
-                                anchors.verticalCenter: parent.verticalCenter
-                                text: "Speed on navbar"
-                                color: "#252D36"
-                                font.pixelSize: 10
-                                font.weight: Font.Medium
-                                elide: Text.ElideRight
-                            }
+                        Rectangle {
+                            id: meterToggle
+                            anchors.right: parent.right
+                            anchors.rightMargin: 10
+                            anchors.verticalCenter: parent.verticalCenter
+                            width: 32
+                            height: 19
+                            radius: 10
+                            color: root.dataMeterEnabled ? "#252B33" : "#E4E8ED"
+                            Behavior on color { ColorAnimation { duration: 120 } }
 
                             Rectangle {
-                                anchors.verticalCenter: parent.verticalCenter
-                                width: 32
-                                height: 19
-                                radius: 10
-                                color: root.dataMeterEnabled ? "#252B33" : "#E4E8ED"
-                                Behavior on color { ColorAnimation { duration: 120 } }
-
-                                Rectangle {
-                                    width: 13
-                                    height: 13
-                                    y: 3
-                                    x: root.dataMeterEnabled ? 16 : 3
-                                    radius: 7
-                                    color: "#FFFFFF"
-                                    Behavior on x { NumberAnimation { duration: 140; easing.type: Easing.OutCubic } }
-                                }
+                                width: 13
+                                height: 13
+                                y: 3
+                                x: root.dataMeterEnabled ? 16 : 3
+                                radius: 7
+                                color: "#FFFFFF"
+                                Behavior on x { NumberAnimation { duration: 140; easing.type: Easing.OutCubic } }
                             }
+                        }
 
-                            MouseArea {
-                                id: toggleMeterMouse
-                                anchors.fill: parent
-                                hoverEnabled: true
-                                cursorShape: Qt.PointingHandCursor
-                                onClicked: root.dataMeterToggleRequested(!root.dataMeterEnabled)
-                            }
+                        MouseArea {
+                            id: toggleMeterMouse
+                            anchors.fill: parent
+                            hoverEnabled: true
+                            cursorShape: Qt.PointingHandCursor
+                            onClicked: root.dataMeterToggleRequested(!root.dataMeterEnabled)
                         }
                     }
                 }
