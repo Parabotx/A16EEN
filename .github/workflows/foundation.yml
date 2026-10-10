@@ -156,6 +156,14 @@ jobs:
           grep -Fq 'id: spinningDisc' quickshell/a16een/ui/MusicDecor.qml
           grep -Fq 'RotationAnimation on rotation' quickshell/a16een/ui/MusicDecor.qml
           grep -Fq 'running: root.playing' quickshell/a16een/ui/MusicDecor.qml
+          grep -Fq 'property string coverSource: ""' quickshell/a16een/ui/MusicDecor.qml
+          grep -Fq 'readonly property bool hasCover:' quickshell/a16een/ui/MusicDecor.qml
+          grep -Fq 'interval: 10000' quickshell/a16een/ui/MusicDecor.qml
+          grep -Fq 'root.woodTone ? "#D5BE9A" : "#E5EBF0"' quickshell/a16een/ui/MusicDecor.qml
+          grep -Fq 'maskEnabled: true' quickshell/a16een/ui/MusicDecor.qml
+          grep -Fq 'source: coverImage' quickshell/a16een/ui/MusicDecor.qml
+          grep -Fq 'coverSource: root.currentCover' quickshell/a16een/ui/MusicWidget.qml
+          grep -Fq 'readonly property color cream: "#B8EAF2F8"' quickshell/a16een/ui/MusicWidget.qml
           grep -Fq 'gradient: Gradient {' quickshell/a16een/ui/MusicDecor.qml
           grep -Fq 'mask: Region {' quickshell/a16een/ui/MusicWidget.qml
           grep -Fq 'Region { item: card }' quickshell/a16een/ui/MusicWidget.qml

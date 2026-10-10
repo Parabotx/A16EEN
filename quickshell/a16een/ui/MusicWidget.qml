@@ -34,8 +34,8 @@ PanelWindow {
     readonly property color ink: "#1D2938"
     readonly property color secondary: "#5F7186"
     readonly property color muted: "#8391A1"
-    readonly property color border: "#64869FB8"
-    readonly property color cream: "#EAF4F7FB"
+    readonly property color border: "#4D869FB8"
+    readonly property color cream: "#B8EAF2F8"
     readonly property color accent: "#7E9BC7"
     readonly property int activeIndex: root.indexForPath(root.playback.path)
     readonly property bool isPlaying: root.playback.running
@@ -497,6 +497,7 @@ PanelWindow {
                     height: 76
                     anchors.verticalCenter: parent.verticalCenter
                     playing: root.isPlaying
+                    coverSource: root.currentCover
                 }
             }
 
