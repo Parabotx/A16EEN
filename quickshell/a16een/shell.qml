@@ -1194,7 +1194,7 @@ ShellRoot {
         root.toolsPanelOpen = false
         root.toolsPanelPage = "tools"
         root.calculatorOpen = false
-        if (mode === "toggle" && root.quickUtilitiesOpen)
+        if (mode === "toggle" && root.quickUtilitiesOpen) {
             root.quickUtilitiesOpen = false
             root.utilitiesExpanded = false
             return
