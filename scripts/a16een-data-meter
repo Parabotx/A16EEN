@@ -6,6 +6,7 @@ from datetime import date
 from pathlib import Path
 from typing import Any
 
+DEFAULT_STATE_FILE = Path.home() / ".local/state/a16een/data-meter.json"
 STATE_HOME = Path(os.environ.get("XDG_STATE_HOME") or (Path.home() / ".local/state"))
 STATE_FILE = STATE_HOME / "a16een/data-meter.json"
 VIRTUAL_PREFIXES = ("docker", "veth", "br-", "virbr", "podman", "cni", "flannel")
@@ -77,8 +78,11 @@ def interface_candidates(class_root: Path = Path("/sys/class/net"),
 def update_usage(previous: dict[str, Any], samples: list[dict[str, Any]],
                  today: str, now_ms: int) -> tuple[dict[str, Any], dict[str, Any]]:
     month_key = today[:7]
-    same_month = previous.get("month") == month_key
-    same_day = same_month and previous.get("date") == today
+    previous_date = str(previous.get("date") or "")
+    # Older releases stored daily totals only and had no "month" field.
+    # Keep their same-month interface counters instead of resetting after an update.
+    same_month = previous.get("month") == month_key or previous_date.startswith(month_key)
+    same_day = previous_date == today
     old_map = previous.get("interfaces", {}) if same_month else {}
     records = {
         key: dict(value)
@@ -106,12 +110,16 @@ def update_usage(previous: dict[str, Any], samples: list[dict[str, Any]],
             elapsed = max(0.05, (now_ms - int(old.get("last_sample_ms", now_ms))) / 1000)
             rx_today = (max(0, int(old.get("rx_today", 0))) if same_day else 0) + drx
             tx_today = (max(0, int(old.get("tx_today", 0))) if same_day else 0) + dtx
-            rx_month = max(0, int(old.get("rx_month", 0))) + drx
-            tx_month = max(0, int(old.get("tx_month", 0))) + dtx
+            # For version-1 state, seed the month from the previous daily totals
+            # rather than dropping the accumulated number at upgrade time.
+            rx_month_base = old.get("rx_month", old.get("rx_today", 0) if same_month else 0)
+            tx_month_base = old.get("tx_month", old.get("tx_today", 0) if same_month else 0)
+            rx_month = max(0, int(rx_month_base)) + drx
+            tx_month = max(0, int(tx_month_base)) + dtx
             in_rate, out_rate = drx / elapsed, dtx / elapsed
         else:
-            # First observation is a counter baseline; earlier traffic cannot be recovered
-            # reliably from kernel counters without a prior sample.
+            # First observation is a baseline; earlier traffic cannot be recovered
+            # from kernel counters without a prior sample.
             rx_today = tx_today = rx_month = tx_month = 0
             in_rate = out_rate = 0.0
 
@@ -185,12 +193,28 @@ def update_usage(previous: dict[str, Any], samples: list[dict[str, Any]],
     }
     return state, output
 
-def load_state(path: Path = STATE_FILE) -> dict[str, Any]:
-    try:
-        value = json.loads(path.read_text(encoding="utf-8"))
-    except (OSError, UnicodeError, json.JSONDecodeError):
-        return {}
-    return value if isinstance(value, dict) else {}
+def load_state(path: Path | None = None) -> dict[str, Any]:
+    explicit_path = path is not None
+    candidates = [path] if explicit_path else [STATE_FILE, DEFAULT_STATE_FILE]
+    unique_candidates: list[Path] = []
+    for candidate in candidates:
+        if candidate is not None and candidate not in unique_candidates:
+            unique_candidates.append(candidate)
+
+    valid: list[tuple[int, dict[str, Any]]] = []
+    for candidate in unique_candidates:
+        try:
+            value = json.loads(candidate.read_text(encoding="utf-8"))
+            if not isinstance(value, dict):
+                continue
+            modified_ns = candidate.stat().st_mtime_ns
+            valid.append((modified_ns, value))
+        except (OSError, UnicodeError, json.JSONDecodeError):
+            continue
+
+    # Usually there is one file. If XDG_STATE_HOME changed between sessions,
+    # use the most recently updated known copy and migrate it on the next save.
+    return max(valid, key=lambda item: item[0])[1] if valid else {}
 
 def save_state(value: dict[str, Any], path: Path = STATE_FILE) -> None:
     path.parent.mkdir(parents=True, exist_ok=True, mode=0o700)
@@ -207,12 +231,13 @@ def save_state(value: dict[str, Any], path: Path = STATE_FILE) -> None:
     finally:
         temp_path.unlink(missing_ok=True)
 
-def snapshot(state_path: Path = STATE_FILE, now_ms: int | None = None,
+def snapshot(state_path: Path | None = None, now_ms: int | None = None,
              today: str | None = None) -> dict[str, Any]:
     stamp = int(time.time() * 1000) if now_ms is None else int(now_ms)
     day = date.today().isoformat() if today is None else str(today)
+    destination = STATE_FILE if state_path is None else state_path
     state, output = update_usage(load_state(state_path), interface_candidates(), day, stamp)
-    save_state(state, state_path)
+    save_state(state, destination)
     return output
 
 def main(argv: list[str]) -> int:
