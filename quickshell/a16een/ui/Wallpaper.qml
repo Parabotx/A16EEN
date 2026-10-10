@@ -90,7 +90,7 @@ PanelWindow {
 
     MediaPlayer {
         id: videoPlayer
-        source: root.isVideo ? root.activePath : ""
+        source: root.isVideo ? Qt.resolvedUrl(root.activePath) : ""
         videoOutput: wallpaperVideoOutput
         audioOutput: null
         loops: MediaPlayer.Infinite

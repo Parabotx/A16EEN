@@ -220,7 +220,7 @@ PanelWindow {
                                     anchors.margins: 5
                                     height: 104
                                     source: modelData.type === "static"
-                                        ? modelData.path
+                                        ? Qt.resolvedUrl(modelData.path)
                                         : ""
                                     sourceSize.width: root.tileWidth * 2
                                     sourceSize.height: 0
