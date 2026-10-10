@@ -4,17 +4,15 @@ import QtQuick.Effects
 Item {
     id: root
 
-    // Stable renderer: always loads the bundled Lucide asset and colorizes
-    // its alpha. Generated navbar SVGs remain available for previews/state,
-    // but the live UI is never dependent on their file:// rendering path.
     property string iconName: ""
     property color iconColor: "#111111"
-    // Backward-compatible properties used by older manager implementations.
     property string iconPath: ""
     property string fallbackIconPath: ""
     property int refreshRevision: 0
     property bool hovered: false
     property bool active: false
+    property bool preserveSourceColors: false
+    property string imageSource: ""
 
     implicitWidth: 19
     implicitHeight: 19
@@ -41,10 +39,22 @@ Item {
         return "house.svg"
     }
 
+    function desiredSource() {
+        if (root.iconPath.length)
+            return root.iconPath
+        return Qt.resolvedUrl("../assets/icons/" + root.effectiveIconName)
+    }
+
+    function reloadSource() {
+        const path = root.desiredSource()
+        root.imageSource = ""
+        Qt.callLater(() => root.imageSource = path)
+    }
+
     Image {
         id: iconImage
         anchors.fill: parent
-        source: Qt.resolvedUrl("../assets/icons/" + root.effectiveIconName)
+        source: root.imageSource
         fillMode: Image.PreserveAspectFit
         sourceSize.width: width
         sourceSize.height: height
@@ -52,11 +62,24 @@ Item {
         mipmap: true
         asynchronous: true
         cache: false
-        layer.enabled: true
+        layer.enabled: !root.preserveSourceColors
 
         layer.effect: MultiEffect {
             colorization: 1
             colorizationColor: root.iconColor
         }
+
+        onStatusChanged: {
+            if (status === Image.Error && root.fallbackIconPath.length
+                && source !== root.fallbackIconPath) {
+                root.imageSource = root.fallbackIconPath
+            }
+        }
     }
+
+    Component.onCompleted: root.reloadSource()
+    onIconNameChanged: root.reloadSource()
+    onIconPathChanged: root.reloadSource()
+    onFallbackIconPathChanged: root.reloadSource()
+    onRefreshRevisionChanged: root.reloadSource()
 }

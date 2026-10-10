@@ -268,6 +268,7 @@ Item {
                                         height: 18
                                         iconPath: root.generatedIconPath(modelData.id)
                                         fallbackIconPath: root.baseIconPath(modelData.id)
+                                        preserveSourceColors: true
                                         iconColor: root.selectedSlot === modelData.id ? "#FFFFFF" : root.textPrimary
                                         refreshRevision: root.navbarIconRevision
                                         active: root.selectedSlot === modelData.id
@@ -347,6 +348,7 @@ Item {
                                 height: 22
                                 iconPath: root.generatedIconPath(root.selectedSlot)
                                 fallbackIconPath: root.baseIconPath(root.selectedSlot)
+                                preserveSourceColors: true
                                 iconColor: root.textPrimary
                                 refreshRevision: root.navbarIconRevision
                             }
