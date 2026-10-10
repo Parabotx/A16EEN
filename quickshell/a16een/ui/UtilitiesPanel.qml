@@ -457,9 +457,8 @@ PanelWindow {
                                         font.pixelSize: 10
                                         clip: true
                                         activeFocusOnTab: true
+                                        Keys.onEscapePressed: root.closeRequested()
                                     }
-
-                                    Keys.onEscapePressed: root.closeRequested()
                                 }
                             }
 

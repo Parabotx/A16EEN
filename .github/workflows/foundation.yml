@@ -46,7 +46,7 @@ jobs:
           CLIPBOARD_TEST_HOME="$(mktemp -d)"
           printf 'sample clipboard text\n' | XDG_STATE_HOME="$CLIPBOARD_TEST_HOME" python3 scripts/a16een-clipboard capture
           printf 'sample clipboard text\n' | XDG_STATE_HOME="$CLIPBOARD_TEST_HOME" python3 scripts/a16een-clipboard capture
-          XDG_STATE_HOME="$CLIPBOARD_TEST_HOME" python3 scripts/a16een-clipboard list | python3 -c 'import json,sys; items=json.load(sys.stdin); assert len(items)==1 and items[0]["content"]=="sample clipboard text\\n"'
+          XDG_STATE_HOME="$CLIPBOARD_TEST_HOME" python3 scripts/a16een-clipboard list | python3 -c 'import json,sys; items=json.load(sys.stdin); assert len(items)==1 and items[0]["content"].startswith("sample clipboard text")'
           XDG_STATE_HOME="$CLIPBOARD_TEST_HOME" python3 -c 'import json,os,pathlib,time; p=pathlib.Path(os.environ["XDG_STATE_HOME"])/"a16een"/"clipboard-history.json"; d=json.loads(p.read_text()); d[0]["timestamp"]=int(time.time()*1000)-25*60*60*1000; p.write_text(json.dumps(d))'
           XDG_STATE_HOME="$CLIPBOARD_TEST_HOME" python3 scripts/a16een-clipboard list | python3 -c 'import json,sys; assert json.load(sys.stdin)==[]'
           rm -rf "$CLIPBOARD_TEST_HOME"

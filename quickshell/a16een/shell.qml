@@ -952,7 +952,7 @@ ShellRoot {
 
         root.quickUtilitiesOpen = true
         root.utilitiesExpanded = true
-        root.utilitiesMode = mode === "bluetooth" ? "bluetooth" : "wifi"
+        root.utilitiesMode = ["wifi", "bluetooth", "clipboard"].includes(mode) ? mode : "wifi"
     }
 
     function openQuickTasks() {
