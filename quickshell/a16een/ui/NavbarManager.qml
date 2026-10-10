@@ -464,68 +464,79 @@ Item {
                             font.letterSpacing: 1.0
                         }
 
-                        GridLayout {
-                            id: workspaceGrid
+                        Flickable {
+                            id: workspaceList
                             Layout.fillWidth: true
-                            Layout.preferredHeight: Math.ceil(root.slots.length / 2) * 49
-                                + Math.max(0, Math.ceil(root.slots.length / 2) - 1) * 5
-                            columns: 2
-                            rowSpacing: 5
-                            columnSpacing: 5
+                            Layout.fillHeight: true
+                            Layout.minimumHeight: 0
+                            clip: true
+                            contentWidth: width
+                            contentHeight: workspaceRows.implicitHeight
+                            boundsBehavior: Flickable.StopAtBounds
 
-                            Repeater {
-                                model: root.slots
+                            Column {
+                                id: workspaceRows
+                                width: workspaceList.width
+                                spacing: 5
 
-                                delegate: Rectangle {
-                                    required property var modelData
-                                    Layout.preferredWidth: (workspaceGrid.width - 5) / 2
-                                    Layout.preferredHeight: 49
-                                    radius: 8
-                                    color: root.selectedSlot === modelData.id
-                                        ? "#E9EDF2"
-                                        : (slotMouse.containsMouse ? root.cardHover : "transparent")
-                                    border.width: root.selectedSlot === modelData.id ? 1 : 0
-                                    border.color: root.selectedSlot === modelData.id ? "#D4D8DE" : "transparent"
+                                Repeater {
+                                    model: root.slots
 
-                                    Column {
-                                        anchors.centerIn: parent
-                                        width: parent.width - 4
-                                        spacing: 2
+                                    delegate: Rectangle {
+                                        required property var modelData
+                                        width: workspaceRows.width
+                                        height: 48
+                                        radius: 9
+                                        color: root.selectedSlot === modelData.id
+                                            ? "#E9EDF2"
+                                            : (slotMouse.containsMouse ? root.cardHover : "transparent")
+                                        border.width: root.selectedSlot === modelData.id ? 1 : 1
+                                        border.color: root.selectedSlot === modelData.id
+                                            ? "#D4D8DE"
+                                            : (slotMouse.containsMouse ? "#E3E8ED" : "transparent")
 
-                                        NavbarIcon {
-                                            anchors.horizontalCenter: parent.horizontalCenter
-                                            width: 17
-                                            height: 17
-                                            iconPath: root.generatedIconPath(modelData.id)
-                                            fallbackIconPath: Qt.resolvedUrl("../assets/icons/" + root.settingFor(modelData.id).icon)
-                                            preserveSourceColors: true
-                                            refreshRevision: root.navbarIconRevision
-                                            active: root.selectedSlot === modelData.id
+                                        Behavior on color {
+                                            ColorAnimation { duration: 110 }
                                         }
 
-                                        Text {
-                                            width: parent.width
-                                            horizontalAlignment: Text.AlignHCenter
-                                            text: modelData.name
-                                            color: root.textPrimary
-                                            font.pixelSize: 7
-                                            font.weight: root.selectedSlot === modelData.id ? Font.DemiBold : Font.Medium
-                                            elide: Text.ElideRight
-                                        }
-                                    }
+                                        Column {
+                                            anchors.centerIn: parent
+                                            width: parent.width - 12
+                                            spacing: 2
 
-                                    MouseArea {
-                                        id: slotMouse
-                                        anchors.fill: parent
-                                        hoverEnabled: true
-                                        cursorShape: Qt.PointingHandCursor
-                                        onClicked: root.selectedSlot = modelData.id
+                                            NavbarIcon {
+                                                anchors.horizontalCenter: parent.horizontalCenter
+                                                width: 18
+                                                height: 18
+                                                iconPath: root.generatedIconPath(modelData.id)
+                                                fallbackIconPath: Qt.resolvedUrl("../assets/icons/" + root.settingFor(modelData.id).icon)
+                                                preserveSourceColors: true
+                                                refreshRevision: root.navbarIconRevision
+                                                active: root.selectedSlot === modelData.id
+                                            }
+
+                                            Text {
+                                                width: parent.width
+                                                horizontalAlignment: Text.AlignHCenter
+                                                text: modelData.name
+                                                color: root.textPrimary
+                                                font.pixelSize: 8
+                                                font.weight: root.selectedSlot === modelData.id ? Font.DemiBold : Font.Medium
+                                                elide: Text.ElideRight
+                                            }
+                                        }
+
+                                        MouseArea {
+                                            id: slotMouse
+                                            anchors.fill: parent
+                                            hoverEnabled: true
+                                            cursorShape: Qt.PointingHandCursor
+                                            onClicked: root.selectedSlot = modelData.id
+                                        }
                                     }
                                 }
                             }
                         }
-
-                        Item { Layout.fillHeight: true }
                     }
                 }
             Rectangle {
@@ -580,20 +591,24 @@ Item {
                         }
 
                         Rectangle {
-                            Layout.preferredWidth: 64
-                            Layout.preferredHeight: 26
-                            radius: 7
-                            color: resetMouse.containsMouse ? "#F0F1F3" : "transparent"
-                            border.width: 0
-                            border.color: "transparent"
+                            Layout.preferredWidth: 30
+                            Layout.preferredHeight: 30
+                            radius: 9
+                            color: resetMouse.containsMouse ? "#E8ECF1" : "#F5F6F8"
+                            border.width: 1
+                            border.color: resetMouse.containsMouse ? "#D5DBE3" : "#E7EBF0"
+                            Accessible.name: "Reset workspace icon and style"
 
-                            Text {
+                            Behavior on color {
+                                ColorAnimation { duration: 110 }
+                            }
+
+                            NavbarIcon {
                                 anchors.centerIn: parent
-                                text: "RESET"
-                                color: root.textPrimary
-                                font.pixelSize: 8
-                                font.weight: Font.Medium
-                                font.letterSpacing: 0.3
+                                width: 15
+                                height: 15
+                                iconName: "lucide-refresh-cw-refined-dark.svg"
+                                iconColor: "#5C6673"
                             }
 
                             MouseArea {
