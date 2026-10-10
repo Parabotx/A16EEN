@@ -337,6 +337,9 @@ fi
 echo "==> Installing A16EEN session launcher, shell supervisor, updater and diagnostics"
 sudo install -Dm755 "$ROOT_DIR/scripts/start-a16een" /usr/local/bin/start-a16een
 sudo install -Dm755 "$ROOT_DIR/scripts/a16een-shell" /usr/local/bin/a16een-shell
+# A16 is the short, user-facing terminal command. Keep the legacy name installed
+# as a compatibility alias so old shell habits and external scripts still work.
+sudo install -Dm755 "$ROOT_DIR/scripts/a16een" /usr/local/bin/a16
 sudo install -Dm755 "$ROOT_DIR/scripts/a16een" /usr/local/bin/a16een
 sudo install -Dm755 "$ROOT_DIR/scripts/a16een-wallpaper" /usr/local/bin/a16een-wallpaper
 sudo install -Dm755 "$ROOT_DIR/scripts/a16een-screenshot" /usr/local/bin/a16een-screenshot
@@ -535,7 +538,7 @@ echo "│           A16EEN installation complete       │"
 echo "╰──────────────────────────────────────────────╯"
 printf '%s\n' "$SOURCE_COMMIT" > "$STATE_DIR/installed-commit"
 
-echo "Run 'a16een-update' whenever you want to check for updates."
+echo "Run 'a16 update' whenever you want to check for updates."
 echo "Built-in wallpapers: $QS_DIR/assets/wallpapers"
 echo "Personal wallpapers: $USER_WALLPAPER_DIR"
 echo "Personal animated wallpapers: $USER_WALLPAPER_DIR/animated"
