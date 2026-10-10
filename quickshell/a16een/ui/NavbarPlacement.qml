@@ -146,11 +146,10 @@ Item {
             }
 
             Text {
-                width: 50
+                width: 45
                 height: parent.height
                 verticalAlignment: Text.AlignVCenter
                 horizontalAlignment: Text.AlignRight
-                width: 45
                 text: root.statusText
                 color: root.muted
                 font.pixelSize: 8
