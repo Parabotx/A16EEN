@@ -623,14 +623,18 @@ PanelWindow {
 
     Rectangle {
         id: card
-        width: root.powerViewOpen || root.widgetViewOpen || root.controlViewOpen || root.iconThemeViewOpen || root.workspacePresetViewOpen || root.navbarViewOpen
-            ? Math.min(940, parent.width - 72)
-            : Math.min(500, parent.width - 48)
+        width: root.navbarViewOpen
+            ? Math.min(800, parent.width - 48)
+            : root.powerViewOpen || root.widgetViewOpen || root.controlViewOpen || root.iconThemeViewOpen || root.workspacePresetViewOpen
+                ? Math.min(940, parent.width - 72)
+                : Math.min(500, parent.width - 48)
         height: root.plainCommandView
             ? 210
-            : root.powerViewOpen || root.widgetViewOpen || root.controlViewOpen || root.iconThemeViewOpen || root.workspacePresetViewOpen || root.navbarViewOpen
-                ? Math.min(640, parent.height - 80)
-                : 280
+            : root.navbarViewOpen
+                ? Math.min(560, parent.height - 72)
+                : root.powerViewOpen || root.widgetViewOpen || root.controlViewOpen || root.iconThemeViewOpen || root.workspacePresetViewOpen
+                    ? Math.min(640, parent.height - 80)
+                    : 280
         anchors.centerIn: parent
         anchors.horizontalCenterOffset: root.plainCommandView
             ? Math.min(36, parent.width * 0.03)
