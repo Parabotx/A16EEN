@@ -250,49 +250,6 @@ Item {
 
         RowLayout {
             Layout.fillWidth: true
-            Layout.preferredHeight: 42
-            spacing: 12
-
-            Rectangle {
-                Layout.preferredWidth: 30
-                Layout.preferredHeight: 30
-                radius: 8
-                color: "transparent"
-                border.width: 0
-                border.color: "transparent"
-
-                Text {
-                    anchors.centerIn: parent
-                    text: "←"
-                    color: root.textSecondary
-                    font.pixelSize: 17
-                    font.weight: Font.Normal
-                }
-
-                MouseArea {
-                    anchors.fill: parent
-                    cursorShape: Qt.PointingHandCursor
-                    onClicked: root.backRequested()
-                }
-            }
-
-            ColumnLayout {
-                Layout.fillWidth: true
-                spacing: 3
-
-                Text {
-                    text: "NAVBAR"
-                    color: root.textPrimary
-                    font.pixelSize: 17
-                    font.weight: Font.DemiBold
-                    font.letterSpacing: 1.3
-                }
-
-            }
-        }
-
-        RowLayout {
-            Layout.fillWidth: true
             Layout.preferredHeight: 32
             spacing: 6
 
@@ -341,6 +298,8 @@ Item {
             id: sectionContent
             Layout.fillWidth: true
             Layout.fillHeight: true
+            Layout.minimumHeight: 0
+            Layout.preferredHeight: 0
             opacity: 1
             clip: true
 
@@ -350,13 +309,17 @@ Item {
                     : root.currentSection === "position" ? 1
                     : root.currentSection === "appearance" ? 2 : 3
 
-        RowLayout {
-            Layout.fillWidth: true
-            Layout.fillHeight: true
-            spacing: 14
+        Item {
+            id: workspacePage
+            implicitWidth: 1
+            implicitHeight: 1
 
-            Rectangle {
-                Layout.preferredWidth: 150
+            RowLayout {
+                anchors.fill: parent
+                spacing: 14
+
+                Rectangle {
+                    Layout.preferredWidth: 150
                 Layout.fillHeight: true
                 radius: 0
                 color: "transparent"
@@ -652,6 +615,7 @@ Item {
                 }
             }
         }
+            }
 
                 Item {
                     id: positionPage
