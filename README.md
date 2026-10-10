@@ -130,7 +130,7 @@ a16een wallpaper previous
 a16een wallpaper reset
 ```
 
-Supported static image formats include PNG, JPG, JPEG, WEBP, BMP, TIFF, TGA, SVG, PPM, PGM, PBM, XPM, and XBM. Qt's core image support plus Qt Image Formats provide the corresponding image-loading plugins used by the shell. Animated images and short-video backgrounds are intentionally left for the next wallpaper stage.
+Supported static image formats include PNG, JPG, JPEG, WEBP, BMP, TIFF, TGA, SVG, PPM, PGM, PBM, XPM, and XBM. Animated GIF and animated WebP files play in the Animated tab; still WebP images remain in the static Wallpaper tab. MP4, WEBM, MOV, M4V, and MKV wallpapers use Qt Multimedia's video renderer, loop silently, and pause or resume with A16EEN's desktop animation policy. Video previews play muted only while their tile is hovered, so opening the picker does not start every video at once. The installed `qt6-imageformats` and `qt6-multimedia` modules provide the image and video loading backends.
 
 ## One-command installation
 

@@ -1,4 +1,5 @@
 import QtQuick
+import QtMultimedia
 import Quickshell
 import Quickshell.Wayland
 
@@ -16,7 +17,14 @@ PanelWindow {
     readonly property string activePath: root.currentWallpaperPath.length
         ? root.currentWallpaperPath
         : root.fallbackPath
-    readonly property bool isGif: root.activePath.toLowerCase().endsWith(".gif")
+    readonly property string lowerPath: root.activePath.toLowerCase()
+    readonly property bool isAnimatedImage: lowerPath.endsWith(".gif")
+        || lowerPath.endsWith(".webp")
+    readonly property bool isVideo: lowerPath.endsWith(".mp4")
+        || lowerPath.endsWith(".webm")
+        || lowerPath.endsWith(".mov")
+        || lowerPath.endsWith(".m4v")
+        || lowerPath.endsWith(".mkv")
 
     screen: modelData
     color: "#050608"
@@ -32,6 +40,25 @@ PanelWindow {
         left: true
     }
 
+    function syncVideoPlayback() {
+        if (!root.isVideo) {
+            if (videoPlayer.playbackState !== MediaPlayer.StoppedState)
+                videoPlayer.stop()
+            return
+        }
+
+        if (root.desktopAnimationAllowed) {
+            if (videoPlayer.playbackState !== MediaPlayer.PlayingState)
+                videoPlayer.play()
+        } else if (videoPlayer.playbackState === MediaPlayer.PlayingState) {
+            videoPlayer.pause()
+        }
+    }
+
+    onActivePathChanged: Qt.callLater(root.syncVideoPlayback)
+    onDesktopAnimationAllowedChanged: Qt.callLater(root.syncVideoPlayback)
+    Component.onCompleted: Qt.callLater(root.syncVideoPlayback)
+
     Rectangle {
         anchors.fill: parent
         color: "#050608"
@@ -40,25 +67,53 @@ PanelWindow {
     Image {
         id: staticWallpaper
         anchors.fill: parent
-        source: root.activePath
+        source: !root.isAnimatedImage && !root.isVideo ? root.activePath : ""
         fillMode: Image.PreserveAspectFit
         asynchronous: true
         retainWhileLoading: true
         mipmap: true
         cache: true
-        visible: !root.isGif && status === Image.Ready
+        visible: !root.isAnimatedImage && !root.isVideo && status === Image.Ready
     }
 
     AnimatedImage {
         id: animatedWallpaper
         anchors.fill: parent
-        source: root.isGif ? root.activePath : ""
+        source: root.isAnimatedImage ? root.activePath : ""
         sourceSize.width: Math.max(1, Math.round(width))
         fillMode: Image.PreserveAspectFit
         asynchronous: true
         cache: false
-        playing: root.isGif && root.desktopAnimationAllowed
-        visible: root.isGif && status === AnimatedImage.Ready
+        playing: root.isAnimatedImage && root.desktopAnimationAllowed
+        visible: root.isAnimatedImage && status === AnimatedImage.Ready
+    }
+
+    MediaPlayer {
+        id: videoPlayer
+        source: root.isVideo ? root.activePath : ""
+        videoOutput: wallpaperVideoOutput
+        audioOutput: null
+        loops: MediaPlayer.Infinite
+
+        onSourceChanged: Qt.callLater(root.syncVideoPlayback)
+        onMediaStatusChanged: {
+            if (root.isVideo && root.desktopAnimationAllowed
+                && (mediaStatus === MediaPlayer.LoadedMedia
+                    || mediaStatus === MediaPlayer.BufferedMedia
+                    || mediaStatus === MediaPlayer.BufferingMedia)) {
+                Qt.callLater(root.syncVideoPlayback)
+            }
+        }
+        onErrorOccurred: function(error, errorString) {
+            console.warn("A16EEN could not play the selected video wallpaper:", errorString)
+        }
+    }
+
+    VideoOutput {
+        id: wallpaperVideoOutput
+        anchors.fill: parent
+        fillMode: VideoOutput.PreserveAspectCrop
+        visible: root.isVideo && videoPlayer.hasVideo
     }
 
     Rectangle {

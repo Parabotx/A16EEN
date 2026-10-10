@@ -44,8 +44,8 @@ Personal animated wallpapers:
 Static image formats:
   PNG, JPG, JPEG, WEBP, BMP, TIFF, TGA, SVG, PPM, PGM, PBM, XPM, XBM
 
-Animated formats:
-  GIF
+Animated image formats:
+  GIF, animated WEBP
 
 Video formats:
   MP4, WEBM, MOV, M4V, MKV
@@ -77,10 +77,31 @@ is_supported() {
     is_static_supported "$1" || is_animated_supported "$1"
 }
 
+is_animated_webp() {
+    local name="$1"
+    local path="${2:-}"
+
+    [[ "${name,,}" == *.webp ]] || return 1
+    [ -f "$path" ] || return 1
+
+    # Animated WebP files contain ANIM and ANMF chunks. Keep still WebP images
+    # in the static Wallpaper tab rather than misclassifying every .webp file.
+    LC_ALL=C grep -a -F -q 'ANIM' "$path" &&
+        LC_ALL=C grep -a -F -q 'ANMF' "$path"
+}
+
 media_type() {
     local name="$1"
+    local path="${2:-}"
     case "${name,,}" in
         *.gif) printf '%s\n' "animated" ;;
+        *.webp)
+            if is_animated_webp "$name" "$path"; then
+                printf '%s\n' "animated"
+            else
+                printf '%s\n' "static"
+            fi
+            ;;
         *.mp4|*.webm|*.mov|*.m4v|*.mkv) printf '%s\n' "video" ;;
         *) printf '%s\n' "static" ;;
     esac
@@ -173,7 +194,7 @@ collect_entries_for_dir() {
         name="${file##*/}"
         is_supported "$name" || continue
         display="$(display_name "$name")"
-        type="$(media_type "$name")"
+        type="$(media_type "$name" "$file")"
         printf '%s\t%s\t%s\t%s\t%s\n' "$source" "$name" "$display" "$file" "$type"
     done < <(find "$dir" -maxdepth 1 -type f -print0 | LC_ALL=C sort -z -f)
 }

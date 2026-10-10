@@ -239,6 +239,20 @@ jobs:
           grep -Fq 'function widgetSettingsPayload()' quickshell/a16een/shell.qml
           grep -Fq 'id: widgetSettingsLoadProcess' quickshell/a16een/shell.qml
           grep -Fq 'mpv' scripts/install.sh
+          grep -Fq 'import QtMultimedia' quickshell/a16een/ui/Wallpaper.qml
+          grep -Fq 'readonly property bool isVideo:' quickshell/a16een/ui/Wallpaper.qml
+          grep -Fq 'MediaPlayer.Infinite' quickshell/a16een/ui/Wallpaper.qml
+          grep -Fq 'VideoOutput.PreserveAspectCrop' quickshell/a16een/ui/Wallpaper.qml
+          grep -Fq 'audioOutput: null' quickshell/a16een/ui/Wallpaper.qml
+          grep -Fq 'root.desktopAnimationAllowed' quickshell/a16een/ui/Wallpaper.qml
+          grep -Fq 'id: videoPreviewPlayer' quickshell/a16een/ui/WallpaperPicker.qml
+          grep -Fq 'id: videoPreviewOutput' quickshell/a16een/ui/WallpaperPicker.qml
+          grep -Fq 'tileMouseArea.containsMouse' quickshell/a16een/ui/WallpaperPicker.qml
+          grep -Fq 'is_animated_webp()' scripts/a16een-wallpaper
+          grep -Fq "grep -a -F -q 'ANIM'" scripts/a16een-wallpaper
+          grep -Fq 'type="$(media_type "$name" "$file")"' scripts/a16een-wallpaper
+          grep -Fq '*.mp4|*.webm|*.mov|*.m4v|*.mkv' scripts/a16een-wallpaper
+          grep -Fq 'qt6-multimedia' scripts/install.sh
           test -f quickshell/a16een/ui/WallpaperPicker.qml
           test -f quickshell/a16een/ui/NotificationToast.qml
           test -f quickshell/a16een/assets/wallpapers/default.png

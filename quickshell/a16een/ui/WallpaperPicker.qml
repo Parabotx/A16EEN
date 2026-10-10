@@ -1,4 +1,5 @@
 import QtQuick
+import QtMultimedia
 import Quickshell
 import Quickshell.Io
 import Quickshell.Wayland
@@ -250,9 +251,31 @@ PanelWindow {
                                         && status === AnimatedImage.Ready
                                 }
 
-                                // Video files are listed immediately but only show
-                                // their lightweight placeholder until video preview
-                                // support is enabled independently of the shell.
+                                // Only the hovered video gets a decoder, avoiding
+                                // unnecessary playback across the entire wallpaper grid.
+                                MediaPlayer {
+                                    id: videoPreviewPlayer
+                                    source: modelData.type === "video" && tileMouseArea.containsMouse
+                                        ? modelData.path
+                                        : ""
+                                    videoOutput: videoPreviewOutput
+                                    audioOutput: null
+                                    loops: MediaPlayer.Infinite
+
+                                    onSourceChanged: {
+                                        if (source.toString().length === 0)
+                                            stop()
+                                    }
+
+                                    onMediaStatusChanged: {
+                                        if (tileMouseArea.containsMouse
+                                            && (mediaStatus === MediaPlayer.LoadedMedia
+                                                || mediaStatus === MediaPlayer.BufferedMedia)) {
+                                            play()
+                                        }
+                                    }
+                                }
+
                                 Rectangle {
                                     anchors.left: parent.left
                                     anchors.right: parent.right
@@ -262,18 +285,33 @@ PanelWindow {
                                     radius: 8
                                     color: "#F0F0F0"
                                     visible: modelData.type === "video"
+                                        && !videoPreviewPlayer.hasVideo
+                                }
+
+                                VideoOutput {
+                                    id: videoPreviewOutput
+                                    anchors.left: parent.left
+                                    anchors.right: parent.right
+                                    anchors.top: parent.top
+                                    anchors.margins: 5
+                                    height: 104
+                                    fillMode: VideoOutput.PreserveAspectCrop
+                                    visible: modelData.type === "video" && videoPreviewPlayer.hasVideo
                                 }
 
                                 Text {
                                     anchors.centerIn: parent
                                     text: modelData.type === "video"
-                                        ? "VIDEO"
+                                        ? (videoPreviewPlayer.error !== MediaPlayer.NoError
+                                            ? "Preview unavailable"
+                                            : "VIDEO")
                                         : "Preview unavailable"
                                     color: "#9A9A9A"
                                     font.pixelSize: 9
                                     font.weight: Font.Medium
                                     visible: modelData.type === "video"
-                                        || (modelData.type === "static"
+                                        ? !videoPreviewPlayer.hasVideo
+                                        : (modelData.type === "static"
                                             ? staticPreview.status === Image.Error
                                             : animatedPreview.status === AnimatedImage.Error)
                                 }
@@ -340,7 +378,7 @@ PanelWindow {
                                     anchors.right: parent.right
                                     anchors.topMargin: 10
                                     anchors.rightMargin: 10
-                                    width: modelData.type === "video" ? 52 : 42
+                                    width: modelData.type === "video" ? 52 : modelData.name.toLowerCase().endsWith(".webp") ? 48 : 42
                                     height: 20
                                     radius: 10
                                     color: "#CCFFFFFF"
@@ -348,7 +386,7 @@ PanelWindow {
 
                                     Text {
                                         anchors.centerIn: parent
-                                        text: modelData.type === "video" ? "VIDEO" : "GIF"
+                                        text: modelData.type === "video" ? "VIDEO" : modelData.name.toLowerCase().endsWith(".webp") ? "WEBP" : "GIF"
                                         color: "#222222"
                                         font.pixelSize: 8
                                         font.weight: Font.DemiBold
@@ -374,6 +412,7 @@ PanelWindow {
                                 }
 
                                 MouseArea {
+                                    id: tileMouseArea
                                     anchors.fill: parent
                                     hoverEnabled: true
                                     cursorShape: Qt.PointingHandCursor
