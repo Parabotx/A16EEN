@@ -490,7 +490,16 @@ jobs:
           grep -Fq 'function recordCommandUsage(commandId)' quickshell/a16een/ui/CommandCenter.qml
           grep -Fq 'id: "screenshot"' quickshell/a16een/ui/CommandCenter.qml
           grep -Fq 'text: "/"' quickshell/a16een/ui/CommandCenter.qml
-          grep -Fq 'text: "search commands"' quickshell/a16een/ui/CommandCenter.qml
+          grep -Fq 'readonly property bool plainCommandView' quickshell/a16een/ui/CommandCenter.qml
+          grep -Fq 'font.family: "monospace"' quickshell/a16een/ui/CommandCenter.qml
+          grep -Fq 'height: 27' quickshell/a16een/ui/CommandCenter.qml
+          grep -Fq 'anchors.verticalCenterOffset: root.plainCommandView' quickshell/a16een/ui/CommandCenter.qml
+          ! grep -Fq 'id: searchBox' quickshell/a16een/ui/CommandCenter.qml
+          ! grep -Fq 'id: commandSurface' quickshell/a16een/ui/CommandCenter.qml
+          ! grep -Fq 'id: iconThemeButton' quickshell/a16een/ui/CommandCenter.qml
+          ! grep -Fq 'id: workspacePresetButton' quickshell/a16een/ui/CommandCenter.qml
+          ! grep -Fq 'id: controlsButton' quickshell/a16een/ui/CommandCenter.qml
+          ! grep -Fq '↵' quickshell/a16een/ui/CommandCenter.qml
           grep -Fq 'signal wallpaperRequested()' quickshell/a16een/ui/CommandCenter.qml
           grep -Fq 'readonly property var commands' quickshell/a16een/ui/CommandCenter.qml
           grep -Fq 'function executeCommand(command)' quickshell/a16een/ui/CommandCenter.qml
