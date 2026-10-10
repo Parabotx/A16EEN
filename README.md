@@ -26,6 +26,7 @@ The project is being designed as a cohesive desktop product rather than a conven
 - Notification daemon integration
 - Network connection indicator
 - Bluetooth power indicator
+- Searchable 24-hour text clipboard history with one-line previews and click-to-copy
 - Safe session controls with confirmation for reboot and power-off
 - GTKLock password-entry lock screen with visible cursor, live time/date, and the current wallpaper (including a captured frame for animated backgrounds)
 - Volume, microphone, media, and brightness keybindings
@@ -33,6 +34,12 @@ The project is being designed as a cohesive desktop product rather than a conven
 - Lightweight curated font set for UI, display, text, and mono use
 - Persistent user wallpaper collection with `a16een wallpaper`
 - Isolated configuration under `~/.config/a16een/`
+
+## Clipboard history
+
+The navbar utilities panel includes a searchable clipboard history for copied text. A16EEN watches the Wayland text clipboard, moves repeated items back to the top, and removes entries after 24 hours. Each row shows a single-line preview; click an item to copy it back, or remove one item or clear the history.
+
+History stays on the local machine at `~/.local/state/a16een/clipboard-history.json`. The file is stored with user-only permissions. Clipboard history is text-only; copied text may include sensitive information, so it remains available for up to 24 hours unless you remove it earlier.
 
 ## Icon Themes
 

@@ -1,0 +1,239 @@
+#!/usr/bin/env python3
+"""A16EEN local Wayland text clipboard history with 24-hour retention."""
+
+from __future__ import annotations
+
+import argparse
+import hashlib
+import json
+import os
+import shutil
+import signal
+import subprocess
+import sys
+import tempfile
+import time
+from pathlib import Path
+from typing import Any
+
+RETENTION_SECONDS = 24 * 60 * 60
+MAX_ITEMS = 100
+STATE_HOME = Path(os.environ.get("XDG_STATE_HOME") or (Path.home() / ".local" / "state"))
+STATE_DIR = STATE_HOME / "a16een"
+HISTORY_FILE = STATE_DIR / "clipboard-history.json"
+STOP_REQUESTED = False
+
+
+def now_ms() -> int:
+    return int(time.time() * 1000)
+
+
+def load_entries() -> list[dict[str, Any]]:
+    try:
+        raw = json.loads(HISTORY_FILE.read_text(encoding="utf-8"))
+    except FileNotFoundError:
+        return []
+    except (OSError, UnicodeError, json.JSONDecodeError):
+        return []
+
+    if not isinstance(raw, list):
+        return []
+
+    entries: list[dict[str, Any]] = []
+    for item in raw:
+        if not isinstance(item, dict):
+            continue
+        content = item.get("content")
+        timestamp = item.get("timestamp")
+        entry_id = item.get("id")
+        if isinstance(content, str) and isinstance(timestamp, (int, float)) and isinstance(entry_id, str):
+            entries.append({"id": entry_id, "content": content, "timestamp": int(timestamp)})
+    return entries
+
+
+def store_entries(entries: list[dict[str, Any]]) -> None:
+    STATE_DIR.mkdir(parents=True, exist_ok=True, mode=0o700)
+    clean_entries = entries[:MAX_ITEMS]
+    handle = tempfile.NamedTemporaryFile(
+        mode="w",
+        encoding="utf-8",
+        dir=STATE_DIR,
+        prefix=".clipboard-history-",
+        suffix=".tmp",
+        delete=False,
+    )
+    temporary_path = Path(handle.name)
+    try:
+        os.chmod(temporary_path, 0o600)
+        with handle:
+            json.dump(clean_entries, handle, ensure_ascii=False, separators=(",", ":"))
+            handle.write("\n")
+        os.replace(temporary_path, HISTORY_FILE)
+        os.chmod(HISTORY_FILE, 0o600)
+    finally:
+        try:
+            temporary_path.unlink(missing_ok=True)
+        except OSError:
+            pass
+
+
+def prune_entries(entries: list[dict[str, Any]], now: int | None = None) -> list[dict[str, Any]]:
+    current = now if now is not None else now_ms()
+    cutoff = current - RETENTION_SECONDS * 1000
+    fresh = [entry for entry in entries if entry["timestamp"] > cutoff]
+    fresh.sort(key=lambda entry: entry["timestamp"], reverse=True)
+    return fresh[:MAX_ITEMS]
+
+
+def prune_and_store() -> list[dict[str, Any]]:
+    entries = load_entries()
+    fresh = prune_entries(entries)
+    if len(fresh) != len(entries):
+        store_entries(fresh)
+    return fresh
+
+
+def capture() -> int:
+    # Preserve the copied text as-is, including newlines and leading spaces.
+    content = sys.stdin.read()
+    if not content:
+        return 0
+
+    entries = prune_entries(load_entries())
+    digest = hashlib.sha256(content.encode("utf-8", errors="replace")).hexdigest()
+    timestamp = now_ms()
+
+    # Recopying an existing item refreshes its expiry and moves it to the top.
+    entries = [entry for entry in entries if entry["id"] != digest]
+    entries.insert(0, {"id": digest, "content": content, "timestamp": timestamp})
+    store_entries(prune_entries(entries, timestamp))
+    return 0
+
+
+def list_entries() -> int:
+    entries = prune_and_store()
+    print(json.dumps(entries, ensure_ascii=False, separators=(",", ":")))
+    return 0
+
+
+def copy_entry(entry_id: str) -> int:
+    entries = prune_and_store()
+    entry = next((item for item in entries if item["id"] == entry_id), None)
+    if entry is None:
+        print("Clipboard item has expired or no longer exists.", file=sys.stderr)
+        return 1
+    if shutil.which("wl-copy") is None:
+        print("wl-copy is not available; install wl-clipboard.", file=sys.stderr)
+        return 1
+    try:
+        subprocess.run(
+            ["wl-copy", "--type", "text/plain"],
+            input=entry["content"],
+            text=True,
+            encoding="utf-8",
+            check=True,
+            stdout=subprocess.DEVNULL,
+            stderr=subprocess.DEVNULL,
+        )
+    except (OSError, subprocess.CalledProcessError) as error:
+        print(f"Could not restore clipboard text: {error}", file=sys.stderr)
+        return 1
+    return 0
+
+
+def delete_entry(entry_id: str) -> int:
+    entries = prune_and_store()
+    remaining = [entry for entry in entries if entry["id"] != entry_id]
+    store_entries(remaining)
+    return 0 if len(remaining) != len(entries) else 1
+
+
+def clear_entries() -> int:
+    store_entries([])
+    return 0
+
+
+def start_watcher() -> int:
+    global STOP_REQUESTED
+    wl_paste = shutil.which("wl-paste")
+    if wl_paste is None:
+        print("wl-paste is not available; install wl-clipboard.", file=sys.stderr)
+        return 1
+
+    def request_stop(_signum: int, _frame: Any) -> None:
+        global STOP_REQUESTED
+        STOP_REQUESTED = True
+
+    signal.signal(signal.SIGTERM, request_stop)
+    signal.signal(signal.SIGINT, request_stop)
+
+    child: subprocess.Popen[bytes] | None = None
+
+    def launch() -> subprocess.Popen[bytes]:
+        return subprocess.Popen(
+            [
+                wl_paste,
+                "--watch",
+                "--type",
+                "text",
+                sys.executable,
+                str(Path(__file__).resolve()),
+                "capture",
+            ],
+            stdin=subprocess.DEVNULL,
+            stdout=subprocess.DEVNULL,
+            stderr=subprocess.DEVNULL,
+        )
+
+    try:
+        child = launch()
+        last_prune = 0.0
+        while not STOP_REQUESTED:
+            if child.poll() is not None:
+                child = launch()
+            now = time.monotonic()
+            if now - last_prune >= 30:
+                prune_and_store()
+                last_prune = now
+            time.sleep(2)
+    finally:
+        if child is not None and child.poll() is None:
+            child.terminate()
+            try:
+                child.wait(timeout=2)
+            except subprocess.TimeoutExpired:
+                child.kill()
+                child.wait(timeout=2)
+    return 0
+
+
+def main() -> int:
+    parser = argparse.ArgumentParser(description="A16EEN text-only clipboard history")
+    subparsers = parser.add_subparsers(dest="command", required=True)
+    subparsers.add_parser("watch", help="watch Wayland text clipboard changes")
+    subparsers.add_parser("capture", help="store clipboard text read from stdin")
+    subparsers.add_parser("list", help="list unexpired clipboard items")
+    subparsers.add_parser("clear", help="clear clipboard history")
+    copy_parser = subparsers.add_parser("copy", help="restore an item to the system clipboard")
+    copy_parser.add_argument("id")
+    delete_parser = subparsers.add_parser("delete", help="remove one history item")
+    delete_parser.add_argument("id")
+    args = parser.parse_args()
+
+    if args.command == "watch":
+        return start_watcher()
+    if args.command == "capture":
+        return capture()
+    if args.command == "list":
+        return list_entries()
+    if args.command == "clear":
+        return clear_entries()
+    if args.command == "copy":
+        return copy_entry(args.id)
+    if args.command == "delete":
+        return delete_entry(args.id)
+    return 2
+
+
+if __name__ == "__main__":
+    raise SystemExit(main())

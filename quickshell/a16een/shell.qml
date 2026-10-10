@@ -98,6 +98,22 @@ ShellRoot {
         }
     }
 
+    // Capture text-only clipboard changes into private, expiring user history.
+    // Stop watching while the secure lock screen is active.
+    Process {
+        id: clipboardHistoryWatcher
+        command: ["/usr/local/bin/a16een-clipboard", "watch"]
+        running: !root.secureLockActive
+
+        stderr: StdioCollector {
+            onStreamFinished: {
+                const message = String(text || "").trim()
+                if (message.length)
+                    console.warn("A16EEN clipboard watcher:", message)
+            }
+        }
+    }
+
     function requestLockScreen() {
         if (root.lockLaunchQueued || root.lockProcessRunning || root.lockSessionActive)
             return

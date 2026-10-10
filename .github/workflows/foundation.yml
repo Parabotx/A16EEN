@@ -30,10 +30,26 @@ jobs:
           bash -n scripts/a16een-icons
           bash -n scripts/a16een-screenshot
           bash -n scripts/a16een-control
+          python3 -m py_compile scripts/a16een-clipboard
           bash -n scripts/a16een-icon-theme
           bash -n scripts/a16een-workspace-preset
           python3 -m py_compile scripts/a16een-music scripts/a16een-widget-settings
           grep -Fq 'a16een-workspace-preset' scripts/install.sh
+          grep -Fq 'a16een-clipboard' scripts/install.sh
+          grep -Fq 'clipboardHistoryWatcher' quickshell/a16een/shell.qml
+          grep -Fq 'modeRequested("clipboard")' quickshell/a16een/ui/UtilitiesPanel.qml
+          grep -Fq 'popupHeight: root.selectedMode === "clipboard" ? 440 : 340' quickshell/a16een/ui/UtilitiesPanel.qml
+          grep -Fq 'RETENTION_SECONDS = 24 * 60 * 60' scripts/a16een-clipboard
+          grep -Fq '"--watch"' scripts/a16een-clipboard
+          grep -Fq 'clipboard-history.json' scripts/a16een-clipboard
+
+          CLIPBOARD_TEST_HOME="$(mktemp -d)"
+          printf 'sample clipboard text\n' | XDG_STATE_HOME="$CLIPBOARD_TEST_HOME" python3 scripts/a16een-clipboard capture
+          printf 'sample clipboard text\n' | XDG_STATE_HOME="$CLIPBOARD_TEST_HOME" python3 scripts/a16een-clipboard capture
+          XDG_STATE_HOME="$CLIPBOARD_TEST_HOME" python3 scripts/a16een-clipboard list | python3 -c 'import json,sys; items=json.load(sys.stdin); assert len(items)==1 and items[0]["content"]=="sample clipboard text\\n"'
+          XDG_STATE_HOME="$CLIPBOARD_TEST_HOME" python3 -c 'import json,os,pathlib,time; p=pathlib.Path(os.environ["XDG_STATE_HOME"])/"a16een"/"clipboard-history.json"; d=json.loads(p.read_text()); d[0]["timestamp"]=int(time.time()*1000)-25*60*60*1000; p.write_text(json.dumps(d))'
+          XDG_STATE_HOME="$CLIPBOARD_TEST_HOME" python3 scripts/a16een-clipboard list | python3 -c 'import json,sys; assert json.load(sys.stdin)==[]'
+          rm -rf "$CLIPBOARD_TEST_HOME"
           grep -Fq 'cp "$ROOT_DIR/quickshell/a16een/ui/"*.qml "$TMP_DEPLOY/ui/"' scripts/install.sh
           grep -Fq 'workspace presets' quickshell/a16een/ui/CommandCenter.qml
           grep -Fq 'id: "presets"' quickshell/a16een/ui/CommandCenter.qml
