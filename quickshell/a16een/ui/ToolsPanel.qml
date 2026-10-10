@@ -741,7 +741,6 @@ PanelWindow {
                         id: dataMeterPeriodSwitch
                         anchors.left: parent.left
                         anchors.right: parent.right
-                        top: parent.top
                         height: 34
                         radius: 10
                         color: "#F1F3F6"
