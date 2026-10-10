@@ -76,6 +76,13 @@ PanelWindow {
     readonly property color secondaryText: "#6F6F6F"
     readonly property color mutedText: "#3F3F3F"
     readonly property color selectedBackground: "#111111"
+    readonly property bool plainCommandView:
+        !root.powerViewOpen
+        && !root.widgetViewOpen
+        && !root.controlViewOpen
+        && !root.iconThemeViewOpen
+        && !root.workspacePresetViewOpen
+        && !root.navbarViewOpen
 
     readonly property var commands: [
         // First-run suggestions are common, useful actions; usage history
@@ -605,7 +612,7 @@ PanelWindow {
     Rectangle {
         anchors.fill: parent
         color: "#000000"
-        opacity: root.opened ? 0.34 : 0
+        opacity: root.opened ? 0.12 : 0
     }
 
     Rectangle {
@@ -613,16 +620,20 @@ PanelWindow {
         width: root.powerViewOpen || root.widgetViewOpen || root.controlViewOpen || root.iconThemeViewOpen || root.workspacePresetViewOpen || root.navbarViewOpen
             ? Math.min(940, parent.width - 72)
             : Math.min(500, parent.width - 48)
-        height: root.powerViewOpen || root.widgetViewOpen || root.controlViewOpen || root.iconThemeViewOpen || root.workspacePresetViewOpen || root.navbarViewOpen
-            ? Math.min(640, parent.height - 80)
-            : 280
+        height: root.plainCommandView
+            ? 210
+            : root.powerViewOpen || root.widgetViewOpen || root.controlViewOpen || root.iconThemeViewOpen || root.workspacePresetViewOpen || root.navbarViewOpen
+                ? Math.min(640, parent.height - 80)
+                : 280
         anchors.centerIn: parent
-        anchors.verticalCenterOffset: root.powerViewOpen || root.controlViewOpen || root.iconThemeViewOpen || root.workspacePresetViewOpen || root.navbarViewOpen ? 0 : 185
-        radius: root.powerViewOpen || root.controlViewOpen || root.iconThemeViewOpen || root.workspacePresetViewOpen || root.navbarViewOpen ? 26 : 18
-        color: root.surface
-        border.width: 1
+        anchors.verticalCenterOffset: root.plainCommandView
+            ? Math.min(215, Math.max(190, parent.height * 0.27))
+            : root.powerViewOpen || root.controlViewOpen || root.iconThemeViewOpen || root.workspacePresetViewOpen || root.navbarViewOpen ? 0 : 185
+        radius: root.plainCommandView ? 0 : root.powerViewOpen || root.controlViewOpen || root.iconThemeViewOpen || root.workspacePresetViewOpen || root.navbarViewOpen ? 26 : 18
+        color: root.plainCommandView ? "transparent" : root.surface
+        border.width: root.plainCommandView ? 0 : 1
         border.color: root.widgetViewOpen || root.controlViewOpen || root.iconThemeViewOpen || root.workspacePresetViewOpen || root.navbarViewOpen ? "#E1E6EC" : "#202020"
-        clip: true
+        clip: !root.plainCommandView
 
         Behavior on width {
             NumberAnimation { duration: 180; easing.type: Easing.OutCubic }
@@ -642,6 +653,7 @@ PanelWindow {
             radius: root.powerViewOpen || root.controlViewOpen || root.iconThemeViewOpen || root.workspacePresetViewOpen || root.navbarViewOpen ? 31 : 23
             color: "#16000000"
             z: -1
+            visible: !root.plainCommandView
         }
 
         WorkspacePresetsSection {
@@ -812,184 +824,121 @@ PanelWindow {
             onTimeShowSecondsRequested: root.timeShowSecondsRequested(enabled)
         }
 
-        // Normal command search.
+        // Plain terminal-style command palette: no nested cards or button chrome.
         Item {
             anchors.fill: parent
-            visible: !root.powerViewOpen && !root.widgetViewOpen && !root.controlViewOpen && !root.iconThemeViewOpen && !root.workspacePresetViewOpen && !root.navbarViewOpen
+            visible: root.plainCommandView
 
-            Rectangle {
-                id: searchBox
-                x: 12
-                y: 12
-                width: parent.width - 24
-                height: 48
-                radius: 12
-                color: search.activeFocus ? "#0D0D0D" : root.fieldBackground
-                border.width: 1
-                border.color: search.activeFocus
-                    ? root.fieldFocusBorder
-                    : root.fieldBorder
+            TextInput {
+                id: search
+                x: 2
+                y: 6
+                width: parent.width - 4
+                height: 30
+                color: "#F2F2F2"
+                selectionColor: "#FFFFFF35"
+                selectedTextColor: "#FFFFFF"
+                font.family: "monospace"
+                font.pixelSize: 14
+                clip: true
+                focus: root.opened && root.plainCommandView
+                activeFocusOnPress: true
+                verticalAlignment: Text.AlignVCenter
+                selectByMouse: true
+                text: "/"
+                cursorVisible: activeFocus
 
-                TextInput {
-                    id: search
-                    anchors.fill: parent
-                    anchors.leftMargin: 14
-                    anchors.rightMargin: 14
-                    color: root.primaryText
-                    selectionColor: "#FFFFFF20"
-                    selectedTextColor: root.primaryText
-                    font.pixelSize: 12
-                    clip: true
-                    focus: root.opened && !root.powerViewOpen && !root.widgetViewOpen && !root.controlViewOpen && !root.iconThemeViewOpen && !root.workspacePresetViewOpen && !root.navbarViewOpen
-                    activeFocusOnPress: true
-                    verticalAlignment: Text.AlignVCenter
-                    selectByMouse: true
-                    text: "/"
-
-                    onTextChanged: {
-                        if (!text.startsWith("/")) {
-                            text = "/" + text
-                            return
-                        }
-
-                        root.commandText = text
-                        root.selectedCommandIndex = 0
+                onTextChanged: {
+                    if (!text.startsWith("/")) {
+                        text = "/" + text
+                        return
                     }
 
-                    Keys.onEscapePressed: root.closeRequested()
-
-                    Keys.onReturnPressed: {
-                        if (root.filteredCommands.length > 0)
-                            root.executeCommand(
-                                root.filteredCommands[
-                                    Math.min(
-                                        root.selectedCommandIndex,
-                                        root.filteredCommands.length - 1
-                                    )
-                                ]
-                            )
-                    }
-
-                    Keys.onDownPressed: {
-                        if (root.filteredCommands.length > 0)
-                            root.selectedCommandIndex = Math.min(
-                                root.filteredCommands.length - 1,
-                                root.selectedCommandIndex + 1
-                            )
-                    }
-
-                    Keys.onUpPressed: {
-                        if (root.filteredCommands.length > 0)
-                            root.selectedCommandIndex = Math.max(
-                                0,
-                                root.selectedCommandIndex - 1
-                            )
-                    }
+                    root.commandText = text
+                    root.selectedCommandIndex = 0
                 }
 
-                Text {
-                    anchors.left: parent.left
-                    anchors.leftMargin: 28
-                    anchors.verticalCenter: parent.verticalCenter
-                    text: "search commands"
-                    color: root.secondaryText
-                    font.pixelSize: 12
-                    visible: search.text === "/"
+                Keys.onEscapePressed: root.closeRequested()
+
+                Keys.onReturnPressed: {
+                    if (root.filteredCommands.length > 0)
+                        root.executeCommand(
+                            root.filteredCommands[
+                                Math.min(
+                                    root.selectedCommandIndex,
+                                    root.filteredCommands.length - 1
+                                )
+                            ]
+                        )
                 }
 
+                Keys.onDownPressed: {
+                    if (root.filteredCommands.length > 0)
+                        root.selectedCommandIndex = Math.min(
+                            root.filteredCommands.length - 1,
+                            root.selectedCommandIndex + 1
+                        )
+                }
 
+                Keys.onUpPressed: {
+                    if (root.filteredCommands.length > 0)
+                        root.selectedCommandIndex = Math.max(
+                            0,
+                            root.selectedCommandIndex - 1
+                        )
+                }
             }
 
-            Rectangle {
-                id: commandSurface
-                x: 12
-                y: 68
-                width: parent.width - 24
-                height: 200
-                radius: 12
-                color: "#030303"
-                border.width: 1
-                border.color: "#181818"
-                clip: true
+            Column {
+                id: commandColumn
+                x: 2
+                y: 40
+                width: parent.width - 4
+                spacing: 0
 
-                Column {
-                    id: commandColumn
-                    x: 5
-                    y: 5
-                    width: parent.width - 10
-                    spacing: 2
+                Repeater {
+                    model: root.filteredCommands
 
-                    Repeater {
-                        model: root.filteredCommands
+                    delegate: Item {
+                        width: commandColumn.width
+                        height: 27
 
-                        delegate: Rectangle {
-                            width: commandColumn.width
-                            height: 34
-                            radius: 8
-                            color: root.selectedCommandIndex === index
-                                ? "#111111"
-                                : "#030303"
+                        Text {
+                            anchors.fill: parent
+                            anchors.leftMargin: 2
+                            verticalAlignment: Text.AlignVCenter
+                            text: "/" + modelData.name
+                            color: root.selectedCommandIndex === index ? "#FFFFFF" : "#858585"
+                            font.family: "monospace"
+                            font.pixelSize: 12
+                            font.weight: root.selectedCommandIndex === index
+                                ? Font.DemiBold
+                                : Font.Normal
+                            elide: Text.ElideRight
+                        }
 
-                            Behavior on color {
-                                ColorAnimation { duration: 100 }
-                            }
-
-                            Rectangle {
-                                visible: root.selectedCommandIndex === index
-                                width: 2
-                                height: 14
-                                radius: 1
-                                anchors.left: parent.left
-                                anchors.leftMargin: 4
-                                anchors.verticalCenter: parent.verticalCenter
-                                color: "#AFAFAF"
-                            }
-
-                            Text {
-                                anchors.left: parent.left
-                                anchors.leftMargin: 14
-                                anchors.right: parent.right
-                                anchors.rightMargin: 38
-                                anchors.verticalCenter: parent.verticalCenter
-                                text: "/" + modelData.name
-                                color: root.selectedCommandIndex === index ? "#FFFFFF" : "#8D8D8D"
-                                font.pixelSize: 12
-                                font.weight: root.selectedCommandIndex === index
-                                    ? Font.DemiBold
-                                    : Font.Normal
-                                elide: Text.ElideRight
-                            }
-
-                            Text {
-                                anchors.right: parent.right
-                                anchors.rightMargin: 13
-                                anchors.verticalCenter: parent.verticalCenter
-                                text: root.selectedCommandIndex === index ? "↵" : ""
-                                color: "#666666"
-                                font.pixelSize: 13
-                            }
-
-                            MouseArea {
-                                anchors.fill: parent
-                                hoverEnabled: true
-                                cursorShape: Qt.PointingHandCursor
-                                onEntered: root.selectedCommandIndex = index
-                                onClicked: root.executeCommand(modelData)
-                            }
+                        MouseArea {
+                            anchors.fill: parent
+                            hoverEnabled: true
+                            cursorShape: Qt.PointingHandCursor
+                            onEntered: root.selectedCommandIndex = index
+                            onClicked: root.executeCommand(modelData)
                         }
                     }
+                }
+            }
 
-                }
-                Text {
-                    anchors.fill: parent
-                    anchors.margins: 12
-                    visible: root.filteredCommands.length === 0
-                    text: "No matching command"
-                    color: root.secondaryText
-                    font.pixelSize: 11
-                    horizontalAlignment: Text.AlignHCenter
-                    verticalAlignment: Text.AlignVCenter
-                }
+            Text {
+                x: 4
+                y: 40
+                width: parent.width - 8
+                height: 27
+                visible: root.filteredCommands.length === 0
+                text: "no matching command"
+                color: "#777777"
+                font.family: "monospace"
+                font.pixelSize: 12
+                verticalAlignment: Text.AlignVCenter
             }
         }
 
