@@ -598,7 +598,11 @@ jobs:
           grep -Fq '*.tiff' scripts/a16een-wallpaper
           grep -Fq '*.tga' scripts/a16een-wallpaper
           grep -Fq 'USER_WALLPAPER_DIR="$HOME/Pictures/a16een"' scripts/a16een-wallpaper
-          grep -Fq 'a16een-update' README.md
+          grep -Fq 'a16 update' README.md
+          grep -Fq 'A16 terminal command' README.md
+          grep -Fq 'a16 <command> [options]' scripts/a16een
+          grep -Fq '/usr/local/bin/a16' scripts/install.sh
+          grep -Fq '/usr/local/bin/a16een' scripts/install.sh
           # Launcher shortcut is already validated earlier in this block.
 
       - name: Validate no legacy wallpaper reference
