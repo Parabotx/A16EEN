@@ -40,9 +40,10 @@ jobs:
           bash -n scripts/a16een-icons
           bash -n scripts/a16een-screenshot
           bash -n scripts/a16een-control
-          python3 -m py_compile scripts/a16een-clipboard scripts/a16een-app-stash scripts/a16een-system-monitor
+          python3 -m py_compile scripts/a16een-clipboard scripts/a16een-app-stash scripts/a16een-system-monitor scripts/a16een-data-meter scripts/a16een-system-monitor
           python3 tests/test_app_stash.py
           python3 tests/test_system_monitor.py
+          python3 tests/test_data_meter.py
           bash -n scripts/a16een-icon-theme
           bash -n scripts/a16een-workspace-preset
           python3 -m py_compile scripts/a16een-music scripts/a16een-widget-settings
@@ -159,6 +160,8 @@ jobs:
           grep -Fq 'onClicked: {' quickshell/a16een/ui/WorkspacePresetsSection.qml
           test -f scripts/a16een-screenshot
           test -f scripts/a16een-system-monitor
+          test -f scripts/a16een-data-meter
+          test -f tests/test_data_meter.py
           test -f tests/test_system_monitor.py
           test -f quickshell/a16een/assets/icons/lucide-toolbox.svg
           test -f quickshell/a16een/assets/icons/lucide-activity.svg

@@ -1,0 +1,180 @@
+#!/usr/bin/env python3
+"""Opt-in network speed and daily usage snapshot for A16EEN."""
+from __future__ import annotations
+import json, os, subprocess, sys, tempfile, time
+from datetime import date
+from pathlib import Path
+from typing import Any
+
+STATE_HOME = Path(os.environ.get("XDG_STATE_HOME") or (Path.home() / ".local/state"))
+STATE_FILE = STATE_HOME / "a16een/data-meter.json"
+VIRTUAL_PREFIXES = ("docker", "veth", "br-", "virbr", "podman", "cni", "flannel")
+
+def read_default_interface(route_file: Path = Path("/proc/net/route")) -> str:
+    try:
+        lines = route_file.read_text(encoding="ascii").splitlines()[1:]
+    except OSError:
+        return ""
+    choices = []
+    for line in lines:
+        fields = line.split()
+        if len(fields) < 8 or fields[1] != "00000000":
+            continue
+        try:
+            flags, metric = int(fields[3], 16), int(fields[6])
+        except ValueError:
+            continue
+        if flags & 1:
+            choices.append((metric, fields[0]))
+    return min(choices)[1] if choices else ""
+
+def connection_info(name: str, interface_path: Path) -> tuple[str, str]:
+    kind = ("Wi-Fi" if (interface_path / "wireless").exists() or name.startswith(("wl", "wlan"))
+            else "VPN" if name.startswith(("tun", "tap", "wg", "tailscale", "zt")) else "Ethernet")
+    connection = ""
+    try:
+        result = subprocess.run(["nmcli", "-g", "GENERAL.CONNECTION", "device", "show", name],
+            capture_output=True, text=True, timeout=0.8, check=False)
+        if result.returncode == 0 and result.stdout.strip():
+            connection = result.stdout.strip().splitlines()[0].strip()
+    except (OSError, subprocess.TimeoutExpired):
+        pass
+    return kind, connection if connection and connection != "--" else name
+
+def interface_candidates(class_root: Path = Path("/sys/class/net"),
+                         route_file: Path = Path("/proc/net/route")) -> list[dict[str, Any]]:
+    default = read_default_interface(route_file)
+    try:
+        paths = sorted(class_root.iterdir(), key=lambda item: item.name)
+    except OSError:
+        paths = []
+    names = []
+    for item in paths:
+        name = item.name
+        if name == "lo" or name.startswith(VIRTUAL_PREFIXES):
+            continue
+        if not (item / "statistics/rx_bytes").exists() or not (item / "statistics/tx_bytes").exists():
+            continue
+        if (item / "device").exists() or name == default:
+            names.append(name)
+    if default.startswith(("tun", "tap", "wg", "tailscale", "zt")) and default in names:
+        names = [default]
+    elif default and default not in names:
+        names.append(default)
+    result = []
+    for name in names:
+        base = class_root / name
+        try:
+            rx = int((base / "statistics/rx_bytes").read_text(encoding="ascii").strip())
+            tx = int((base / "statistics/tx_bytes").read_text(encoding="ascii").strip())
+        except (OSError, ValueError):
+            continue
+        kind, connection = connection_info(name, base)
+        result.append({"name": name, "type": kind, "connection": connection,
+                       "is_default": name == default, "rx": rx, "tx": tx})
+    return result
+
+def update_usage(previous: dict[str, Any], samples: list[dict[str, Any]],
+                 today: str, now_ms: int) -> tuple[dict[str, Any], dict[str, Any]]:
+    same_day = previous.get("date") == today
+    old_map = previous.get("interfaces", {}) if same_day else {}
+    records = {k: dict(v) for k, v in old_map.items() if isinstance(v, dict)} if isinstance(old_map, dict) else {}
+    touched, down_bps, up_bps = set(), 0.0, 0.0
+    active_name = next((str(x["name"]) for x in samples if x.get("is_default")), "")
+    for sample in samples:
+        name = str(sample.get("name") or "")
+        if not name:
+            continue
+        touched.add(name)
+        rx, tx = max(0, int(sample.get("rx", 0))), max(0, int(sample.get("tx", 0)))
+        old = records.get(name)
+        if old:
+            old_rx, old_tx = max(0, int(old.get("last_rx", rx))), max(0, int(old.get("last_tx", tx)))
+            drx = rx - old_rx if rx >= old_rx else rx
+            dtx = tx - old_tx if tx >= old_tx else tx
+            elapsed = max(0.05, (now_ms - int(old.get("last_sample_ms", now_ms))) / 1000)
+            rx_today = max(0, int(old.get("rx_today", 0))) + drx
+            tx_today = max(0, int(old.get("tx_today", 0))) + dtx
+            in_rate, out_rate = drx / elapsed, dtx / elapsed
+        else:
+            rx_today = tx_today = in_rate = out_rate = 0
+        records[name] = {
+            "name": name, "type": str(sample.get("type") or "Network"),
+            "connection": str(sample.get("connection") or name),
+            "last_rx": rx, "last_tx": tx, "rx_today": rx_today, "tx_today": tx_today,
+            "last_sample_ms": now_ms, "rx_bps": round(in_rate, 1), "tx_bps": round(out_rate, 1),
+            "is_default": bool(sample.get("is_default")),
+        }
+        down_bps += in_rate
+        up_bps += out_rate
+    for name, item in records.items():
+        if name not in touched:
+            item["rx_bps"] = item["tx_bps"] = 0.0
+            item["is_default"] = False
+    items = sorted(records.values(), key=lambda x: (not x.get("is_default", False),
+                    -int(x.get("rx_today", 0)) - int(x.get("tx_today", 0))))
+    active = next((x for x in items if x.get("name") == active_name), None)
+    rx_total = sum(max(0, int(x.get("rx_today", 0))) for x in items)
+    tx_total = sum(max(0, int(x.get("tx_today", 0))) for x in items)
+    state = {"version": 1, "date": today, "interfaces": records}
+    output = {
+        "date": today, "active_interface": active_name,
+        "connection_name": str(active.get("connection") if active else "No active connection"),
+        "connection_type": str(active.get("type") if active else "Network"),
+        "down_bps": round(down_bps, 1), "up_bps": round(up_bps, 1),
+        "today_download_bytes": rx_total, "today_upload_bytes": tx_total,
+        "today_total_bytes": rx_total + tx_total,
+        "interfaces": [{"name": x["name"], "type": x["type"], "connection": x["connection"],
+            "is_default": bool(x.get("is_default")), "rx_today_bytes": int(x.get("rx_today", 0)),
+            "tx_today_bytes": int(x.get("tx_today", 0)), "rx_bps": float(x.get("rx_bps", 0)),
+            "tx_bps": float(x.get("tx_bps", 0))} for x in items],
+        "sampled_at": now_ms,
+    }
+    return state, output
+
+def load_state(path: Path = STATE_FILE) -> dict[str, Any]:
+    try:
+        value = json.loads(path.read_text(encoding="utf-8"))
+    except (OSError, UnicodeError, json.JSONDecodeError):
+        return {}
+    return value if isinstance(value, dict) else {}
+
+def save_state(value: dict[str, Any], path: Path = STATE_FILE) -> None:
+    path.parent.mkdir(parents=True, exist_ok=True, mode=0o700)
+    os.chmod(path.parent, 0o700)
+    with tempfile.NamedTemporaryFile("w", encoding="utf-8", dir=path.parent,
+        prefix=".data-meter-", delete=False) as handle:
+        temp_path = Path(handle.name)
+        os.chmod(temp_path, 0o600)
+        json.dump(value, handle, separators=(",", ":"), ensure_ascii=False)
+        handle.write("\n")
+    try:
+        os.replace(temp_path, path)
+        os.chmod(path, 0o600)
+    finally:
+        temp_path.unlink(missing_ok=True)
+
+def snapshot(state_path: Path = STATE_FILE, now_ms: int | None = None,
+             today: str | None = None) -> dict[str, Any]:
+    stamp = int(time.time() * 1000) if now_ms is None else int(now_ms)
+    day = date.today().isoformat() if today is None else str(today)
+    state, output = update_usage(load_state(state_path), interface_candidates(), day, stamp)
+    save_state(state, state_path)
+    return output
+
+def main(argv: list[str]) -> int:
+    if not argv or argv[0] in ("help", "-h", "--help"):
+        print("Usage: a16een-data-meter snapshot")
+        return 0
+    if argv != ["snapshot"]:
+        print("Usage: a16een-data-meter snapshot", file=sys.stderr)
+        return 2
+    try:
+        print(json.dumps(snapshot(), separators=(",", ":"), ensure_ascii=False))
+        return 0
+    except (OSError, ValueError, TypeError) as error:
+        print(f"A16EEN Data Meter: {error}", file=sys.stderr)
+        return 1
+
+if __name__ == "__main__":
+    raise SystemExit(main(sys.argv[1:]))
