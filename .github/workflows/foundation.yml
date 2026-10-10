@@ -20,6 +20,7 @@ jobs:
       - name: Validate shell scripts
         run: |
           set -euo pipefail
+          trap 'status=$?; echo "Shell check failed at line ${LINENO}: ${BASH_COMMAND} (exit ${status})" >&2; exit "${status}"' ERR
           bash -n scripts/install.sh
           bash -n scripts/start-a16een
           bash -n scripts/a16een-shell
