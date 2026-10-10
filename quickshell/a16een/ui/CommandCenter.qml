@@ -190,13 +190,17 @@ PanelWindow {
             return
 
         if (!root.commandUsageLoaded) {
-            const pending = ({ ...root.pendingCommandUsage })
+            const pending = ({})
+            for (const key in root.pendingCommandUsage)
+                pending[key] = root.pendingCommandUsage[key]
             pending[commandId] = Number(pending[commandId] || 0) + 1
             root.pendingCommandUsage = pending
             return
         }
 
-        const nextUsage = ({ ...root.commandUsage })
+        const nextUsage = ({})
+        for (const key in root.commandUsage)
+            nextUsage[key] = root.commandUsage[key]
         nextUsage[commandId] = Number(nextUsage[commandId] || 0) + 1
         root.commandUsage = nextUsage
         commandUsageSaveTimer.restart()
