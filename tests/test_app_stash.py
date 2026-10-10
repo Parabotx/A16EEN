@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import importlib.machinery
 import importlib.util
 import json
 import os
@@ -9,7 +10,8 @@ from pathlib import Path
 from unittest.mock import patch
 
 SCRIPT = Path(__file__).resolve().parents[1] / "scripts" / "a16een-app-stash"
-SPEC = importlib.util.spec_from_file_location("a16een_app_stash", SCRIPT)
+LOADER = importlib.machinery.SourceFileLoader("a16een_app_stash", str(SCRIPT))
+SPEC = importlib.util.spec_from_loader("a16een_app_stash", LOADER)
 APP_STASH = importlib.util.module_from_spec(SPEC)
 assert SPEC and SPEC.loader
 SPEC.loader.exec_module(APP_STASH)

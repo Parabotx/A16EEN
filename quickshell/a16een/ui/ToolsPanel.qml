@@ -192,10 +192,12 @@ PanelWindow {
                     }
 
                     Column {
+                        width: Math.max(0, parent.width - 28 - 16 - (root.page === "stash" ? 25 : 0))
                         anchors.verticalCenter: parent.verticalCenter
                         spacing: 2
 
                         Text {
+                            width: parent.width
                             text: root.page === "stash" ? "APP STASH" : "QUICK TOOLS"
                             color: "#171B21"
                             font.pixelSize: 10
@@ -212,14 +214,9 @@ PanelWindow {
                         }
                     }
 
-                    Item {
-                        width: Math.max(0, parent.width - 28 - 8 - 156)
-                        height: 1
-                    }
-
                     Rectangle {
                         visible: root.page === "stash"
-                        width: 25
+                        width: root.page === "stash" ? 25 : 0
                         height: 25
                         radius: 8
                         color: backMouse.containsMouse ? "#EEF1F4" : "transparent"
@@ -381,15 +378,6 @@ PanelWindow {
                             }
                         }
 
-                        Item { width: Math.max(0, parent.width - 175); height: 1 }
-
-                        Text {
-                            anchors.verticalCenter: parent.verticalCenter
-                            text: "Ctrl + Super + H"
-                            color: "#7B8490"
-                            font.pixelSize: 7
-                            font.weight: Font.Medium
-                        }
                     }
 
                     MouseArea {
@@ -516,7 +504,7 @@ PanelWindow {
                     height: 11
                     text: root.page === "stash"
                         ? "Choose an icon to restore its window"
-                        : "A16EEN · everyday tools"
+                        : "App Stash · Ctrl + Super + H"
                     color: "#9AA3AE"
                     font.pixelSize: 8
                     elide: Text.ElideRight
