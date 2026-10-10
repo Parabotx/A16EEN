@@ -532,6 +532,12 @@ PanelWindow {
         ? WlrKeyboardFocus.OnDemand
         : WlrKeyboardFocus.None
 
+    // Match the rounded command surface so blur remains local and efficient.
+    BackgroundEffect.blurRegion: Region {
+        item: commandPaletteBackdrop
+        radius: 14
+    }
+
     Process {
         id: profileReader
         command: ["powerprofilesctl", "get"]
@@ -626,6 +632,9 @@ PanelWindow {
                 ? Math.min(640, parent.height - 80)
                 : 280
         anchors.centerIn: parent
+        anchors.horizontalCenterOffset: root.plainCommandView
+            ? Math.min(36, parent.width * 0.03)
+            : 0
         anchors.verticalCenterOffset: root.plainCommandView
             ? Math.min(215, Math.max(190, parent.height * 0.27))
             : root.powerViewOpen || root.controlViewOpen || root.iconThemeViewOpen || root.workspacePresetViewOpen || root.navbarViewOpen ? 0 : 185
@@ -643,8 +652,25 @@ PanelWindow {
             NumberAnimation { duration: 180; easing.type: Easing.OutCubic }
         }
 
+        Behavior on anchors.horizontalCenterOffset {
+            NumberAnimation { duration: 180; easing.type: Easing.OutCubic }
+        }
+
         Behavior on anchors.verticalCenterOffset {
             NumberAnimation { duration: 180; easing.type: Easing.OutCubic }
+        }
+
+        // The command palette stays visually anchored without adding nested UI chrome.
+        // The compositor blurs only this bounded region, not the full-screen layer.
+        Rectangle {
+            id: commandPaletteBackdrop
+            anchors.fill: parent
+            visible: root.plainCommandView
+            radius: 14
+            color: "#D90A0A0A"
+            border.width: 1
+            border.color: "#303030"
+            z: 0
         }
 
         Rectangle {
