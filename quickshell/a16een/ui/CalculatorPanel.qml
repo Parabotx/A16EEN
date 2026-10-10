@@ -272,6 +272,7 @@ PanelWindow {
                     }
 
                     Column {
+                        width: 120
                         anchors.verticalCenter: parent.verticalCenter
                         spacing: 2
 
@@ -289,7 +290,7 @@ PanelWindow {
                         }
                     }
 
-                    Item { width: Math.max(0, parent.width - 29 - 8 - 120 - 8 - 25); height: 1 }
+                    Item { width: Math.max(0, parent.width - 29 - 120 - 25 - 24); height: 1 }
 
                     Rectangle {
                         width: 25
@@ -401,7 +402,7 @@ PanelWindow {
                 Text {
                     width: parent.width
                     height: 11
-                    text: "Basic arithmetic · parentheses supported"
+                    text: "Basic arithmetic · percentage included"
                     color: "#9AA3AE"
                     font.pixelSize: 7
                     elide: Text.ElideRight
