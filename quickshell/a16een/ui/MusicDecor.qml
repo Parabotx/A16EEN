@@ -29,7 +29,8 @@ Item {
         rotation: 0
         opacity: root.playing ? 1.0 : 0.72
 
-        // One smooth rotation for the disc/artwork; no visualizer or polling.
+        // CD-inspired metallic disc with understated fallback materials and smooth motion.
+    // One rotation only; no visualizer or external polling.
         RotationAnimation on rotation {
             from: 0
             to: 360
@@ -119,6 +120,7 @@ Item {
             visible: root.hasCover
             maskEnabled: true
             maskSource: Item {
+                visible: false
                 width: spinningDisc.width
                 height: spinningDisc.height
                 Rectangle {
