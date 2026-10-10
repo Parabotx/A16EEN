@@ -16,6 +16,7 @@ PanelWindow {
     property var dataMeterSnapshot: ({})
     property bool dataMeterSnapshotReady: false
     property string dataMeterError: ""
+    property string dataMeterPeriod: "today"
     property string expression: "0"
     property string calculatorError: ""
     property bool justEvaluated: false
@@ -30,10 +31,10 @@ PanelWindow {
     readonly property bool horizontalNavbar: root.navbarPosition === "top" || root.navbarPosition === "bottom"
     readonly property real screenWidth: root.modelData ? root.modelData.width : 1920
     readonly property real screenHeight: root.modelData ? root.modelData.height : 1080
-    readonly property int popupWidth: 322
+    readonly property int popupWidth: root.page === "data-meter" ? 360 : 322
     readonly property int popupHeight: root.page === "stash" ? 388
         : (root.page === "monitor" ? 310
-        : (root.page === "calculator" ? 420 : (root.page === "data-meter" ? 350 : 316)))
+        : (root.page === "calculator" ? 420 : (root.page === "data-meter" ? 390 : 316)))
     property var monitorStats: null
     property string monitorError: ""
     readonly property var monitorMetrics: [
@@ -83,6 +84,7 @@ PanelWindow {
 
     function formatBytes(value) {
         const bytes = Math.max(0, Number(value) || 0)
+        if (bytes < 1024) return Math.round(bytes) + " B"
         if (bytes < 1024 * 1024) return (bytes / 1024).toFixed(0) + " KB"
         if (bytes < 1024 * 1024 * 1024) return (bytes / (1024 * 1024)).toFixed(1) + " MB"
         return (bytes / (1024 * 1024 * 1024)).toFixed(2) + " GB"
@@ -433,14 +435,16 @@ PanelWindow {
                         }
 
                         Text {
+                            visible: root.page !== "data-meter"
+                            width: parent.width
                             text: root.page === "stash"
                                 ? "Your hidden windows, ready to return"
                                 : (root.page === "monitor" ? "Live usage while this card is open"
                                 : (root.page === "calculator" ? "Quick calculations, no waiting"
-                                : (root.page === "data-meter" ? "Daily usage by connection"
-                                    : "Useful actions, one click away")))
+                                : "Useful actions, one click away"))
                             color: "#89929E"
                             font.pixelSize: 8
+                            elide: Text.ElideRight
                         }
                     }
 
@@ -731,198 +735,234 @@ PanelWindow {
                     id: dataMeterPage
                     visible: root.page === "data-meter"
                     width: parent.width
-                    spacing: 7
+                    spacing: 8
+
+                    Rectangle {
+                        id: dataMeterPeriodSwitch
+                        width: parent.width
+                        height: 34
+                        radius: 10
+                        color: "#F1F3F6"
+
+                        Row {
+                            id: periodChoices
+                            anchors.fill: parent
+                            anchors.margins: 3
+                            spacing: 3
+
+                            Repeater {
+                                model: [
+                                    { id: "today", label: "Today" },
+                                    { id: "month", label: "This month" }
+                                ]
+
+                                delegate: Rectangle {
+                                    required property var modelData
+                                    width: (periodChoices.width - periodChoices.spacing) / 2
+                                    height: periodChoices.height
+                                    radius: 7
+                                    color: root.dataMeterPeriod === modelData.id ? "#FFFFFF" : "transparent"
+                                    border.width: root.dataMeterPeriod === modelData.id ? 1 : 0
+                                    border.color: "#E1E5EA"
+
+                                    Text {
+                                        anchors.centerIn: parent
+                                        text: periodChoicesItem.modelData.label
+                                        color: root.dataMeterPeriod === periodChoicesItem.modelData.id ? "#20262E" : "#7D8793"
+                                        font.pixelSize: 10
+                                        font.weight: root.dataMeterPeriod === periodChoicesItem.modelData.id
+                                            ? Font.DemiBold : Font.Medium
+                                    }
+
+                                    MouseArea {
+                                        id: periodChoiceMouse
+                                        anchors.fill: parent
+                                        hoverEnabled: true
+                                        cursorShape: Qt.PointingHandCursor
+                                        onClicked: root.dataMeterPeriod = periodChoicesItem.modelData.id
+                                    }
+
+                                    // Name the delegate explicitly so its state stays unambiguous.
+                                    property var periodChoicesItem: modelData
+                                }
+                            }
+                        }
+                    }
+
                     Row {
                         width: parent.width
-                        spacing: 7
+                        spacing: 8
+
                         Repeater {
                             model: [
-                                { label: "DOWNLOADED", value: root.dataMeterSnapshotReady ? root.formatBytes(root.dataMeterSnapshot.today_download_bytes) : "—" },
-                                { label: "UPLOADED", value: root.dataMeterSnapshotReady ? root.formatBytes(root.dataMeterSnapshot.today_upload_bytes) : "—" }
+                                {
+                                    label: "DOWNLOADED",
+                                    value: root.dataMeterSnapshotReady
+                                        ? root.formatBytes(root.dataMeterPeriod === "month"
+                                            ? root.dataMeterSnapshot.month_download_bytes
+                                            : root.dataMeterSnapshot.today_download_bytes) : "—"
+                                },
+                                {
+                                    label: "UPLOADED",
+                                    value: root.dataMeterSnapshotReady
+                                        ? root.formatBytes(root.dataMeterPeriod === "month"
+                                            ? root.dataMeterSnapshot.month_upload_bytes
+                                            : root.dataMeterSnapshot.today_upload_bytes) : "—"
+                                }
                             ]
+
                             delegate: Rectangle {
                                 id: trafficTile
                                 required property var modelData
                                 width: (dataMeterPage.width - dataMeterPage.spacing) / 2
-                                height: 57
-                                radius: 11
+                                height: 79
+                                radius: 12
                                 color: "#FAFBFC"
                                 border.width: 1
-                                border.color: "#EDF0F3"
+                                border.color: "#E8ECF0"
+
                                 Column {
                                     anchors.fill: parent
-                                    anchors.margins: 9
-                                    spacing: 4
+                                    anchors.leftMargin: 11
+                                    anchors.rightMargin: 8
+                                    anchors.topMargin: 10
+                                    anchors.bottomMargin: 8
+                                    spacing: 7
+
                                     Text {
                                         width: parent.width
                                         text: trafficTile.modelData.label
                                         color: "#7D8793"
-                                        font.pixelSize: 7
+                                        font.pixelSize: 8
                                         font.weight: Font.DemiBold
-                                        font.letterSpacing: 0.35
-                                        elide: Text.ElideRight
+                                        font.letterSpacing: 0.45
                                     }
+
                                     Text {
                                         width: parent.width
                                         text: trafficTile.modelData.value
                                         color: "#171B21"
-                                        font.pixelSize: 12
+                                        font.pixelSize: 18
                                         font.weight: Font.DemiBold
                                         elide: Text.ElideRight
                                     }
-                                    Text { text: "Today"; color: "#9AA3AE"; font.pixelSize: 7 }
                                 }
                             }
                         }
                     }
-                    Rectangle {
-                        width: parent.width
-                        height: 47
-                        radius: 11
-                        color: "#FFFFFF"
-                        border.width: 1
-                        border.color: "#E8ECF0"
-                        Row {
-                            anchors.fill: parent
-                            anchors.leftMargin: 10
-                            anchors.rightMargin: 10
-                            spacing: 8
-                            Rectangle {
-                                anchors.verticalCenter: parent.verticalCenter
-                                width: 28
-                                height: 28
-                                radius: 9
-                                color: "#F2F4F7"
-                                Image {
-                                    anchors.centerIn: parent
-                                    width: 15
-                                    height: 15
-                                    source: Qt.resolvedUrl("../assets/icons/lucide-wifi.svg")
-                                    sourceSize.width: 48
-                                    sourceSize.height: 48
-                                    smooth: true
-                                }
-                            }
-                            Column {
-                                width: parent.width - 50
-                                anchors.verticalCenter: parent.verticalCenter
-                                spacing: 3
-                                Text {
-                                    width: parent.width
-                                    text: root.dataMeterSnapshotReady
-                                        ? String(root.dataMeterSnapshot.connection_name || "No active connection")
-                                        : "Reading current connection…"
-                                    color: "#27303A"
-                                    font.pixelSize: 9
-                                    font.weight: Font.DemiBold
-                                    elide: Text.ElideRight
-                                }
-                                Text {
-                                    width: parent.width
-                                    text: root.dataMeterSnapshotReady
-                                        ? String(root.dataMeterSnapshot.connection_type || "Network") + " · "
-                                            + String(root.dataMeterSnapshot.active_interface || "offline")
-                                            + " · ↓ " + root.formatRate(root.dataMeterSnapshot.down_bps)
-                                            + " ↑ " + root.formatRate(root.dataMeterSnapshot.up_bps)
-                                        : "Daily usage by network interface"
-                                    color: "#89929E"
-                                    font.pixelSize: 7
-                                    elide: Text.ElideRight
-                                }
-                            }
-                        }
-                    }
+
                     Text {
-                        text: "NETWORKS · TODAY"
-                        color: "#818B97"
-                        font.pixelSize: 7
-                        font.weight: Font.DemiBold
-                        font.letterSpacing: 0.45
-                    }
-                    Column {
                         width: parent.width
-                        spacing: 2
+                        text: "BY NETWORK"
+                        color: "#77818D"
+                        font.pixelSize: 8
+                        font.weight: Font.DemiBold
+                        font.letterSpacing: 0.65
+                    }
+
+                    Column {
+                        id: dataMeterNetworks
+                        width: parent.width
+                        spacing: 3
+
                         Repeater {
                             model: root.dataMeterSnapshot && Array.isArray(root.dataMeterSnapshot.interfaces)
-                                ? root.dataMeterSnapshot.interfaces.slice(0, 2) : []
-                            delegate: Row {
+                                ? root.dataMeterSnapshot.interfaces.slice(0, 3) : []
+
+                            delegate: Rectangle {
+                                id: networkRow
                                 required property var modelData
-                                width: parent.width
-                                height: 20
-                                Text {
-                                    width: parent.width * 0.43
-                                    text: String(modelData.connection || modelData.name || "Network")
-                                        + (modelData.is_default ? " · active" : "")
-                                    color: "#505B67"
-                                    font.pixelSize: 7
-                                    elide: Text.ElideRight
-                                    anchors.verticalCenter: parent.verticalCenter
-                                }
-                                Text {
-                                    width: parent.width * 0.57
-                                    text: "↓ " + root.formatBytes(modelData.rx_today_bytes)
-                                        + "   ↑ " + root.formatBytes(modelData.tx_today_bytes)
-                                    color: "#7D8793"
-                                    font.pixelSize: 7
-                                    horizontalAlignment: Text.AlignRight
-                                    elide: Text.ElideLeft
-                                    anchors.verticalCenter: parent.verticalCenter
+                                width: dataMeterNetworks.width
+                                height: 24
+                                radius: 7
+                                color: networkRow.modelData.is_default ? "#F4F6F8" : "transparent"
+
+                                Row {
+                                    anchors.fill: parent
+                                    anchors.leftMargin: 8
+                                    anchors.rightMargin: 8
+                                    spacing: 5
+
+                                    Text {
+                                        width: parent.width * 0.40
+                                        anchors.verticalCenter: parent.verticalCenter
+                                        text: String(networkRow.modelData.connection || networkRow.modelData.name || "Network")
+                                            + (networkRow.modelData.is_default ? "  •" : "")
+                                        color: networkRow.modelData.is_default ? "#27303A" : "#626D79"
+                                        font.pixelSize: 9
+                                        font.weight: networkRow.modelData.is_default ? Font.DemiBold : Font.Normal
+                                        elide: Text.ElideRight
+                                    }
+
+                                    Text {
+                                        width: parent.width * 0.60 - parent.spacing
+                                        anchors.verticalCenter: parent.verticalCenter
+                                        text: "↓ " + root.formatBytes(root.dataMeterPeriod === "month"
+                                            ? networkRow.modelData.rx_month_bytes : networkRow.modelData.rx_today_bytes)
+                                            + "   ↑ " + root.formatBytes(root.dataMeterPeriod === "month"
+                                            ? networkRow.modelData.tx_month_bytes : networkRow.modelData.tx_today_bytes)
+                                        color: "#586371"
+                                        font.pixelSize: 8
+                                        horizontalAlignment: Text.AlignRight
+                                        elide: Text.ElideLeft
+                                    }
                                 }
                             }
                         }
+
                         Text {
                             visible: !root.dataMeterSnapshotReady || !root.dataMeterSnapshot.interfaces
                                 || root.dataMeterSnapshot.interfaces.length === 0
-                            text: root.dataMeterError.length ? root.dataMeterError : "Usage starts with the first sample today."
+                            width: parent.width
+                            text: root.dataMeterError.length ? root.dataMeterError : "No network traffic detected yet"
                             color: root.dataMeterError.length ? "#B4534B" : "#939CA7"
-                            font.pixelSize: 7
+                            font.pixelSize: 9
+                            elide: Text.ElideRight
                         }
                     }
+
                     Rectangle {
                         width: parent.width
-                        height: 42
-                        radius: 11
-                        color: toggleMeterMouse.containsMouse ? "#F3F5F7" : "#FFFFFF"
+                        height: 40
+                        radius: 10
+                        color: toggleMeterMouse.containsMouse ? "#F4F6F8" : "#FFFFFF"
                         border.width: 1
                         border.color: "#E8ECF0"
+
                         Row {
                             anchors.fill: parent
-                            anchors.leftMargin: 10
+                            anchors.leftMargin: 11
                             anchors.rightMargin: 10
-                            spacing: 8
-                            Column {
+
+                            Text {
+                                width: parent.width - 48
                                 anchors.verticalCenter: parent.verticalCenter
-                                spacing: 2
-                                Text {
-                                    text: "Show speed on navbar"
-                                    color: "#252D36"
-                                    font.pixelSize: 9
-                                    font.weight: Font.DemiBold
-                                }
-                                Text {
-                                    text: root.dataMeterEnabled ? "Separate speed pill is active" : "Keep the navbar clean"
-                                    color: "#89929E"
-                                    font.pixelSize: 7
-                                }
+                                text: "Speed on navbar"
+                                color: "#252D36"
+                                font.pixelSize: 10
+                                font.weight: Font.Medium
+                                elide: Text.ElideRight
                             }
-                            Item { width: Math.max(0, parent.width - 170); height: 1 }
+
                             Rectangle {
-                                width: 31
-                                height: 18
-                                radius: 9
                                 anchors.verticalCenter: parent.verticalCenter
+                                width: 32
+                                height: 19
+                                radius: 10
                                 color: root.dataMeterEnabled ? "#252B33" : "#E4E8ED"
                                 Behavior on color { ColorAnimation { duration: 120 } }
+
                                 Rectangle {
-                                    width: 12
-                                    height: 12
+                                    width: 13
+                                    height: 13
                                     y: 3
                                     x: root.dataMeterEnabled ? 16 : 3
-                                    radius: 6
+                                    radius: 7
                                     color: "#FFFFFF"
                                     Behavior on x { NumberAnimation { duration: 140; easing.type: Easing.OutCubic } }
                                 }
                             }
+
                             MouseArea {
                                 id: toggleMeterMouse
                                 anchors.fill: parent
@@ -1045,14 +1085,14 @@ PanelWindow {
                 }
 
                 Text {
+                    visible: root.page !== "data-meter"
                     width: parent.width
                     height: 11
                     text: root.page === "stash"
                         ? "Choose an icon to restore its window"
                         : (root.page === "monitor" ? "Refreshes only while open"
                         : (root.page === "calculator" ? "Basic arithmetic · percentage included"
-                        : (root.page === "data-meter" ? "Daily totals · sampling only while needed"
-                            : "Nest · Ctrl + Super + H")))
+                            : "Nest · Ctrl + Super + H"))
                     color: "#9AA3AE"
                     font.pixelSize: 8
                     elide: Text.ElideRight
