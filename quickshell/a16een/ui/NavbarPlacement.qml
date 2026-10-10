@@ -25,8 +25,8 @@ Item {
     readonly property color borderStrong: "#B8C1CC"
     readonly property color text: "#111318"
     readonly property color muted: "#66707C"
-    readonly property color hover: "#F0F4F8"
-    readonly property color selected: "#E3EAF2"
+    readonly property color hover: "#F5F6F7"
+    readonly property color selected: "#ECEEF1"
 
     function loadPosition(raw) {
         try {
@@ -78,18 +78,18 @@ Item {
 
     Rectangle {
         anchors.fill: parent
-        radius: 12
-        color: "#F7F8FA"
-        border.width: 1
-        border.color: root.border
+        radius: 0
+        color: "transparent"
+        border.width: 0
+        border.color: "transparent"
 
         Row {
             anchors.fill: parent
-            anchors.margins: 7
+            anchors.margins: 0
             spacing: 6
 
             Text {
-                width: 125
+                width: 110
                 height: parent.height
                 verticalAlignment: Text.AlignVCenter
                 text: "NAVBAR POSITION"
@@ -108,14 +108,13 @@ Item {
                 ]
 
                 delegate: Rectangle {
-                    width: (parent.width - 199) / 4
-                    height: 36
-                    radius: 9
+                    width: (parent.width - 185) / 4
+                    height: 34
+                    radius: 7
                     color: root.position === modelData.id ? root.selected
-                        : (placementMouse.containsMouse ? root.hover : "#FFFFFF")
-                    border.width: 1
-                    border.color: root.position === modelData.id
-                        ? "#8B97A5" : "#B8C1CC"
+                        : (placementMouse.containsMouse ? root.hover : "transparent")
+                    border.width: 0
+                    border.color: "transparent"
 
                     Row {
                         anchors.centerIn: parent
@@ -151,8 +150,9 @@ Item {
                 height: parent.height
                 verticalAlignment: Text.AlignVCenter
                 horizontalAlignment: Text.AlignRight
+                width: 45
                 text: root.statusText
-                color: root.text
+                color: root.muted
                 font.pixelSize: 8
                 font.weight: Font.DemiBold
             }
