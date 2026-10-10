@@ -189,23 +189,19 @@ The normal installer is also the updater. Running the command again checks GitHu
 curl -fL https://raw.githubusercontent.com/Parabotx/A16EEN/main/install.sh -o /tmp/a16een-install.sh && bash /tmp/a16een-install.sh && rm -f /tmp/a16een-install.sh
 ```
 
-After installation, use the short A16 command for updates:
+After installation, update with the short flag:
 
 ```sh
-a16 update
+a16 -u
 ```
 
-Inspect the current revision state and rollback availability:
+You can also use the dedicated updater command:
 
 ```sh
-a16 status
+a16-update
 ```
 
-Roll back to the latest known-good revision:
-
-```sh
-a16 rollback
-```
+The updater supports concise flags too: `a16-update -s` shows revision status, `a16-update -r` rolls back, and `a16-update -h` shows its help. The matching A16 shortcuts are `a16 -s` for status and `a16 -b` for rollback.
 
 Use `-y` only when you intentionally want to skip the rollback confirmation.
 
@@ -296,11 +292,13 @@ a16 screenshot
 a16 screenshot-screen
 a16 screenshot-window
 a16 restart-shell
-a16 update
-a16 rollback
-a16 doctor
-a16 status
+a16 -u
+a16 -b
+a16 -d
+a16 -s
 ```
+
+Quick shortcuts include `a16 -h` for help, `a16 -u` to update, `a16 -r` to restart the shell, `a16 -s` for status, `a16 -d` for diagnostics, `a16 -b` for rollback, and `a16 -v` for version information. Natural two-word aliases include `a16 shell restart`, `a16 app open`, `a16 control open`, `a16 screen shot`, and `a16 system update`.
 
 Reboot and power-off require confirmation unless `--yes` / `-y` is explicitly supplied. Logout uses Niri's IPC action, which retains Niri's own confirmation behavior. The CLI keeps desktop actions behind fixed commands and arguments rather than accepting arbitrary shell input.
 
