@@ -34,8 +34,8 @@ PanelWindow {
     aboveWindows: true
     exclusionMode: ExclusionMode.Ignore
     exclusiveZone: 0
-    width: root.horizontalNavbar ? 112 : 112
-    height: root.horizontalNavbar ? 30 : 36
+    width: 124
+    height: root.horizontalNavbar ? 32 : 38
 
     // On a vertical dock, match the power button's top position. The capsule
     // sits one gap inward from it rather than following the battery at the bottom.
