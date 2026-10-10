@@ -14,8 +14,17 @@ Item {
     property string currentSection: "workspace"
     property string pendingSection: "workspace"
     property string statusText: "READY"
+    // Only one icon-generation process may write navbar settings at a time.
+    // New clicks update the queued state and run after the active write finishes.
+    property string pendingSlot: "home"
     property string pendingIcon: "house.svg"
-    property string pendingColor: "#111318"
+    property string pendingColor: "solid:#111318"
+    property string processSlot: "home"
+    property string processIcon: "house.svg"
+    property string processColor: "solid:#111318"
+    property int requestedApplyRevision: 0
+    property int processRevision: 0
+    property bool applyPending: false
 
     signal backRequested()
     signal navbarPositionChanged(string position)
@@ -260,18 +269,56 @@ Item {
         for (const slot of root.slots)
             next[slot.id] = root.settingFor(slot.id)
 
+        const selected = root.settingFor(root.selectedSlot)
         next[root.selectedSlot] = {
-            icon: p.icon || root.settingFor(root.selectedSlot).icon,
-            color: p.color || root.settingFor(root.selectedSlot).color
+            icon: p.icon !== undefined ? p.icon : selected.icon,
+            color: p.color !== undefined ? p.color : selected.color
         }
 
         const current = next[root.selectedSlot]
         root.navbarSettings = next
+        root.pendingSlot = root.selectedSlot
         root.pendingIcon = current.icon
         root.pendingColor = current.color
+        root.requestedApplyRevision += 1
+        root.applyPending = true
         root.statusText = "APPLYING"
-        iconProcess.running = false
-        Qt.callLater(() => iconProcess.running = true)
+
+        // Never terminate an in-flight write: the file watcher and process can
+        // otherwise restore a previous icon/color combination. Coalesce clicks
+        // into the newest requested settings, then apply them in sequence.
+        if (!iconProcess.running)
+            Qt.callLater(() => root.startPendingApply())
+    }
+
+    function startPendingApply() {
+        if (iconProcess.running || !root.applyPending)
+            return
+
+        root.processSlot = root.pendingSlot
+        root.processIcon = root.pendingIcon
+        root.processColor = root.pendingColor
+        root.processRevision = root.requestedApplyRevision
+        iconProcess.running = true
+    }
+
+    function finishPendingApply(exitCode) {
+        if (root.processRevision !== root.requestedApplyRevision) {
+            // A newer edit arrived while the previous generated SVGs were
+            // being written. Keep the UI state and apply that newest edit next.
+            root.statusText = "APPLYING"
+            Qt.callLater(() => root.startPendingApply())
+            return
+        }
+
+        root.applyPending = false
+        root.statusText = exitCode === 0 ? "READY" : "ICON APPLY FAILED"
+
+        // Reload only after the final queued write has finished. During an
+        // apply, FileView events are ignored so stale disk state cannot undo
+        // the latest in-card selection.
+        settingsFile.reload()
+        navbarReadyFile.reload()
     }
 
     function resetSelected() {
@@ -318,8 +365,14 @@ Item {
         path: root.settingsPath
         watchChanges: true
         printErrors: false
-        onLoaded: root.loadSettings(this.text())
-        onFileChanged: root.loadSettings(this.text())
+        onLoaded: {
+            if (!root.applyPending)
+                root.loadSettings(this.text())
+        }
+        onFileChanged: {
+            if (!root.applyPending)
+                root.loadSettings(this.text())
+        }
     }
 
     FileView {
@@ -345,15 +398,13 @@ Item {
         command: [
             "/usr/local/bin/a16een-navbar",
             "set",
-            root.selectedSlot,
-            root.pendingIcon,
-            root.pendingColor
+            root.processSlot,
+            root.processIcon,
+            root.processColor
         ]
         running: false
         onExited: function(exitCode) {
-            root.statusText = exitCode === 0 ? "READY" : "ICON APPLY FAILED"
-            if (exitCode !== 0)
-                settingsFile.reload()
+            root.finishPendingApply(exitCode)
         }
     }
 
