@@ -354,6 +354,10 @@ Item {
     }
 
     function resetSelected() {
+        if (root.iconStyleLocked(root.selectedSlot)) {
+            root.patch({ icon: root.defaultIcon(root.selectedSlot) })
+            return
+        }
         root.patch({
             icon: root.defaultIcon(root.selectedSlot),
             color: "solid:#111318"
