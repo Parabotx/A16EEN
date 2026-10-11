@@ -403,7 +403,7 @@ PanelWindow {
                         width: 28
                         height: 28
                         radius: 9
-                        color: "#F2F4F7"
+                        color: popupCardStyle.subtleSurfaceColor
                         anchors.verticalCenter: parent.verticalCenter
 
                         Image {
@@ -461,7 +461,7 @@ PanelWindow {
                         width: root.page !== "tools" ? 25 : 0
                         height: 25
                         radius: 8
-                        color: backMouse.containsMouse ? "#EEF1F4" : "transparent"
+                        color: backMouse.containsMouse ? popupCardStyle.hoverSurfaceColor : "transparent"
                         anchors.verticalCenter: parent.verticalCenter
 
                         Image {
@@ -503,9 +503,9 @@ PanelWindow {
                                 : (toolsGrid.width - toolsGrid.spacing) / 2
                             height: 70
                             radius: 11
-                            color: toolMouse.containsMouse ? "#F0F2F5" : "#FAFBFC"
+                            color: toolMouse.containsMouse ? popupCardStyle.hoverSurfaceColor : popupCardStyle.fieldColor
                             border.width: 1
-                            border.color: toolMouse.containsMouse ? "#DDE3E9" : "#EDF0F3"
+                            border.color: toolMouse.containsMouse ? "#DDE3E9" : popupCardStyle.fieldBorderColor
                             Behavior on color { ColorAnimation { duration: 120 } }
 
                             Row {
@@ -518,7 +518,7 @@ PanelWindow {
                                     width: 29
                                     height: 29
                                     radius: 9
-                                    color: "#F0F3F6"
+                                    color: popupCardStyle.subtleSurfaceColor
                                     anchors.verticalCenter: parent.verticalCenter
 
                                     Image {
@@ -582,9 +582,9 @@ PanelWindow {
                     width: parent.width
                     height: 64
                     radius: 12
-                    color: "#F7F8FA"
+                    color: popupCardStyle.subtleSurfaceColor
                     border.width: 1
-                    border.color: "#EDF0F3"
+                    border.color: popupCardStyle.fieldBorderColor
                     Column {
                         anchors.fill: parent
                         anchors.leftMargin: 12
@@ -641,11 +641,11 @@ PanelWindow {
                             width: (calculatorKeypad.width - calculatorKeypad.spacing * 3) / 4
                             height: 42
                             radius: 10
-                            color: calculatorKeyMouse.containsMouse ? "#E9EDF1"
+                            color: calculatorKeyMouse.containsMouse ? popupCardStyle.hoverSurfaceColor
                                 : (calculatorTile.modelData.kind === "equals" ? "#171B21"
                                 : (calculatorTile.modelData.kind === "digit" ? "#FAFBFC" : "#F0F3F6"))
                             border.width: 1
-                            border.color: calculatorTile.modelData.kind === "equals" ? "#171B21" : "#E7EBEF"
+                            border.color: calculatorTile.modelData.kind === "equals" ? "#171B21" : popupCardStyle.fieldBorderColor
                             Behavior on color { ColorAnimation { duration: 90 } }
                             Text {
                                 anchors.centerIn: parent
@@ -680,9 +680,9 @@ PanelWindow {
                             width: monitorPage.width
                             height: 64
                             radius: 11
-                            color: "#FAFBFC"
+                            color: popupCardStyle.fieldColor
                             border.width: 1
-                            border.color: "#EDF0F3"
+                            border.color: popupCardStyle.fieldBorderColor
 
                             Column {
                                 anchors.fill: parent
@@ -716,7 +716,7 @@ PanelWindow {
                                     width: parent.width
                                     height: 4
                                     radius: 2
-                                    color: "#E9EDF1"
+                                    color: popupCardStyle.selectedSurfaceColor
                                     clip: true
 
                                     Rectangle {
@@ -751,7 +751,7 @@ PanelWindow {
                         anchors.right: parent.right
                         height: 34
                         radius: 10
-                        color: "#F1F3F6"
+                        color: popupCardStyle.subtleSurfaceColor
 
                         Row {
                             id: periodChoices
@@ -773,7 +773,7 @@ PanelWindow {
                                     radius: 7
                                     color: root.dataMeterPeriod === modelData.id ? "#FFFFFF" : "transparent"
                                     border.width: root.dataMeterPeriod === modelData.id ? 1 : 0
-                                    border.color: "#E1E5EA"
+                                    border.color: popupCardStyle.fieldBorderColor
 
                                     Text {
                                         anchors.centerIn: parent
@@ -827,9 +827,9 @@ PanelWindow {
                                 width: (dataMeterTotals.width - dataMeterTotals.spacing) / 2
                                 height: dataMeterTotals.height
                                 radius: 12
-                                color: "#FAFBFC"
+                                color: popupCardStyle.fieldColor
                                 border.width: 1
-                                border.color: "#E8ECF0"
+                                border.color: popupCardStyle.fieldBorderColor
 
                                 Column {
                                     anchors.fill: parent
@@ -900,7 +900,7 @@ PanelWindow {
                                     width: dataMeterNetworkArea.width
                                     height: 24
                                     radius: 7
-                                    color: networkRow.modelData.is_default ? "#F4F6F8" : "transparent"
+                                    color: networkRow.modelData.is_default ? popupCardStyle.selectedSurfaceColor : "transparent"
 
                                     Row {
                                         anchors.fill: parent
@@ -956,9 +956,9 @@ PanelWindow {
                         anchors.bottom: parent.bottom
                         height: 40
                         radius: 10
-                        color: toggleMeterMouse.containsMouse ? "#F4F6F8" : "#FFFFFF"
+                        color: toggleMeterMouse.containsMouse ? popupCardStyle.subtleSurfaceColor : "#FFFFFF"
                         border.width: 1
-                        border.color: "#E8ECF0"
+                        border.color: popupCardStyle.fieldBorderColor
 
                         Text {
                             anchors.left: parent.left
@@ -1028,9 +1028,9 @@ PanelWindow {
                             width: 44
                             height: 44
                             radius: 13
-                            color: stashIconMouse.containsMouse ? "#F0F2F5" : "#F7F8FA"
+                            color: stashIconMouse.containsMouse ? popupCardStyle.hoverSurfaceColor : popupCardStyle.subtleSurfaceColor
                             border.width: 1
-                            border.color: "#E8ECF0"
+                            border.color: popupCardStyle.fieldBorderColor
 
                             Image {
                                 anchors.centerIn: parent
@@ -1083,9 +1083,9 @@ PanelWindow {
                             width: 50
                             height: 50
                             radius: 15
-                            color: "#F4F6F8"
+                            color: popupCardStyle.subtleSurfaceColor
                             border.width: 1
-                            border.color: "#E8ECF0"
+                            border.color: popupCardStyle.fieldBorderColor
 
                             Image {
                                 anchors.centerIn: parent

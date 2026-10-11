@@ -836,9 +836,9 @@ PanelWindow {
                         width: parent.width
                         height: 36
                         radius: 10
-                        color: "#FAFBFC"
+                        color: popupCardStyle.fieldColor
                         border.width: 1
-                        border.color: passcodeField.activeFocus ? "#B8C5D4" : "#E4E9EF"
+                        border.color: passcodeField.activeFocus ? "#B8C5D4" : popupCardStyle.fieldBorderColor
 
                         TextInput {
                             id: passcodeField
@@ -895,9 +895,9 @@ PanelWindow {
                         width: 32
                         height: 32
                         radius: 10
-                        color: closeGateHover.containsMouse ? "#F0F2F5" : "#FAFBFC"
+                        color: closeGateHover.containsMouse ? popupCardStyle.hoverSurfaceColor : popupCardStyle.fieldColor
                         border.width: 1
-                        border.color: "#E5E9EE"
+                        border.color: popupCardStyle.fieldBorderColor
                         Text {
                             anchors.centerIn: parent
                             text: "×"
@@ -932,9 +932,9 @@ PanelWindow {
                         width: 28
                         height: 28
                         radius: 8
-                        color: toggleNavHover.containsMouse ? "#EEF1F4" : "#F8F9FA"
+                        color: toggleNavHover.containsMouse ? popupCardStyle.hoverSurfaceColor : popupCardStyle.subtleSurfaceColor
                         border.width: 1
-                        border.color: "#E4E8ED"
+                        border.color: popupCardStyle.fieldBorderColor
                         Image {
                             anchors.centerIn: parent
                             width: 15
@@ -956,9 +956,9 @@ PanelWindow {
                         width: parent.width - 99
                         height: 28
                         radius: 8
-                        color: "#FAFBFC"
+                        color: popupCardStyle.fieldColor
                         border.width: 1
-                        border.color: titleField.activeFocus ? "#BECAD7" : "#E5EAF0"
+                        border.color: titleField.activeFocus ? "#BECAD7" : popupCardStyle.fieldBorderColor
 
                         TextInput {
                             id: titleField
@@ -990,9 +990,9 @@ PanelWindow {
                         width: 28
                         height: 28
                         radius: 8
-                        color: lockHover.containsMouse ? "#E8EEF4" : "#F8F9FA"
+                        color: lockHover.containsMouse ? popupCardStyle.hoverSurfaceColor : popupCardStyle.subtleSurfaceColor
                         border.width: 1
-                        border.color: "#E4E8ED"
+                        border.color: popupCardStyle.fieldBorderColor
                         Image {
                             anchors.centerIn: parent
                             width: 15
@@ -1014,9 +1014,9 @@ PanelWindow {
                         width: 28
                         height: 28
                         radius: 8
-                        color: closeHover.containsMouse ? "#FBEDEE" : "#F8F9FA"
+                        color: closeHover.containsMouse ? "#FBEDEE" : popupCardStyle.subtleSurfaceColor
                         border.width: 1
-                        border.color: "#E5E9EE"
+                        border.color: popupCardStyle.fieldBorderColor
                         Text {
                             anchors.centerIn: parent
                             text: "×"
@@ -1045,9 +1045,9 @@ PanelWindow {
                         width: root.sidebarVisible ? 104 : 0
                         height: parent.height
                         radius: 11
-                        color: "#F7F8FA"
+                        color: popupCardStyle.subtleSurfaceColor
                         border.width: 1
-                        border.color: "#E6EAF0"
+                        border.color: popupCardStyle.fieldBorderColor
 
                         Column {
                             anchors.fill: parent
@@ -1071,9 +1071,9 @@ PanelWindow {
                                     width: 22
                                     height: 22
                                     radius: 7
-                                    color: addNoteHover.containsMouse ? "#E6EAF0" : "#FFFFFF"
+                                    color: addNoteHover.containsMouse ? popupCardStyle.hoverSurfaceColor : popupCardStyle.fieldColor
                                     border.width: 1
-                                    border.color: "#E0E5EB"
+                                    border.color: popupCardStyle.fieldBorderColor
                                     Text {
                                         anchors.centerIn: parent
                                         text: "+"
@@ -1169,7 +1169,7 @@ PanelWindow {
                                 width: (parent.width - 5) / 2
                                 height: 26
                                 radius: 8
-                                color: micHover.containsMouse ? "#FCEDEF" : "#F8F9FA"
+                                color: micHover.containsMouse ? "#FCEDEF" : popupCardStyle.subtleSurfaceColor
                                 border.width: 1
                                 border.color: root.isRecording ? "#E8ADB2" : "#E4E9EE"
 
@@ -1205,7 +1205,7 @@ PanelWindow {
                                 width: (parent.width - 5) / 2
                                 height: 26
                                 radius: 8
-                                color: imageHover.containsMouse ? "#E9EEF4" : "#F8F9FA"
+                                color: imageHover.containsMouse ? popupCardStyle.hoverSurfaceColor : popupCardStyle.subtleSurfaceColor
                                 border.width: 1
                                 border.color: "#E4E9EE"
                                 Row {
@@ -1254,9 +1254,9 @@ PanelWindow {
                                     width: 25
                                     height: 20
                                     radius: 6
-                                    color: formatHover.containsMouse ? "#E9EEF4" : "#F7F8FA"
+                                    color: formatHover.containsMouse ? popupCardStyle.hoverSurfaceColor : popupCardStyle.subtleSurfaceColor
                                     border.width: 1
-                                    border.color: "#E2E7ED"
+                                    border.color: popupCardStyle.fieldBorderColor
                                     Text {
                                         anchors.centerIn: parent
                                         text: modelData.text
@@ -1280,9 +1280,9 @@ PanelWindow {
                                 width: 22
                                 height: 20
                                 radius: 6
-                                color: alignLeftHover.containsMouse ? "#E9EEF4" : "#F7F8FA"
+                                color: alignLeftHover.containsMouse ? popupCardStyle.hoverSurfaceColor : popupCardStyle.subtleSurfaceColor
                                 border.width: 1
-                                border.color: "#E2E7ED"
+                                border.color: popupCardStyle.fieldBorderColor
                                 Text { anchors.centerIn: parent; text: "≡"; color: "#44505C"; font.pixelSize: 12 }
                                 MouseArea {
                                     id: alignLeftHover
@@ -1296,9 +1296,9 @@ PanelWindow {
                                 width: 22
                                 height: 20
                                 radius: 6
-                                color: alignCenterHover.containsMouse ? "#E9EEF4" : "#F7F8FA"
+                                color: alignCenterHover.containsMouse ? popupCardStyle.hoverSurfaceColor : popupCardStyle.subtleSurfaceColor
                                 border.width: 1
-                                border.color: "#E2E7ED"
+                                border.color: popupCardStyle.fieldBorderColor
                                 Text { anchors.centerIn: parent; text: "≡"; color: "#44505C"; font.pixelSize: 12; horizontalAlignment: Text.AlignHCenter }
                                 MouseArea {
                                     id: alignCenterHover
@@ -1312,9 +1312,9 @@ PanelWindow {
                                 width: 22
                                 height: 20
                                 radius: 6
-                                color: alignRightHover.containsMouse ? "#E9EEF4" : "#F7F8FA"
+                                color: alignRightHover.containsMouse ? popupCardStyle.hoverSurfaceColor : popupCardStyle.subtleSurfaceColor
                                 border.width: 1
-                                border.color: "#E2E7ED"
+                                border.color: popupCardStyle.fieldBorderColor
                                 Text { anchors.centerIn: parent; text: "≡"; color: "#44505C"; font.pixelSize: 12; horizontalAlignment: Text.AlignRight }
                                 MouseArea {
                                     id: alignRightHover
@@ -1334,9 +1334,9 @@ PanelWindow {
                                 - (root.selectedNote && root.selectedNote.attachments.length > 0 ? 58 : 0)
                                 - (root.mediaError.length > 0 ? 24 : 0))
                             radius: 11
-                            color: "#FAFBFC"
+                            color: popupCardStyle.fieldColor
                             border.width: 1
-                            border.color: noteEditor.activeFocus ? "#BECAD7" : "#E5EAF0"
+                            border.color: noteEditor.activeFocus ? "#BECAD7" : popupCardStyle.fieldBorderColor
 
                             TextEdit {
                                 id: noteEditor
@@ -1481,9 +1481,9 @@ PanelWindow {
                                 width: attachmentCard.modelData.type === "audio" ? 126 : 50
                                 height: 48
                                 radius: 9
-                                color: "#F5F7F9"
+                                color: popupCardStyle.subtleSurfaceColor
                                 border.width: 1
-                                border.color: "#E2E7EC"
+                                border.color: popupCardStyle.fieldBorderColor
 
                                 Image {
                                     anchors.fill: parent
@@ -1510,7 +1510,7 @@ PanelWindow {
                                         radius: 8
                                         color: "#FFFFFF"
                                         border.width: 1
-                                        border.color: "#E1E6EC"
+                                        border.color: popupCardStyle.fieldBorderColor
                                         Text {
                                             anchors.centerIn: parent
                                             text: audioPlayer.source.toString() === attachmentCard.modelData.path && audioPlayer.playing ? "Ⅱ" : "▶"
@@ -1557,9 +1557,9 @@ PanelWindow {
                                     width: 16
                                     height: 16
                                     radius: 6
-                                    color: removeAttachmentHover.containsMouse ? "#FFFFFF" : "#F7F8FA"
+                                    color: removeAttachmentHover.containsMouse ? popupCardStyle.hoverSurfaceColor : popupCardStyle.subtleSurfaceColor
                                     border.width: 1
-                                    border.color: "#E2E7EC"
+                                    border.color: popupCardStyle.fieldBorderColor
                                     Text { anchors.centerIn: parent; text: "×"; color: "#67727F"; font.pixelSize: 11 }
                                     MouseArea {
                                         id: removeAttachmentHover
@@ -1590,7 +1590,7 @@ PanelWindow {
         Rectangle {
             anchors.fill: parent
             radius: 12
-            color: "#FFFFFF"
+            color: popupCardStyle.backgroundColor
             border.width: 1
             border.color: "#D9DEE5"
 
@@ -1611,7 +1611,7 @@ PanelWindow {
                     width: parent.width
                     height: 30
                     radius: 8
-                    color: pinNoteHover.containsMouse ? "#F0F3F6" : "transparent"
+                    color: pinNoteHover.containsMouse ? popupCardStyle.subtleSurfaceColor : "transparent"
 
                     Row {
                         anchors.fill: parent

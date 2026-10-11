@@ -352,9 +352,9 @@ PanelWindow {
                         width: 28
                         height: 28
                         radius: 9
-                        color: addHover.containsMouse ? "#171B20" : "#F5F7F9"
+                        color: addHover.containsMouse ? "#171B20" : popupCardStyle.subtleSurfaceColor
                         border.width: addHover.containsMouse ? 0 : 1
-                        border.color: "#E2E7EC"
+                        border.color: popupCardStyle.fieldBorderColor
                         Text {
                             anchors.centerIn: parent
                             text: root.editorOpen ? "‹" : "+"
@@ -379,9 +379,9 @@ PanelWindow {
                         width: 28
                         height: 28
                         radius: 9
-                        color: closeHover.containsMouse ? "#FBEDEE" : "#F8F9FA"
+                        color: closeHover.containsMouse ? "#FBEDEE" : popupCardStyle.subtleSurfaceColor
                         border.width: 1
-                        border.color: "#E7EAEE"
+                        border.color: popupCardStyle.fieldBorderColor
                         Text {
                             anchors.centerIn: parent
                             text: "×"
@@ -401,7 +401,7 @@ PanelWindow {
                 Rectangle {
                     width: parent.width
                     height: 1
-                    color: "#E9EDF1"
+                    color: popupCardStyle.selectedSurfaceColor
                 }
 
                 Item {
@@ -422,9 +422,9 @@ PanelWindow {
                             width: presetList.width
                             height: 56
                             radius: 11
-                            color: "#FAFBFC"
+                            color: popupCardStyle.fieldColor
                             border.width: 1
-                            border.color: "#E8ECF1"
+                            border.color: popupCardStyle.fieldBorderColor
 
                             Column {
                                 anchors.left: parent.left
@@ -461,7 +461,7 @@ PanelWindow {
                                     width: 35
                                     height: 30
                                     radius: 8
-                                    color: launchHover.containsMouse ? "#20262E" : "#EDF0F3"
+                                    color: launchHover.containsMouse ? "#20262E" : popupCardStyle.subtleSurfaceColor
                                     Text {
                                         anchors.centerIn: parent
                                         text: "▶"
@@ -523,9 +523,9 @@ PanelWindow {
                         width: parent.width
                         height: 31
                         radius: 9
-                        color: "#FAFBFC"
+                        color: popupCardStyle.fieldColor
                         border.width: 1
-                        border.color: presetNameField.activeFocus ? "#B8C5D4" : "#E5EAF0"
+                        border.color: presetNameField.activeFocus ? "#B8C5D4" : popupCardStyle.fieldBorderColor
                         TextInput {
                             id: presetNameField
                             anchors.fill: parent
@@ -556,9 +556,9 @@ PanelWindow {
                         width: parent.width
                         height: 30
                         radius: 9
-                        color: "#FAFBFC"
+                        color: popupCardStyle.fieldColor
                         border.width: 1
-                        border.color: appSearchField.activeFocus ? "#B8C5D4" : "#E5EAF0"
+                        border.color: appSearchField.activeFocus ? "#B8C5D4" : popupCardStyle.fieldBorderColor
                         TextInput {
                             id: appSearchField
                             anchors.fill: parent
@@ -599,7 +599,7 @@ PanelWindow {
                             radius: 8
                             readonly property bool chosen:
                                 root.draftApps.some(app => app.desktopId === String(appRow.modelData.id || ""))
-                            color: appRow.chosen ? "#E9EEF3"
+                            color: appRow.chosen ? popupCardStyle.selectedSurfaceColor
                                 : (appHover.containsMouse ? "#F2F4F6" : "transparent")
 
                             Row {
@@ -615,7 +615,7 @@ PanelWindow {
                                     radius: 4
                                     color: appRow.chosen ? "#222A34" : "#FFFFFF"
                                     border.width: 1
-                                    border.color: appRow.chosen ? "#222A34" : "#CED5DD"
+                                    border.color: appRow.chosen ? "#222A34" : popupCardStyle.fieldBorderColor
                                     Text {
                                         anchors.centerIn: parent
                                         text: appRow.chosen ? "✓" : ""
@@ -653,9 +653,9 @@ PanelWindow {
                             width: (parent.width - 7) / 2
                             height: 30
                             radius: 9
-                            color: cancelHover.containsMouse ? "#EEF1F4" : "#F7F8FA"
+                            color: cancelHover.containsMouse ? popupCardStyle.hoverSurfaceColor : popupCardStyle.subtleSurfaceColor
                             border.width: 1
-                            border.color: "#E3E7EC"
+                            border.color: popupCardStyle.fieldBorderColor
                             Text {
                                 anchors.centerIn: parent
                                 text: "Cancel"
@@ -674,7 +674,7 @@ PanelWindow {
                             width: (parent.width - 7) / 2
                             height: 30
                             radius: 9
-                            color: root.canSave ? (saveHover.containsMouse ? "#111318" : "#242A32") : "#F0F2F4"
+                            color: root.canSave ? (saveHover.containsMouse ? "#111318" : "#242A32") : popupCardStyle.subtleSurfaceColor
                             Text {
                                 anchors.centerIn: parent
                                 text: saveProcess.running ? "Saving…" : "Save preset"

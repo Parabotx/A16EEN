@@ -201,7 +201,7 @@ PanelWindow {
                     width: parent.width
                     height: 30
                     radius: 9
-                    color: "#F7F8FA"
+                    color: popupCardStyle.subtleSurfaceColor
                     border.width: 1
                     border.color: searchInput.activeFocus ? "#BBC4CE" : "#E5E9ED"
 
@@ -271,7 +271,7 @@ PanelWindow {
                             width: historyList.width
                             height: 58
                             radius: 9
-                            color: historyRowMouse.containsMouse ? "#F0F2F5" : "#FAFBFC"
+                            color: historyRowMouse.containsMouse ? popupCardStyle.hoverSurfaceColor : popupCardStyle.fieldColor
                             border.width: 1
                             border.color: historyRowMouse.containsMouse ? "#E1E6EB" : "#F0F2F5"
 
@@ -293,7 +293,7 @@ PanelWindow {
                                     width: 28
                                     height: 28
                                     radius: 8
-                                    color: "#F0F3F6"
+                                    color: popupCardStyle.subtleSurfaceColor
                                     anchors.verticalCenter: parent.verticalCenter
 
                                     IconImage {

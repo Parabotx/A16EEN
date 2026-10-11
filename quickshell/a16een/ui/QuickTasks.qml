@@ -352,9 +352,9 @@ PanelWindow {
                     width: parent.width
                     height: 34
                     radius: 9
-                    color: "#FAFBFC"
+                    color: popupCardStyle.fieldColor
                     border.width: 1
-                    border.color: taskNameField.activeFocus ? "#B8C5D4" : "#E5EAF0"
+                    border.color: taskNameField.activeFocus ? "#B8C5D4" : popupCardStyle.fieldBorderColor
 
                     TextInput {
                         id: taskNameField
@@ -384,9 +384,9 @@ PanelWindow {
                     width: parent.width
                     height: 43
                     radius: 9
-                    color: "#FAFBFC"
+                    color: popupCardStyle.fieldColor
                     border.width: 1
-                    border.color: descriptionField.activeFocus ? "#B8C5D4" : "#E5EAF0"
+                    border.color: descriptionField.activeFocus ? "#B8C5D4" : popupCardStyle.fieldBorderColor
 
                     TextEdit {
                         id: descriptionField
@@ -441,8 +441,8 @@ PanelWindow {
                         width: 25
                         height: 25
                         radius: 8
-                        color: prevHover.containsMouse ? "#EEF1F4" : "#F8F9FA"
-                        Text { anchors.centerIn: parent; text: "‹"; color: "#343D47"; font.pixelSize: 19 }
+                        color: prevHover.containsMouse ? popupCardStyle.hoverSurfaceColor : popupCardStyle.subtleSurfaceColor
+                        Text { anchors.centerIn: parent; text: "‹"; color: popupCardStyle.textColor; font.pixelSize: 19 }
                         MouseArea {
                             id: prevHover
                             anchors.fill: parent
@@ -466,8 +466,8 @@ PanelWindow {
                         width: 25
                         height: 25
                         radius: 8
-                        color: nextHover.containsMouse ? "#EEF1F4" : "#F8F9FA"
-                        Text { anchors.centerIn: parent; text: "›"; color: "#343D47"; font.pixelSize: 19 }
+                        color: nextHover.containsMouse ? popupCardStyle.hoverSurfaceColor : popupCardStyle.subtleSurfaceColor
+                        Text { anchors.centerIn: parent; text: "›"; color: popupCardStyle.textColor; font.pixelSize: 19 }
                         MouseArea {
                             id: nextHover
                             anchors.fill: parent
@@ -550,9 +550,9 @@ PanelWindow {
                         width: (parent.width - 7) / 2
                         height: 29
                         radius: 9
-                        color: cancelHover.containsMouse ? "#EEF1F4" : "#F7F8FA"
+                        color: cancelHover.containsMouse ? popupCardStyle.hoverSurfaceColor : popupCardStyle.subtleSurfaceColor
                         border.width: 1
-                        border.color: "#E3E7EC"
+                        border.color: popupCardStyle.fieldBorderColor
                         Text {
                             anchors.centerIn: parent
                             text: "Cancel"
@@ -616,9 +616,9 @@ PanelWindow {
                             width: (parent.width - 6) / 2
                             height: 29
                             radius: 9
-                            color: root.selectedTab === tabButton.modelData.id ? "#20262E" : "#F6F7F9"
+                            color: root.selectedTab === tabButton.modelData.id ? popupCardStyle.actionColor : popupCardStyle.fieldColor
                             border.width: 1
-                            border.color: root.selectedTab === tabButton.modelData.id ? "#20262E" : "#E3E8ED"
+                            border.color: root.selectedTab === tabButton.modelData.id ? "#20262E" : popupCardStyle.fieldBorderColor
                             Text {
                                 anchors.centerIn: parent
                                 text: tabButton.modelData.label
@@ -659,9 +659,9 @@ PanelWindow {
                         width: tasksList.width
                         height: taskRow.modelData.description ? 54 : 46
                         radius: 11
-                        color: "#FAFBFC"
+                        color: popupCardStyle.fieldColor
                         border.width: 1
-                        border.color: "#E8EDF2"
+                        border.color: popupCardStyle.fieldBorderColor
 
                         Rectangle {
                             id: completeButton
@@ -674,7 +674,7 @@ PanelWindow {
                             color: taskRow.modelData.completed ? "#20262E"
                                 : (completeHover.containsMouse ? "#EFF2F5" : "#FFFFFF")
                             border.width: 1
-                            border.color: taskRow.modelData.completed ? "#20262E" : "#D5DDE5"
+                            border.color: taskRow.modelData.completed ? "#20262E" : popupCardStyle.fieldBorderColor
                             Text {
                                 anchors.centerIn: parent
                                 text: taskRow.modelData.completed ? "✓" : ""
