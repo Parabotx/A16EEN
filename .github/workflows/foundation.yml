@@ -44,6 +44,7 @@ jobs:
           python3 tests/test_app_stash.py
           python3 tests/test_system_monitor.py
           python3 tests/test_data_meter.py
+          node tests/test_window_geometry.js
           bash tests/test_screenshot_capture.sh
           bash -n scripts/a16een-icon-theme
           bash -n scripts/a16een-workspace-preset
@@ -181,7 +182,10 @@ jobs:
           grep -Fq 'prepare-window)' scripts/a16een-screenshot
           grep -Fq 'windowSelectionOverlay' quickshell/a16een/ui/ScreenshotCenter.qml
           grep -Fq 'windowCandidates' quickshell/a16een/ui/ScreenshotCenter.qml
+          grep -Fq 'WindowGeometry.buildCandidates' quickshell/a16een/ui/ScreenshotCenter.qml
           grep -Fq 'root.updateHoveredWindow' quickshell/a16een/ui/ScreenshotCenter.qml
+          test -f quickshell/a16een/ui/WindowGeometry.js
+          test -f tests/test_window_geometry.js
           grep -Fq '"window-id"' quickshell/a16een/ui/ScreenshotCenter.qml
           grep -Fq 'anchors.right: screenshotModeRow.left' quickshell/a16een/ui/ScreenshotCenter.qml
           grep -Fq 'lucide-x.svg' quickshell/a16een/ui/ScreenshotCenter.qml
