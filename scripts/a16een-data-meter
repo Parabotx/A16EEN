@@ -11,11 +11,16 @@ STATE_HOME = Path(os.environ.get("XDG_STATE_HOME") or (Path.home() / ".local/sta
 STATE_FILE = STATE_HOME / "a16een/data-meter.json"
 VIRTUAL_PREFIXES = ("docker", "veth", "br-", "virbr", "podman", "cni", "flannel")
 
-def read_default_interface(route_file: Path = Path("/proc/net/route")) -> str:
+def read_default_interface(
+    route_file: Path = Path("/proc/net/route"),
+    ipv6_route_file: Path = Path("/proc/net/ipv6_route"),
+) -> str:
+    """Return the preferred default-route interface, including IPv6-only links."""
     try:
         lines = route_file.read_text(encoding="ascii").splitlines()[1:]
     except OSError:
-        return ""
+        lines = []
+
     choices = []
     for line in lines:
         fields = line.split()
@@ -27,7 +32,30 @@ def read_default_interface(route_file: Path = Path("/proc/net/route")) -> str:
             continue
         if flags & 1:
             choices.append((metric, fields[0]))
-    return min(choices)[1] if choices else ""
+    if choices:
+        return min(choices)[1]
+
+    # /proc/net/route only covers IPv4. IPv6-only connections still have
+    # a default route, which must be used for the live speed measurement.
+    try:
+        ipv6_lines = ipv6_route_file.read_text(encoding="ascii").splitlines()
+    except OSError:
+        ipv6_lines = []
+
+    ipv6_choices = []
+    zero_prefix = "0" * 32
+    for line in ipv6_lines:
+        fields = line.split()
+        if len(fields) < 10 or fields[0] != zero_prefix or fields[1] != "00":
+            continue
+        try:
+            metric = int(fields[5], 16)
+            flags = int(fields[8], 16)
+        except ValueError:
+            continue
+        if flags & 1:
+            ipv6_choices.append((metric, fields[9]))
+    return min(ipv6_choices)[1] if ipv6_choices else ""
 
 def connection_info(name: str, interface_path: Path) -> tuple[str, str]:
     kind = ("Wi-Fi" if (interface_path / "wireless").exists() or name.startswith(("wl", "wlan"))
@@ -91,7 +119,10 @@ def update_usage(previous: dict[str, Any], samples: list[dict[str, Any]],
     } if isinstance(old_map, dict) else {}
 
     touched: set[str] = set()
-    down_bps, up_bps = 0.0, 0.0
+    # The navbar is a live throughput indicator, not an aggregate of every
+    # physical NIC. Summing Wi-Fi, Ethernet, and tunnel/bridge counters can
+    # count the same traffic twice or include unrelated interfaces.
+    down_bytes_per_second, up_bytes_per_second = 0.0, 0.0
     active_name = next((str(item["name"]) for item in samples if item.get("is_default")), "")
 
     for sample in samples:
@@ -107,7 +138,8 @@ def update_usage(previous: dict[str, Any], samples: list[dict[str, Any]],
             old_tx = max(0, int(old.get("last_tx", tx)))
             drx = rx - old_rx if rx >= old_rx else rx
             dtx = tx - old_tx if tx >= old_tx else tx
-            elapsed = max(0.05, (now_ms - int(old.get("last_sample_ms", now_ms))) / 1000)
+            elapsed = (now_ms - int(old.get("last_sample_ms", now_ms))) / 1000
+            rx_reset, tx_reset = rx < old_rx, tx < old_tx
             rx_today = (max(0, int(old.get("rx_today", 0))) if same_day else 0) + drx
             tx_today = (max(0, int(old.get("tx_today", 0))) if same_day else 0) + dtx
             # For version-1 state, seed the month from the previous daily totals
@@ -116,7 +148,11 @@ def update_usage(previous: dict[str, Any], samples: list[dict[str, Any]],
             tx_month_base = old.get("tx_month", old.get("tx_today", 0) if same_month else 0)
             rx_month = max(0, int(rx_month_base)) + drx
             tx_month = max(0, int(tx_month_base)) + dtx
-            in_rate, out_rate = drx / elapsed, dtx / elapsed
+            # Reject impossible/abnormal intervals and counter resets for live
+            # throughput. Continue counting reset counters toward usage totals.
+            valid_interval = 0.25 <= elapsed <= 60
+            in_rate = (rx - old_rx) / elapsed if valid_interval and not rx_reset else 0.0
+            out_rate = (tx - old_tx) / elapsed if valid_interval and not tx_reset else 0.0
         else:
             # First observation is a baseline; earlier traffic cannot be recovered
             # from kernel counters without a prior sample.
@@ -134,12 +170,13 @@ def update_usage(previous: dict[str, Any], samples: list[dict[str, Any]],
             "rx_month": rx_month,
             "tx_month": tx_month,
             "last_sample_ms": now_ms,
-            "rx_bps": round(in_rate, 1),
-            "tx_bps": round(out_rate, 1),
+            "rx_bytes_per_second": round(in_rate, 1),
+            "tx_bytes_per_second": round(out_rate, 1),
             "is_default": bool(sample.get("is_default")),
         }
-        down_bps += in_rate
-        up_bps += out_rate
+        if sample.get("is_default"):
+            down_bytes_per_second += in_rate
+            up_bytes_per_second += out_rate
 
     for name, item in records.items():
         if name not in touched:
@@ -166,8 +203,8 @@ def update_usage(previous: dict[str, Any], samples: list[dict[str, Any]],
         "active_interface": active_name,
         "connection_name": str(active.get("connection") if active else "No active connection"),
         "connection_type": str(active.get("type") if active else "Network"),
-        "down_bps": round(down_bps, 1),
-        "up_bps": round(up_bps, 1),
+        "download_bytes_per_second": round(down_bytes_per_second, 1),
+        "upload_bytes_per_second": round(up_bytes_per_second, 1),
         "today_download_bytes": rx_today_total,
         "today_upload_bytes": tx_today_total,
         "today_total_bytes": rx_today_total + tx_today_total,
@@ -184,8 +221,8 @@ def update_usage(previous: dict[str, Any], samples: list[dict[str, Any]],
                 "tx_today_bytes": int(item.get("tx_today", 0)),
                 "rx_month_bytes": int(item.get("rx_month", 0)),
                 "tx_month_bytes": int(item.get("tx_month", 0)),
-                "rx_bps": float(item.get("rx_bps", 0)),
-                "tx_bps": float(item.get("tx_bps", 0)),
+                "rx_bytes_per_second": float(item.get("rx_bytes_per_second", 0)),
+                "tx_bytes_per_second": float(item.get("tx_bytes_per_second", 0)),
             }
             for item in items
         ],
@@ -233,10 +270,13 @@ def save_state(value: dict[str, Any], path: Path = STATE_FILE) -> None:
 
 def snapshot(state_path: Path | None = None, now_ms: int | None = None,
              today: str | None = None) -> dict[str, Any]:
+    # Timestamp after counters have been collected, so the interval measures
+    # the period between actual samples rather than command startup times.
+    samples = interface_candidates()
     stamp = int(time.time() * 1000) if now_ms is None else int(now_ms)
     day = date.today().isoformat() if today is None else str(today)
     destination = STATE_FILE if state_path is None else state_path
-    state, output = update_usage(load_state(state_path), interface_candidates(), day, stamp)
+    state, output = update_usage(load_state(state_path), samples, day, stamp)
     save_state(state, destination)
     return output
 
