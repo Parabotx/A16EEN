@@ -62,13 +62,16 @@ PanelWindow {
         ? WlrKeyboardFocus.OnDemand
         : WlrKeyboardFocus.None
 
-    // Keep the desktop clickable during Niri's native window picker. Only the
-    // controls and the region-selection canvas take input in their respective modes.
+    // Keep a valid input surface during every transition. Switching the
+    // mask to an invisible menu row while preparing a snapshot can leave the
+    // compositor with an empty input region and make selection appear broken.
     mask: Region {
         Region {
-            item: root.phase === 2
-                ? areaSelectionOverlay
-                : (root.phase === 5 ? windowSelectionOverlay : screenshotModeRow)
+            item: root.phase === 0
+                ? screenshotModeRow
+                : (root.phase === 2
+                    ? areaSelectionOverlay
+                    : (root.phase === 5 ? windowSelectionOverlay : preparationInputSurface))
         }
         Region { item: cancelButton }
     }
@@ -230,8 +233,10 @@ PanelWindow {
             onStreamFinished: {
                 const path = text.trim()
                 if (!path.length) {
+                    // Keep Screenshot Center open so a missing capture tool or
+                    // compositor error does not look like a dead button.
                     root.phase = 0
-                    root.closeRequested()
+                    console.warn("A16EEN screenshot selection could not prepare its background.")
                     return
                 }
 
@@ -274,6 +279,22 @@ PanelWindow {
                 if (text.trim().length)
                     console.warn("A16EEN area capture:", text.trim())
             }
+        }
+    }
+
+    // Transparent full-screen hit region for short capture/preparation
+    // phases; never let an empty menu mask collapse the overlay interaction.
+    Item {
+        id: preparationInputSurface
+        anchors.fill: parent
+        visible: root.phase === 1 || root.phase === 3 || root.phase === 4
+        z: 0
+
+        MouseArea {
+            anchors.fill: parent
+            acceptedButtons: Qt.AllButtons
+            preventStealing: true
+            onClicked: mouse => { mouse.accepted = true }
         }
     }
 
