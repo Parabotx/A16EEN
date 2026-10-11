@@ -22,17 +22,26 @@ PanelWindow {
     property bool dragging: false
     property real screenOriginX: modelData ? modelData.x : 0
     property real screenOriginY: modelData ? modelData.y : 0
+    property var windowItems: []
+    property var workspaceItems: []
+    property int focusedWorkspaceId: -1
+    property int focusedWindowId: -1
+    property int hoveredWindowId: -1
+    property var hoveredWindowRect: null
+    property string hoveredWindowName: ""
+    readonly property var windowCandidates: root.buildWindowCandidates()
 
     signal closeRequested()
 
     readonly property string monitorIcon: Qt.resolvedUrl("../assets/icons/lucide-monitor.svg")
     readonly property string cropIcon: Qt.resolvedUrl("../assets/icons/lucide-crop.svg")
     readonly property string windowIcon: Qt.resolvedUrl("../assets/icons/lucide-app-window.svg")
+    readonly property string cancelIcon: Qt.resolvedUrl("../assets/icons/lucide-x.svg")
 
     screen: modelData
     color: "transparent"
     visible: root.opened
-    focusable: root.opened && root.phase !== 5
+    focusable: root.opened
     aboveWindows: true
     exclusiveZone: 0
 
@@ -45,14 +54,18 @@ PanelWindow {
 
     WlrLayershell.layer: WlrLayer.Overlay
     WlrLayershell.namespace: "a16een-screenshot"
-    WlrLayershell.keyboardFocus: root.opened && root.phase !== 5
+    WlrLayershell.keyboardFocus: root.opened
         ? WlrKeyboardFocus.OnDemand
         : WlrKeyboardFocus.None
 
     // Keep the desktop clickable during Niri's native window picker. Only the
     // controls and the region-selection canvas take input in their respective modes.
     mask: Region {
-        Region { item: root.phase === 2 ? areaSelectionOverlay : screenshotModeRow }
+        Region {
+            item: root.phase === 2
+                ? areaSelectionOverlay
+                : (root.phase === 5 ? windowSelectionOverlay : screenshotModeRow)
+        }
         Region { item: cancelButton }
     }
 
@@ -80,6 +93,163 @@ PanelWindow {
         root.dragging = false
     }
 
+    // Niri's native pick-window operation conflicts with a full-screen
+    // layer-shell overlay. Resolve window targets from Niri's IPC state and
+    // keep hover/click selection inside this component instead.
+    function buildWindowCandidates() {
+        const screenWidth = Math.max(1, Number(root.width))
+        const screenHeight = Math.max(1, Number(root.height))
+        const gap = 12
+        const workspaces = Array.isArray(root.workspaceItems) ? root.workspaceItems : []
+        const windows = Array.isArray(root.windowItems) ? root.windowItems : []
+        let workspace = workspaces.find(item =>
+            Number(item.id) === Number(root.focusedWorkspaceId))
+        if (!workspace)
+            workspace = workspaces.find(item => item.is_focused === true || item.is_active === true)
+        if (!workspace)
+            return []
+
+        const current = windows.filter(item =>
+            Number(item.workspace_id) === Number(workspace.id)
+            && item.layout && Array.isArray(item.layout.tile_size)
+            && item.layout.tile_size.length >= 2
+            && Number(item.layout.tile_size[0]) > 0
+            && Number(item.layout.tile_size[1]) > 0
+        )
+
+        const candidates = []
+        const tiledByColumn = ({})
+        for (let i = 0; i < current.length; i++) {
+            const item = current[i]
+            const layout = item.layout
+            const size = layout.tile_size
+            if (item.is_floating === true) {
+                const pos = layout.tile_pos_in_workspace_view
+                if (Array.isArray(pos) && pos.length >= 2) {
+                    candidates.push({
+                        id: Number(item.id),
+                        title: String(item.title || item.app_id || "Window"),
+                        rect: { x: Number(pos[0]), y: Number(pos[1]),
+                            width: Number(size[0]), height: Number(size[1]) },
+                        floating: true,
+                        order: 100000 + i
+                    })
+                }
+                continue
+            }
+
+            const pos = layout.pos_in_scrolling_layout
+            if (!Array.isArray(pos) || pos.length < 2)
+                continue
+            const columnIndex = Number(pos[0])
+            if (!Number.isFinite(columnIndex))
+                continue
+            const key = String(columnIndex)
+            if (!tiledByColumn[key])
+                tiledByColumn[key] = { index: columnIndex, width: Number(size[0]), windows: [] }
+            tiledByColumn[key].width = Math.max(tiledByColumn[key].width, Number(size[0]))
+            tiledByColumn[key].windows.push({
+                item,
+                tileIndex: Number(pos[1]),
+                width: Number(size[0]),
+                height: Number(size[1]),
+                order: i
+            })
+        }
+
+        const columns = Object.keys(tiledByColumn).map(key => tiledByColumn[key])
+            .sort((a, b) => a.index - b.index)
+        if (columns.length) {
+            let contentWidth = 0
+            for (let i = 0; i < columns.length; i++)
+                contentWidth += columns[i].width + (i ? gap : 0)
+
+            const focused = current.find(item => Number(item.id) === Number(root.focusedWindowId))
+            const focusedPos = focused && focused.layout
+                ? focused.layout.pos_in_scrolling_layout
+                : null
+            const focusedColumn = Array.isArray(focusedPos) ? Number(focusedPos[0]) : columns[0].index
+            let focusedOffset = 0
+            let focusedWidth = columns[0].width
+            for (let i = 0; i < columns.length; i++) {
+                if (columns[i].index === focusedColumn) {
+                    focusedWidth = columns[i].width
+                    break
+                }
+                focusedOffset += columns[i].width + gap
+            }
+
+            // Mirrors the A16EEN layout setting: center the focused column on overflow.
+            let x = gap
+            if (contentWidth > screenWidth - gap * 2)
+                x = screenWidth / 2 - focusedOffset - focusedWidth / 2
+
+            for (let i = 0; i < columns.length; i++) {
+                const column = columns[i]
+                const ordered = column.windows.sort((a, b) => a.tileIndex - b.tileIndex)
+                let contentHeight = 0
+                for (let j = 0; j < ordered.length; j++)
+                    contentHeight += ordered[j].height + (j ? gap : 0)
+                let y = contentHeight < screenHeight - gap * 2
+                    ? (screenHeight - contentHeight) / 2
+                    : gap
+
+                for (let j = 0; j < ordered.length; j++) {
+                    const entry = ordered[j]
+                    candidates.push({
+                        id: Number(entry.item.id),
+                        title: String(entry.item.title || entry.item.app_id || "Window"),
+                        rect: { x: x, y: y, width: entry.width, height: entry.height },
+                        floating: false,
+                        order: entry.order
+                    })
+                    y += entry.height + gap
+                }
+                x += column.width + gap
+            }
+        }
+
+        return candidates.filter(item =>
+            Number.isFinite(item.id)
+            && item.rect.width > 0 && item.rect.height > 0
+            && item.rect.x < screenWidth && item.rect.y < screenHeight
+            && item.rect.x + item.rect.width > 0 && item.rect.y + item.rect.height > 0
+        ).sort((a, b) => a.order - b.order)
+    }
+
+    function updateHoveredWindow(x, y) {
+        const candidates = root.windowCandidates
+        let hit = null
+        // Floating windows appear above tiled windows.
+        for (let i = candidates.length - 1; i >= 0; i--) {
+            const item = candidates[i]
+            const rect = item.rect
+            if (x >= rect.x && y >= rect.y
+                    && x < rect.x + rect.width && y < rect.y + rect.height) {
+                hit = item
+                break
+            }
+        }
+        root.hoveredWindowId = hit ? hit.id : -1
+        root.hoveredWindowRect = hit ? hit.rect : null
+        root.hoveredWindowName = hit ? hit.title : ""
+    }
+
+    function captureHoveredWindow() {
+        if (root.phase !== 5 || root.hoveredWindowId < 0)
+            return
+
+        root.phase = 3
+        captureProcess.command = [
+            "a16een-screenshot",
+            "window-id",
+            String(root.hoveredWindowId),
+            root.snapshotPath
+        ]
+        captureProcess.running = false
+        captureProcess.running = true
+    }
+
     function beginMode(mode) {
         root.resetSelection()
         root.snapshotPath = ""
@@ -90,9 +260,12 @@ PanelWindow {
             areaPrepareProcess.running = false
             areaPrepareProcess.running = true
         } else if (mode === 2) {
-            // Prepare a frozen, softly blurred desktop first. During the actual
-            // picker, the input mask lets clicks pass through to real windows.
+            // Freeze the desktop, then use an in-overlay hover/click picker.
+            // Do not start Niri's native picker under this full-screen layer.
             root.phase = 4
+            root.hoveredWindowId = -1
+            root.hoveredWindowRect = null
+            root.hoveredWindowName = ""
             areaPrepareProcess.command = ["a16een-screenshot", "prepare-window"]
             areaPrepareProcess.running = false
             areaPrepareProcess.running = true
@@ -184,18 +357,10 @@ PanelWindow {
                 root.forceActiveFocus()
 
                 if (root.phase === 4) {
+                    root.hoveredWindowId = -1
+                    root.hoveredWindowRect = null
+                    root.hoveredWindowName = ""
                     root.phase = 5
-                    Qt.callLater(() => {
-                        if (!root.opened || root.phase !== 5)
-                            return
-                        captureProcess.command = [
-                            "a16een-screenshot",
-                            "window",
-                            root.snapshotPath
-                        ]
-                        captureProcess.running = false
-                        captureProcess.running = true
-                    })
                 } else {
                     root.phase = 2
                 }
@@ -348,6 +513,7 @@ PanelWindow {
         anchors.fill: parent
         visible: root.phase === 5
         z: 1
+        clip: true
 
         Image {
             id: windowSnapshot
@@ -375,11 +541,43 @@ PanelWindow {
             visible: windowSnapshot.status === Image.Ready
         }
 
+        Item {
+            x: root.hoveredWindowRect ? root.hoveredWindowRect.x : 0
+            y: root.hoveredWindowRect ? root.hoveredWindowRect.y : 0
+            width: root.hoveredWindowRect ? root.hoveredWindowRect.width : 0
+            height: root.hoveredWindowRect ? root.hoveredWindowRect.height : 0
+            clip: true
+            visible: root.hoveredWindowId >= 0 && windowSnapshot.status === Image.Ready
+
+            Image {
+                x: root.hoveredWindowRect ? -root.hoveredWindowRect.x : 0
+                y: root.hoveredWindowRect ? -root.hoveredWindowRect.y : 0
+                width: root.width
+                height: root.height
+                source: root.snapshotPath
+                fillMode: Image.Stretch
+                asynchronous: true
+                cache: false
+            }
+        }
+
+        Rectangle {
+            x: root.hoveredWindowRect ? root.hoveredWindowRect.x : 0
+            y: root.hoveredWindowRect ? root.hoveredWindowRect.y : 0
+            width: root.hoveredWindowRect ? root.hoveredWindowRect.width : 0
+            height: root.hoveredWindowRect ? root.hoveredWindowRect.height : 0
+            color: "transparent"
+            border.width: 2
+            border.color: "#FFFFFF"
+            visible: root.hoveredWindowId >= 0
+        }
+
         Column {
             anchors.horizontalCenter: parent.horizontalCenter
             anchors.top: parent.top
             anchors.topMargin: 35
             spacing: 7
+            z: 3
 
             Text {
                 anchors.horizontalCenter: parent.horizontalCenter
@@ -392,7 +590,9 @@ PanelWindow {
 
             Text {
                 anchors.horizontalCenter: parent.horizontalCenter
-                text: "Click the window you want to capture"
+                text: root.hoveredWindowId >= 0
+                    ? root.hoveredWindowName
+                    : "Hover a window to highlight it"
                 color: "#E5EAF0"
                 font.pixelSize: 9
             }
@@ -402,11 +602,35 @@ PanelWindow {
             anchors.horizontalCenter: parent.horizontalCenter
             anchors.bottom: parent.bottom
             anchors.bottomMargin: 26
-            text: "ESC TO CANCEL"
+            text: root.hoveredWindowId >= 0
+                ? "CLICK TO CAPTURE  ·  ESC TO CANCEL"
+                : "HOVER A WINDOW  ·  ESC TO CANCEL"
             color: "#FFFFFF"
             font.pixelSize: 8
             font.weight: Font.DemiBold
             font.letterSpacing: 1.0
+            z: 3
+        }
+
+        MouseArea {
+            id: windowPickerMouseArea
+            anchors.fill: parent
+            hoverEnabled: true
+            acceptedButtons: Qt.LeftButton
+            cursorShape: root.hoveredWindowId >= 0 ? Qt.PointingHandCursor : Qt.ArrowCursor
+            z: 4
+
+            onPositionChanged: root.updateHoveredWindow(mouseX, mouseY)
+            onEntered: root.updateHoveredWindow(mouseX, mouseY)
+            onExited: {
+                root.hoveredWindowId = -1
+                root.hoveredWindowRect = null
+                root.hoveredWindowName = ""
+            }
+            onClicked: {
+                root.updateHoveredWindow(mouseX, mouseY)
+                Qt.callLater(root.captureHoveredWindow)
+            }
         }
     }
 
@@ -466,26 +690,23 @@ PanelWindow {
 
     Rectangle {
         id: cancelButton
-        visible: root.opened && (root.phase === 0 || root.phase === 2)
+        visible: root.opened && (root.phase === 0 || root.phase === 2 || root.phase === 5)
         z: 10
-        width: 104
-        height: 34
-        anchors.top: parent.top
-        anchors.right: parent.right
-        anchors.topMargin: 28
-        anchors.rightMargin: 28
-        radius: 11
+        width: 36
+        height: 36
+        anchors.right: screenshotModeRow.left
+        anchors.rightMargin: 12
+        anchors.verticalCenter: screenshotModeRow.verticalCenter
+        radius: 18
         color: cancelMouse.containsMouse ? "#FFFFFF" : "#F7F9FB"
         border.width: 1
         border.color: "#DDE4EA"
 
-        Text {
+        IconImage {
             anchors.centerIn: parent
-            text: "CANCEL"
-            color: "#303741"
-            font.pixelSize: 8
-            font.weight: Font.DemiBold
-            font.letterSpacing: 0.8
+            implicitWidth: 17
+            implicitHeight: 17
+            source: root.cancelIcon
         }
 
         MouseArea {
@@ -504,6 +725,9 @@ PanelWindow {
             root.phase = 0
             root.resetSelection()
             root.snapshotPath = ""
+            root.hoveredWindowId = -1
+            root.hoveredWindowRect = null
+            root.hoveredWindowName = ""
             root.forceActiveFocus()
         } else if (!root.areaPrepareProcess.running && !root.areaCaptureProcess.running
                    && !root.captureProcess.running) {
