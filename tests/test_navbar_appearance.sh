@@ -95,12 +95,8 @@ fi
 if run set container missing visible off 2>/dev/null; then
     echo "Expected an unknown container to be rejected." >&2; exit 1
 fi
-grep -q '^apply
- "$APPLY_LOG"
-grep -q '^apply-appearance power
- "$APPLY_LOG"
-grep -q '^apply-appearance quick-actions
- "$APPLY_LOG"
-grep -q '^apply-appearance quick-hub
- "$APPLY_LOG"
+grep -q "^apply$" "$APPLY_LOG"
+grep -q "^apply-appearance power$" "$APPLY_LOG"
+grep -q "^apply-appearance quick-actions$" "$APPLY_LOG"
+grep -q "^apply-appearance quick-hub$" "$APPLY_LOG"
 echo "Navbar container appearance tests passed."
