@@ -86,9 +86,6 @@ Item {
             root.quotesWidgetEnabledRequested(next)
     }
 
-    focus: visible
-    activeFocusOnTab: true
-
     ColumnLayout {
         anchors.fill: parent
         anchors.margins: 20
