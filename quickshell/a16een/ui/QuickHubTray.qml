@@ -88,8 +88,14 @@ PanelWindow {
         path: root.navbarReadyPath
         watchChanges: true
         printErrors: false
-        onLoaded: root.navbarRevision++
-        onFileChanged: root.navbarRevision++
+        onLoaded: {
+            root.navbarRevision++
+            appearanceFile.reload()
+        }
+        onFileChanged: {
+            root.navbarRevision++
+            appearanceFile.reload()
+        }
     }
 
     screen: root.modelData
