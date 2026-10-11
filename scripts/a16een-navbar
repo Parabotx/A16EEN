@@ -447,36 +447,77 @@ set_setting() {
     main
 }
 
+generate_workspace_icons() {
+    local slot
+    while IFS= read -r slot; do
+        [[ -n "$slot" ]] || continue
+        generate_icon "$slot"
+    done < <(workspace_ids)
+}
+
+generate_auxiliary_icons() {
+    generate_icon "utilities"
+    generate_icon "power"
+    # Keep each tray button separately themed, using its parent group's colors.
+    generate_icon "quick-actions-notes"
+    generate_icon "quick-actions-tasks"
+    generate_icon "quick-actions-presets"
+    generate_icon "quick-hub-notifications"
+    generate_icon "quick-hub-tools"
+}
+
 main() {
     ensure_registry
     ensure_settings
     repair_uniform_home_icons
     repair_all_white_styles
     mkdir -p "$OUTPUT_DIR"
-
     prune_inactive_slots
-
-    local slot
-    while IFS= read -r slot; do
-        [[ -n "$slot" ]] || continue
-        generate_icon "$slot"
-    done < <(workspace_ids)
-
-    generate_icon "utilities"
-    generate_icon "power"
-    # Generate one SVG per button while sharing its parent's appearance settings.
-    generate_icon "quick-actions-notes"
-    generate_icon "quick-actions-tasks"
-    generate_icon "quick-actions-presets"
-    generate_icon "quick-hub-notifications"
-    generate_icon "quick-hub-tools"
-
+    generate_workspace_icons
+    generate_auxiliary_icons
     touch "$OUTPUT_DIR/ready"
     echo "A16EEN navbar icons generated for $(active_count) active workspaces."
 }
 
+apply_appearance_target() {
+    local target="${1:-all}"
+    ensure_registry
+    ensure_settings
+    repair_all_white_styles
+    mkdir -p "$OUTPUT_DIR"
+
+    case "$target" in
+        all)
+            generate_workspace_icons
+            generate_auxiliary_icons
+            ;;
+        workspaces)
+            generate_workspace_icons
+            ;;
+        utilities|power)
+            generate_icon "$target"
+            ;;
+        quick-actions)
+            generate_icon "quick-actions-notes"
+            generate_icon "quick-actions-tasks"
+            generate_icon "quick-actions-presets"
+            ;;
+        quick-hub)
+            generate_icon "quick-hub-notifications"
+            generate_icon "quick-hub-tools"
+            ;;
+        *)
+            echo "A16EEN navbar: unknown appearance target: $target" >&2
+            return 2
+            ;;
+    esac
+
+    touch "$OUTPUT_DIR/ready"
+}
+
 case "${1:-apply}" in
     apply) main ;;
+    apply-appearance) shift; apply_appearance_target "${1:-all}" ;;
     set) shift; set_setting "$@" ;;
-    *) echo "Usage: a16een-navbar {apply|set <slot> <icon.svg> <color>}" >&2; exit 2 ;;
+    *) echo "Usage: a16een-navbar {apply|apply-appearance <all|workspaces|utilities|power|quick-actions|quick-hub>|set <slot> <icon.svg> <color>}" >&2; exit 2 ;;
 esac
