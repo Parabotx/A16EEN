@@ -13,6 +13,7 @@ PanelWindow {
     property bool opened: false
     property bool preparingCapture: false
     property string prepareCommand: ""
+    property int pendingWindowId: -1
 
     property int phase: 0 // 0 menu, 1 preparing area, 2 selecting area, 3 capturing, 4 preparing window picker, 5 picking window
     property string snapshotPath: ""
@@ -72,6 +73,8 @@ PanelWindow {
         root.dragging = false
         root.preparingCapture = false
         prepareCaptureTimer.stop()
+        areaCaptureDelayTimer.stop()
+        selectedWindowCaptureTimer.stop()
         root.resetSelection()
         if (areaPrepareProcess.running)
             areaPrepareProcess.running = false
@@ -120,15 +123,10 @@ PanelWindow {
         if (root.phase !== 5 || root.hoveredWindowId < 0)
             return
 
+        root.pendingWindowId = root.hoveredWindowId
         root.phase = 3
-        captureProcess.command = [
-            "/usr/local/bin/a16een-screenshot",
-            "window-id",
-            String(root.hoveredWindowId),
-            root.snapshotPath
-        ]
-        captureProcess.running = false
-        captureProcess.running = true
+        root.preparingCapture = true
+        selectedWindowCaptureTimer.restart()
     }
 
     function beginMode(mode) {
@@ -178,18 +176,8 @@ PanelWindow {
         }
 
         root.phase = 3
-
-        areaCaptureProcess.command = [
-            "/usr/local/bin/a16een-screenshot",
-            "area",
-            root.snapshotPath,
-            String(Math.round(root.selectionX + root.screenOriginX)),
-            String(Math.round(root.selectionY + root.screenOriginY)),
-            String(Math.round(root.selectionWidth)),
-            String(Math.round(root.selectionHeight))
-        ]
-        areaCaptureProcess.running = false
-        areaCaptureProcess.running = true
+        root.preparingCapture = true
+        areaCaptureDelayTimer.restart()
     }
 
     Timer {
@@ -213,6 +201,47 @@ PanelWindow {
     }
 
     Timer {
+        id: areaCaptureDelayTimer
+        interval: 160
+        repeat: false
+        onTriggered: {
+            if (!root.opened || root.phase !== 3)
+                return
+            preparationWatchdog.restart()
+            areaCaptureProcess.command = [
+                "/usr/local/bin/a16een-screenshot",
+                "area",
+                root.snapshotPath,
+                String(Math.round(root.selectionX + root.screenOriginX)),
+                String(Math.round(root.selectionY + root.screenOriginY)),
+                String(Math.round(root.selectionWidth)),
+                String(Math.round(root.selectionHeight))
+            ]
+            areaCaptureProcess.running = false
+            areaCaptureProcess.running = true
+        }
+    }
+
+    Timer {
+        id: selectedWindowCaptureTimer
+        interval: 160
+        repeat: false
+        onTriggered: {
+            if (!root.opened || root.phase !== 3 || root.pendingWindowId < 0)
+                return
+            preparationWatchdog.restart()
+            captureProcess.command = [
+                "/usr/local/bin/a16een-screenshot",
+                "window-id",
+                String(root.pendingWindowId),
+                root.snapshotPath
+            ]
+            captureProcess.running = false
+            captureProcess.running = true
+        }
+    }
+
+    Timer {
         id: preparationWatchdog
         interval: 12000
         repeat: false
@@ -221,8 +250,12 @@ PanelWindow {
                 return
             if (areaPrepareProcess.running)
                 areaPrepareProcess.running = false
+            if (areaCaptureProcess.running)
+                areaCaptureProcess.running = false
             if (captureProcess.running)
                 captureProcess.running = false
+            areaCaptureDelayTimer.stop()
+            selectedWindowCaptureTimer.stop()
             root.preparingCapture = false
             root.phase = 0
             if (root.snapshotPath.length)
@@ -266,7 +299,7 @@ PanelWindow {
 
     Process {
         id: areaPrepareProcess
-        command: ["a16een-screenshot", "prepare-area"]
+        command: ["/usr/local/bin/a16een-screenshot", "prepare-area"]
         running: false
 
         stdout: StdioCollector {
@@ -319,8 +352,20 @@ PanelWindow {
 
         stdout: StdioCollector {
             onStreamFinished: {
+                preparationWatchdog.stop()
+                root.preparingCapture = false
                 root.phase = 0
                 root.closeRequested()
+            }
+        }
+
+        onExited: (exitCode, exitStatus) => {
+            if (exitCode !== 0 && root.opened) {
+                preparationWatchdog.stop()
+                root.preparingCapture = false
+                root.phase = 0
+                Qt.callLater(() => root.forceActiveFocus())
+                console.warn("A16EEN area capture exited with code", exitCode)
             }
         }
 
@@ -662,6 +707,8 @@ PanelWindow {
         if (root.opened) {
             prepareCaptureTimer.stop()
             preparationWatchdog.stop()
+            areaCaptureDelayTimer.stop()
+            selectedWindowCaptureTimer.stop()
             root.preparingCapture = false
             root.phase = 0
             root.resetSelection()
