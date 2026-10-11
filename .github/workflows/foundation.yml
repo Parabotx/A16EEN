@@ -183,6 +183,7 @@ jobs:
           grep -Fq 'windowSelectionOverlay' quickshell/a16een/ui/ScreenshotCenter.qml
           grep -Fq 'windowCandidates' quickshell/a16een/ui/ScreenshotCenter.qml
           grep -Fq 'WindowGeometry.buildCandidates' quickshell/a16een/ui/ScreenshotCenter.qml
+          grep -Fq 'preparationInputSurface' quickshell/a16een/ui/ScreenshotCenter.qml
           grep -Fq 'root.updateHoveredWindow' quickshell/a16een/ui/ScreenshotCenter.qml
           test -f quickshell/a16een/ui/WindowGeometry.js
           test -f tests/test_window_geometry.js
