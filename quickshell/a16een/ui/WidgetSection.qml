@@ -377,7 +377,6 @@ Item {
                     text: root.selectedWidget.detail || ""
                     color: root.textSecondary
                     font.pixelSize: 9
-                    lineHeight: 1.3
                     wrapMode: Text.WordWrap
                 }
 
