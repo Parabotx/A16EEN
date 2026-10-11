@@ -36,10 +36,13 @@ chmod +x "$A16EEN_NAVBAR_CMD"
 run() { bash "$ROOT/scripts/a16een-navbar-appearance" "$@"; }
 
 run get >/dev/null
-jq -e '.schemaVersion == 2 and (.workspaces == null)
-    and (.containers | has("workspaces") and has("battery") and has("time") and has("utilities") and has("power"))
+jq -e '.schemaVersion == 3 and (.workspaces == null)
+    and (.containers | has("workspaces") and has("battery") and has("time") and has("utilities") and has("power")
+        and has("quick-actions") and has("quick-hub"))
     and .containers.workspaces.visible == true
-    and .containers.workspaces.iconColor == "inherit"' \
+    and .containers.workspaces.iconColor == "inherit"
+    and .containers["quick-actions"].visible == true
+    and .containers["quick-hub"].visible == true' \
     "$XDG_STATE_HOME/a16een/navbar-appearance.json" >/dev/null
 
 run set all - containerColor '#E7E8EA'
@@ -68,7 +71,12 @@ run set all - applyIconColor off
 run set container workspaces visible off
 run set container battery containerColor '#070B13'
 run set container power iconColor auto
-jq -e '.containers.workspaces.visible == false
+run set container quick-actions containerColor '#E7E8EA'
+run set container quick-hub iconColor '#1D4ED8'
+jq -e '.containers["quick-actions"].containerEnabled == true
+    and .containers["quick-actions"].containerColor == "#E7E8EA"
+    and .containers["quick-hub"].iconColor == "#1D4ED8"
+    and .containers.workspaces.visible == false
     and .containers.battery.containerEnabled == true
     and .containers.battery.containerColor == "#070B13"
     and .containers.power.iconColor == "auto"' \
