@@ -24,10 +24,6 @@ PanelWindow {
     readonly property string commandUsagePath: Quickshell.stateDir + "/command-center-usage.json"
 
     property bool editorialTimeWidgetEnabled: true
-    property bool calendarWidgetEnabled: false
-    property bool pulseWidgetEnabled: false
-    property bool workspaceWidgetEnabled: false
-    property bool tasksWidgetEnabled: false
     property bool musicWidgetEnabled: false
     property bool quotesWidgetEnabled: false
     property bool timeUse24Hour: true
@@ -54,10 +50,6 @@ PanelWindow {
     signal presetsRequested()
     signal doNotDisturbRequested(bool enabled)
     signal editorialTimeWidgetEnabledRequested(bool enabled)
-    signal calendarWidgetEnabledRequested(bool enabled)
-    signal pulseWidgetEnabledRequested(bool enabled)
-    signal workspaceWidgetEnabledRequested(bool enabled)
-    signal tasksWidgetEnabledRequested(bool enabled)
     signal musicWidgetEnabledRequested(bool enabled)
     signal quotesWidgetEnabledRequested(bool enabled)
     signal timeUse24HourRequested(bool enabled)
@@ -642,7 +634,7 @@ PanelWindow {
             : 0
         anchors.verticalCenterOffset: root.plainCommandView
             ? Math.min(215, Math.max(190, parent.height * 0.27))
-            : root.powerViewOpen || root.controlViewOpen || root.iconThemeViewOpen || root.workspacePresetViewOpen || root.navbarViewOpen ? 0 : 185
+            : root.powerViewOpen || root.widgetViewOpen || root.controlViewOpen || root.iconThemeViewOpen || root.workspacePresetViewOpen || root.navbarViewOpen ? 0 : 185
         radius: root.plainCommandView ? 0 : root.powerViewOpen || root.controlViewOpen || root.iconThemeViewOpen || root.workspacePresetViewOpen || root.navbarViewOpen ? 26 : 18
         color: root.plainCommandView ? "transparent" : root.surface
         border.width: root.plainCommandView ? 0 : 1
@@ -834,10 +826,6 @@ PanelWindow {
             visible: root.widgetViewOpen
 
             editorialTimeEnabled: root.editorialTimeWidgetEnabled
-            calendarEnabled: root.calendarWidgetEnabled
-            pulseEnabled: root.pulseWidgetEnabled
-            workspaceEnabled: root.workspaceWidgetEnabled
-            tasksEnabled: root.tasksWidgetEnabled
             musicEnabled: root.musicWidgetEnabled
             quotesEnabled: root.quotesWidgetEnabled
             timeUse24Hour: root.timeUse24Hour
@@ -845,10 +833,6 @@ PanelWindow {
 
             onBackRequested: root.closeWidgetView()
             onEditorialTimeWidgetEnabledRequested: root.editorialTimeWidgetEnabledRequested(enabled)
-            onCalendarWidgetEnabledRequested: root.calendarWidgetEnabledRequested(enabled)
-            onPulseWidgetEnabledRequested: root.pulseWidgetEnabledRequested(enabled)
-            onWorkspaceWidgetEnabledRequested: root.workspaceWidgetEnabledRequested(enabled)
-            onTasksWidgetEnabledRequested: root.tasksWidgetEnabledRequested(enabled)
             onMusicWidgetEnabledRequested: root.musicWidgetEnabledRequested(enabled)
             onQuotesWidgetEnabledRequested: root.quotesWidgetEnabledRequested(enabled)
             onTimeUse24HourRequested: root.timeUse24HourRequested(enabled)
