@@ -11,7 +11,7 @@ PanelWindow {
     required property var modelData
     property bool opened: false
 
-    property int phase: 0 // 0 menu, 1 preparing area, 2 selecting area, 3 capturing
+    property int phase: 0 // 0 menu, 1 preparing area, 2 selecting area, 3 capturing, 4 preparing window picker, 5 picking window
     property string snapshotPath: ""
     property real selectionX: 0
     property real selectionY: 0
@@ -49,6 +49,13 @@ PanelWindow {
         ? WlrKeyboardFocus.OnDemand
         : WlrKeyboardFocus.None
 
+    // Keep the desktop clickable during Niri's native window picker. Only the
+    // controls and the region-selection canvas take input in their respective modes.
+    mask: Region {
+        Region { item: root.phase === 2 ? areaSelectionOverlay : screenshotModeRow }
+        Region { item: cancelButton }
+    }
+
     function cancelCapture() {
         root.dragging = false
         root.resetSelection()
@@ -75,15 +82,23 @@ PanelWindow {
 
     function beginMode(mode) {
         root.resetSelection()
-        root.phase = mode === 1 ? 1 : 3
+        root.snapshotPath = ""
+
         if (mode === 1) {
+            root.phase = 1
+            areaPrepareProcess.command = ["a16een-screenshot", "prepare-area"]
+            areaPrepareProcess.running = false
+            areaPrepareProcess.running = true
+        } else if (mode === 2) {
+            // Prepare a frozen, softly blurred desktop first. During the actual
+            // picker, the input mask lets clicks pass through to real windows.
+            root.phase = 4
+            areaPrepareProcess.command = ["a16een-screenshot", "prepare-window"]
             areaPrepareProcess.running = false
             areaPrepareProcess.running = true
         } else {
-            captureProcess.command = [
-                "a16een-screenshot",
-                mode === 0 ? "screen" : "window"
-            ]
+            root.phase = 3
+            captureProcess.command = ["a16een-screenshot", "screen"]
             captureProcess.running = false
             captureProcess.running = true
         }
@@ -141,6 +156,13 @@ PanelWindow {
                     console.warn("A16EEN screenshot:", text.trim())
             }
         }
+
+        onExited: (exitCode, exitStatus) => {
+            if (exitCode !== 0 && root.opened) {
+                root.phase = 0
+                root.closeRequested()
+            }
+        }
     }
 
     Process {
@@ -158,9 +180,25 @@ PanelWindow {
                 }
 
                 root.snapshotPath = path
-                root.phase = 2
                 root.resetSelection()
                 root.forceActiveFocus()
+
+                if (root.phase === 4) {
+                    root.phase = 5
+                    Qt.callLater(() => {
+                        if (!root.opened || root.phase !== 5)
+                            return
+                        captureProcess.command = [
+                            "a16een-screenshot",
+                            "window",
+                            root.snapshotPath
+                        ]
+                        captureProcess.running = false
+                        captureProcess.running = true
+                    })
+                } else {
+                    root.phase = 2
+                }
             }
         }
 
@@ -192,6 +230,7 @@ PanelWindow {
     }
 
     Item {
+        id: areaSelectionOverlay
         anchors.fill: parent
         visible: root.phase === 2
         z: 1
@@ -304,7 +343,75 @@ PanelWindow {
         }
     }
 
+    Item {
+        id: windowSelectionOverlay
+        anchors.fill: parent
+        visible: root.phase === 5
+        z: 1
+
+        Image {
+            id: windowSnapshot
+            anchors.fill: parent
+            source: root.snapshotPath
+            fillMode: Image.Stretch
+            asynchronous: true
+            cache: false
+        }
+
+        MultiEffect {
+            anchors.fill: parent
+            source: windowSnapshot
+            visible: windowSnapshot.status === Image.Ready
+            blurEnabled: true
+            blurMax: 28
+            blur: 0.62
+            brightness: -0.12
+            autoPaddingEnabled: false
+        }
+
+        Rectangle {
+            anchors.fill: parent
+            color: "#36000000"
+            visible: windowSnapshot.status === Image.Ready
+        }
+
+        Column {
+            anchors.horizontalCenter: parent.horizontalCenter
+            anchors.top: parent.top
+            anchors.topMargin: 35
+            spacing: 7
+
+            Text {
+                anchors.horizontalCenter: parent.horizontalCenter
+                text: "SELECT A WINDOW"
+                color: "#FFFFFF"
+                font.pixelSize: 10
+                font.weight: Font.DemiBold
+                font.letterSpacing: 1.2
+            }
+
+            Text {
+                anchors.horizontalCenter: parent.horizontalCenter
+                text: "Click the window you want to capture"
+                color: "#E5EAF0"
+                font.pixelSize: 9
+            }
+        }
+
+        Text {
+            anchors.horizontalCenter: parent.horizontalCenter
+            anchors.bottom: parent.bottom
+            anchors.bottomMargin: 26
+            text: "ESC TO CANCEL"
+            color: "#FFFFFF"
+            font.pixelSize: 8
+            font.weight: Font.DemiBold
+            font.letterSpacing: 1.0
+        }
+    }
+
     Row {
+        id: screenshotModeRow
         visible: root.phase === 0
         z: 2
         anchors.top: parent.top
@@ -354,6 +461,39 @@ PanelWindow {
                     onClicked: root.beginMode(modelData.mode)
                 }
             }
+        }
+    }
+
+    Rectangle {
+        id: cancelButton
+        visible: root.opened && root.phase !== 3
+        z: 10
+        width: 104
+        height: 34
+        anchors.top: parent.top
+        anchors.right: parent.right
+        anchors.topMargin: 28
+        anchors.rightMargin: 28
+        radius: 11
+        color: cancelMouse.containsMouse ? "#FFFFFF" : "#F7F9FB"
+        border.width: 1
+        border.color: "#DDE4EA"
+
+        Text {
+            anchors.centerIn: parent
+            text: "CANCEL"
+            color: "#303741"
+            font.pixelSize: 8
+            font.weight: Font.DemiBold
+            font.letterSpacing: 0.8
+        }
+
+        MouseArea {
+            id: cancelMouse
+            anchors.fill: parent
+            hoverEnabled: true
+            cursorShape: Qt.PointingHandCursor
+            onClicked: root.cancelCapture()
         }
     }
 
