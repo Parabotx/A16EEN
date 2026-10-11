@@ -261,8 +261,9 @@ PanelWindow {
     }
 
     onLibraryOpenChanged: {
+        // The search input is bound to libraryQuery; resetting the source keeps
+        // the binding intact and clears the filter whenever the panel opens.
         root.libraryQuery = ""
-        libraryKeyboardInput.text = ""
         if (root.libraryOpen) {
             root.refreshLibrary()
             Qt.callLater(function() {
