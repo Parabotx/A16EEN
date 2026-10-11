@@ -235,6 +235,32 @@ case "${1:-}" in
         finalize_capture "$tmp"
         ACTIVE_TEMP_PATH=""
         ;;
+    window-id)
+        [[ $# -eq 3 ]] || exit 2
+        selected="${2:-}"
+        snapshot="${3:-}"
+        if [[ ! "$selected" =~ ^[0-9]+$ ]]; then
+            echo "A16EEN: invalid window identifier." >&2
+            exit 2
+        fi
+        if [[ -n "$snapshot" && ! -f "$snapshot" ]]; then
+            echo "A16EEN: window-selection background is missing." >&2
+            exit 1
+        fi
+        delay="$(get_setting delay)"
+        [[ "$delay" =~ ^[0-9]+$ ]] || delay=0
+        (( delay > 0 )) && sleep "$delay"
+        tmp="$TEMP_DIR/capture-$(date +%s%N).png"
+        ACTIVE_TEMP_PATH="$tmp"
+        niri msg action screenshot-window --id "$selected" --path "$tmp" --show-pointer="$(get_setting pointer)"
+        if ! wait_for_file "$tmp"; then
+            echo "A16EEN: selected-window screenshot was not created." >&2
+            exit 1
+        fi
+        [[ -z "$snapshot" ]] || rm -f "$snapshot"
+        finalize_capture "$tmp"
+        ACTIVE_TEMP_PATH=""
+        ;;
     area)
         [[ $# -eq 6 ]] || exit 2
         snapshot="$2"
