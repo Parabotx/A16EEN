@@ -118,7 +118,7 @@ PanelWindow {
         )
 
         const candidates = []
-        const tiledByColumn = ({})
+        const tiledByColumn = Object.create(null)
         for (let i = 0; i < current.length; i++) {
             const item = current[i]
             const layout = item.layout
