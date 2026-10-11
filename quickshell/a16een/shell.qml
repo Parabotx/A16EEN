@@ -214,7 +214,11 @@ ShellRoot {
                 try {
                     const saved = JSON.parse(String(this.text || "{}"))
                     const keys = [
-                                                                        "timeUse24Hour", "timeShowSeconds"
+                        "editorialTimeWidgetEnabled",
+                        "musicWidgetEnabled",
+                        "quotesWidgetEnabled",
+                        "timeUse24Hour",
+                        "timeShowSeconds"
                     ]
                     for (let i = 0; i < keys.length; i++) {
                         const key = keys[i]
