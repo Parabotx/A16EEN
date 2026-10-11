@@ -226,9 +226,9 @@ Item {
         const containers = appearance.containers || ({})
         const item = containers.workspaces || ({})
         if (all.applyIconColor === true)
-            return "Disable 'Apply one icon color' under Appearance → All Workspaces first."
+            return "Disable 'Override icon colors' under Appearance → All Containers first."
         if (item.iconColor && item.iconColor !== "inherit")
-            return "Set Workspaces → Icon Color to Inherit before changing Icon Style here."
+            return "Set Appearance → Workspaces → Icon Color to Inherit before changing Icon Style here."
         return ""
     }
 
