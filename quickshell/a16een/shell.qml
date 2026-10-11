@@ -175,10 +175,6 @@ ShellRoot {
     // Widget state lives in the shell; rendering and management stay modular.
     property bool widgetsCenterOpen: false
     property bool editorialTimeWidgetEnabled: true
-    property bool calendarWidgetEnabled: false
-    property bool pulseWidgetEnabled: false
-    property bool workspaceWidgetEnabled: false
-    property bool tasksWidgetEnabled: false
     property bool musicWidgetEnabled: false
     property bool quotesWidgetEnabled: false
     property bool timeUse24Hour: true
@@ -189,10 +185,6 @@ ShellRoot {
     function widgetSettingsPayload() {
         return {
             editorialTimeWidgetEnabled: root.editorialTimeWidgetEnabled,
-            calendarWidgetEnabled: root.calendarWidgetEnabled,
-            pulseWidgetEnabled: root.pulseWidgetEnabled,
-            workspaceWidgetEnabled: root.workspaceWidgetEnabled,
-            tasksWidgetEnabled: root.tasksWidgetEnabled,
             musicWidgetEnabled: root.musicWidgetEnabled,
             quotesWidgetEnabled: root.quotesWidgetEnabled,
             timeUse24Hour: root.timeUse24Hour,
@@ -207,10 +199,6 @@ ShellRoot {
     }
 
     onEditorialTimeWidgetEnabledChanged: root.requestWidgetSettingsSave()
-    onCalendarWidgetEnabledChanged: root.requestWidgetSettingsSave()
-    onPulseWidgetEnabledChanged: root.requestWidgetSettingsSave()
-    onWorkspaceWidgetEnabledChanged: root.requestWidgetSettingsSave()
-    onTasksWidgetEnabledChanged: root.requestWidgetSettingsSave()
     onMusicWidgetEnabledChanged: root.requestWidgetSettingsSave()
     onQuotesWidgetEnabledChanged: root.requestWidgetSettingsSave()
     onTimeUse24HourChanged: root.requestWidgetSettingsSave()
@@ -226,10 +214,7 @@ ShellRoot {
                 try {
                     const saved = JSON.parse(String(this.text || "{}"))
                     const keys = [
-                        "editorialTimeWidgetEnabled", "calendarWidgetEnabled",
-                        "pulseWidgetEnabled", "workspaceWidgetEnabled",
-                        "tasksWidgetEnabled", "musicWidgetEnabled", "quotesWidgetEnabled",
-                        "timeUse24Hour", "timeShowSeconds"
+                                                                        "timeUse24Hour", "timeShowSeconds"
                     ]
                     for (let i = 0; i < keys.length; i++) {
                         const key = keys[i]
@@ -328,7 +313,6 @@ ShellRoot {
     }
 
 
-    property real systemLoad: 0
     property int volumePercent: 0
     property bool volumeMuted: false
     property var latestNotification: null
@@ -1096,19 +1080,6 @@ ShellRoot {
     }
 
     Process {
-        id: loadProcess
-
-        command: ["cat", "/proc/loadavg"]
-
-        stdout: StdioCollector {
-            onStreamFinished: {
-                const pieces = text.trim().split(/\s+/)
-                if (pieces.length > 0) root.systemLoad = Number(pieces[0]) || 0
-            }
-        }
-    }
-
-    Process {
         id: dndReader
         command: ["a16een-control", "dnd", "get"]
         running: true
@@ -1155,9 +1126,6 @@ ShellRoot {
         running: true
 
         onTriggered: {
-            loadProcess.running = false
-            loadProcess.running = true
-
             volumeProcess.running = false
             volumeProcess.running = true
         }
@@ -1173,49 +1141,6 @@ ShellRoot {
             editorialTimeWidgetEnabled: root.editorialTimeWidgetEnabled
             timeUse24Hour: root.timeUse24Hour
             timeShowSeconds: root.timeShowSeconds
-        }
-    }
-
-    Variants {
-        model: Quickshell.screens
-
-        CalendarWidget {
-            modelData: modelData
-            widgetEnabled: root.calendarWidgetEnabled && !root.secureLockActive
-            use24Hour: root.timeUse24Hour
-            showSeconds: root.timeShowSeconds
-        }
-    }
-
-    Variants {
-        model: Quickshell.screens
-
-        SystemPulseWidget {
-            modelData: modelData
-            widgetEnabled: root.pulseWidgetEnabled && !root.secureLockActive
-            systemLoad: root.systemLoad
-            volumePercent: root.volumePercent
-            volumeMuted: root.volumeMuted
-        }
-    }
-
-    Variants {
-        model: Quickshell.screens
-
-        WorkspaceWidget {
-            modelData: modelData
-            widgetEnabled: root.workspaceWidgetEnabled && !root.secureLockActive
-            workspaces: root.workspaces
-            focusedWorkspaceId: root.focusedWorkspaceId
-        }
-    }
-
-    Variants {
-        model: Quickshell.screens
-
-        TasksWidget {
-            modelData: modelData
-            widgetEnabled: root.tasksWidgetEnabled && !root.secureLockActive
         }
     }
 
@@ -1304,8 +1229,6 @@ ShellRoot {
         root.quickPresetsOpen = false
         root.quickUtilitiesOpen = false
         root.utilitiesExpanded = false
-        // The navbar's lightweight task list is independent of the old desktop widget.
-        root.tasksWidgetEnabled = false
         root.quickNotesOpen = false
         root.commandCenterOpen = false
         root.launcherOpen = false
@@ -1325,7 +1248,6 @@ ShellRoot {
         root.utilitiesExpanded = false
         root.quickNotesOpen = false
         root.quickTasksOpen = false
-        root.tasksWidgetEnabled = false
         root.commandCenterOpen = false
         root.launcherOpen = false
         root.wallpaperPickerOpen = false
@@ -1462,10 +1384,6 @@ ShellRoot {
         opened: root.commandCenterOpen
         widgetViewOpen: root.widgetsCenterOpen
         editorialTimeWidgetEnabled: root.editorialTimeWidgetEnabled
-        calendarWidgetEnabled: root.calendarWidgetEnabled
-        pulseWidgetEnabled: root.pulseWidgetEnabled
-        workspaceWidgetEnabled: root.workspaceWidgetEnabled
-        tasksWidgetEnabled: root.tasksWidgetEnabled
         musicWidgetEnabled: root.musicWidgetEnabled
         quotesWidgetEnabled: root.quotesWidgetEnabled
         timeUse24Hour: root.timeUse24Hour
@@ -1529,26 +1447,6 @@ ShellRoot {
 
         onEditorialTimeWidgetEnabledRequested: {
             root.editorialTimeWidgetEnabled = enabled
-            if (enabled)
-                root.calendarWidgetEnabled = false
-            root.requestWidgetSettingsSave()
-        }
-        onCalendarWidgetEnabledRequested: {
-            root.calendarWidgetEnabled = enabled
-            if (enabled)
-                root.editorialTimeWidgetEnabled = false
-            root.requestWidgetSettingsSave()
-        }
-        onPulseWidgetEnabledRequested: {
-            root.pulseWidgetEnabled = enabled
-            root.requestWidgetSettingsSave()
-        }
-        onWorkspaceWidgetEnabledRequested: {
-            root.workspaceWidgetEnabled = enabled
-            root.requestWidgetSettingsSave()
-        }
-        onTasksWidgetEnabledRequested: {
-            root.tasksWidgetEnabled = enabled
             root.requestWidgetSettingsSave()
         }
         onMusicWidgetEnabledRequested: {
