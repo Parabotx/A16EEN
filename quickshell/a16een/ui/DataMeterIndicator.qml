@@ -20,12 +20,12 @@ PanelWindow {
     function formatRate(value) {
         const rate = Math.max(0, Number(value) || 0)
         if (rate < 1024)
-            return { value: String(Math.round(rate)), unit: "B" }
+            return { value: String(Math.round(rate)), unit: "B/s" }
         if (rate < 1024 * 1024)
-            return { value: (rate / 1024).toFixed(rate < 10240 ? 1 : 0), unit: "K" }
+            return { value: (rate / 1024).toFixed(rate < 10240 ? 1 : 0), unit: "KiB/s" }
         if (rate < 1024 * 1024 * 1024)
-            return { value: (rate / (1024 * 1024)).toFixed(1), unit: "M" }
-        return { value: (rate / (1024 * 1024 * 1024)).toFixed(1), unit: "G" }
+            return { value: (rate / (1024 * 1024)).toFixed(1), unit: "MiB/s" }
+        return { value: (rate / (1024 * 1024 * 1024)).toFixed(1), unit: "GiB/s" }
     }
 
     screen: root.modelData
@@ -156,7 +156,7 @@ PanelWindow {
                     anchors.verticalCenter: parent.verticalCenter
                     text: {
                         const reading = root.formatRate(root.snapshot
-                            ? (root.showingDownload ? root.snapshot.down_bps : root.snapshot.up_bps)
+                            ? (root.showingDownload ? root.snapshot.download_bytes_per_second : root.snapshot.upload_bytes_per_second)
                             : 0)
                         return reading.value
                     }
@@ -172,7 +172,7 @@ PanelWindow {
                     y: 4
                     text: {
                         const reading = root.formatRate(root.snapshot
-                            ? (root.showingDownload ? root.snapshot.down_bps : root.snapshot.up_bps)
+                            ? (root.showingDownload ? root.snapshot.download_bytes_per_second : root.snapshot.upload_bytes_per_second)
                             : 0)
                         return reading.unit
                     }
