@@ -184,20 +184,36 @@ main() {
             esac
             flock -u 9
 
-            # Visibility and the text/custom-drawn Battery and Clock can update
-            # directly from JSON. Don't rebuild every workspace SVG just to
-            # flip one switch; only icon-affecting edits need regeneration.
+            # Route only the icons that can be affected by this setting. Most
+            # visibility changes and the custom-drawn Battery/Clock update from
+            # JSON directly and should never rebuild the entire navbar.
+            local appearance_target="none"
             case "$key" in
-                visible|visibilityControl) regenerate_icons=false ;;
-                containerColor|iconColor)
-                    if [[ "$scope" == "container" && ( "$id" == "battery" || "$id" == "time" ) ]]; then
-                        regenerate_icons=false
+                visible|visibilityControl)
+                    appearance_target="none"
+                    ;;
+                applyContainerColor|containerColor|applyIconColor|iconColor)
+                    if [[ "$scope" == "all" ]]; then
+                        appearance_target="all"
+                    else
+                        case "$id" in
+                            workspaces|utilities|power|quick-actions|quick-hub)
+                                appearance_target="$id"
+                                ;;
+                            battery|time)
+                                appearance_target="none"
+                                ;;
+                        esac
                     fi
                     ;;
             esac
 
-            if [[ "$regenerate_icons" == true && -x "$NAVBAR_CMD" ]]; then
+            if [[ ! -x "$NAVBAR_CMD" ]]; then
+                notify_appearance_changed
+            elif [[ "$appearance_target" == "all" ]]; then
                 "$NAVBAR_CMD" apply
+            elif [[ "$appearance_target" != "none" ]]; then
+                "$NAVBAR_CMD" apply-appearance "$appearance_target"
             else
                 notify_appearance_changed
             fi
