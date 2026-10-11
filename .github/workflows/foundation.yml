@@ -461,6 +461,12 @@ jobs:
           grep -Fq 'containerIsVisible("power")' quickshell/a16een/ui/Dock.qml
           grep -Fq 'containerIsVisible("quick-actions")' quickshell/a16een/ui/QuickActionsTray.qml
           grep -Fq 'containerIsVisible("quick-hub")' quickshell/a16een/ui/QuickHubTray.qml
+          grep -Fq 'appearanceFile.reload()' quickshell/a16een/ui/QuickActionsTray.qml
+          grep -Fq 'appearanceFile.reload()' quickshell/a16een/ui/QuickHubTray.qml
+          grep -Fq 'navbarAppearanceFile.reload()' quickshell/a16een/ui/Dock.qml
+          grep -Fq 'apply-appearance' scripts/a16een-navbar
+          grep -Fq 'appearance_target="none"' scripts/a16een-navbar-appearance
+          grep -Fq 'notify_appearance_changed' scripts/a16een-navbar-appearance
           grep -Fq 'Layout.maximumWidth: 154' quickshell/a16een/ui/NavbarAppearancePage.qml
           grep -Fq 'quick-actions' quickshell/a16een/ui/NavbarAppearancePage.qml
           grep -Fq 'quick-hub' quickshell/a16een/ui/NavbarAppearancePage.qml
