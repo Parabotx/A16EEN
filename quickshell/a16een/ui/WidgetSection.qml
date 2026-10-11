@@ -53,10 +53,6 @@ Item {
 
     function widgetIcon(id) {
         if (id === "editorial-time") return "lucide-monitor.svg"
-        if (id === "calendar") return "quick-calendar.svg"
-        if (id === "pulse") return "lucide-activity.svg"
-        if (id === "workspaces") return "layers.svg"
-        if (id === "tasks") return "quick-tasks.svg"
         if (id === "music") return "music.svg"
         if (id === "quotes") return "quote-mark.svg"
         return "lucide-app-window.svg"
