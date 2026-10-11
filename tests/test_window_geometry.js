@@ -31,6 +31,15 @@ const windows = [
     {
         id: 15, title: "Off screen", workspace_id: 7,
         layout: { tile_pos_in_workspace_view: [1200, 0], tile_size: [200, 200] }
+    },
+    {
+        id: 16, title: "Tiled fallback", app_id: "org.example.app", workspace_id: 7,
+        is_floating: false,
+        layout: {
+            tile_pos_in_workspace_view: null,
+            pos_in_scrolling_layout: [1, 1],
+            tile_size: [300, 400]
+        }
     }
 ];
 const workspaces = [
@@ -51,6 +60,11 @@ assert.deepEqual(JSON.parse(JSON.stringify(simple)), [
         id: 11, title: "Firefox",
         rect: { x: 20, y: 30, width: 600, height: 700 },
         floating: false, focused: true
+    },
+    {
+        id: 16, title: "Tiled fallback",
+        rect: { x: 12, y: 200, width: 300, height: 400 },
+        floating: false, focused: false
     },
     {
         id: 12, title: "Terminal",
