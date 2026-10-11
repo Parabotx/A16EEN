@@ -4,80 +4,48 @@ set -euo pipefail
 STATE_BASE="$(printenv XDG_STATE_HOME 2>/dev/null || printf '%s' "$HOME/.local/state")"
 STATE_DIR="$STATE_BASE/a16een"
 STATE_FILE="$STATE_DIR/navbar-appearance.json"
-REGISTRY_FILE="$STATE_DIR/workspaces.json"
-WORKSPACES_CMD="$(printenv A16EEN_WORKSPACES_CMD 2>/dev/null || printf '%s' /usr/local/bin/a16een-workspaces)"
 NAVBAR_CMD="$(printenv A16EEN_NAVBAR_CMD 2>/dev/null || printf '%s' /usr/local/bin/a16een-navbar)"
 
-ensure_registry() {
-    [[ -s "$REGISTRY_FILE" ]] || "$WORKSPACES_CMD" apply >/dev/null 2>&1 || true
-    [[ -s "$REGISTRY_FILE" ]] || {
-        echo "A16EEN appearance: workspace registry is missing." >&2
-        return 1
-    }
-    jq -e 'type == "array" and all(.[]; (.id | type == "string") and (.id | test("^[a-z0-9_-]+$")))' \
-        "$REGISTRY_FILE" >/dev/null || {
-        echo "A16EEN appearance: workspace registry is invalid." >&2
-        return 1
-    }
-}
-
-default_workspace_state='{"visible":true,"containerEnabled":false,"containerColor":"transparent","iconColor":"inherit"}'
+default_all='{"visibilityControl":false,"visible":true,"applyContainerColor":false,"containerColor":"#15171A","applyIconColor":false,"iconColor":"auto","surfaceColor":"#FFFFFF"}'
+default_container='{"visible":true,"containerEnabled":false,"containerColor":"transparent","iconColor":"inherit"}'
+container_ids='["workspaces","battery","time","utilities","power"]'
 
 ensure_settings() {
     mkdir -p "$STATE_DIR"
-    ensure_registry
     if [[ ! -s "$STATE_FILE" ]]; then
-        jq -n --slurpfile registry "$REGISTRY_FILE" \
-            --argjson workspaceDefaults "$default_workspace_state" '
-            {
-              all: {
-                visibilityControl: false,
-                visible: true,
-                applyContainerColor: false,
-                containerColor: "#15171A",
-                applyIconColor: false,
-                iconColor: "auto",
-                surfaceColor: "#FFFFFF"
-              },
-              workspaces: {}
-            }
-            | reduce $registry[0][] as $ws (.;
-                .workspaces[$ws.id] = $workspaceDefaults
+        jq -n --argjson allDefaults "$default_all" --argjson containerDefaults "$default_container" \
+            --argjson ids "$container_ids" '
+            {all:$allDefaults, containers:{}, schemaVersion:2}
+            | reduce $ids[] as $id (.;
+                .containers[$id] = $containerDefaults
               )
         ' > "$STATE_FILE"
         chmod 600 "$STATE_FILE"
-    else
-        jq empty "$STATE_FILE" >/dev/null 2>&1 || {
-            echo "A16EEN appearance: settings JSON is invalid; leaving it untouched." >&2
-            return 1
-        }
-        local tmp
-        tmp="$(mktemp "$STATE_DIR/navbar-appearance.json.XXXXXX")"
-        if ! jq --slurpfile registry "$REGISTRY_FILE" \
-            --argjson workspaceDefaults "$default_workspace_state" '
-            (.all // {}) as $existingAll
-            | .all = ({
-                visibilityControl: false,
-                visible: true,
-                applyContainerColor: false,
-                containerColor: "#15171A",
-                applyIconColor: false,
-                iconColor: "auto",
-                surfaceColor: "#FFFFFF"
-              } + $existingAll)
-            | .workspaces = (.workspaces // {})
-            | reduce $registry[0][] as $ws (.;
-                if (.workspaces | has($ws.id)) then .
-                else .workspaces[$ws.id] = $workspaceDefaults
-                end
-              )
-        ' "$STATE_FILE" > "$tmp"; then
-            rm -f "$tmp"
-            return 1
-        fi
-        chmod 600 "$tmp"
-        mv -f "$tmp" "$STATE_FILE"
+        return
     fi
+
+    jq empty "$STATE_FILE" >/dev/null 2>&1 || {
+        echo "A16EEN appearance: settings JSON is invalid; leaving it untouched." >&2
+        return 1
+    }
+
+    local tmp
+    tmp="$(mktemp "$STATE_DIR/navbar-appearance.json.XXXXXX")"
+    if ! jq --argjson allDefaults "$default_all" --argjson containerDefaults "$default_container" \
+        --argjson ids "$container_ids" '
+        .all = ($allDefaults + (.all // {}))
+        | .containers = (.containers // {})
+        | reduce $ids[] as $id (.;
+            .containers[$id] = ($containerDefaults + (.containers[$id] // {}))
+          )
+        | del(.workspaces)
+        | .schemaVersion = 2
+    ' "$STATE_FILE" > "$tmp"; then
+        rm -f "$tmp"
+        return 1
+    fi
+    chmod 600 "$tmp"
+    mv -f "$tmp" "$STATE_FILE"
 }
 
 normalize_bool() {
@@ -87,10 +55,7 @@ normalize_bool() {
         *) return 1 ;;
     esac
 }
-
-valid_hex() {
-    [[ "$1" =~ ^#[0-9A-Fa-f]{6}$ ]]
-}
+valid_hex() { [[ "$1" =~ ^#[0-9A-Fa-f]{6}$ ]]; }
 
 write_all() {
     local key="$1" value="$2" tmp
@@ -101,26 +66,14 @@ write_all() {
                 return 2
             }
             tmp="$(mktemp "$STATE_DIR/navbar-appearance.json.XXXXXX")"
-            jq --arg key "$key" --argjson value "$value" '.all[$key] = $value' \
-                "$STATE_FILE" > "$tmp"
+            jq --arg key "$key" --argjson value "$value" '.all[$key] = $value' "$STATE_FILE" > "$tmp"
             ;;
-        surfaceColor)
+        containerColor)
             valid_hex "$value" || {
-                echo "A16EEN appearance: surface color must be a #RRGGBB value." >&2
+                echo "A16EEN appearance: shared background must be a #RRGGBB value." >&2
                 return 2
             }
             value="$(printf '%s' "$value" | tr '[:lower:]' '[:upper:]')"
-            tmp="$(mktemp "$STATE_DIR/navbar-appearance.json.XXXXXX")"
-            jq --arg value "$value" '.all.surfaceColor = $value' "$STATE_FILE" > "$tmp"
-            ;;
-        containerColor)
-            { valid_hex "$value" || [[ "$value" == "transparent" ]]; } || {
-                echo "A16EEN appearance: container color must be #RRGGBB or transparent." >&2
-                return 2
-            }
-            if valid_hex "$value"; then
-                value="$(printf '%s' "$value" | tr '[:lower:]' '[:upper:]')"
-            fi
             tmp="$(mktemp "$STATE_DIR/navbar-appearance.json.XXXXXX")"
             jq --arg value "$value" '.all.containerColor = $value' "$STATE_FILE" > "$tmp"
             ;;
@@ -129,9 +82,7 @@ write_all() {
                 echo "A16EEN appearance: icon color must be #RRGGBB or auto." >&2
                 return 2
             }
-            if valid_hex "$value"; then
-                value="$(printf '%s' "$value" | tr '[:lower:]' '[:upper:]')"
-            fi
+            if valid_hex "$value"; then value="$(printf '%s' "$value" | tr '[:lower:]' '[:upper:]')"; fi
             tmp="$(mktemp "$STATE_DIR/navbar-appearance.json.XXXXXX")"
             jq --arg value "$value" '.all.iconColor = $value' "$STATE_FILE" > "$tmp"
             ;;
@@ -140,18 +91,16 @@ write_all() {
             return 2
             ;;
     esac
-
     chmod 600 "$tmp"
     mv -f "$tmp" "$STATE_FILE"
 }
 
-write_workspace() {
-    local slot="$1" key="$2" value="$3" tmp
-    jq -e --arg id "$slot" '.[] | select(.id == $id)' "$REGISTRY_FILE" >/dev/null 2>&1 || {
-        echo "A16EEN appearance: unknown workspace: $slot" >&2
-        return 2
-    }
-
+write_container() {
+    local id="$1" key="$2" value="$3" tmp
+    case "$id" in
+        workspaces|battery|time|utilities|power) ;;
+        *) echo "A16EEN appearance: unknown navbar container: $id" >&2; return 2 ;;
+    esac
     case "$key" in
         visible)
             if jq -e '.all.visibilityControl == true' "$STATE_FILE" >/dev/null 2>&1; then
@@ -163,49 +112,41 @@ write_workspace() {
                 return 2
             }
             tmp="$(mktemp "$STATE_DIR/navbar-appearance.json.XXXXXX")"
-            jq --arg slot "$slot" --argjson value "$value" \
-                '.workspaces[$slot].visible = $value' "$STATE_FILE" > "$tmp"
+            jq --arg id "$id" --argjson value "$value" '.containers[$id].visible = $value' "$STATE_FILE" > "$tmp"
             ;;
         containerColor)
             if jq -e '.all.applyContainerColor == true' "$STATE_FILE" >/dev/null 2>&1; then
-                echo "A16EEN appearance: turn off All container color first." >&2
+                echo "A16EEN appearance: turn off All background override first." >&2
                 return 2
             fi
             { valid_hex "$value" || [[ "$value" == "transparent" ]]; } || {
                 echo "A16EEN appearance: container color must be #RRGGBB or transparent." >&2
                 return 2
             }
-            if valid_hex "$value"; then
-                value="$(printf '%s' "$value" | tr '[:lower:]' '[:upper:]')"
-            fi
+            if valid_hex "$value"; then value="$(printf '%s' "$value" | tr '[:lower:]' '[:upper:]')"; fi
             tmp="$(mktemp "$STATE_DIR/navbar-appearance.json.XXXXXX")"
-            jq --arg slot "$slot" --arg value "$value" \
-                '.workspaces[$slot].containerColor = $value
-                 | .workspaces[$slot].containerEnabled = ($value != "transparent")' \
-                "$STATE_FILE" > "$tmp"
+            jq --arg id "$id" --arg value "$value" \
+                '.containers[$id].containerColor = $value
+                 | .containers[$id].containerEnabled = ($value != "transparent")' "$STATE_FILE" > "$tmp"
             ;;
         iconColor)
             if jq -e '.all.applyIconColor == true' "$STATE_FILE" >/dev/null 2>&1; then
-                echo "A16EEN appearance: turn off All icon color first." >&2
+                echo "A16EEN appearance: turn off All icon-color override first." >&2
                 return 2
             fi
             { valid_hex "$value" || [[ "$value" == "auto" || "$value" == "inherit" ]]; } || {
                 echo "A16EEN appearance: icon color must be #RRGGBB, auto, or inherit." >&2
                 return 2
             }
-            if valid_hex "$value"; then
-                value="$(printf '%s' "$value" | tr '[:lower:]' '[:upper:]')"
-            fi
+            if valid_hex "$value"; then value="$(printf '%s' "$value" | tr '[:lower:]' '[:upper:]')"; fi
             tmp="$(mktemp "$STATE_DIR/navbar-appearance.json.XXXXXX")"
-            jq --arg slot "$slot" --arg value "$value" \
-                '.workspaces[$slot].iconColor = $value' "$STATE_FILE" > "$tmp"
+            jq --arg id "$id" --arg value "$value" '.containers[$id].iconColor = $value' "$STATE_FILE" > "$tmp"
             ;;
         *)
-            echo "A16EEN appearance: unsupported workspace setting: $key" >&2
+            echo "A16EEN appearance: unsupported container setting: $key" >&2
             return 2
             ;;
     esac
-
     chmod 600 "$tmp"
     mv -f "$tmp" "$STATE_FILE"
 }
@@ -213,52 +154,30 @@ write_workspace() {
 main() {
     local action="get"
     if [[ $# -gt 0 ]]; then action="$1"; fi
-
     case "$action" in
-        get)
-            ensure_settings
-            cat "$STATE_FILE"
-            ;;
+        get) ensure_settings; cat "$STATE_FILE" ;;
         set)
             [[ $# -eq 5 ]] || {
-                echo "Usage: a16een-navbar-appearance set <all|workspace> <slot|-> <key> <value>" >&2
+                echo "Usage: a16een-navbar-appearance set <all|container> <id|-> <key> <value>" >&2
                 return 2
             }
-            local scope="$2" slot="$3" key="$4" value="$5"
+            local scope="$2" id="$3" key="$4" value="$5"
             mkdir -p "$STATE_DIR"
             exec 9>"$STATE_DIR/navbar-appearance.lock"
             flock -x 9
             ensure_settings
             case "$scope" in
                 all)
-                    [[ "$slot" == "-" ]] || {
-                        echo "Use '-' as the slot for All settings." >&2
-                        return 2
-                    }
+                    [[ "$id" == "-" ]] || { echo "Use '-' for All settings." >&2; return 2; }
                     write_all "$key" "$value"
                     ;;
-                workspace)
-                    [[ "$slot" =~ ^[a-z0-9_-]+$ ]] || {
-                        echo "A16EEN appearance: invalid workspace ID." >&2
-                        return 2
-                    }
-                    write_workspace "$slot" "$key" "$value"
-                    ;;
-                *)
-                    echo "Scope must be all or workspace." >&2
-                    return 2
-                    ;;
+                container) write_container "$id" "$key" "$value" ;;
+                *) echo "Scope must be all or container." >&2; return 2 ;;
             esac
             flock -u 9
-            if [[ -x "$NAVBAR_CMD" ]]; then
-                "$NAVBAR_CMD" apply
-            fi
+            if [[ -x "$NAVBAR_CMD" ]]; then "$NAVBAR_CMD" apply; fi
             ;;
-        *)
-            echo "Usage: a16een-navbar-appearance {get|set <all|workspace> <slot|-> <key> <value>}" >&2
-            return 2
-            ;;
+        *) echo "Usage: a16een-navbar-appearance {get|set <all|container> <id|-> <key> <value>}" >&2; return 2 ;;
     esac
 }
-
 main "$@"

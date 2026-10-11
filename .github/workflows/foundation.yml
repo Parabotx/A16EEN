@@ -461,7 +461,8 @@ jobs:
           grep -Fq 'NavbarAppearancePage {' quickshell/a16een/ui/NavbarManager.qml
           grep -Fq 'iconStyleLockMessage(slot)' quickshell/a16een/ui/NavbarManager.qml
           grep -Fq 'a16een-navbar-appearance' scripts/install.sh
-          grep -Fq 'surfaceColor' quickshell/a16een/ui/NavbarAppearancePage.qml
+          grep -Fq 'All Containers' quickshell/a16een/ui/NavbarAppearancePage.qml
+          grep -Fq 'containerChoices' quickshell/a16een/ui/NavbarAppearancePage.qml
           ! grep -Fq '#2F6FED' quickshell/a16een/ui/Dock.qml
           ! grep -Fq 'width: 20' quickshell/a16een/ui/Dock.qml
           grep -Fq 'Super+S allow-inhibiting=false repeat=false hotkey-overlay-title="A16EEN Screenshot Center"' niri/config.kdl

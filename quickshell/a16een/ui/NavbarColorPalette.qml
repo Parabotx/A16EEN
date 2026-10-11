@@ -10,6 +10,7 @@ Item {
     signal colorPicked(string value)
 
     implicitHeight: Math.ceil(options.length / 5) * 43
+        + Math.max(0, Math.ceil(options.length / 5) - 1) * 5
     implicitWidth: 260
 
     GridLayout {

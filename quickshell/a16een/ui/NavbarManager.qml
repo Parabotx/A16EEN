@@ -223,12 +223,12 @@ Item {
     function iconStyleLockMessage(slot) {
         const appearance = root.appearanceSettings || ({})
         const all = appearance.all || ({})
-        const workspaces = appearance.workspaces || ({})
-        const item = workspaces[slot] || ({})
+        const containers = appearance.containers || ({})
+        const item = containers.workspaces || ({})
         if (all.applyIconColor === true)
             return "Disable 'Apply one icon color' under Appearance → All Workspaces first."
         if (item.iconColor && item.iconColor !== "inherit")
-            return "Set this workspace's Appearance → Icon Color to Inherit before changing Icon Style here."
+            return "Set Workspaces → Icon Color to Inherit before changing Icon Style here."
         return ""
     }
 
@@ -965,7 +965,6 @@ Item {
 
                 NavbarAppearancePage {
                     active: root.active && root.currentSection === "appearance"
-                    workspaces: root.slots
                 }
 
                 Item {
