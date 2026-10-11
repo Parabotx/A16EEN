@@ -86,6 +86,25 @@ window_result="$(bash "$SCRIPT" window "$snapshot")"
 [[ "$window_result" == "$HOME/Pictures/Screenshots/"* ]]
 [[ ! -e "$snapshot" ]]
 
+# The hover picker passes a specific Niri window ID directly. It must capture
+# that window and remove the frozen desktop used for hover highlighting.
+id_snapshot="$(bash "$SCRIPT" prepare-window)"
+id_result="$(bash "$SCRIPT" window-id 42 "$id_snapshot")"
+[[ -s "$id_result" ]]
+[[ "$id_result" == "$HOME/Pictures/Screenshots/"* ]]
+[[ ! -e "$id_snapshot" ]]
+
+# Invalid IDs must be rejected instead of being passed into compositor IPC.
+invalid_snapshot="$(bash "$SCRIPT" prepare-window)"
+if bash "$SCRIPT" window-id not-a-window "$invalid_snapshot" >/dev/null 2>&1; then
+    echo "Invalid window ID unexpectedly succeeded." >&2
+    exit 1
+else
+    status=$?
+fi
+[[ "$status" -eq 2 ]]
+[[ ! -e "$invalid_snapshot" ]]
+
 # Full-screen capture uses the same output-wait helper and must also succeed.
 screen_result="$(bash "$SCRIPT" screen)"
 [[ -s "$screen_result" ]]
