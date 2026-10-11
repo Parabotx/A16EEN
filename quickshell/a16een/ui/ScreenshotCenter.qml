@@ -4,6 +4,7 @@ import Quickshell
 import Quickshell.Io
 import Quickshell.Widgets
 import Quickshell.Wayland
+import "WindowGeometry.js" as WindowGeometry
 
 PanelWindow {
     id: root
@@ -29,7 +30,10 @@ PanelWindow {
     property int hoveredWindowId: -1
     property var hoveredWindowRect: null
     property string hoveredWindowName: ""
-    readonly property var windowCandidates: root.buildWindowCandidates()
+    readonly property var windowCandidates: WindowGeometry.buildCandidates(
+        root.width, root.height, root.windowItems, root.workspaceItems,
+        root.focusedWorkspaceId, root.focusedWindowId
+    )
 
     signal closeRequested()
 
@@ -93,129 +97,8 @@ PanelWindow {
         root.dragging = false
     }
 
-    // Niri's native pick-window operation conflicts with a full-screen
-    // layer-shell overlay. Resolve window targets from Niri's IPC state and
-    // keep hover/click selection inside this component instead.
-    function buildWindowCandidates() {
-        const screenWidth = Math.max(1, Number(root.width))
-        const screenHeight = Math.max(1, Number(root.height))
-        const gap = 12
-        const workspaces = Array.isArray(root.workspaceItems) ? root.workspaceItems : []
-        const windows = Array.isArray(root.windowItems) ? root.windowItems : []
-        let workspace = workspaces.find(item =>
-            Number(item.id) === Number(root.focusedWorkspaceId))
-        if (!workspace)
-            workspace = workspaces.find(item => item.is_focused === true || item.is_active === true)
-        if (!workspace)
-            return []
-
-        const current = windows.filter(item =>
-            Number(item.workspace_id) === Number(workspace.id)
-            && item.layout && Array.isArray(item.layout.tile_size)
-            && item.layout.tile_size.length >= 2
-            && Number(item.layout.tile_size[0]) > 0
-            && Number(item.layout.tile_size[1]) > 0
-        )
-
-        const candidates = []
-        const tiledByColumn = Object.create(null)
-        for (let i = 0; i < current.length; i++) {
-            const item = current[i]
-            const layout = item.layout
-            const size = layout.tile_size
-            if (item.is_floating === true) {
-                const pos = layout.tile_pos_in_workspace_view
-                if (Array.isArray(pos) && pos.length >= 2) {
-                    candidates.push({
-                        id: Number(item.id),
-                        title: String(item.title || item.app_id || "Window"),
-                        rect: { x: Number(pos[0]), y: Number(pos[1]),
-                            width: Number(size[0]), height: Number(size[1]) },
-                        floating: true,
-                        order: 100000 + i
-                    })
-                }
-                continue
-            }
-
-            const pos = layout.pos_in_scrolling_layout
-            if (!Array.isArray(pos) || pos.length < 2)
-                continue
-            const columnIndex = Number(pos[0])
-            if (!Number.isFinite(columnIndex))
-                continue
-            const key = String(columnIndex)
-            if (!tiledByColumn[key])
-                tiledByColumn[key] = { index: columnIndex, width: Number(size[0]), windows: [] }
-            tiledByColumn[key].width = Math.max(tiledByColumn[key].width, Number(size[0]))
-            tiledByColumn[key].windows.push({
-                item,
-                tileIndex: Number(pos[1]),
-                width: Number(size[0]),
-                height: Number(size[1]),
-                order: i
-            })
-        }
-
-        const columns = Object.keys(tiledByColumn).map(key => tiledByColumn[key])
-            .sort((a, b) => a.index - b.index)
-        if (columns.length) {
-            let contentWidth = 0
-            for (let i = 0; i < columns.length; i++)
-                contentWidth += columns[i].width + (i ? gap : 0)
-
-            const focused = current.find(item => Number(item.id) === Number(root.focusedWindowId))
-            const focusedPos = focused && focused.layout
-                ? focused.layout.pos_in_scrolling_layout
-                : null
-            const focusedColumn = Array.isArray(focusedPos) ? Number(focusedPos[0]) : columns[0].index
-            let focusedOffset = 0
-            let focusedWidth = columns[0].width
-            for (let i = 0; i < columns.length; i++) {
-                if (columns[i].index === focusedColumn) {
-                    focusedWidth = columns[i].width
-                    break
-                }
-                focusedOffset += columns[i].width + gap
-            }
-
-            // Mirrors the A16EEN layout setting: center the focused column on overflow.
-            let x = gap
-            if (contentWidth > screenWidth - gap * 2)
-                x = screenWidth / 2 - focusedOffset - focusedWidth / 2
-
-            for (let i = 0; i < columns.length; i++) {
-                const column = columns[i]
-                const ordered = column.windows.sort((a, b) => a.tileIndex - b.tileIndex)
-                let contentHeight = 0
-                for (let j = 0; j < ordered.length; j++)
-                    contentHeight += ordered[j].height + (j ? gap : 0)
-                let y = contentHeight < screenHeight - gap * 2
-                    ? (screenHeight - contentHeight) / 2
-                    : gap
-
-                for (let j = 0; j < ordered.length; j++) {
-                    const entry = ordered[j]
-                    candidates.push({
-                        id: Number(entry.item.id),
-                        title: String(entry.item.title || entry.item.app_id || "Window"),
-                        rect: { x: x, y: y, width: entry.width, height: entry.height },
-                        floating: false,
-                        order: entry.order
-                    })
-                    y += entry.height + gap
-                }
-                x += column.width + gap
-            }
-        }
-
-        return candidates.filter(item =>
-            Number.isFinite(item.id)
-            && item.rect.width > 0 && item.rect.height > 0
-            && item.rect.x < screenWidth && item.rect.y < screenHeight
-            && item.rect.x + item.rect.width > 0 && item.rect.y + item.rect.height > 0
-        ).sort((a, b) => a.order - b.order)
-    }
+    // Window bounds are derived by the helper module so QML stays easy to
+    // parse and the hit-test math remains independently testable.
 
     function updateHoveredWindow(x, y) {
         const candidates = root.windowCandidates
