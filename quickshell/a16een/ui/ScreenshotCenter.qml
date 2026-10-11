@@ -11,6 +11,8 @@ PanelWindow {
 
     required property var modelData
     property bool opened: false
+    property bool preparingCapture: false
+    property string prepareCommand: ""
 
     property int phase: 0 // 0 menu, 1 preparing area, 2 selecting area, 3 capturing, 4 preparing window picker, 5 picking window
     property string snapshotPath: ""
@@ -44,8 +46,8 @@ PanelWindow {
 
     screen: modelData
     color: "transparent"
-    visible: root.opened
-    focusable: root.opened
+    visible: root.opened && !root.preparingCapture
+    focusable: root.opened && !root.preparingCapture
     aboveWindows: true
     exclusiveZone: 0
 
@@ -58,26 +60,18 @@ PanelWindow {
 
     WlrLayershell.layer: WlrLayer.Overlay
     WlrLayershell.namespace: "a16een-screenshot"
-    WlrLayershell.keyboardFocus: root.opened
+    WlrLayershell.keyboardFocus: root.opened && !root.preparingCapture
         ? WlrKeyboardFocus.OnDemand
         : WlrKeyboardFocus.None
 
-    // Keep a valid input surface during every transition. Switching the
-    // mask to an invisible menu row while preparing a snapshot can leave the
-    // compositor with an empty input region and make selection appear broken.
-    mask: Region {
-        Region {
-            item: root.phase === 0
-                ? screenshotModeRow
-                : (root.phase === 2
-                    ? areaSelectionOverlay
-                    : (root.phase === 5 ? windowSelectionOverlay : preparationInputSurface))
-        }
-        Region { item: cancelButton }
-    }
+    // This picker owns hover/click selection itself. Do not restrict the
+    // full-screen surface with a Region mask: the old native-picker pass-through
+    // mask swallowed pointer transitions in both area and window modes.
 
     function cancelCapture() {
         root.dragging = false
+        root.preparingCapture = false
+        prepareCaptureTimer.stop()
         root.resetSelection()
         if (areaPrepareProcess.running)
             areaPrepareProcess.running = false
@@ -142,24 +136,23 @@ PanelWindow {
 
         if (mode === 1) {
             root.phase = 1
-            areaPrepareProcess.command = ["a16een-screenshot", "prepare-area"]
-            areaPrepareProcess.running = false
-            areaPrepareProcess.running = true
+            root.prepareCommand = "prepare-area"
+            root.preparingCapture = true
+            prepareCaptureTimer.restart()
         } else if (mode === 2) {
-            // Freeze the desktop, then use an in-overlay hover/click picker.
-            // Do not start Niri's native picker under this full-screen layer.
+            // Hide the panel before taking the frozen background so the image
+            // contains the desktop rather than the menu/layer-shell itself.
             root.phase = 4
             root.hoveredWindowId = -1
             root.hoveredWindowRect = null
             root.hoveredWindowName = ""
-            areaPrepareProcess.command = ["a16een-screenshot", "prepare-window"]
-            areaPrepareProcess.running = false
-            areaPrepareProcess.running = true
+            root.prepareCommand = "prepare-window"
+            root.preparingCapture = true
+            prepareCaptureTimer.restart()
         } else {
             root.phase = 3
-            captureProcess.command = ["a16een-screenshot", "screen"]
-            captureProcess.running = false
-            captureProcess.running = true
+            root.preparingCapture = true
+            prepareCaptureTimer.restart()
         }
     }
 
@@ -198,12 +191,32 @@ PanelWindow {
         areaCaptureProcess.running = true
     }
 
+    Timer {
+        id: prepareCaptureTimer
+        interval: 160
+        repeat: false
+        onTriggered: {
+            if (!root.opened)
+                return
+            if (root.phase === 3) {
+                captureProcess.command = ["/usr/local/bin/a16een-screenshot", "screen"]
+                captureProcess.running = false
+                captureProcess.running = true
+            } else {
+                areaPrepareProcess.command = ["/usr/local/bin/a16een-screenshot", root.prepareCommand]
+                areaPrepareProcess.running = false
+                areaPrepareProcess.running = true
+            }
+        }
+    }
+
     Process {
         id: captureProcess
         running: false
 
         stdout: StdioCollector {
             onStreamFinished: {
+                root.preparingCapture = false
                 root.phase = 0
                 root.closeRequested()
             }
@@ -218,8 +231,10 @@ PanelWindow {
 
         onExited: (exitCode, exitStatus) => {
             if (exitCode !== 0 && root.opened) {
+                root.preparingCapture = false
                 root.phase = 0
-                root.closeRequested()
+                console.warn("A16EEN screenshot capture process exited with code", exitCode)
+                root.forceActiveFocus()
             }
         }
     }
@@ -231,27 +246,34 @@ PanelWindow {
 
         stdout: StdioCollector {
             onStreamFinished: {
-                const path = text.trim()
+                const path = String(text || "").trim()
                 if (!path.length) {
-                    // Keep Screenshot Center open so a missing capture tool or
-                    // compositor error does not look like a dead button.
+                    // Recover to the menu instead of leaving an invisible
+                    // full-screen overlay catching every click.
+                    root.preparingCapture = false
                     root.phase = 0
+                    Qt.callLater(root.forceActiveFocus)
                     console.warn("A16EEN screenshot selection could not prepare its background.")
                     return
                 }
 
                 root.snapshotPath = path
                 root.resetSelection()
-                root.forceActiveFocus()
-
-                if (root.phase === 4) {
-                    root.hoveredWindowId = -1
-                    root.hoveredWindowRect = null
-                    root.hoveredWindowName = ""
+                if (root.prepareCommand === "prepare-window")
                     root.phase = 5
-                } else {
+                else
                     root.phase = 2
-                }
+                root.preparingCapture = false
+                Qt.callLater(root.forceActiveFocus)
+            }
+        }
+
+        onExited: (exitCode, exitStatus) => {
+            if (exitCode !== 0 && root.opened) {
+                root.preparingCapture = false
+                root.phase = 0
+                Qt.callLater(root.forceActiveFocus)
+                console.warn("A16EEN screenshot background process exited with code", exitCode)
             }
         }
 
@@ -279,22 +301,6 @@ PanelWindow {
                 if (text.trim().length)
                     console.warn("A16EEN area capture:", text.trim())
             }
-        }
-    }
-
-    // Transparent full-screen hit region for short capture/preparation
-    // phases; never let an empty menu mask collapse the overlay interaction.
-    Item {
-        id: preparationInputSurface
-        anchors.fill: parent
-        visible: root.phase === 1 || root.phase === 3 || root.phase === 4
-        z: 0
-
-        MouseArea {
-            anchors.fill: parent
-            acceptedButtons: Qt.AllButtons
-            preventStealing: true
-            onClicked: mouse => { mouse.accepted = true }
         }
     }
 
@@ -626,6 +632,8 @@ PanelWindow {
 
     onOpenedChanged: {
         if (root.opened) {
+            prepareCaptureTimer.stop()
+            root.preparingCapture = false
             root.phase = 0
             root.resetSelection()
             root.snapshotPath = ""
