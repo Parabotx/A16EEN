@@ -151,6 +151,13 @@ write_container() {
     mv -f "$tmp" "$STATE_FILE"
 }
 
+notify_appearance_changed() {
+    # QML also watches this stable path. Settings are atomically replaced with
+    # mv, which can detach some QFileSystemWatcher-backed file watches.
+    mkdir -p "$STATE_DIR/navbar-icons"
+    touch "$STATE_DIR/navbar-icons/ready"
+}
+
 main() {
     local action="get"
     if [[ $# -gt 0 ]]; then action="$1"; fi
@@ -162,6 +169,7 @@ main() {
                 return 2
             }
             local scope="$2" id="$3" key="$4" value="$5"
+            local regenerate_icons=true
             mkdir -p "$STATE_DIR"
             exec 9>"$STATE_DIR/navbar-appearance.lock"
             flock -x 9
@@ -175,7 +183,24 @@ main() {
                 *) echo "Scope must be all or container." >&2; return 2 ;;
             esac
             flock -u 9
-            if [[ -x "$NAVBAR_CMD" ]]; then "$NAVBAR_CMD" apply; fi
+
+            # Visibility and the text/custom-drawn Battery and Clock can update
+            # directly from JSON. Don't rebuild every workspace SVG just to
+            # flip one switch; only icon-affecting edits need regeneration.
+            case "$key" in
+                visible|visibilityControl) regenerate_icons=false ;;
+                containerColor|iconColor)
+                    if [[ "$scope" == "container" && ( "$id" == "battery" || "$id" == "time" ) ]]; then
+                        regenerate_icons=false
+                    fi
+                    ;;
+            esac
+
+            if [[ "$regenerate_icons" == true && -x "$NAVBAR_CMD" ]]; then
+                "$NAVBAR_CMD" apply
+            else
+                notify_appearance_changed
+            fi
             ;;
         *) echo "Usage: a16een-navbar-appearance {get|set <all|container> <id|-> <key> <value>}" >&2; return 2 ;;
     esac
