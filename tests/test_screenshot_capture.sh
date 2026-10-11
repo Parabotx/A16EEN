@@ -86,6 +86,14 @@ window_result="$(bash "$SCRIPT" window "$snapshot")"
 [[ "$window_result" == "$HOME/Pictures/Screenshots/"* ]]
 [[ ! -e "$snapshot" ]]
 
+# Free-area selection must prepare a frozen image and successfully crop it.
+area_snapshot="$(bash "$SCRIPT" prepare-area)"
+[[ -s "$area_snapshot" ]]
+area_result="$(bash "$SCRIPT" area "$area_snapshot" 10 20 320 240)"
+[[ -s "$area_result" ]]
+[[ "$area_result" == "$HOME/Pictures/Screenshots/"* ]]
+[[ ! -e "$area_snapshot" ]]
+
 # The hover picker passes a specific Niri window ID directly. It must capture
 # that window and remove the frozen desktop used for hover highlighting.
 id_snapshot="$(bash "$SCRIPT" prepare-window)"
