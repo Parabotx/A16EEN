@@ -6,10 +6,6 @@ Item {
     id: root
 
     property bool editorialTimeEnabled: true
-    property bool calendarEnabled: false
-    property bool pulseEnabled: false
-    property bool workspaceEnabled: false
-    property bool tasksEnabled: false
     property bool musicEnabled: false
     property bool quotesEnabled: false
     property bool timeUse24Hour: true
@@ -28,10 +24,6 @@ Item {
 
     signal backRequested()
     signal editorialTimeWidgetEnabledRequested(bool enabled)
-    signal calendarWidgetEnabledRequested(bool enabled)
-    signal pulseWidgetEnabledRequested(bool enabled)
-    signal workspaceWidgetEnabledRequested(bool enabled)
-    signal tasksWidgetEnabledRequested(bool enabled)
     signal musicWidgetEnabledRequested(bool enabled)
     signal quotesWidgetEnabledRequested(bool enabled)
     signal timeUse24HourRequested(bool enabled)
@@ -39,10 +31,6 @@ Item {
 
     readonly property int activeCount:
         (root.editorialTimeEnabled ? 1 : 0)
-        + (root.calendarEnabled ? 1 : 0)
-        + (root.pulseEnabled ? 1 : 0)
-        + (root.workspaceEnabled ? 1 : 0)
-        + (root.tasksEnabled ? 1 : 0)
         + (root.musicEnabled ? 1 : 0)
         + (root.quotesEnabled ? 1 : 0)
 
@@ -58,10 +46,6 @@ Item {
 
     function widgetEnabled(id) {
         if (id === "editorial-time") return root.editorialTimeEnabled
-        if (id === "calendar") return root.calendarEnabled
-        if (id === "pulse") return root.pulseEnabled
-        if (id === "workspaces") return root.workspaceEnabled
-        if (id === "tasks") return root.tasksEnabled
         if (id === "music") return root.musicEnabled
         if (id === "quotes") return root.quotesEnabled
         return false
@@ -83,14 +67,6 @@ Item {
 
         if (id === "editorial-time")
             root.editorialTimeWidgetEnabledRequested(next)
-        else if (id === "calendar")
-            root.calendarWidgetEnabledRequested(next)
-        else if (id === "pulse")
-            root.pulseWidgetEnabledRequested(next)
-        else if (id === "workspaces")
-            root.workspaceWidgetEnabledRequested(next)
-        else if (id === "tasks")
-            root.tasksWidgetEnabledRequested(next)
         else if (id === "music")
             root.musicWidgetEnabledRequested(next)
         else if (id === "quotes")
@@ -135,9 +111,9 @@ Item {
             // A stable left-side index leaves room for each widget to gain
             // its own settings without turning the screen into more tabs.
             ColumnLayout {
-                Layout.preferredWidth: 228
-                Layout.minimumWidth: 190
-                Layout.maximumWidth: 260
+                Layout.preferredWidth: 178
+                Layout.minimumWidth: 155
+                Layout.maximumWidth: 195
                 Layout.fillHeight: true
                 spacing: 8
 
@@ -380,7 +356,7 @@ Item {
                     wrapMode: Text.WordWrap
                 }
 
-                Item { Layout.preferredHeight: 20 }
+                Item { Layout.preferredHeight: 12 }
 
                 // Editorial Time is the first widget with configurable options.
                 // Other widgets can add their own controls to this same panel.
@@ -524,16 +500,6 @@ Item {
                         font.pixelSize: 7
                         wrapMode: Text.WordWrap
                     }
-                }
-
-                Text {
-                    visible: root.selectedWidgetId !== "editorial-time"
-                    Layout.fillWidth: true
-                    Layout.topMargin: 18
-                    text: "Additional settings for this widget can live here as they are added."
-                    color: root.textMuted
-                    font.pixelSize: 8
-                    wrapMode: Text.WordWrap
                 }
 
                 Item { Layout.fillHeight: true }
