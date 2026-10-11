@@ -48,6 +48,7 @@ jq -e '.all.surfaceColor == "#E7E8EA"
     and .all.iconColor == "auto"' \
     "$XDG_STATE_HOME/a16een/navbar-appearance.json" >/dev/null
 
+run set all - visibilityControl on
 if run set workspace home visible off 2>/dev/null; then
     echo "Expected All visibility lock to block individual visibility." >&2
     exit 1
@@ -61,6 +62,7 @@ if run set workspace home iconColor '#FFFFFF' 2>/dev/null; then
     exit 1
 fi
 
+run set all - visibilityControl off
 run set all - visibilityControl on
 run set all - visible off
 jq -e '.all.visibilityControl == true and .all.visible == false' \
