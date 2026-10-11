@@ -1472,7 +1472,12 @@ ShellRoot {
         timeShowSeconds: root.timeShowSeconds
         doNotDisturb: root.doNotDisturb
 
-        onCloseRequested: root.commandCenterOpen = false
+        onCloseRequested: {
+            // Close nested views with the command surface so the next
+            // Super + / open always starts from a clean command palette.
+            root.widgetsCenterOpen = false
+            root.commandCenterOpen = false
+        }
         onPresetsRequested: root.openQuickPresets()
 
         onNavbarPositionChanged: {
