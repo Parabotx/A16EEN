@@ -450,7 +450,7 @@ set_setting() {
 signal_ready() {
     # Write a new token, not only a timestamp, so QFileSystemWatcher reliably
     # sees every apply even when several changes happen in quick succession.
-    printf '%s\n' "$(date +%s%N)-$" > "$OUTPUT_DIR/ready"
+    printf '%s\n' "$(date +%s%N)" > "$OUTPUT_DIR/ready"
 }
 
 generate_workspace_icons() {
