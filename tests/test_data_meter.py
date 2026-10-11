@@ -14,12 +14,12 @@ assert SPEC and SPEC.loader
 SPEC.loader.exec_module(METER)
 
 
-def sample(rx: int, tx: int, name: str = "wlp2s0") -> dict:
+def sample(rx: int, tx: int, name: str = "wlp2s0", is_default: bool = True) -> dict:
     return {
         "name": name,
         "type": "Wi-Fi",
         "connection": "Home Wi-Fi",
-        "is_default": True,
+        "is_default": is_default,
         "rx": rx,
         "tx": tx,
     }
@@ -41,8 +41,57 @@ class DataMeterTests(unittest.TestCase):
         self.assertEqual(output["today_upload_bytes"], 1000)
         self.assertEqual(output["month_download_bytes"], 6000)
         self.assertEqual(output["month_upload_bytes"], 1000)
-        self.assertEqual(output["down_bps"], 3000)
-        self.assertEqual(output["up_bps"], 500)
+        self.assertEqual(output["download_bytes_per_second"], 3000)
+        self.assertEqual(output["upload_bytes_per_second"], 500)
+
+    def test_speed_uses_only_default_route_interface(self):
+        previous_samples = [
+            sample(1000, 500, "wlp2s0", True),
+            sample(1000, 500, "enp4s0", False),
+        ]
+        state, _ = METER.update_usage({}, previous_samples, "2026-10-10", 10000)
+
+        current_samples = [
+            sample(7000, 1500, "wlp2s0", True),
+            sample(21000, 11000, "enp4s0", False),
+        ]
+        _, output = METER.update_usage(state, current_samples, "2026-10-10", 12000)
+
+        # The inactive NIC has much more background traffic, but must not inflate
+        # the navbar reading for the interface carrying the default route.
+        self.assertEqual(output["download_bytes_per_second"], 3000)
+        self.assertEqual(output["upload_bytes_per_second"], 500)
+
+    def test_counter_reset_does_not_create_a_false_speed_spike(self):
+        state, _ = METER.update_usage({}, [sample(10000, 800)], "2026-10-10", 10000)
+        state, _ = METER.update_usage(state, [sample(15000, 1200)], "2026-10-10", 12000)
+        _, output = METER.update_usage(state, [sample(400, 100)], "2026-10-10", 14000)
+
+        # Counter resets still contribute the newly observed usage, but the rate
+        # is zero until the interface provides a normal increasing sample again.
+        self.assertEqual(output["today_download_bytes"], 5400)
+        self.assertEqual(output["download_bytes_per_second"], 0)
+        self.assertEqual(output["upload_bytes_per_second"], 0)
+
+    def test_ipv6_default_route_is_detected_when_ipv4_has_none(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            ipv4_file = root / "route"
+            ipv6_file = root / "ipv6_route"
+            ipv4_file.write_text(
+                "Iface Destination Gateway Flags RefCnt Use Metric Mask MTU Window IRTT\\n",
+                encoding="ascii",
+            )
+            zero = "0" * 32
+            ipv6_file.write_text(
+                f"{zero} 00 {zero} 00 {zero} 00000064 00000000 00000000 00000001 enp4s0\\n"
+                f"{zero} 00 {zero} 00 {zero} 0000000A 00000000 00000000 00000001 wlp2s0\\n",
+                encoding="ascii",
+            )
+            self.assertEqual(
+                METER.read_default_interface(ipv4_file, ipv6_file),
+                "wlp2s0",
+            )
 
     def test_monthly_totals_continue_across_days(self):
         state, _ = METER.update_usage({}, [sample(1000, 500)], "2026-10-10", 10000)
