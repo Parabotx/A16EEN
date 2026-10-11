@@ -9,6 +9,31 @@ TEMP_DIR="${XDG_RUNTIME_DIR:-/tmp}/a16een-screenshots"
 
 mkdir -p "$STATE_DIR" "$TEMP_DIR"
 
+ACTIVE_CHILD_PID=""
+ACTIVE_TEMP_PATH=""
+PICK_RESULT_PATH=""
+
+cancel_active_capture() {
+    trap - INT TERM HUP
+    if [[ -n "${ACTIVE_CHILD_PID:-}" ]] && kill -0 "$ACTIVE_CHILD_PID" 2>/dev/null; then
+        kill -TERM "$ACTIVE_CHILD_PID" 2>/dev/null || true
+        wait "$ACTIVE_CHILD_PID" 2>/dev/null || true
+    fi
+    rm -f "${ACTIVE_TEMP_PATH:-}" "${PICK_RESULT_PATH:-}" "${snapshot:-}" 2>/dev/null || true
+    exit 130
+}
+trap cancel_active_capture INT TERM HUP
+
+wait_for_file() {
+    local path="$1"
+    local attempt
+    for ((attempt = 0; attempt < 80; attempt++)); do
+        [[ -s "$path" ]] && return 0
+        sleep 0.05
+    done
+    return 1
+}
+
 if [[ ! -f "$SCREENSHOT_STATE" ]]; then
     cat > "$SCREENSHOT_STATE" <<EOF
 save=true
@@ -121,38 +146,84 @@ case "${1:-}" in
         ;;
     prepare-area)
         tmp="$TEMP_DIR/area-$(date +%s%N).png"
+        ACTIVE_TEMP_PATH="$tmp"
         if [[ "$(get_setting pointer)" == "true" ]]; then
             grim -c "$tmp"
         else
             grim "$tmp"
         fi
+        wait_for_file "$tmp" || {
+            echo "A16EEN: could not prepare the area-selection image." >&2
+            exit 1
+        }
         printf '%s\n' "$tmp"
+        ACTIVE_TEMP_PATH=""
+        ;;
+    prepare-window)
+        # Use a clean background without a frozen cursor; the live pointer is
+        # needed by Niri's native click-to-select window picker.
+        tmp="$TEMP_DIR/window-background-$(date +%s%N).png"
+        ACTIVE_TEMP_PATH="$tmp"
+        grim "$tmp"
+        wait_for_file "$tmp" || {
+            echo "A16EEN: could not prepare the window-selection background." >&2
+            exit 1
+        }
+        printf '%s\n' "$tmp"
+        ACTIVE_TEMP_PATH=""
         ;;
     screen)
         delay="$(get_setting delay)"
         [[ "$delay" =~ ^[0-9]+$ ]] || delay=0
         (( delay > 0 )) && sleep "$delay"
         tmp="$TEMP_DIR/capture-$(date +%s%N).png"
+        ACTIVE_TEMP_PATH="$tmp"
         niri msg action screenshot-screen --path "$tmp" --show-pointer="$(get_setting pointer)"
         if ! wait_for_file "$tmp"; then
             echo "A16EEN: screenshot file was not created." >&2
             exit 1
         fi
         finalize_capture "$tmp"
+        ACTIVE_TEMP_PATH=""
         ;;
     window)
-        selected="$(niri msg --json pick-window | jq -r '.id // empty')"
-        [[ -n "$selected" ]] || exit 0
+        [[ $# -le 2 ]] || exit 2
+        snapshot="${2:-}"
+        pick_result="$(mktemp "$TEMP_DIR/window-pick.XXXXXX")"
+        PICK_RESULT_PATH="$pick_result"
+        niri msg --json pick-window > "$pick_result" &
+        ACTIVE_CHILD_PID=$!
+        if wait "$ACTIVE_CHILD_PID"; then
+            ACTIVE_CHILD_PID=""
+        else
+            ACTIVE_CHILD_PID=""
+            rm -f "$pick_result"
+            PICK_RESULT_PATH=""
+            [[ -z "$snapshot" ]] || rm -f "$snapshot"
+            echo "A16EEN: window selection was cancelled." >&2
+            exit 130
+        fi
+        selected="$(jq -r '.id // empty' "$pick_result" 2>/dev/null || true)"
+        rm -f "$pick_result"
+        PICK_RESULT_PATH=""
+        if [[ -z "$selected" ]]; then
+            [[ -z "$snapshot" ]] || rm -f "$snapshot"
+            echo "A16EEN: window selection was cancelled." >&2
+            exit 130
+        fi
         delay="$(get_setting delay)"
         [[ "$delay" =~ ^[0-9]+$ ]] || delay=0
         (( delay > 0 )) && sleep "$delay"
         tmp="$TEMP_DIR/capture-$(date +%s%N).png"
+        ACTIVE_TEMP_PATH="$tmp"
         niri msg action screenshot-window --id "$selected" --path "$tmp" --show-pointer="$(get_setting pointer)"
         if ! wait_for_file "$tmp"; then
             echo "A16EEN: screenshot file was not created." >&2
             exit 1
         fi
+        [[ -z "$snapshot" ]] || rm -f "$snapshot"
         finalize_capture "$tmp"
+        ACTIVE_TEMP_PATH=""
         ;;
     area)
         [[ $# -eq 6 ]] || exit 2
@@ -165,9 +236,10 @@ case "${1:-}" in
         grim -g "${x},${y} ${width}x${height}" "$tmp" >/dev/null
         finalize_capture "$tmp"
         rm -f "$snapshot" 2>/dev/null || true
+        ACTIVE_TEMP_PATH=""
         ;;
     *)
-        echo "Usage: a16een-screenshot {screen|window|prepare-area|area|settings}" >&2
+        echo "Usage: a16een-screenshot {screen|window|prepare-area|prepare-window|area|settings}" >&2
         exit 2
         ;;
 esac
