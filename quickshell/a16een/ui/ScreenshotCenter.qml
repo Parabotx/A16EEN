@@ -32,7 +32,7 @@ PanelWindow {
     screen: modelData
     color: "transparent"
     visible: root.opened
-    focusable: root.opened
+    focusable: root.opened && root.phase !== 5
     aboveWindows: true
     exclusiveZone: 0
 
@@ -45,7 +45,7 @@ PanelWindow {
 
     WlrLayershell.layer: WlrLayer.Overlay
     WlrLayershell.namespace: "a16een-screenshot"
-    WlrLayershell.keyboardFocus: root.opened
+    WlrLayershell.keyboardFocus: root.opened && root.phase !== 5
         ? WlrKeyboardFocus.OnDemand
         : WlrKeyboardFocus.None
 
@@ -466,7 +466,7 @@ PanelWindow {
 
     Rectangle {
         id: cancelButton
-        visible: root.opened && root.phase !== 3
+        visible: root.opened && (root.phase === 0 || root.phase === 2)
         z: 10
         width: 104
         height: 34
