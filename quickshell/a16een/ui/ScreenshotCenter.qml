@@ -121,7 +121,7 @@ PanelWindow {
 
         root.phase = 3
         captureProcess.command = [
-            "a16een-screenshot",
+            "/usr/local/bin/a16een-screenshot",
             "window-id",
             String(root.hoveredWindowId),
             root.snapshotPath
@@ -179,7 +179,7 @@ PanelWindow {
         root.phase = 3
 
         areaCaptureProcess.command = [
-            "a16een-screenshot",
+            "/usr/local/bin/a16een-screenshot",
             "area",
             root.snapshotPath,
             String(Math.round(root.selectionX + root.screenOriginX)),
