@@ -183,7 +183,12 @@ jobs:
           grep -Fq 'windowSelectionOverlay' quickshell/a16een/ui/ScreenshotCenter.qml
           grep -Fq 'windowCandidates' quickshell/a16een/ui/ScreenshotCenter.qml
           grep -Fq 'WindowGeometry.buildCandidates' quickshell/a16een/ui/ScreenshotCenter.qml
-          grep -Fq 'preparationInputSurface' quickshell/a16een/ui/ScreenshotCenter.qml
+          ! grep -Fq 'mask: Region' quickshell/a16een/ui/ScreenshotCenter.qml
+          grep -Fq 'visible: root.opened && !root.preparingCapture' quickshell/a16een/ui/ScreenshotCenter.qml
+          grep -Fq 'id: prepareCaptureTimer' quickshell/a16een/ui/ScreenshotCenter.qml
+          grep -Fq 'id: preparationWatchdog' quickshell/a16een/ui/ScreenshotCenter.qml
+          grep -Fq 'areaCaptureDelayTimer.restart()' quickshell/a16een/ui/ScreenshotCenter.qml
+          grep -Fq 'selectedWindowCaptureTimer.restart()' quickshell/a16een/ui/ScreenshotCenter.qml
           grep -Fq 'root.updateHoveredWindow' quickshell/a16een/ui/ScreenshotCenter.qml
           test -f quickshell/a16een/ui/WindowGeometry.js
           test -f tests/test_window_geometry.js
@@ -464,7 +469,7 @@ jobs:
           grep -Fq 'target: "screenshot"' quickshell/a16een/shell.qml
           grep -Fq 'ScreenshotCenter {' quickshell/a16een/shell.qml
           grep -Fq 'visible: root.opened' quickshell/a16een/ui/CommandCenter.qml
-          grep -Fq '"a16een-screenshot"' quickshell/a16een/ui/ScreenshotCenter.qml
+          grep -Fq '/usr/local/bin/a16een-screenshot' quickshell/a16een/ui/ScreenshotCenter.qml
           grep -Fq 'lucide-monitor.svg' quickshell/a16een/ui/ScreenshotCenter.qml
           grep -Fq 'lucide-crop.svg' quickshell/a16een/ui/ScreenshotCenter.qml
           grep -Fq 'lucide-app-window.svg' quickshell/a16een/ui/ScreenshotCenter.qml
