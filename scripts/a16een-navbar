@@ -181,6 +181,15 @@ apply_appearance_style() {
     container="$slot"
     if is_known_slot "$slot"; then
         container="workspaces"
+    else
+        case "$slot" in
+            quick-actions-notes|quick-actions-tasks|quick-actions-presets)
+                container="quick-actions"
+                ;;
+            quick-hub-notifications|quick-hub-tools)
+                container="quick-hub"
+                ;;
+        esac
     fi
 
     if [[ -s "$APPEARANCE_FILE" ]]; then
@@ -282,6 +291,11 @@ generate_icon() {
         case "$slot" in
             utilities) configured_icon="lucide-sliders-horizontal-dark.svg" ;;
             power) configured_icon="quick-power.svg" ;;
+            quick-actions-notes) configured_icon="quick-notes.svg" ;;
+            quick-actions-tasks) configured_icon="quick-tasks.svg" ;;
+            quick-actions-presets) configured_icon="quick-presets.svg" ;;
+            quick-hub-notifications) configured_icon="lucide-bell.svg" ;;
+            quick-hub-tools) configured_icon="lucide-toolbox.svg" ;;
             *) configured_icon="house.svg" ;;
         esac
     fi
@@ -450,6 +464,12 @@ main() {
 
     generate_icon "utilities"
     generate_icon "power"
+    # Generate one SVG per button while sharing its parent's appearance settings.
+    generate_icon "quick-actions-notes"
+    generate_icon "quick-actions-tasks"
+    generate_icon "quick-actions-presets"
+    generate_icon "quick-hub-notifications"
+    generate_icon "quick-hub-tools"
 
     touch "$OUTPUT_DIR/ready"
     echo "A16EEN navbar icons generated for $(active_count) active workspaces."
