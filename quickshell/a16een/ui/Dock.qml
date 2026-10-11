@@ -45,10 +45,25 @@ PanelWindow {
 
     // The quick-actions tray follows the dock's fullscreen edge-reveal state.
 
-    readonly property color dockBackground: "#FFFFFF"
-    readonly property color dockBorder: "#E5E7EB"
+    property var appearanceSettings: ({})
+
+    readonly property color dockBackground: {
+        const all = root.appearanceSettings && root.appearanceSettings.all
+            ? root.appearanceSettings.all : ({})
+        const value = String(all.surfaceColor || "#FFFFFF")
+        return root.validAppearanceHex(value) ? value : "#FFFFFF"
+    }
+    readonly property color dockBorder: {
+        const c = root.dockBackground
+        const luminance = (0.2126 * c.r) + (0.7152 * c.g) + (0.0722 * c.b)
+        return luminance < 0.42 ? "#343A45" : "#D6DBE1"
+    }
     readonly property color iconColor: "#111111"
-    readonly property color hoverBackground: "#F3F4F6"
+    readonly property color hoverBackground: {
+        const c = root.dockBackground
+        const luminance = (0.2126 * c.r) + (0.7152 * c.g) + (0.0722 * c.b)
+        return luminance < 0.42 ? Qt.lighter(c, 1.28) : Qt.darker(c, 1.04)
+    }
 
     readonly property string stateDir: {
         const stateHome = Quickshell.env("XDG_STATE_HOME")
@@ -59,6 +74,7 @@ PanelWindow {
     readonly property string navbarIconRoot: root.stateDir + "/navbar-icons"
     readonly property string navbarReadyPath: root.navbarIconRoot + "/ready"
     readonly property string workspaceCountPath: root.stateDir + "/workspace-count"
+    readonly property string appearanceSettingsPath: root.stateDir + "/navbar-appearance.json"
 
     property int navbarRevision: 0
     property int workspaceCount: 6
@@ -128,7 +144,97 @@ PanelWindow {
         { id: "lab", icon: "terminal.svg" }
     ]
 
-    readonly property var visibleWorkspaces: root.workspaceCatalog.slice(0, root.workspaceCount)
+    readonly property var visibleWorkspaces: root.workspaceCatalog
+        .slice(0, root.workspaceCount)
+        .filter(function(workspace) {
+            const appearance = root.appearanceSettings || ({})
+            const all = appearance.all || ({})
+            const entries = appearance.workspaces || ({})
+            const individual = entries[workspace.id] || ({})
+            if (all.visibilityControl === true)
+                return all.visible !== false
+            return individual.visible !== false
+        })
+
+    function validAppearanceHex(value) {
+        return /^#[0-9A-Fa-f]{6}$/.test(String(value || ""))
+    }
+
+    function appearanceWorkspace(slot) {
+        const workspaces = root.appearanceSettings && root.appearanceSettings.workspaces
+            ? root.appearanceSettings.workspaces : ({})
+        return workspaces[slot] || ({})
+    }
+
+    function appearanceAll() {
+        return root.appearanceSettings && root.appearanceSettings.all
+            ? root.appearanceSettings.all : ({})
+    }
+
+    function containerColorFor(slot) {
+        const all = root.appearanceAll()
+        const individual = root.appearanceWorkspace(slot)
+        if (all.applyContainerColor === true && root.validAppearanceHex(all.containerColor))
+            return String(all.containerColor)
+        if (individual.containerEnabled === true && root.validAppearanceHex(individual.containerColor))
+            return String(individual.containerColor)
+        return "transparent"
+    }
+
+    function contrastColorFor(value) {
+        const match = String(value || "").match(/^#([0-9A-Fa-f]{6})$/)
+        if (!match)
+            return "#111318"
+        const hex = match[1]
+        const r = parseInt(hex.slice(0, 2), 16)
+        const g = parseInt(hex.slice(2, 4), 16)
+        const b = parseInt(hex.slice(4, 6), 16)
+        const luminance = (r * 299 + g * 587 + b * 114) / 1000
+        return luminance >= 145 ? "#111318" : "#FFFFFF"
+    }
+
+    function markerColorFor(slot) {
+        const all = root.appearanceAll()
+        const individual = root.appearanceWorkspace(slot)
+        const buttonColor = root.containerColorFor(slot)
+        const surface = String(all.surfaceColor || "#FFFFFF")
+        const background = root.validAppearanceHex(buttonColor)
+            ? buttonColor : (root.validAppearanceHex(surface) ? surface : "#FFFFFF")
+        let desired = "auto"
+        if (all.applyIconColor === true)
+            desired = String(all.iconColor || "auto")
+        else if (individual.iconColor && individual.iconColor !== "inherit")
+            desired = String(individual.iconColor)
+
+        if (desired === "auto" || !root.validAppearanceHex(desired))
+            return root.contrastColorFor(background)
+
+        const requested = desired.toUpperCase()
+        const requestedLuminance = root.appearanceLuminance(requested)
+        const backgroundLuminance = root.appearanceLuminance(background)
+        if (Math.abs(requestedLuminance - backgroundLuminance) < 95)
+            return root.contrastColorFor(background)
+        return requested
+    }
+
+    function appearanceLuminance(value) {
+        const match = String(value || "").match(/^#([0-9A-Fa-f]{6})$/)
+        if (!match)
+            return 120
+        const hex = match[1]
+        return (parseInt(hex.slice(0, 2), 16) * 299
+            + parseInt(hex.slice(2, 4), 16) * 587
+            + parseInt(hex.slice(4, 6), 16) * 114) / 1000
+    }
+
+    function hoverColorFor(slot) {
+        const buttonColor = root.containerColorFor(slot)
+        if (!root.validAppearanceHex(buttonColor))
+            return root.hoverBackground
+        return root.appearanceLuminance(buttonColor) < 120
+            ? Qt.lighter(buttonColor, 1.24)
+            : Qt.darker(buttonColor, 1.06)
+    }
 
     readonly property bool horizontalNavbar:
         root.navbarPosition === "top" || root.navbarPosition === "bottom"
@@ -200,6 +306,24 @@ PanelWindow {
         printErrors: false
         onLoaded: root.loadWorkspaceCount(this.text())
         onFileChanged: root.loadWorkspaceCount(this.text())
+    }
+
+    FileView {
+        id: navbarAppearanceFile
+        path: root.appearanceSettingsPath
+        watchChanges: true
+        printErrors: false
+        onLoaded: root.loadAppearanceSettings(this.text())
+        onFileChanged: root.loadAppearanceSettings(this.text())
+    }
+
+    function loadAppearanceSettings(raw) {
+        try {
+            const parsed = JSON.parse(String(raw || "{}"))
+            root.appearanceSettings = parsed && typeof parsed === "object" ? parsed : ({})
+        } catch (error) {
+            root.appearanceSettings = ({})
+        }
     }
 
     screen: modelData
@@ -1336,8 +1460,8 @@ PanelWindow {
                         root.workspaceIsFocused(modelData.id)
 
                     color: workspaceMouse.containsMouse
-                        ? root.hoverBackground
-                        : "transparent"
+                        ? root.hoverColorFor(modelData.id)
+                        : root.containerColorFor(modelData.id)
 
                     // Keep the active marker on the physical edge of the screen.
                     // Explicit x/y geometry avoids stale conditional anchors when the
@@ -1358,7 +1482,7 @@ PanelWindow {
                                 ? 2
                                 : workspaceButton.height - height - 2)
                             : Math.round((workspaceButton.height - height) / 2)
-                        color: root.iconColor
+                        color: root.markerColorFor(modelData.id)
                         z: 0
                     }
 
