@@ -447,6 +447,12 @@ set_setting() {
     main
 }
 
+signal_ready() {
+    # Write a new token, not only a timestamp, so QFileSystemWatcher reliably
+    # sees every apply even when several changes happen in quick succession.
+    printf '%s\n' "$(date +%s%N)-$" > "$OUTPUT_DIR/ready"
+}
+
 generate_workspace_icons() {
     local slot
     while IFS= read -r slot; do
@@ -475,7 +481,7 @@ main() {
     prune_inactive_slots
     generate_workspace_icons
     generate_auxiliary_icons
-    touch "$OUTPUT_DIR/ready"
+    signal_ready
     echo "A16EEN navbar icons generated for $(active_count) active workspaces."
 }
 
@@ -512,7 +518,7 @@ apply_appearance_target() {
             ;;
     esac
 
-    touch "$OUTPUT_DIR/ready"
+    signal_ready
 }
 
 case "${1:-apply}" in
