@@ -551,16 +551,21 @@ ShellRoot {
             if (event.WindowLayoutsChanged) {
                 const changes = event.WindowLayoutsChanged.changes || []
                 if (changes.length) {
-                    root.windows = root.windows.map(window => {
-                        const change = changes.find(entry => {
-                            const id = Array.isArray(entry) ? entry[0] : entry.id
-                            return Number(id) === Number(window.id)
-                        })
-                        if (!change)
-                            return window
+                    const updatedWindows = root.windows.slice()
+                    for (let i = 0; i < changes.length; i++) {
+                        const change = changes[i]
+                        const id = Array.isArray(change) ? change[0] : change.id
                         const layout = Array.isArray(change) ? change[1] : change.layout
-                        return layout ? { ...window, layout: layout } : window
-                    })
+                        if (!layout)
+                            continue
+                        for (let j = 0; j < updatedWindows.length; j++) {
+                            if (Number(updatedWindows[j].id) === Number(id)) {
+                                updatedWindows[j].layout = layout
+                                break
+                            }
+                        }
+                    }
+                    root.windows = updatedWindows
                 }
                 return
             }
