@@ -79,13 +79,13 @@ class DataMeterTests(unittest.TestCase):
             ipv4_file = root / "route"
             ipv6_file = root / "ipv6_route"
             ipv4_file.write_text(
-                "Iface Destination Gateway Flags RefCnt Use Metric Mask MTU Window IRTT\\n",
+                "Iface Destination Gateway Flags RefCnt Use Metric Mask MTU Window IRTT\n",
                 encoding="ascii",
             )
             zero = "0" * 32
             ipv6_file.write_text(
-                f"{zero} 00 {zero} 00 {zero} 00000064 00000000 00000000 00000001 enp4s0\\n"
-                f"{zero} 00 {zero} 00 {zero} 0000000A 00000000 00000000 00000001 wlp2s0\\n",
+                f"{zero} 00 {zero} 00 {zero} 00000064 00000000 00000000 00000001 enp4s0\n"
+                f"{zero} 00 {zero} 00 {zero} 0000000A 00000000 00000000 00000001 wlp2s0\n",
                 encoding="ascii",
             )
             self.assertEqual(
