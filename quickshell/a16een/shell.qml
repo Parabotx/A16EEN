@@ -1477,6 +1477,10 @@ ShellRoot {
     ScreenshotCenter {
         modelData: root.primaryScreen
         opened: root.screenshotCenterOpen
+        windowItems: root.windows
+        workspaceItems: root.workspaces
+        focusedWorkspaceId: root.focusedWorkspaceId
+        focusedWindowId: root.focusedWindowId
         onCloseRequested: root.screenshotCenterOpen = false
     }
 
