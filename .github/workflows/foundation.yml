@@ -38,7 +38,10 @@ jobs:
           bash -n scripts/a16een-wallpaper
           bash -n scripts/a16een-icons
           bash -n scripts/a16een-screenshot
+          bash -n scripts/a16een-navbar
+          bash -n scripts/a16een-navbar-appearance
           bash -n tests/test_screenshot_capture.sh
+          bash -n tests/test_navbar_appearance.sh
           bash -n scripts/a16een-control
           python3 -m py_compile scripts/a16een-clipboard scripts/a16een-app-stash scripts/a16een-system-monitor scripts/a16een-data-meter
           python3 tests/test_app_stash.py
@@ -46,6 +49,7 @@ jobs:
           python3 tests/test_data_meter.py
           node tests/test_window_geometry.js
           bash tests/test_screenshot_capture.sh
+          bash tests/test_navbar_appearance.sh
           bash -n scripts/a16een-icon-theme
           bash -n scripts/a16een-workspace-preset
           python3 -m py_compile scripts/a16een-music scripts/a16een-widget-settings
@@ -450,8 +454,14 @@ jobs:
           grep -Fq 'WallpaperPicker {' quickshell/a16een/shell.qml
           grep -Fq 'cp "$ROOT_DIR/quickshell/a16een/ui/"*.qml "$TMP_DEPLOY/ui/"' scripts/install.sh
           grep -Fq 'cp "$ROOT_DIR/quickshell/a16een/ui/"*.js "$TMP_DEPLOY/ui/"' scripts/install.sh
-          grep -Fq 'dockBackground: "#FFFFFF"' quickshell/a16een/ui/Dock.qml
-          grep -Fq 'iconColor: "#111111"' quickshell/a16een/ui/Dock.qml
+          grep -Fq 'navbar-appearance.json' quickshell/a16een/ui/Dock.qml
+          grep -Fq 'function markerColorFor(slot)' quickshell/a16een/ui/Dock.qml
+          grep -Fq 'root.containerColorFor(modelData.id)' quickshell/a16een/ui/Dock.qml
+          grep -Fq 'apply_appearance_style' scripts/a16een-navbar
+          grep -Fq 'NavbarAppearancePage {' quickshell/a16een/ui/NavbarManager.qml
+          grep -Fq 'iconStyleLockMessage(slot)' quickshell/a16een/ui/NavbarManager.qml
+          grep -Fq 'a16een-navbar-appearance' scripts/install.sh
+          grep -Fq 'surfaceColor' quickshell/a16een/ui/NavbarAppearancePage.qml
           ! grep -Fq '#2F6FED' quickshell/a16een/ui/Dock.qml
           ! grep -Fq 'width: 20' quickshell/a16een/ui/Dock.qml
           grep -Fq 'Super+S allow-inhibiting=false repeat=false hotkey-overlay-title="A16EEN Screenshot Center"' niri/config.kdl
