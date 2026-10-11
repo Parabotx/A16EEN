@@ -5,9 +5,13 @@ import Quickshell
 import Quickshell.Io
 import Quickshell.Wayland
 import Quickshell.Services.UPower
+import qs.ui
 
 PanelWindow {
     id: root
+
+    PopupCardStyle { id: powerPopupStyle; containerId: "power" }
+    PopupCardStyle { id: clockPopupStyle; containerId: "time" }
 
     required property var modelData
     required property var workspaces
@@ -1063,9 +1067,9 @@ PanelWindow {
                 id: powerMenuSurface
                 anchors.fill: parent
                 radius: 16
-                color: root.popupCardColorFor("power")
+                color: powerPopupStyle.backgroundColor
                 border.width: 1
-                border.color: root.popupCardBorderColorFor("power")
+                border.color: powerPopupStyle.borderColor
                 Behavior on color { ColorAnimation { duration: 130; easing.type: Easing.OutCubic } }
                 opacity: root.powerMenuOpen ? 1 : 0
                 scale: root.powerMenuOpen ? 1 : 0.96
@@ -1113,7 +1117,7 @@ PanelWindow {
                             height: 30
                             radius: 9
                             color: powerActionMouse.containsMouse
-                                ? (powerActionRow.modelData.id === "poweroff" ? "#FFF0F0" : "#F1F3F6")
+                                ? (powerActionRow.modelData.id === "poweroff" ? "#FFF0F0" : powerPopupStyle.hoverSurfaceColor)
                                 : (root.pendingPowerAction === powerActionRow.modelData.id ? "#FFF5E8" : "transparent")
                             border.width: root.pendingPowerAction === powerActionRow.modelData.id ? 1 : 0
                             border.color: "#E6B66D"
@@ -1126,7 +1130,7 @@ PanelWindow {
                                 height: 24
                                 radius: 7
                                 color: powerActionRow.modelData.id === "poweroff"
-                                    ? "#FFF0F0" : "#F6F7F9"
+                                    ? "#FFF0F0" : powerPopupStyle.subtleSurfaceColor
 
                                 Image {
                                     anchors.centerIn: parent
@@ -1151,7 +1155,7 @@ PanelWindow {
                                     : powerActionRow.modelData.label
                                 color: root.pendingPowerAction === powerActionRow.modelData.id
                                     ? "#9A5A14"
-                                    : (powerActionRow.modelData.id === "poweroff" ? "#B83A42" : "#28313B")
+                                    : (powerActionRow.modelData.id === "poweroff" ? "#B83A42" : powerPopupStyle.textColor)
                                 font.pixelSize: 11
                                 font.weight: Font.Medium
                                 elide: Text.ElideRight
@@ -1271,9 +1275,9 @@ PanelWindow {
         Rectangle {
             anchors.fill: parent
             radius: 20
-            color: root.popupCardColorFor("time")
+            color: clockPopupStyle.backgroundColor
             border.width: 1
-            border.color: root.popupCardBorderColorFor("time")
+            border.color: clockPopupStyle.borderColor
             Behavior on color { ColorAnimation { duration: 135; easing.type: Easing.OutCubic } }
             opacity: navbarClockPanel.calendarOpen ? 1 : 0
             scale: navbarClockPanel.calendarOpen ? 1 : 0.95
@@ -1313,7 +1317,7 @@ PanelWindow {
                     width: parent.width
                     text: "ዛሬ  ·  " + navbarClockPanel.ethiopianWeekdays[navbarClockPanel.ethiopianToday.weekday]
                         + " " + navbarClockPanel.ethiopianToday.day
-                    color: "#66707C"
+                    color: clockPopupStyle.secondaryTextColor
                     font.family: "Noto Sans Ethiopic"
                     font.pixelSize: 10
                     font.weight: Font.Medium
@@ -1324,7 +1328,7 @@ PanelWindow {
                     text: navbarClockPanel.ethiopianMonths[navbarClockPanel.ethiopianToday.month - 1]
                         + " " + String(navbarClockPanel.ethiopianToday.year)
                         + " ዓ.ም."
-                    color: "#111318"
+                    color: clockPopupStyle.textColor
                     font.family: "Noto Sans Ethiopic"
                     font.pixelSize: 20
                     font.weight: Font.DemiBold
@@ -1345,7 +1349,7 @@ PanelWindow {
                         width: 32
                         height: 18
                         text: modelData
-                        color: "#8A939E"
+                        color: clockPopupStyle.mutedTextColor
                         font.family: "Noto Sans Ethiopic"
                         font.pixelSize: 9
                         font.weight: Font.DemiBold
@@ -1376,12 +1380,12 @@ PanelWindow {
                             ? "#111318"
                             : (modelData.day > 0 ? "#F7F8FA" : "transparent")
                         border.width: modelData.day === navbarClockPanel.ethiopianToday.day ? 1 : 0
-                        border.color: "#111318"
+                        border.color: clockPopupStyle.actionColor
 
                         Text {
                             anchors.fill: parent
                             text: modelData.day > 0 ? String(modelData.day) : ""
-                            color: modelData.today ? "#FFFFFF" : "#4B5563"
+                            color: modelData.today ? clockPopupStyle.actionTextColor : clockPopupStyle.textColor
                             font.family: "Monospace"
                             font.pixelSize: 11
                             font.weight: modelData.today ? Font.DemiBold : Font.Normal

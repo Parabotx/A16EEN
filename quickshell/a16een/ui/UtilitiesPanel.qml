@@ -156,11 +156,11 @@ PanelWindow {
                             height: 29
                             radius: 9
                             color: root.selectedMode === tabButton.modelData.id
-                                ? "#20262E"
-                                : (tabMouse.containsMouse ? "#EEF1F4" : "#F6F7F9")
+                                ? popupCardStyle.actionColor
+                                : (tabMouse.containsMouse ? popupCardStyle.hoverSurfaceColor : popupCardStyle.fieldColor)
                             border.width: 1
                             border.color: root.selectedMode === tabButton.modelData.id
-                                ? "#20262E" : "#E3E8ED"
+                                ? popupCardStyle.actionColor : popupCardStyle.fieldBorderColor
 
                             Behavior on color {
                                 ColorAnimation { duration: 120 }
@@ -187,7 +187,7 @@ PanelWindow {
                                     anchors.verticalCenter: parent.verticalCenter
                                     text: tabButton.modelData.label
                                     color: root.selectedMode === tabButton.modelData.id
-                                        ? "#FFFFFF" : "#5D6875"
+                                        ? popupCardStyle.actionTextColor : popupCardStyle.secondaryTextColor
                                     font.pixelSize: 10
                                     font.weight: Font.DemiBold
                                 }
@@ -365,7 +365,7 @@ PanelWindow {
                                 Text {
                                     id: clipboardClearLabel
                                     text: "CLEAR"
-                                    color: clipboardClearMouse.containsMouse ? "#111318" : "#7B8591"
+                                    color: clipboardClearMouse.containsMouse ? popupCardStyle.textColor : popupCardStyle.mutedTextColor
                                     font.pixelSize: 8
                                     font.weight: Font.DemiBold
                                     anchors.verticalCenter: parent.verticalCenter
@@ -386,9 +386,9 @@ PanelWindow {
                                 width: parent.width
                                 height: 31
                                 radius: 9
-                                color: "#F7F8FA"
+                                color: popupCardStyle.subtleSurfaceColor
                                 border.width: 1
-                                border.color: clipboardSearchInput.activeFocus ? "#BBC4CE" : "#E5E9ED"
+                                border.color: clipboardSearchInput.activeFocus ? popupCardStyle.focusBorderColor : popupCardStyle.fieldBorderColor
 
                                 Row {
                                     anchors.fill: parent
@@ -456,7 +456,7 @@ PanelWindow {
                                         width: clipboardHistoryList.width
                                         height: 32
                                         radius: 8
-                                        color: clipboardEntryMouse.containsMouse ? "#EEF1F4" : "#FAFBFC"
+                                        color: clipboardEntryMouse.containsMouse ? popupCardStyle.hoverSurfaceColor : popupCardStyle.fieldColor
 
                                         MouseArea {
                                             id: clipboardEntryMouse
