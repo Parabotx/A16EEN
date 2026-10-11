@@ -154,6 +154,10 @@ write_workspace() {
 
     case "$key" in
         visible)
+            if jq -e '.all.visibilityControl == true' "$STATE_FILE" >/dev/null 2>&1; then
+                echo "A16EEN appearance: turn off All visibility control first." >&2
+                return 2
+            fi
             value="$(normalize_bool "$value")" || {
                 echo "A16EEN appearance: visible must be on or off." >&2
                 return 2
@@ -163,6 +167,10 @@ write_workspace() {
                 '.workspaces[$slot].visible = $value' "$STATE_FILE" > "$tmp"
             ;;
         containerColor)
+            if jq -e '.all.applyContainerColor == true' "$STATE_FILE" >/dev/null 2>&1; then
+                echo "A16EEN appearance: turn off All container color first." >&2
+                return 2
+            fi
             { valid_hex "$value" || [[ "$value" == "transparent" ]]; } || {
                 echo "A16EEN appearance: container color must be #RRGGBB or transparent." >&2
                 return 2
@@ -177,6 +185,10 @@ write_workspace() {
                 "$STATE_FILE" > "$tmp"
             ;;
         iconColor)
+            if jq -e '.all.applyIconColor == true' "$STATE_FILE" >/dev/null 2>&1; then
+                echo "A16EEN appearance: turn off All icon color first." >&2
+                return 2
+            fi
             { valid_hex "$value" || [[ "$value" == "auto" || "$value" == "inherit" ]]; } || {
                 echo "A16EEN appearance: icon color must be #RRGGBB, auto, or inherit." >&2
                 return 2
