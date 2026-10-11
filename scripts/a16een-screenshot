@@ -13,6 +13,16 @@ ACTIVE_CHILD_PID=""
 ACTIVE_TEMP_PATH=""
 PICK_RESULT_PATH=""
 
+cleanup_capture() {
+    local path
+    for path in "${ACTIVE_TEMP_PATH:-}" "${PICK_RESULT_PATH:-}" "${snapshot:-}"; do
+        if [[ -n "$path" ]]; then
+            rm -f "$path" 2>/dev/null || true
+        fi
+    done
+}
+trap cleanup_capture EXIT
+
 cancel_active_capture() {
     trap - INT TERM HUP
     if [[ -n "${ACTIVE_CHILD_PID:-}" ]] && kill -0 "$ACTIVE_CHILD_PID" 2>/dev/null; then
@@ -233,6 +243,7 @@ case "${1:-}" in
         width="$5"
         height="$6"
         tmp="$TEMP_DIR/area-$(date +%s%N).png"
+        ACTIVE_TEMP_PATH="$tmp"
         grim -g "${x},${y} ${width}x${height}" "$tmp" >/dev/null
         finalize_capture "$tmp"
         rm -f "$snapshot" 2>/dev/null || true
