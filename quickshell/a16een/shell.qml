@@ -434,7 +434,7 @@ ShellRoot {
 
     Timer {
         id: dataMeterTimer
-        interval: 3000
+        interval: 1000
         repeat: true
         running: root.dataMeterEnabled || (root.toolsPanelOpen && root.toolsPanelPage === "data-meter")
         onTriggered: root.requestDataMeterSnapshot()
