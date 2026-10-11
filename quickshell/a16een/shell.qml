@@ -544,6 +544,27 @@ ShellRoot {
                 return
             }
 
+            // Niri reports tile positions/sizes separately as windows are
+            // resized, moved, or the scrolling workspace view changes. Keep
+            // the shared state fresh so ScreenshotCenter hover targets match
+            // the actual on-screen windows.
+            if (event.WindowLayoutsChanged) {
+                const changes = event.WindowLayoutsChanged.changes || []
+                if (changes.length) {
+                    root.windows = root.windows.map(window => {
+                        const change = changes.find(entry => {
+                            const id = Array.isArray(entry) ? entry[0] : entry.id
+                            return Number(id) === Number(window.id)
+                        })
+                        if (!change)
+                            return window
+                        const layout = Array.isArray(change) ? change[1] : change.layout
+                        return layout ? { ...window, layout: layout } : window
+                    })
+                }
+                return
+            }
+
             if (event.WindowFocusChanged) {
                 root.focusedWindowId = event.WindowFocusChanged.id === null
                     ? -1
