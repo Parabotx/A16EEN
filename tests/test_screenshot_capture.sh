@@ -79,20 +79,20 @@ export PATH="$MOCK_BIN:$PATH"
 
 # Native window selection should capture the exact selected ID, wait for the
 # screenshot file, save it, and remove the temporary blurred desktop image.
-snapshot="$("$SCRIPT" prepare-window)"
+snapshot="$(bash "$SCRIPT" prepare-window)"
 [[ -s "$snapshot" ]]
-window_result="$("$SCRIPT" window "$snapshot")"
+window_result="$(bash "$SCRIPT" window "$snapshot")"
 [[ -s "$window_result" ]]
 [[ "$window_result" == "$HOME/Pictures/Screenshots/"* ]]
 [[ ! -e "$snapshot" ]]
 
 # Full-screen capture uses the same output-wait helper and must also succeed.
-screen_result="$("$SCRIPT" screen)"
+screen_result="$(bash "$SCRIPT" screen)"
 [[ -s "$screen_result" ]]
 
 # Cancelling Niri's picker returns no window ID and must clean up the backdrop.
-cancel_snapshot="$("$SCRIPT" prepare-window)"
-if NIRI_PICK_CANCEL=1 "$SCRIPT" window "$cancel_snapshot" >/dev/null 2>"$SANDBOX/cancel.log"; then
+cancel_snapshot="$(bash "$SCRIPT" prepare-window)"
+if NIRI_PICK_CANCEL=1 bash "$SCRIPT" window "$cancel_snapshot" >/dev/null 2>"$SANDBOX/cancel.log"; then
     echo "Window cancellation unexpectedly succeeded." >&2
     exit 1
 else
