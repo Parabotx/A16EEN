@@ -157,11 +157,9 @@ case "${1:-}" in
     prepare-area)
         tmp="$TEMP_DIR/area-$(date +%s%N).png"
         ACTIVE_TEMP_PATH="$tmp"
-        if [[ "$(get_setting pointer)" == "true" ]]; then
-            grim -c "$tmp"
-        else
-            grim "$tmp"
-        fi
+        # The selection overlay owns the live pointer. Do not freeze the old
+        # cursor into the background image; it looks like a stuck pointer.
+        grim "$tmp"
         wait_for_file "$tmp" || {
             echo "A16EEN: could not prepare the area-selection image." >&2
             exit 1
