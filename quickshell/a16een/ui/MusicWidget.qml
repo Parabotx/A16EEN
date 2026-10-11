@@ -67,7 +67,7 @@ PanelWindow {
     readonly property int libraryPopupRightMargin: root.navbarPosition === "right" ? 88 : 12
     // Keep the song library beside the player so it never covers the Quotes card above it.
     readonly property bool libraryPopupOpensRight: root.modelData !== null
-        && root.modelData.width - card.x - card.width - 8 - root.libraryPopupRightMargin >= 180
+        && root.modelData.width - card.x - card.width - 8 - root.libraryPopupRightMargin >= 300
 
     screen: modelData
     visible: root.widgetEnabled
@@ -739,7 +739,7 @@ PanelWindow {
         }
     }
 
-    // The library floats above the player. Opening it never resizes or nudges the card.
+    // The library sits beside the player when space permits and uses the same height.
     Rectangle {
         id: libraryPopup
         x: root.libraryPopupOpensRight ? card.x + card.width + 8 : card.x
@@ -747,9 +747,9 @@ PanelWindow {
             ? card.y + card.height - height
             : Math.max(12, card.y - height - 8)
         width: root.libraryPopupOpensRight
-            ? Math.min(card.width, Math.max(180, parent.width - card.x - card.width - 8 - root.libraryPopupRightMargin))
-            : card.width
-        height: 138
+            ? Math.min(292, parent.width - card.x - card.width - 8 - root.libraryPopupRightMargin)
+            : Math.min(292, Math.max(220, card.width - 80))
+        height: card.height
         radius: 16
         color: root.cream
         border.width: 1
@@ -766,11 +766,54 @@ PanelWindow {
         Column {
             anchors.fill: parent
             anchors.margins: 10
-            spacing: 0
+            spacing: 6
+
+            Rectangle {
+                id: librarySearchField
+                width: parent.width
+                height: 30
+                radius: 9
+                color: "#F6FAFD"
+                border.width: 1
+                border.color: libraryKeyboardInput.activeFocus ? "#A8BED7" : "#DDE6F0"
+                clip: true
+
+                Text {
+                    anchors.left: parent.left
+                    anchors.leftMargin: 10
+                    anchors.verticalCenter: parent.verticalCenter
+                    text: "Search songs or artists"
+                    color: "#8391A1"
+                    font.pixelSize: 9
+                    visible: libraryKeyboardInput.text.length === 0
+                }
+
+                TextInput {
+                    id: libraryKeyboardInput
+                    anchors.fill: parent
+                    anchors.leftMargin: 10
+                    anchors.rightMargin: 8
+                    verticalAlignment: TextInput.AlignVCenter
+                    color: root.ink
+                    selectionColor: "#AFC7E2"
+                    selectedTextColor: "#1D2938"
+                    font.pixelSize: 9
+                    text: root.libraryQuery
+                    activeFocusOnTab: true
+                    selectByMouse: true
+
+                    onTextChanged: {
+                        if (root.libraryQuery !== text)
+                            root.libraryQuery = text
+                    }
+
+                    Keys.onEscapePressed: root.libraryOpen = false
+                }
+            }
 
             Item {
                 width: parent.width
-                height: parent.height
+                height: Math.max(0, parent.height - librarySearchField.height - parent.spacing)
                 clip: true
 
                 ListView {
@@ -793,7 +836,7 @@ PanelWindow {
                         readonly property bool currentTrack: modelData.path === root.playback.path
 
                         width: trackList.width
-                        height: 20
+                        height: 25
                         radius: 7
                         color: currentTrack ? "#DDE8F3" : trackHover.containsMouse ? "#EDF3F9" : "transparent"
                         border.width: currentTrack ? 1 : 0
@@ -810,7 +853,7 @@ PanelWindow {
                                 anchors.verticalCenter: parent.verticalCenter
                                 text: parent.parent.currentTrack && root.isPlaying ? "♫" : String(index + 1).padStart(2, "0")
                                 color: parent.parent.currentTrack ? root.accent : root.muted
-                                font.pixelSize: 7
+                                font.pixelSize: 8
                                 font.weight: Font.DemiBold
                             }
 
@@ -823,7 +866,7 @@ PanelWindow {
                                     width: parent.width
                                     text: modelData.title
                                     color: parent.parent.parent.currentTrack ? root.ink : root.secondary
-                                    font.pixelSize: 7
+                                    font.pixelSize: 9
                                     font.weight: parent.parent.parent.currentTrack ? Font.DemiBold : Font.Medium
                                     elide: Text.ElideRight
                                 }
@@ -832,7 +875,7 @@ PanelWindow {
                                     width: parent.width
                                     text: modelData.artist
                                     color: root.muted
-                                    font.pixelSize: 6
+                                    font.pixelSize: 7
                                     elide: Text.ElideRight
                                 }
                             }
@@ -858,7 +901,7 @@ PanelWindow {
                             ? (root.statusMessage.length ? root.statusMessage : "No songs yet")
                             : "No matching tracks"
                         color: root.secondary
-                        font.pixelSize: 8
+                        font.pixelSize: 9
                     }
 
                     Text {
@@ -867,34 +910,10 @@ PanelWindow {
                             ? "Add tracks to ~/Music"
                             : "Try another title or artist"
                         color: root.muted
-                        font.pixelSize: 6
+                        font.pixelSize: 7
                     }
                 }
             }
-        }
-
-        // Invisible keyboard sink: it listens only while the song list is open.
-        TextInput {
-            id: libraryKeyboardInput
-            x: root.modelData ? root.modelData.width - 1 : 0
-            y: root.modelData ? root.modelData.height - 1 : 0
-            width: 1
-            height: 1
-            visible: root.libraryOpen
-            opacity: 0
-            color: "transparent"
-            selectionColor: "transparent"
-            selectedTextColor: "transparent"
-            font.pixelSize: 1
-            text: root.libraryQuery
-            activeFocusOnTab: true
-
-            onTextChanged: {
-                if (root.libraryQuery !== text)
-                    root.libraryQuery = text
-            }
-
-            Keys.onEscapePressed: root.libraryOpen = false
         }
     }
 
