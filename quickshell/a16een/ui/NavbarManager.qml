@@ -9,6 +9,7 @@ Item {
     property bool active: false
     property var navbarSettings: ({})
     property var workspaceRegistry: []
+    property var appearanceSettings: ({})
     property int navbarIconRevision: 0
     property string selectedSlot: "home"
     property string currentSection: "workspace"
@@ -39,6 +40,7 @@ Item {
     readonly property string navbarReadyPath: root.navbarIconRoot + "/ready"
     readonly property string settingsPath: root.stateDir + "/navbar.json"
     readonly property string workspaceRegistryPath: root.stateDir + "/workspaces.json"
+    readonly property string appearanceSettingsPath: root.stateDir + "/navbar-appearance.json"
 
 
     readonly property color page: "transparent"
@@ -209,6 +211,31 @@ Item {
         }
     }
 
+    function loadAppearanceSettings(raw) {
+        try {
+            const parsed = JSON.parse(String(raw || "{}"))
+            root.appearanceSettings = parsed && typeof parsed === "object" ? parsed : ({})
+        } catch (error) {
+            root.appearanceSettings = ({})
+        }
+    }
+
+    function iconStyleLockMessage(slot) {
+        const appearance = root.appearanceSettings || ({})
+        const all = appearance.all || ({})
+        const workspaces = appearance.workspaces || ({})
+        const item = workspaces[slot] || ({})
+        if (all.applyIconColor === true)
+            return "Disable 'Apply one icon color' under Appearance → All Workspaces first."
+        if (item.iconColor && item.iconColor !== "inherit")
+            return "Set this workspace's Appearance → Icon Color to Inherit before changing Icon Style here."
+        return ""
+    }
+
+    function iconStyleLocked(slot) {
+        return root.iconStyleLockMessage(slot).length > 0
+    }
+
     function colorHexFromStyle(style) {
         // Navbar settings store styles as solid:#RRGGBB or split/gradient strings.
         // QML color properties need a real color, so extract the first hex stop.
@@ -265,6 +292,11 @@ Item {
     }
 
     function patch(p) {
+        if (p.color !== undefined && root.iconStyleLocked(root.selectedSlot)) {
+            root.statusText = root.iconStyleLockMessage(root.selectedSlot)
+            return
+        }
+
         const next = {}
         for (const slot of root.slots)
             next[slot.id] = root.settingFor(slot.id)
@@ -382,6 +414,15 @@ Item {
         printErrors: false
         onLoaded: root.loadWorkspaceRegistry(this.text())
         onFileChanged: root.loadWorkspaceRegistry(this.text())
+    }
+
+    FileView {
+        id: appearanceSettingsFile
+        path: root.appearanceSettingsPath
+        watchChanges: true
+        printErrors: false
+        onLoaded: root.loadAppearanceSettings(this.text())
+        onFileChanged: root.loadAppearanceSettings(this.text())
     }
 
     FileView {
@@ -752,6 +793,15 @@ Item {
                     }
 
                     Text {
+                        visible: root.iconStyleLocked(root.selectedSlot)
+                        Layout.fillWidth: true
+                        text: root.iconStyleLockMessage(root.selectedSlot)
+                        color: "#9A6722"
+                        font.pixelSize: 8
+                        wrapMode: Text.WordWrap
+                    }
+
+                    Text {
                         text: "ICON STYLE"
                         color: root.textMuted
                         font.pixelSize: 7
@@ -788,7 +838,8 @@ Item {
 
                                 MouseArea {
                                     anchors.fill: parent
-                                    cursorShape: Qt.PointingHandCursor
+                                    enabled: !root.iconStyleLocked(root.selectedSlot)
+                                    cursorShape: enabled ? Qt.PointingHandCursor : Qt.ArrowCursor
                                     onClicked: root.setStyleMode(modelData.id)
                                 }
                             }
@@ -830,7 +881,8 @@ Item {
 
                                 MouseArea {
                                     anchors.fill: parent
-                                    cursorShape: Qt.PointingHandCursor
+                                    enabled: !root.iconStyleLocked(root.selectedSlot)
+                                    cursorShape: enabled ? Qt.PointingHandCursor : Qt.ArrowCursor
                                     onClicked: root.setStyleColor(modelData.id, 0)
                                 }
                             }
@@ -874,7 +926,8 @@ Item {
 
                                 MouseArea {
                                     anchors.fill: parent
-                                    cursorShape: Qt.PointingHandCursor
+                                    enabled: !root.iconStyleLocked(root.selectedSlot)
+                                    cursorShape: enabled ? Qt.PointingHandCursor : Qt.ArrowCursor
                                     onClicked: root.setStyleColor(modelData.id, 1)
                                 }
                             }
@@ -906,19 +959,9 @@ Item {
                     }
                 }
 
-                Item {
-                    Column {
-                        anchors.centerIn: parent
-
-                        Text {
-                            anchors.horizontalCenter: parent.horizontalCenter
-                            text: "COMING SOON"
-                            color: "#6B7280"
-                            font.pixelSize: 9
-                            font.weight: Font.DemiBold
-                            font.letterSpacing: 1.0
-                        }
-                    }
+                NavbarAppearancePage {
+                    active: root.active && root.currentSection === "appearance"
+                    workspaces: root.slots
                 }
 
                 Item {
@@ -943,6 +986,7 @@ Item {
         if (root.active) {
             settingsFile.reload()
             navbarReadyFile.reload()
+            appearanceSettingsFile.reload()
             placementControl.active = true
         }
     }
