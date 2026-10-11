@@ -3,6 +3,7 @@ set -euo pipefail
 
 readonly STATE_DIR="${XDG_STATE_HOME:-$HOME/.local/state}/a16een"
 readonly SETTINGS_FILE="$STATE_DIR/navbar.json"
+readonly APPEARANCE_FILE="$STATE_DIR/navbar-appearance.json"
 readonly ICON_ROOT="${XDG_CONFIG_HOME:-$HOME/.config}/a16een/quickshell/a16een/assets/icons"
 readonly OUTPUT_DIR="$STATE_DIR/navbar-icons"
 readonly ICON_REPAIR_MARKER="$STATE_DIR/navbar-icon-repair-v1"
@@ -115,6 +116,109 @@ repair_all_white_styles() {
 
 
 
+color_brightness() {
+    local color="$1" hex red green blue
+    [[ "$color" =~ ^#[0-9A-Fa-f]{6}$ ]] || return 1
+    hex="$(printf '%s' "$color" | cut -c2-7)"
+    red="$(printf '%s' "$hex" | cut -c1-2)"
+    green="$(printf '%s' "$hex" | cut -c3-4)"
+    blue="$(printf '%s' "$hex" | cut -c5-6)"
+    red=$((16#$red))
+    green=$((16#$green))
+    blue=$((16#$blue))
+    printf '%s' "$(((red * 299 + green * 587 + blue * 114) / 1000))"
+}
+
+auto_contrast_icon_color() {
+    local brightness
+    brightness="$(color_brightness "$1")" || brightness=120
+    if (( brightness >= 145 )); then
+        printf '#111318'
+    else
+        printf '#FFFFFF'
+    fi
+}
+
+ensure_style_contrast() {
+    local style="$1" background="$2" background_luma color color_luma difference
+    local has_color=0 safe=1
+    background_luma="$(color_brightness "$background")" || {
+        printf '%s' "$style"
+        return
+    }
+
+    while IFS= read -r color; do
+        [[ -n "$color" ]] || continue
+        has_color=1
+        color_luma="$(color_brightness "$color")" || {
+            safe=0
+            break
+        }
+        difference=$((background_luma - color_luma))
+        if (( difference < 0 )); then
+            difference=$((-difference))
+        fi
+        if (( difference < 95 )); then
+            safe=0
+            break
+        fi
+    done < <(printf '%s' "$style" | grep -Eo '#[0-9A-Fa-f]{6}' || true)
+
+    if (( has_color == 0 || safe == 0 )); then
+        printf 'solid:%s' "$(auto_contrast_icon_color "$background")"
+    else
+        printf '%s' "$style"
+    fi
+}
+
+apply_appearance_style() {
+    local slot="$1" original_style="$2"
+    local surface="#FFFFFF" all_container_on=false all_container="#15171A"
+    local all_icon_on=false all_icon="auto"
+    local individual_container_on=false individual_container="transparent"
+    local individual_icon="inherit" background
+
+    if [[ -s "$APPEARANCE_FILE" ]]; then
+        IFS=$'\t' read -r surface all_container_on all_container all_icon_on all_icon \
+            individual_container_on individual_container individual_icon < <(
+            jq -r --arg slot "$slot" '[
+                (.all.surfaceColor // "#FFFFFF"),
+                (.all.applyContainerColor // false),
+                (.all.containerColor // "#15171A"),
+                (.all.applyIconColor // false),
+                (.all.iconColor // "auto"),
+                (.workspaces[$slot].containerEnabled // false),
+                (.workspaces[$slot].containerColor // "transparent"),
+                (.workspaces[$slot].iconColor // "inherit")
+            ] | @tsv' "$APPEARANCE_FILE"
+        )
+    fi
+
+    [[ "$surface" =~ ^#[0-9A-Fa-f]{6}$ ]] || surface="#FFFFFF"
+    background="$surface"
+    if [[ "$all_container_on" == "true" && "$all_container" =~ ^#[0-9A-Fa-f]{6}$ ]]; then
+        background="$all_container"
+    elif [[ "$individual_container_on" == "true" && "$individual_container" =~ ^#[0-9A-Fa-f]{6}$ ]]; then
+        background="$individual_container"
+    fi
+
+    if [[ "$all_icon_on" == "true" ]]; then
+        if [[ "$all_icon" == "auto" ]]; then
+            original_style="solid:$(auto_contrast_icon_color "$background")"
+        elif [[ "$all_icon" =~ ^#[0-9A-Fa-f]{6}$ ]]; then
+            original_style="solid:$all_icon"
+        fi
+    elif [[ "$individual_icon" != "inherit" && -n "$individual_icon" ]]; then
+        if [[ "$individual_icon" == "auto" ]]; then
+            original_style="solid:$(auto_contrast_icon_color "$background")"
+        elif [[ "$individual_icon" =~ ^#[0-9A-Fa-f]{6}$ ]]; then
+            original_style="solid:$individual_icon"
+        fi
+    fi
+
+    ensure_style_contrast "$original_style" "$background"
+}
+
 normalize_icon() {
     local value="${1:-}"
     if [[ "$value" =~ ^[a-z0-9-]+\.svg$ ]]; then
@@ -172,6 +276,7 @@ generate_icon() {
     [[ -n "$configured_icon" && "$configured_icon" != "null" ]] || configured_icon="house.svg"
 
     [[ -n "$configured_style" ]] || configured_style="solid:#111318"
+    configured_style="$(apply_appearance_style "$slot" "$configured_style")"
 
     icon_file="$ICON_ROOT/$configured_icon"
 
