@@ -353,11 +353,18 @@ sudo install -Dm755 "$ROOT_DIR/scripts/a16een-music" /usr/local/bin/a16een-music
 sudo install -Dm755 "$ROOT_DIR/scripts/a16een-widget-settings" /usr/local/bin/a16een-widget-settings
 sudo install -Dm755 "$ROOT_DIR/scripts/a16een-icon-theme" /usr/local/bin/a16een-icon-theme
 sudo install -Dm755 "$ROOT_DIR/scripts/a16een-navbar" /usr/local/bin/a16een-navbar
+sudo install -Dm755 "$ROOT_DIR/scripts/a16een-navbar-appearance" /usr/local/bin/a16een-navbar-appearance
 sudo install -Dm755 "$ROOT_DIR/scripts/a16een-navbar-layout" /usr/local/bin/a16een-navbar-layout
 sudo install -Dm755 "$ROOT_DIR/scripts/a16een-navbar-content" /usr/local/bin/a16een-navbar-content
 sudo install -Dm755 "$ROOT_DIR/scripts/a16een-workspaces" /usr/local/bin/a16een-workspaces
 sudo install -Dm755 "$ROOT_DIR/scripts/a16een-focus-workspace" /usr/local/bin/a16een-focus-workspace
 sudo install -Dm755 "$ROOT_DIR/scripts/a16een-workspace-preset" /usr/local/bin/a16een-workspace-preset
+
+# Initialize persistent navbar appearance state from the saved workspace registry.
+# The helper merges defaults and never overwrites any previously stored choices.
+if ! /usr/local/bin/a16een-navbar-appearance get >/dev/null; then
+    echo "WARNING: navbar appearance settings could not be initialized; keeping deployed defaults." >&2
+fi
 
 # The first revision with icon themes could leave a theme selected that is
 # expensive or incomplete. Reset once to the system default for a clean,
@@ -427,7 +434,7 @@ fi
 NAVBAR_SYNC_MARKER="$STATE_DIR/navbar-script-sha"
 # Runtime renderer revision invalidates stale generated navbar SVGs after
 # a rendering-path repair, even when the generator source itself is unchanged.
-NAVBAR_RUNTIME_REVISION="3"
+NAVBAR_RUNTIME_REVISION="4"
 NAVBAR_SCRIPT_HASH="$(sha256sum "$ROOT_DIR/scripts/a16een-navbar" | awk '{print $1}')"
 NAVBAR_SYNC_SHA="$(printf '%s:%s' "$NAVBAR_RUNTIME_REVISION" "$NAVBAR_SCRIPT_HASH" | sha256sum | awk '{print $1}')"
 PREVIOUS_NAVBAR_SYNC_SHA=""
