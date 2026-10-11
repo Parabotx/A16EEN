@@ -28,7 +28,9 @@ Item {
         { id: "battery", name: "Battery", detail: "Battery capsule" },
         { id: "time", name: "Clock / Time", detail: "Clock display" },
         { id: "utilities", name: "Utilities", detail: "Wi-Fi and Bluetooth" },
-        { id: "power", name: "Power", detail: "Power button" }
+        { id: "power", name: "Power", detail: "Power button" },
+        { id: "quick-actions", name: "Tasks, Notes & Presets", detail: "Productivity shortcut group" },
+        { id: "quick-hub", name: "Notifications & Tools", detail: "Notifications and tools group" }
     ]
     readonly property var containerColors: [
         { value: "transparent", label: "Default", swatch: "#F4F5F7" },
@@ -164,8 +166,11 @@ Item {
         spacing: 12
 
         ColumnLayout {
-            Layout.preferredWidth: 140
-            Layout.minimumWidth: 122
+            // Keep the category list sidebar-sized so it cannot collapse the settings pane.
+            Layout.preferredWidth: 154
+            Layout.minimumWidth: 154
+            Layout.maximumWidth: 154
+            Layout.fillWidth: false
             Layout.fillHeight: true
             spacing: 4
             Text {
@@ -271,7 +276,7 @@ Item {
                         Text {
                             Layout.fillWidth: true
                             text: root.isAllScope
-                                ? "Shared settings for Workspaces, Battery, Clock, Utilities and Power."
+                                ? "Shared settings for Workspaces, Battery, Clock, Utilities, Power, Tasks/Notes/Presets and Notifications/Tools."
                                 : root.containerChoices.find(function(item) { return item.id === root.selectedScope }).detail
                             color: "#7B8591"
                             font.pixelSize: 8
