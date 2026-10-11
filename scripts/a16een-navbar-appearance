@@ -155,7 +155,7 @@ notify_appearance_changed() {
     # QML also watches this stable path. Settings are atomically replaced with
     # mv, which can detach some QFileSystemWatcher-backed file watches.
     mkdir -p "$STATE_DIR/navbar-icons"
-    touch "$STATE_DIR/navbar-icons/ready"
+    printf '%s\n' "$(date +%s%N)-$" > "$STATE_DIR/navbar-icons/ready"
 }
 
 main() {
