@@ -38,11 +38,13 @@ jobs:
           bash -n scripts/a16een-wallpaper
           bash -n scripts/a16een-icons
           bash -n scripts/a16een-screenshot
+          bash -n tests/test_screenshot_capture.sh
           bash -n scripts/a16een-control
           python3 -m py_compile scripts/a16een-clipboard scripts/a16een-app-stash scripts/a16een-system-monitor scripts/a16een-data-meter
           python3 tests/test_app_stash.py
           python3 tests/test_system_monitor.py
           python3 tests/test_data_meter.py
+          bash tests/test_screenshot_capture.sh
           bash -n scripts/a16een-icon-theme
           bash -n scripts/a16een-workspace-preset
           python3 -m py_compile scripts/a16een-music scripts/a16een-widget-settings
@@ -175,6 +177,11 @@ jobs:
           grep -Fq 'root.editorOpen = true' quickshell/a16een/ui/WorkspacePresetsSection.qml
           grep -Fq 'onClicked: {' quickshell/a16een/ui/WorkspacePresetsSection.qml
           test -f scripts/a16een-screenshot
+          grep -Fq 'wait_for_file() {' scripts/a16een-screenshot
+          grep -Fq 'prepare-window)' scripts/a16een-screenshot
+          grep -Fq 'windowSelectionOverlay' quickshell/a16een/ui/ScreenshotCenter.qml
+          grep -Fq 'ESC TO CANCEL' quickshell/a16een/ui/ScreenshotCenter.qml
+          test -f tests/test_screenshot_capture.sh
           test -f scripts/a16een-system-monitor
           test -f scripts/a16een-data-meter
           test -f tests/test_data_meter.py
