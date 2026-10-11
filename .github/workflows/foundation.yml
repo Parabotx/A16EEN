@@ -230,7 +230,7 @@ jobs:
           grep -Fq 'quotesWidgetEnabled' quickshell/a16een/shell.qml
           grep -Fq 'quotesWidgetEnabledRequested' quickshell/a16een/ui/CommandCenter.qml
           grep -Fq 'quotesWidgetEnabledRequested' quickshell/a16een/ui/WidgetSection.qml
-          grep -Fq 'id: registryScroll' quickshell/a16een/ui/WidgetSection.qml
+          grep -Fq 'id: widgetListScroll' quickshell/a16een/ui/WidgetSection.qml
           grep -Fq 'cp "$ROOT_DIR/quickshell/a16een/assets/quotes.json" "$TMP_DEPLOY/assets/quotes.json"' scripts/install.sh
           test -f quickshell/a16een/ui/MusicDecor.qml
           grep -Fq 'MusicDecor {' quickshell/a16een/ui/MusicWidget.qml
