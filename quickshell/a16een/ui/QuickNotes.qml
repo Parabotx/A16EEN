@@ -813,7 +813,7 @@ PanelWindow {
                         text: root.gateMode === "create"
                             ? "Protect your notes"
                             : (root.gateMode === "confirm" ? "Confirm passcode" : "Unlock notes")
-                        color: "#1C222A"
+                        color: popupCardStyle.textColor
                         font.pixelSize: 16
                         font.weight: Font.DemiBold
                         horizontalAlignment: Text.AlignHCenter
@@ -826,7 +826,7 @@ PanelWindow {
                             : (root.gateMode === "confirm"
                                 ? "Enter the same passcode again."
                                 : "Enter your passcode to continue.")
-                        color: "#828C98"
+                        color: popupCardStyle.secondaryTextColor
                         font.pixelSize: 10
                         horizontalAlignment: Text.AlignHCenter
                         wrapMode: Text.WordWrap
@@ -846,7 +846,7 @@ PanelWindow {
                             anchors.leftMargin: 11
                             anchors.rightMargin: 11
                             verticalAlignment: TextInput.AlignVCenter
-                            color: "#222A34"
+                            color: popupCardStyle.textColor
                             font.pixelSize: 13
                             echoMode: TextInput.Password
                             passwordCharacter: "●"
@@ -901,7 +901,7 @@ PanelWindow {
                         Text {
                             anchors.centerIn: parent
                             text: "×"
-                            color: "#46505B"
+                            color: popupCardStyle.textColor
                             font.pixelSize: 20
                         }
                         MouseArea {
@@ -968,7 +968,7 @@ PanelWindow {
                             verticalAlignment: TextInput.AlignVCenter
                             clip: true
                             selectByMouse: true
-                            color: "#222A34"
+                            color: popupCardStyle.textColor
                             font.pixelSize: 11
                             font.weight: Font.DemiBold
                             onTextEdited: root.updateSelectedField("title", text)
@@ -979,7 +979,7 @@ PanelWindow {
                             anchors.leftMargin: 8
                             anchors.verticalCenter: parent.verticalCenter
                             text: "Note name"
-                            color: "#A0A9B4"
+                            color: popupCardStyle.mutedTextColor
                             font.pixelSize: 11
                             visible: titleField.text.length === 0 && !titleField.activeFocus
                             enabled: false
@@ -1061,7 +1061,7 @@ PanelWindow {
                                 Text {
                                     width: parent.width - 25
                                     text: "NOTES"
-                                    color: "#818B98"
+                                    color: popupCardStyle.secondaryTextColor
                                     font.pixelSize: 9
                                     font.weight: Font.DemiBold
                                     font.letterSpacing: 0.7
@@ -1077,7 +1077,7 @@ PanelWindow {
                                     Text {
                                         anchors.centerIn: parent
                                         text: "+"
-                                        color: "#252C35"
+                                        color: popupCardStyle.textColor
                                         font.pixelSize: 16
                                     }
                                     MouseArea {
@@ -1115,7 +1115,7 @@ PanelWindow {
                                             width: parent.width
                                             text: (noteRow.modelData.pinned ? "★ " : "")
                                                 + (noteRow.modelData.title || "Untitled note")
-                                            color: "#252C35"
+                                            color: popupCardStyle.textColor
                                             font.pixelSize: 10
                                             font.weight: Font.Medium
                                             elide: Text.ElideRight
@@ -1123,7 +1123,7 @@ PanelWindow {
                                         Text {
                                             width: parent.width
                                             text: root.previewText(noteRow.modelData.body)
-                                            color: "#8C96A2"
+                                            color: popupCardStyle.mutedTextColor
                                             font.pixelSize: 9
                                             elide: Text.ElideRight
                                         }
@@ -1221,7 +1221,7 @@ PanelWindow {
                                     }
                                     Text {
                                         text: "Image"
-                                        color: "#4B5663"
+                                        color: popupCardStyle.secondaryTextColor
                                         font.pixelSize: 10
                                         font.weight: Font.Medium
                                         anchors.verticalCenter: parent.verticalCenter
@@ -1260,7 +1260,7 @@ PanelWindow {
                                     Text {
                                         anchors.centerIn: parent
                                         text: modelData.text
-                                        color: "#44505C"
+                                        color: popupCardStyle.textColor
                                         font.pixelSize: 10
                                         font.weight: modelData.id === "bold" ? Font.Bold : Font.Medium
                                         font.italic: modelData.id === "italic"
@@ -1283,7 +1283,7 @@ PanelWindow {
                                 color: alignLeftHover.containsMouse ? popupCardStyle.hoverSurfaceColor : popupCardStyle.subtleSurfaceColor
                                 border.width: 1
                                 border.color: popupCardStyle.fieldBorderColor
-                                Text { anchors.centerIn: parent; text: "≡"; color: "#44505C"; font.pixelSize: 12 }
+                                Text { anchors.centerIn: parent; text: "≡"; color: popupCardStyle.textColor; font.pixelSize: 12 }
                                 MouseArea {
                                     id: alignLeftHover
                                     anchors.fill: parent
@@ -1299,7 +1299,7 @@ PanelWindow {
                                 color: alignCenterHover.containsMouse ? popupCardStyle.hoverSurfaceColor : popupCardStyle.subtleSurfaceColor
                                 border.width: 1
                                 border.color: popupCardStyle.fieldBorderColor
-                                Text { anchors.centerIn: parent; text: "≡"; color: "#44505C"; font.pixelSize: 12; horizontalAlignment: Text.AlignHCenter }
+                                Text { anchors.centerIn: parent; text: "≡"; color: popupCardStyle.textColor; font.pixelSize: 12; horizontalAlignment: Text.AlignHCenter }
                                 MouseArea {
                                     id: alignCenterHover
                                     anchors.fill: parent
@@ -1315,7 +1315,7 @@ PanelWindow {
                                 color: alignRightHover.containsMouse ? popupCardStyle.hoverSurfaceColor : popupCardStyle.subtleSurfaceColor
                                 border.width: 1
                                 border.color: popupCardStyle.fieldBorderColor
-                                Text { anchors.centerIn: parent; text: "≡"; color: "#44505C"; font.pixelSize: 12; horizontalAlignment: Text.AlignRight }
+                                Text { anchors.centerIn: parent; text: "≡"; color: popupCardStyle.textColor; font.pixelSize: 12; horizontalAlignment: Text.AlignRight }
                                 MouseArea {
                                     id: alignRightHover
                                     anchors.fill: parent
@@ -1344,7 +1344,7 @@ PanelWindow {
                                 anchors.margins: 9
                                 text: ""
                                 textFormat: TextEdit.RichText
-                                color: "#303945"
+                                color: popupCardStyle.textColor
                                 selectedTextColor: "#FFFFFF"
                                 selectionColor: "#6E8FB9"
                                 font.family: "Noto Sans"
@@ -1367,7 +1367,7 @@ PanelWindow {
                                 anchors.left: noteEditor.left
                                 anchors.top: noteEditor.top
                                 text: "Write anything…"
-                                color: "#A0A9B4"
+                                color: popupCardStyle.mutedTextColor
                                 font.family: "Noto Sans"
                                 font.pixelSize: 12
                                 visible: noteEditor.text.length === 0 && !noteEditor.activeFocus
@@ -1514,7 +1514,7 @@ PanelWindow {
                                         Text {
                                             anchors.centerIn: parent
                                             text: audioPlayer.source.toString() === attachmentCard.modelData.path && audioPlayer.playing ? "Ⅱ" : "▶"
-                                            color: "#3F4A56"
+                                            color: popupCardStyle.textColor
                                             font.pixelSize: 11
                                         }
                                         MouseArea {
@@ -1538,14 +1538,14 @@ PanelWindow {
                                             width: parent.width
                                             text: audioPlayer.source.toString() === attachmentCard.modelData.path && audioPlayer.playing
                                                 ? "Playing" : "Voice note"
-                                            color: "#4D5967"
+                                            color: popupCardStyle.secondaryTextColor
                                             font.pixelSize: 9
                                             font.weight: Font.Medium
                                         }
                                         Text {
                                             width: parent.width
                                             text: "Tap to play"
-                                            color: "#929BA7"
+                                            color: popupCardStyle.mutedTextColor
                                             font.pixelSize: 8
                                         }
                                     }
@@ -1620,13 +1620,13 @@ PanelWindow {
                         Text {
                             anchors.verticalCenter: parent.verticalCenter
                             text: root.noteMenuNote && root.noteMenuNote.pinned ? "★" : "☆"
-                            color: "#4B5968"
+                            color: popupCardStyle.textColor
                             font.pixelSize: 14
                         }
                         Text {
                             anchors.verticalCenter: parent.verticalCenter
                             text: root.noteMenuNote && root.noteMenuNote.pinned ? "Unpin" : "Pin"
-                            color: "#303A46"
+                            color: popupCardStyle.textColor
                             font.pixelSize: 11
                             font.weight: Font.Medium
                         }

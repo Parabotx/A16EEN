@@ -450,7 +450,7 @@ PanelWindow {
                                 : (root.page === "monitor" ? "Live usage while this card is open"
                                 : (root.page === "calculator" ? "Quick calculations, no waiting"
                                 : "Useful actions, one click away"))
-                            color: "#89929E"
+                            color: popupCardStyle.mutedTextColor
                             font.pixelSize: 8
                             elide: Text.ElideRight
                         }
@@ -550,7 +550,7 @@ PanelWindow {
                                     Text {
                                         width: parent.width
                                         text: toolTile.modelData.detail
-                                        color: "#8A939E"
+                                        color: popupCardStyle.mutedTextColor
                                         font.pixelSize: 7
                                         elide: Text.ElideRight
                                         maximumLineCount: 1
@@ -695,7 +695,7 @@ PanelWindow {
 
                                     Text {
                                         text: metricCard.modelData.label
-                                        color: "#697482"
+                                        color: popupCardStyle.secondaryTextColor
                                         font.pixelSize: 8
                                         font.weight: Font.DemiBold
                                         font.letterSpacing: 0.5
@@ -842,7 +842,7 @@ PanelWindow {
                                     Text {
                                         width: parent.width
                                         text: trafficTile.modelData.label
-                                        color: "#7D8793"
+                                        color: popupCardStyle.mutedTextColor
                                         font.pixelSize: 8
                                         font.weight: Font.DemiBold
                                         font.letterSpacing: 0.45
@@ -868,7 +868,7 @@ PanelWindow {
                         y: 132
                         height: 12
                         text: "BY NETWORK"
-                        color: "#77818D"
+                        color: popupCardStyle.mutedTextColor
                         font.pixelSize: 8
                         font.weight: Font.DemiBold
                         font.letterSpacing: 0.65
@@ -926,7 +926,7 @@ PanelWindow {
                                                 ? networkRow.modelData.rx_month_bytes : networkRow.modelData.rx_today_bytes)
                                                 + "   ↑ " + root.formatBytes(root.dataMeterPeriod === "month"
                                                 ? networkRow.modelData.tx_month_bytes : networkRow.modelData.tx_today_bytes)
-                                            color: "#586371"
+                                            color: popupCardStyle.secondaryTextColor
                                             font.pixelSize: 8
                                             horizontalAlignment: Text.AlignRight
                                             elide: Text.ElideLeft
@@ -1101,7 +1101,7 @@ PanelWindow {
                         Text {
                             anchors.horizontalCenter: parent.horizontalCenter
                             text: "Nest is empty"
-                            color: "#252B34"
+                            color: popupCardStyle.textColor
                             font.pixelSize: 11
                             font.weight: Font.DemiBold
                         }
@@ -1109,7 +1109,7 @@ PanelWindow {
                         Text {
                             anchors.horizontalCenter: parent.horizontalCenter
                             text: "Press Super + H to tuck away a window."
-                            color: "#89929E"
+                            color: popupCardStyle.mutedTextColor
                             font.pixelSize: 9
                         }
                     }
@@ -1124,7 +1124,7 @@ PanelWindow {
                         : (root.page === "monitor" ? "Refreshes only while open"
                         : (root.page === "calculator" ? "Basic arithmetic · percentage included"
                             : "Nest · Ctrl + Super + H"))
-                    color: "#9AA3AE"
+                    color: popupCardStyle.mutedTextColor
                     font.pixelSize: 8
                     elide: Text.ElideRight
                 }

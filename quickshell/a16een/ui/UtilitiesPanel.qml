@@ -346,7 +346,7 @@ PanelWindow {
 
                                 Text {
                                     text: "RECENT COPIES"
-                                    color: "#687381"
+                                    color: popupCardStyle.secondaryTextColor
                                     font.pixelSize: 8
                                     font.weight: Font.DemiBold
                                     font.letterSpacing: 0.8
@@ -355,7 +355,7 @@ PanelWindow {
 
                                 Text {
                                     text: String(clipboardContent.clipboardItems.length)
-                                    color: "#9AA3AE"
+                                    color: popupCardStyle.mutedTextColor
                                     font.pixelSize: 8
                                     anchors.verticalCenter: parent.verticalCenter
                                 }
@@ -414,7 +414,7 @@ PanelWindow {
                                             anchors.fill: parent
                                             verticalAlignment: Text.AlignVCenter
                                             text: "Search copied text"
-                                            color: "#9AA3AE"
+                                            color: popupCardStyle.mutedTextColor
                                             font.pixelSize: 10
                                             visible: clipboardSearchInput.text.length === 0
                                         }
@@ -425,7 +425,7 @@ PanelWindow {
                                             verticalAlignment: TextInput.AlignVCenter
                                             text: clipboardContent.clipboardSearch
                                             onTextChanged: clipboardContent.clipboardSearch = text
-                                            color: "#222831"
+                                            color: popupCardStyle.textColor
                                             selectionColor: "#DDE5EF"
                                             selectedTextColor: "#111318"
                                             font.pixelSize: 10
@@ -477,7 +477,7 @@ PanelWindow {
                                                 height: parent.height
                                                 verticalAlignment: Text.AlignVCenter
                                                 text: clipboardContent.previewText(clipboardEntry.modelData.content)
-                                                color: "#252B33"
+                                                color: popupCardStyle.textColor
                                                 font.pixelSize: 9
                                                 elide: Text.ElideRight
                                                 maximumLineCount: 1
@@ -489,7 +489,7 @@ PanelWindow {
                                                 verticalAlignment: Text.AlignVCenter
                                                 horizontalAlignment: Text.AlignRight
                                                 text: clipboardContent.ageLabel(clipboardEntry.modelData.timestamp)
-                                                color: "#98A1AC"
+                                                color: popupCardStyle.mutedTextColor
                                                 font.pixelSize: 8
                                             }
 
@@ -529,7 +529,7 @@ PanelWindow {
                                         text: clipboardContent.clipboardSearch.trim().length
                                             ? "No matching text"
                                             : "Nothing copied yet"
-                                        color: "#596573"
+                                        color: popupCardStyle.secondaryTextColor
                                         font.pixelSize: 10
                                         font.weight: Font.DemiBold
                                     }
@@ -539,7 +539,7 @@ PanelWindow {
                                         text: clipboardContent.clipboardSearch.trim().length
                                             ? "Try a different search"
                                             : "Text clears automatically after 24 hours"
-                                        color: "#9AA3AE"
+                                        color: popupCardStyle.mutedTextColor
                                         font.pixelSize: 8
                                     }
                                 }

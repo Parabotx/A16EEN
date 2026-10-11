@@ -335,7 +335,7 @@ PanelWindow {
 
                         Text {
                             text: root.editorOpen ? "NEW PRESET" : "WORKSPACES"
-                            color: "#202630"
+                            color: popupCardStyle.textColor
                             font.pixelSize: 14
                             font.weight: Font.DemiBold
                         }
@@ -343,7 +343,7 @@ PanelWindow {
                             text: root.editorOpen
                                 ? root.draftApps.length + " apps selected"
                                 : root.statusMessage
-                            color: "#8A939E"
+                            color: popupCardStyle.mutedTextColor
                             font.pixelSize: 9
                         }
                     }
@@ -385,7 +385,7 @@ PanelWindow {
                         Text {
                             anchors.centerIn: parent
                             text: "×"
-                            color: "#6F7986"
+                            color: popupCardStyle.secondaryTextColor
                             font.pixelSize: 18
                         }
                         MouseArea {
@@ -437,7 +437,7 @@ PanelWindow {
                                 Text {
                                     width: parent.width
                                     text: presetRow.modelData.name || "Untitled preset"
-                                    color: "#27313D"
+                                    color: popupCardStyle.textColor
                                     font.pixelSize: 11
                                     font.weight: Font.DemiBold
                                     elide: Text.ElideRight
@@ -445,7 +445,7 @@ PanelWindow {
                                 Text {
                                     width: parent.width
                                     text: String((presetRow.modelData.apps || []).length) + " apps"
-                                    color: "#8C96A2"
+                                    color: popupCardStyle.mutedTextColor
                                     font.pixelSize: 9
                                 }
                             }
@@ -506,7 +506,7 @@ PanelWindow {
                         anchors.centerIn: parent
                         visible: root.presets.length === 0
                         text: "No presets yet\nTap + to create one"
-                        color: "#8A939E"
+                        color: popupCardStyle.mutedTextColor
                         font.pixelSize: 11
                         horizontalAlignment: Text.AlignHCenter
                         lineHeight: 1.35
@@ -532,7 +532,7 @@ PanelWindow {
                             anchors.leftMargin: 9
                             anchors.rightMargin: 8
                             verticalAlignment: TextInput.AlignVCenter
-                            color: "#202833"
+                            color: popupCardStyle.textColor
                             font.pixelSize: 11
                             clip: true
                             selectByMouse: true
@@ -545,7 +545,7 @@ PanelWindow {
                             anchors.leftMargin: 9
                             anchors.verticalCenter: parent.verticalCenter
                             text: "Preset name"
-                            color: "#A0A9B4"
+                            color: popupCardStyle.mutedTextColor
                             font.pixelSize: 11
                             visible: presetNameField.text.length === 0 && !presetNameField.activeFocus
                             enabled: false
@@ -565,7 +565,7 @@ PanelWindow {
                             anchors.leftMargin: 9
                             anchors.rightMargin: 8
                             verticalAlignment: TextInput.AlignVCenter
-                            color: "#35404C"
+                            color: popupCardStyle.textColor
                             font.pixelSize: 10
                             clip: true
                             selectByMouse: true
@@ -576,7 +576,7 @@ PanelWindow {
                             anchors.leftMargin: 9
                             anchors.verticalCenter: parent.verticalCenter
                             text: "Search applications"
-                            color: "#A0A9B4"
+                            color: popupCardStyle.mutedTextColor
                             font.pixelSize: 10
                             visible: appSearchField.text.length === 0 && !appSearchField.activeFocus
                             enabled: false
@@ -628,7 +628,7 @@ PanelWindow {
                                     anchors.verticalCenter: parent.verticalCenter
                                     width: parent.width - 28
                                     text: appRow.modelData.name || "Application"
-                                    color: "#303A46"
+                                    color: popupCardStyle.textColor
                                     font.pixelSize: 10
                                     elide: Text.ElideRight
                                 }
@@ -659,7 +659,7 @@ PanelWindow {
                             Text {
                                 anchors.centerIn: parent
                                 text: "Cancel"
-                                color: "#5F6A76"
+                                color: popupCardStyle.secondaryTextColor
                                 font.pixelSize: 10
                             }
                             MouseArea {

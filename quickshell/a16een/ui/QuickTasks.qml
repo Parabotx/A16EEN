@@ -341,7 +341,7 @@ PanelWindow {
                     Text {
                         width: parent.width - 2
                         text: "New task"
-                        color: "#202630"
+                        color: popupCardStyle.textColor
                         font.pixelSize: 14
                         font.weight: Font.DemiBold
                         verticalAlignment: Text.AlignVCenter
@@ -362,7 +362,7 @@ PanelWindow {
                         anchors.leftMargin: 10
                         anchors.rightMargin: 8
                         verticalAlignment: TextInput.AlignVCenter
-                        color: "#222A34"
+                        color: popupCardStyle.textColor
                         font.pixelSize: 12
                         clip: true
                         selectByMouse: true
@@ -373,7 +373,7 @@ PanelWindow {
                         anchors.leftMargin: 10
                         anchors.verticalCenter: parent.verticalCenter
                         text: "Task name"
-                        color: "#A0A9B4"
+                        color: popupCardStyle.mutedTextColor
                         font.pixelSize: 12
                         visible: taskNameField.text.length === 0 && !taskNameField.activeFocus
                         enabled: false
@@ -393,7 +393,7 @@ PanelWindow {
                         anchors.fill: parent
                         anchors.margins: 9
                         text: ""
-                        color: "#222A34"
+                        color: popupCardStyle.textColor
                         font.pixelSize: 11
                         wrapMode: TextEdit.Wrap
                         selectByMouse: true
@@ -403,7 +403,7 @@ PanelWindow {
                         anchors.left: descriptionField.left
                         anchors.top: descriptionField.top
                         text: "Description (optional)"
-                        color: "#A0A9B4"
+                        color: popupCardStyle.mutedTextColor
                         font.pixelSize: 11
                         visible: descriptionField.text.length === 0 && !descriptionField.activeFocus
                         enabled: false
@@ -416,7 +416,7 @@ PanelWindow {
                     spacing: 5
                     Text {
                         text: "DATE"
-                        color: "#87919E"
+                        color: popupCardStyle.mutedTextColor
                         font.pixelSize: 9
                         font.weight: Font.DemiBold
                         font.letterSpacing: 0.7
@@ -425,7 +425,7 @@ PanelWindow {
                     Text {
                         text: root.ethiopianMonths[root.selectedMonth - 1] + " "
                             + root.selectedDay + ", " + root.selectedYear + " ዓ.ም."
-                        color: "#4D5967"
+                        color: popupCardStyle.secondaryTextColor
                         font.pixelSize: 10
                         font.weight: Font.Medium
                         anchors.verticalCenter: parent.verticalCenter
@@ -455,7 +455,7 @@ PanelWindow {
                     Text {
                         width: parent.width - 64
                         text: root.ethiopianMonths[root.calendarMonth - 1] + " " + root.calendarYear + " ዓ.ም."
-                        color: "#202731"
+                        color: popupCardStyle.textColor
                         font.pixelSize: 10
                         font.weight: Font.DemiBold
                         horizontalAlignment: Text.AlignHCenter
@@ -490,7 +490,7 @@ PanelWindow {
                             width: 29
                             height: 15
                             text: modelData
-                            color: "#8E97A2"
+                            color: popupCardStyle.mutedTextColor
                             font.family: "Noto Sans Ethiopic"
                             font.pixelSize: 9
                             horizontalAlignment: Text.AlignHCenter
@@ -556,7 +556,7 @@ PanelWindow {
                         Text {
                             anchors.centerIn: parent
                             text: "Cancel"
-                            color: "#5F6A76"
+                            color: popupCardStyle.secondaryTextColor
                             font.pixelSize: 10
                             font.weight: Font.Medium
                         }
@@ -648,7 +648,7 @@ PanelWindow {
                         anchors.centerIn: parent
                         visible: tasksList.count === 0
                         text: root.selectedTab === "done" ? "Nothing completed yet" : "Nothing here yet"
-                        color: "#8A939E"
+                        color: popupCardStyle.mutedTextColor
                         font.pixelSize: 11
                         horizontalAlignment: Text.AlignHCenter
                     }
@@ -702,7 +702,7 @@ PanelWindow {
                             Text {
                                 width: parent.width
                                 text: taskRow.modelData.title
-                                color: "#28313C"
+                                color: popupCardStyle.textColor
                                 font.pixelSize: 11
                                 font.weight: Font.Medium
                                 font.strikeout: Boolean(taskRow.modelData.completed)
@@ -714,7 +714,7 @@ PanelWindow {
                                 text: String(taskRow.modelData.description || "").trim().length
                                     ? String(taskRow.modelData.description).trim()
                                     : root.dateLabel(taskRow.modelData.date)
-                                color: "#8A939E"
+                                color: popupCardStyle.mutedTextColor
                                 font.pixelSize: 9
                                 font.strikeout: Boolean(taskRow.modelData.completed)
                                 opacity: taskRow.modelData.completed ? 0.62 : 1

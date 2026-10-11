@@ -171,7 +171,7 @@ PanelWindow {
 
                         Text {
                             text: String(root.history.length) + " saved"
-                            color: "#89929E"
+                            color: popupCardStyle.mutedTextColor
                             font.pixelSize: 8
                         }
                     }
@@ -229,7 +229,7 @@ PanelWindow {
                                 anchors.fill: parent
                                 verticalAlignment: Text.AlignVCenter
                                 text: "Search notifications"
-                                color: "#9AA3AE"
+                                color: popupCardStyle.mutedTextColor
                                 font.pixelSize: 10
                                 visible: searchInput.text.length === 0
                             }
@@ -240,7 +240,7 @@ PanelWindow {
                                 verticalAlignment: TextInput.AlignVCenter
                                 text: root.searchText
                                 onTextChanged: root.searchText = text
-                                color: "#222831"
+                                color: popupCardStyle.textColor
                                 selectionColor: "#DDE5EF"
                                 selectedTextColor: "#111318"
                                 font.pixelSize: 10
@@ -319,7 +319,7 @@ PanelWindow {
                                         Text {
                                             width: parent.width - 34
                                             text: String(historyRow.modelData.appName || "Notification")
-                                            color: "#7D8793"
+                                            color: popupCardStyle.mutedTextColor
                                             font.pixelSize: 8
                                             elide: Text.ElideRight
                                             verticalAlignment: Text.AlignVCenter
@@ -328,7 +328,7 @@ PanelWindow {
                                         Text {
                                             width: 30
                                             text: root.ageLabel(historyRow.modelData.timestamp)
-                                            color: "#9AA3AE"
+                                            color: popupCardStyle.mutedTextColor
                                             font.pixelSize: 8
                                             horizontalAlignment: Text.AlignRight
                                             verticalAlignment: Text.AlignVCenter
@@ -338,7 +338,7 @@ PanelWindow {
                                     Text {
                                         width: parent.width
                                         text: root.previewText(historyRow.modelData.summary || "Notification")
-                                        color: "#212831"
+                                        color: popupCardStyle.textColor
                                         font.pixelSize: 10
                                         font.weight: Font.DemiBold
                                         elide: Text.ElideRight
@@ -347,7 +347,7 @@ PanelWindow {
                                     Text {
                                         width: parent.width
                                         text: root.previewText(historyRow.modelData.body)
-                                        color: "#7D8793"
+                                        color: popupCardStyle.mutedTextColor
                                         font.pixelSize: 8
                                         elide: Text.ElideRight
                                         maximumLineCount: 1
@@ -390,7 +390,7 @@ PanelWindow {
                             text: root.searchText.trim().length
                                 ? "No matching notifications"
                                 : "You're all caught up"
-                            color: "#56616F"
+                            color: popupCardStyle.secondaryTextColor
                             font.pixelSize: 10
                             font.weight: Font.DemiBold
                         }
@@ -400,7 +400,7 @@ PanelWindow {
                             text: root.searchText.trim().length
                                 ? "Try a different search"
                                 : "New notifications will appear here"
-                            color: "#99A2AD"
+                            color: popupCardStyle.mutedTextColor
                             font.pixelSize: 8
                         }
                     }
@@ -410,7 +410,7 @@ PanelWindow {
                     width: parent.width
                     height: 10
                     text: "Stored on this device"
-                    color: "#98A1AC"
+                    color: popupCardStyle.mutedTextColor
                     font.pixelSize: 8
                 }
             }
