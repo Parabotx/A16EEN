@@ -6,6 +6,7 @@ import Quickshell.Io
 Item {
     id: root
     property bool active: false
+    property bool dataMeterEnabled: false
     property var appearanceSettings: ({})
     property string selectedScope: "all"
     property string statusText: "READY"
@@ -13,6 +14,8 @@ Item {
     property string pendingSlot: "-"
     property string pendingKey: ""
     property string pendingValue: ""
+
+    signal dataMeterToggleRequested(bool enabled)
 
     readonly property string stateDir: {
         const stateHome = Quickshell.env("XDG_STATE_HOME")
@@ -118,6 +121,28 @@ Item {
     function toggleAll(key) {
         root.setSetting("all", "-", key, root.allSetting(key, false) ? "off" : "on")
     }
+    function updateLocalSetting(scope, slot, key, value) {
+        let next = {}
+        try {
+            next = JSON.parse(JSON.stringify(root.appearanceSettings || {}))
+        } catch (error) {
+            next = {}
+        }
+        const boolKeys = ["visible", "visibilityControl", "applyContainerColor", "applyIconColor", "applyPopupCardColor"]
+        const parsedValue = boolKeys.includes(key)
+            ? ["on", "true"].includes(String(value).toLowerCase()) : value
+        if (scope === "all") {
+            next.all = next.all || ({})
+            next.all[key] = parsedValue
+        } else {
+            next.containers = next.containers || ({})
+            next.containers[slot] = next.containers[slot] || ({})
+            next.containers[slot][key] = parsedValue
+            if (key === "containerColor")
+                next.containers[slot].containerEnabled = value !== "transparent"
+        }
+        root.appearanceSettings = next
+    }
     function setSetting(scope, slot, key, value) {
         if (root.writing) return
         if (scope === "container") {
@@ -138,6 +163,7 @@ Item {
         root.pendingSlot = slot
         root.pendingKey = key
         root.pendingValue = String(value)
+        root.updateLocalSetting(scope, slot, key, String(value))
         root.statusText = "SAVING"
         appearanceProcess.running = true
     }
@@ -345,6 +371,24 @@ Item {
                         ToggleRow {
                             visible: root.isAllScope
                             Layout.fillWidth: true
+                            title: "Apply container colors to popup cards"
+                            detail: "Let Power, Clock, Utilities, Notes, Tasks, Presets, Notifications and Tools cards follow their container colors."
+                            checked: root.allSetting("applyPopupCardColor", false)
+                            enabledControl: !root.writing
+                            onToggleRequested: root.toggleAll("applyPopupCardColor")
+                        }
+                        ToggleRow {
+                            visible: root.isAllScope
+                            Layout.fillWidth: true
+                            title: "Show network speed meter"
+                            detail: "Show live upload/download speed in the navbar; detailed usage stays in Tools."
+                            checked: root.dataMeterEnabled
+                            enabledControl: !root.writing
+                            onToggleRequested: root.dataMeterToggleRequested(!root.dataMeterEnabled)
+                        }
+                        ToggleRow {
+                            visible: root.isAllScope
+                            Layout.fillWidth: true
                             title: "Override icon colors"
                             detail: "Apply one color across every navbar icon."
                             checked: root.allSetting("applyIconColor", false)
@@ -453,8 +497,10 @@ Item {
             Layout.preferredWidth: 34
             Layout.preferredHeight: 19
             radius: 10
-            opacity: toggleRoot.enabledControl ? 1 : 0.42
             color: toggleRoot.checked ? "#252B33" : "#E2E6EA"
+            Behavior on color {
+                ColorAnimation { duration: 110; easing.type: Easing.OutCubic }
+            }
             Rectangle {
                 width: 13
                 height: 13
@@ -462,6 +508,9 @@ Item {
                 y: 3
                 x: toggleRoot.checked ? 18 : 3
                 color: "#FFFFFF"
+                Behavior on x {
+                    NumberAnimation { duration: 115; easing.type: Easing.OutCubic }
+                }
             }
             MouseArea {
                 anchors.fill: parent

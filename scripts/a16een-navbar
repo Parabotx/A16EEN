@@ -447,9 +447,15 @@ set_setting() {
     main
 }
 
+ensure_appearance_marker() {
+    # Keep the settings signal available from shell startup even before any
+    # appearance toggle has been used.
+    [[ -e "$OUTPUT_DIR/appearance-ready" ]] || printf '0\n' > "$OUTPUT_DIR/appearance-ready"
+}
+
 signal_ready() {
-    # Write a new token, not only a timestamp, so QFileSystemWatcher reliably
-    # sees every apply even when several changes happen in quick succession.
+    # Only icon-content changes update ready; QML uses that marker to reload SVGs.
+    ensure_appearance_marker
     printf '%s\n' "$(date +%s%N)" > "$OUTPUT_DIR/ready"
 }
 
@@ -478,6 +484,7 @@ main() {
     repair_uniform_home_icons
     repair_all_white_styles
     mkdir -p "$OUTPUT_DIR"
+    ensure_appearance_marker
     prune_inactive_slots
     generate_workspace_icons
     generate_auxiliary_icons
@@ -491,6 +498,7 @@ apply_appearance_target() {
     ensure_settings
     repair_all_white_styles
     mkdir -p "$OUTPUT_DIR"
+    ensure_appearance_marker
 
     case "$target" in
         all)

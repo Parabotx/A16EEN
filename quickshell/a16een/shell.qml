@@ -1411,6 +1411,7 @@ ShellRoot {
     CommandCenter {
         id: commandCenter
         modelData: root.primaryScreen
+        dataMeterEnabled: root.dataMeterEnabled
         opened: root.commandCenterOpen
         widgetViewOpen: root.widgetsCenterOpen
         editorialTimeWidgetEnabled: root.editorialTimeWidgetEnabled
@@ -1497,6 +1498,7 @@ ShellRoot {
         }
 
         onDoNotDisturbRequested: root.setDoNotDisturb(enabled)
+        onDataMeterToggleRequested: root.setDataMeterEnabled(enabled)
         onIconThemeChanged: root.iconThemeRevision++
     }
 

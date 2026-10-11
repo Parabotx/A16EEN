@@ -33,6 +33,7 @@ PanelWindow {
     readonly property string navbarIconRoot: root.stateDir + "/navbar-icons"
     readonly property string appearanceSettingsPath: root.stateDir + "/navbar-appearance.json"
     readonly property string navbarReadyPath: root.navbarIconRoot + "/ready"
+    readonly property string appearanceReadyPath: root.navbarIconRoot + "/appearance-ready"
 
     function loadAppearanceSettings(raw) {
         try {
@@ -87,6 +88,15 @@ PanelWindow {
         onLoaded: root.loadAppearanceSettings(this.text())
         onFileChanged: root.loadAppearanceSettings(this.text())
     }
+    FileView {
+        id: appearanceReadyFile
+        path: root.appearanceReadyPath
+        watchChanges: true
+        printErrors: false
+        onLoaded: appearanceFile.reload()
+        onFileChanged: appearanceFile.reload()
+    }
+
     FileView {
         id: navbarReadyFile
         path: root.navbarReadyPath

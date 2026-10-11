@@ -7,6 +7,11 @@ import qs.ui
 PanelWindow {
     id: root
 
+    PopupCardStyle {
+        id: popupCardStyle
+        containerId: "utilities"
+    }
+
     required property var modelData
     required property string navbarPosition
     property bool opened: false
@@ -103,9 +108,11 @@ PanelWindow {
         Rectangle {
             anchors.fill: parent
             radius: 16
-            color: "#FFFFFF"
+            color: popupCardStyle.backgroundColor
             border.width: 1
-            border.color: "#D9DEE5"
+            border.color: popupCardStyle.borderColor
+            Behavior on color { ColorAnimation { duration: 135; easing.type: Easing.OutCubic } }
+            Behavior on border.color { ColorAnimation { duration: 135; easing.type: Easing.OutCubic } }
 
             Rectangle {
                 anchors.fill: parent

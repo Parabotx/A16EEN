@@ -60,6 +60,7 @@ PanelWindow {
 
     readonly property string navbarIconRoot: root.stateDir + "/navbar-icons"
     readonly property string navbarReadyPath: root.navbarIconRoot + "/ready"
+    readonly property string appearanceReadyPath: root.navbarIconRoot + "/appearance-ready"
     readonly property string workspaceCountPath: root.stateDir + "/workspace-count"
     readonly property string appearanceSettingsPath: root.stateDir + "/navbar-appearance.json"
 
@@ -165,6 +166,16 @@ PanelWindow {
         return "#FFFFFF"
     }
 
+    function popupCardColorFor(id) {
+        return root.appearanceAll().applyPopupCardColor === true
+            ? root.containerColorFor(id) : "#FFFFFF"
+    }
+
+    function popupCardBorderColorFor(id) {
+        return root.appearanceLuminance(root.popupCardColorFor(id)) < 120
+            ? "#3C424C" : "#D9DEE5"
+    }
+
     function appearanceLuminance(value) {
         const match = String(value || "").match(/^#([0-9A-Fa-f]{6})$/)
         if (!match)
@@ -266,6 +277,15 @@ PanelWindow {
 
     function fallbackIconPath(iconName) {
         return Qt.resolvedUrl("../assets/icons/" + iconName)
+    }
+
+    FileView {
+        id: navbarAppearanceReadyFile
+        path: root.appearanceReadyPath
+        watchChanges: true
+        printErrors: false
+        onLoaded: navbarAppearanceFile.reload()
+        onFileChanged: navbarAppearanceFile.reload()
     }
 
     FileView {
@@ -1043,9 +1063,10 @@ PanelWindow {
                 id: powerMenuSurface
                 anchors.fill: parent
                 radius: 16
-                color: "#FFFFFF"
+                color: root.popupCardColorFor("power")
                 border.width: 1
-                border.color: "#D9DEE5"
+                border.color: root.popupCardBorderColorFor("power")
+                Behavior on color { ColorAnimation { duration: 130; easing.type: Easing.OutCubic } }
                 opacity: root.powerMenuOpen ? 1 : 0
                 scale: root.powerMenuOpen ? 1 : 0.96
                 transformOrigin: root.navbarPosition === "right" ? Item.TopRight
@@ -1250,9 +1271,10 @@ PanelWindow {
         Rectangle {
             anchors.fill: parent
             radius: 20
-            color: "#FFFFFF"
+            color: root.popupCardColorFor("time")
             border.width: 1
-            border.color: "#D9DEE5"
+            border.color: root.popupCardBorderColorFor("time")
+            Behavior on color { ColorAnimation { duration: 135; easing.type: Easing.OutCubic } }
             opacity: navbarClockPanel.calendarOpen ? 1 : 0
             scale: navbarClockPanel.calendarOpen ? 1 : 0.95
             transformOrigin: root.navbarPosition === "right"

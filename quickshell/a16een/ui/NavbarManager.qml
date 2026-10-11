@@ -7,6 +7,7 @@ Item {
     id: root
 
     property bool active: false
+    property bool dataMeterEnabled: false
     property var navbarSettings: ({})
     property var workspaceRegistry: []
     property var appearanceSettings: ({})
@@ -29,6 +30,7 @@ Item {
 
     signal backRequested()
     signal navbarPositionChanged(string position)
+    signal dataMeterToggleRequested(bool enabled)
 
     readonly property string stateDir: {
         const stateHome = Quickshell.env("XDG_STATE_HOME")
@@ -38,6 +40,7 @@ Item {
 
     readonly property string navbarIconRoot: root.stateDir + "/navbar-icons"
     readonly property string navbarReadyPath: root.navbarIconRoot + "/ready"
+    readonly property string appearanceReadyPath: root.navbarIconRoot + "/appearance-ready"
     readonly property string settingsPath: root.stateDir + "/navbar.json"
     readonly property string workspaceRegistryPath: root.stateDir + "/workspaces.json"
     readonly property string appearanceSettingsPath: root.stateDir + "/navbar-appearance.json"
@@ -378,8 +381,8 @@ Item {
         NumberAnimation {
             target: sectionContent
             property: "opacity"
-            to: 0
-            duration: 90
+            to: 0.72
+            duration: 55
             easing.type: Easing.OutCubic
         }
 
@@ -391,7 +394,7 @@ Item {
             target: sectionContent
             property: "opacity"
             to: 1
-            duration: 140
+            duration: 95
             easing.type: Easing.OutCubic
         }
     }
@@ -427,6 +430,15 @@ Item {
         printErrors: false
         onLoaded: root.loadAppearanceSettings(this.text())
         onFileChanged: root.loadAppearanceSettings(this.text())
+    }
+
+    FileView {
+        id: appearanceReadyFile
+        path: root.appearanceReadyPath
+        watchChanges: true
+        printErrors: false
+        onLoaded: appearanceSettingsFile.reload()
+        onFileChanged: appearanceSettingsFile.reload()
     }
 
     FileView {
@@ -965,6 +977,8 @@ Item {
 
                 NavbarAppearancePage {
                     active: root.active && root.currentSection === "appearance"
+                    dataMeterEnabled: root.dataMeterEnabled
+                    onDataMeterToggleRequested: root.dataMeterToggleRequested(enabled)
                 }
 
                 Item {

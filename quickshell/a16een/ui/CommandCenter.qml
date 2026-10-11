@@ -17,6 +17,7 @@ PanelWindow {
     property bool workspacePresetViewOpen: false
     property bool doNotDisturb: false
     property string commandText: "/"
+    property bool dataMeterEnabled: false
     property int selectedCommandIndex: 0
     property var commandUsage: ({})
     property var pendingCommandUsage: ({})
@@ -56,6 +57,7 @@ PanelWindow {
     signal timeShowSecondsRequested(bool enabled)
     signal iconThemeChanged(string themeId)
     signal navbarPositionChanged(string position)
+    signal dataMeterToggleRequested(bool enabled)
 
     // The expanded command-center card becomes a light card for navbar mode.
     // The card itself is bounded; this does not create a screen-wide cover.
@@ -712,8 +714,10 @@ PanelWindow {
                 item.anchors.fill = navbarLoader
                 item.visible = true
                 item.active = true
+                item.dataMeterEnabled = root.dataMeterEnabled
                 item.backRequested.connect(root.closeNavbarView)
                 item.navbarPositionChanged.connect(root.navbarPositionChanged)
+                item.dataMeterToggleRequested.connect(root.dataMeterToggleRequested)
 
                 Qt.callLater(() => {
                     if (root.navbarViewOpen && navbarLoader.item) {
@@ -723,6 +727,14 @@ PanelWindow {
                         navbarLoader.item.forceActiveFocus()
                     }
                 })
+            }
+        }
+
+        Connections {
+            target: root
+            function onDataMeterEnabledChanged() {
+                if (navbarLoader.item)
+                    navbarLoader.item.dataMeterEnabled = root.dataMeterEnabled
             }
         }
 

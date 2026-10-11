@@ -1,10 +1,16 @@
 import QtQuick
+import qs.ui
 import Quickshell
 import Quickshell.Io
 import Quickshell.Wayland
 
 PanelWindow {
     id: root
+
+    PopupCardStyle {
+        id: popupCardStyle
+        containerId: "quick-actions"
+    }
 
     required property var modelData
     required property string navbarPosition
@@ -290,9 +296,11 @@ PanelWindow {
         Rectangle {
             anchors.fill: parent
             radius: 18
-            color: "#FFFFFF"
+            color: popupCardStyle.backgroundColor
             border.width: 1
-            border.color: "#D9DEE5"
+            border.color: popupCardStyle.borderColor
+            Behavior on color { ColorAnimation { duration: 135; easing.type: Easing.OutCubic } }
+            Behavior on border.color { ColorAnimation { duration: 135; easing.type: Easing.OutCubic } }
 
             Rectangle {
                 anchors.fill: parent

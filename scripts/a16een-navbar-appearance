@@ -6,7 +6,7 @@ STATE_DIR="$STATE_BASE/a16een"
 STATE_FILE="$STATE_DIR/navbar-appearance.json"
 NAVBAR_CMD="$(printenv A16EEN_NAVBAR_CMD 2>/dev/null || printf '%s' /usr/local/bin/a16een-navbar)"
 
-default_all='{"visibilityControl":false,"visible":true,"applyContainerColor":false,"containerColor":"#15171A","applyIconColor":false,"iconColor":"auto","surfaceColor":"#FFFFFF"}'
+default_all='{"visibilityControl":false,"visible":true,"applyContainerColor":false,"containerColor":"#15171A","applyIconColor":false,"iconColor":"auto","applyPopupCardColor":false,"surfaceColor":"#FFFFFF"}'
 default_container='{"visible":true,"containerEnabled":false,"containerColor":"transparent","iconColor":"inherit"}'
 container_ids='["workspaces","battery","time","utilities","power","quick-actions","quick-hub"]'
 
@@ -15,7 +15,7 @@ ensure_settings() {
     if [[ ! -s "$STATE_FILE" ]]; then
         jq -n --argjson allDefaults "$default_all" --argjson containerDefaults "$default_container" \
             --argjson ids "$container_ids" '
-            {all:$allDefaults, containers:{}, schemaVersion:3}
+            {all:$allDefaults, containers:{}, schemaVersion:4}
             | reduce $ids[] as $id (.;
                 .containers[$id] = $containerDefaults
               )
@@ -39,7 +39,7 @@ ensure_settings() {
             .containers[$id] = ($containerDefaults + (.containers[$id] // {}))
           )
         | del(.workspaces)
-        | .schemaVersion = 3
+        | .schemaVersion = 4
     ' "$STATE_FILE" > "$tmp"; then
         rm -f "$tmp"
         return 1
@@ -60,7 +60,7 @@ valid_hex() { [[ "$1" =~ ^#[0-9A-Fa-f]{6}$ ]]; }
 write_all() {
     local key="$1" value="$2" tmp
     case "$key" in
-        visibilityControl|visible|applyContainerColor|applyIconColor)
+        visibilityControl|visible|applyContainerColor|applyIconColor|applyPopupCardColor)
             value="$(normalize_bool "$value")" || {
                 echo "A16EEN appearance: $key must be on or off." >&2
                 return 2
@@ -152,10 +152,10 @@ write_container() {
 }
 
 notify_appearance_changed() {
-    # QML also watches this stable path. Settings are atomically replaced with
-    # mv, which can detach some QFileSystemWatcher-backed file watches.
+    # Settings have their own signal: updating visibility/card colors must never
+    # invalidate the generated SVG image cache and cause a visible flash.
     mkdir -p "$STATE_DIR/navbar-icons"
-    printf '%s\n' "$(date +%s%N)" > "$STATE_DIR/navbar-icons/ready"
+    printf '%s\n' "$(date +%s%N)" > "$STATE_DIR/navbar-icons/appearance-ready"
 }
 
 main() {
@@ -169,7 +169,6 @@ main() {
                 return 2
             }
             local scope="$2" id="$3" key="$4" value="$5"
-            local regenerate_icons=true
             mkdir -p "$STATE_DIR"
             exec 9>"$STATE_DIR/navbar-appearance.lock"
             flock -x 9
@@ -189,7 +188,7 @@ main() {
             # JSON directly and should never rebuild the entire navbar.
             local appearance_target="none"
             case "$key" in
-                visible|visibilityControl)
+                visible|visibilityControl|applyPopupCardColor)
                     appearance_target="none"
                     ;;
                 applyContainerColor|containerColor|applyIconColor|iconColor)
@@ -208,14 +207,15 @@ main() {
                     ;;
             esac
 
-            if [[ ! -x "$NAVBAR_CMD" ]]; then
-                notify_appearance_changed
-            elif [[ "$appearance_target" == "all" ]]; then
-                "$NAVBAR_CMD" apply
-            elif [[ "$appearance_target" != "none" ]]; then
-                "$NAVBAR_CMD" apply-appearance "$appearance_target"
-            else
-                notify_appearance_changed
+            # Notify live QML settings first. Actual SVG generation below may
+            # take longer and signals only the icon-specific "ready" marker.
+            notify_appearance_changed
+            if [[ -x "$NAVBAR_CMD" ]]; then
+                if [[ "$appearance_target" == "all" ]]; then
+                    "$NAVBAR_CMD" apply
+                elif [[ "$appearance_target" != "none" ]]; then
+                    "$NAVBAR_CMD" apply-appearance "$appearance_target"
+                fi
             fi
             ;;
         *) echo "Usage: a16een-navbar-appearance {get|set <all|container> <id|-> <key> <value>}" >&2; return 2 ;;

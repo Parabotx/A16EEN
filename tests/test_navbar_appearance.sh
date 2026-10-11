@@ -19,6 +19,7 @@ cat > "$XDG_STATE_HOME/a16een/navbar-appearance.json" <<'JSON'
     "containerColor": "#15171A",
     "applyIconColor": false,
     "iconColor": "auto",
+    "applyPopupCardColor": false,
     "surfaceColor": "#FFFFFF"
   },
   "workspaces": {
@@ -31,12 +32,18 @@ cat > "$A16EEN_NAVBAR_CMD" <<'SH'
 #!/usr/bin/env bash
 set -euo pipefail
 printf '%s\n' "$*" >> "$APPLY_LOG"
+case "${1:-}" in
+    apply|apply-appearance)
+        mkdir -p "$XDG_STATE_HOME/a16een/navbar-icons"
+        printf '%s\n' "$(date +%s%N)" > "$XDG_STATE_HOME/a16een/navbar-icons/ready"
+        ;;
+esac
 SH
 chmod +x "$A16EEN_NAVBAR_CMD"
 run() { bash "$ROOT/scripts/a16een-navbar-appearance" "$@"; }
 
 run get >/dev/null
-jq -e '.schemaVersion == 3 and (.workspaces == null)
+jq -e '.schemaVersion == 4 and (.workspaces == null)
     and (.containers | has("workspaces") and has("battery") and has("time") and has("utilities") and has("power")
         and has("quick-actions") and has("quick-hub"))
     and .containers.workspaces.visible == true
@@ -50,6 +57,8 @@ run set all - applyContainerColor on
 run set all - containerColor '#15171A'
 run set all - applyIconColor on
 run set all - iconColor auto
+run set all - applyPopupCardColor on
+jq -e '.all.applyPopupCardColor == true' "$XDG_STATE_HOME/a16een/navbar-appearance.json" >/dev/null
 jq -e '.all.applyContainerColor == true and .all.containerColor == "#15171A"
     and .all.applyIconColor == true and .all.iconColor == "auto"' \
     "$XDG_STATE_HOME/a16een/navbar-appearance.json" >/dev/null
@@ -75,10 +84,15 @@ run set container quick-actions containerColor '#E7E8EA'
 run set container quick-hub iconColor '#1D4ED8'
 # Visibility writes must notify the shell without triggering the expensive icon generator.
 apply_count_before="$(wc -l < "$APPLY_LOG")"
+icon_marker_before="$(cat "$XDG_STATE_HOME/a16een/navbar-icons/ready")"
+settings_marker_before="$(cat "$XDG_STATE_HOME/a16een/navbar-icons/appearance-ready")"
 run set container battery visible off
 apply_count_after="$(wc -l < "$APPLY_LOG")"
+icon_marker_after="$(cat "$XDG_STATE_HOME/a16een/navbar-icons/ready")"
+settings_marker_after="$(cat "$XDG_STATE_HOME/a16een/navbar-icons/appearance-ready")"
 [[ "$apply_count_before" -eq "$apply_count_after" ]]
-[[ -f "$XDG_STATE_HOME/a16een/navbar-icons/ready" ]]
+[[ "$icon_marker_before" == "$icon_marker_after" ]]
+[[ "$settings_marker_before" != "$settings_marker_after" ]]
 jq -e '.containers.battery.visible == false' "$XDG_STATE_HOME/a16een/navbar-appearance.json" >/dev/null
 jq -e '.containers["quick-actions"].containerEnabled == true
     and .containers["quick-actions"].containerColor == "#E7E8EA"
