@@ -1376,9 +1376,9 @@ PanelWindow {
                         width: 32
                         height: 29
                         radius: 9
-                        color: modelData.day === navbarClockPanel.ethiopianToday.day
-                            ? "#111318"
-                            : (modelData.day > 0 ? "#F7F8FA" : "transparent")
+                        color: modelData.today
+                            ? clockPopupStyle.actionColor
+                            : (modelData.day > 0 ? clockPopupStyle.subtleSurfaceColor : "transparent")
                         border.width: modelData.day === navbarClockPanel.ethiopianToday.day ? 1 : 0
                         border.color: clockPopupStyle.actionColor
 

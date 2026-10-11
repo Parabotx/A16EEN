@@ -671,10 +671,10 @@ PanelWindow {
                             width: 17
                             height: 17
                             radius: 6
-                            color: taskRow.modelData.completed ? "#20262E"
-                                : (completeHover.containsMouse ? "#EFF2F5" : "#FFFFFF")
+                            color: taskRow.modelData.completed ? popupCardStyle.actionColor
+                                : (completeHover.containsMouse ? popupCardStyle.hoverSurfaceColor : popupCardStyle.fieldColor)
                             border.width: 1
-                            border.color: taskRow.modelData.completed ? "#20262E" : popupCardStyle.fieldBorderColor
+                            border.color: taskRow.modelData.completed ? popupCardStyle.actionColor : popupCardStyle.fieldBorderColor
                             Text {
                                 anchors.centerIn: parent
                                 text: taskRow.modelData.completed ? "✓" : ""

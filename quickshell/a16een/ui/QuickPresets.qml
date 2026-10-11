@@ -613,9 +613,9 @@ PanelWindow {
                                     width: 13
                                     height: 13
                                     radius: 4
-                                    color: appRow.chosen ? "#222A34" : "#FFFFFF"
+                                    color: appRow.chosen ? popupCardStyle.actionColor : popupCardStyle.fieldColor
                                     border.width: 1
-                                    border.color: appRow.chosen ? "#222A34" : popupCardStyle.fieldBorderColor
+                                    border.color: appRow.chosen ? popupCardStyle.actionColor : popupCardStyle.fieldBorderColor
                                     Text {
                                         anchors.centerIn: parent
                                         text: appRow.chosen ? "✓" : ""

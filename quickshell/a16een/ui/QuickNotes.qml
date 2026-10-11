@@ -1508,7 +1508,7 @@ PanelWindow {
                                         width: 25
                                         height: 25
                                         radius: 8
-                                        color: "#FFFFFF"
+                                        color: popupCardStyle.fieldColor
                                         border.width: 1
                                         border.color: popupCardStyle.fieldBorderColor
                                         Text {
