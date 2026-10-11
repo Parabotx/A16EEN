@@ -22,6 +22,7 @@ Item {
         return (stateHome && stateHome.length ? stateHome : home + "/.local/state") + "/a16een"
     }
     readonly property string settingsPath: root.stateDir + "/navbar-appearance.json"
+    readonly property bool writing: appearanceProcess.running || initializeProcess.running
 
     readonly property var surfaceColors: [
         { value: "#FFFFFF", label: "White", swatch: "#FFFFFF" },
