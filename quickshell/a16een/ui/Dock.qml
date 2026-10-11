@@ -47,23 +47,10 @@ PanelWindow {
 
     property var appearanceSettings: ({})
 
-    readonly property color dockBackground: {
-        const all = root.appearanceSettings && root.appearanceSettings.all
-            ? root.appearanceSettings.all : ({})
-        const value = String(all.surfaceColor || "#FFFFFF")
-        return root.validAppearanceHex(value) ? value : "#FFFFFF"
-    }
-    readonly property color dockBorder: {
-        const c = root.dockBackground
-        const luminance = (0.2126 * c.r) + (0.7152 * c.g) + (0.0722 * c.b)
-        return luminance < 0.42 ? "#343A45" : "#D6DBE1"
-    }
-    readonly property color iconColor: "#111111"
-    readonly property color hoverBackground: {
-        const c = root.dockBackground
-        const luminance = (0.2126 * c.r) + (0.7152 * c.g) + (0.0722 * c.b)
-        return luminance < 0.42 ? Qt.lighter(c, 1.28) : Qt.darker(c, 1.04)
-    }
+    readonly property color dockBackground: root.containerColorFor("workspaces")
+    readonly property color dockBorder: root.containerBorderColorFor("workspaces")
+    readonly property color iconColor: root.iconColorFor("workspaces")
+    readonly property color hoverBackground: root.hoverColorFor("workspaces")
 
     readonly property string stateDir: {
         const stateHome = Quickshell.env("XDG_STATE_HOME")
@@ -144,26 +131,10 @@ PanelWindow {
         { id: "lab", icon: "terminal.svg" }
     ]
 
-    readonly property var visibleWorkspaces: root.workspaceCatalog
-        .slice(0, root.workspaceCount)
-        .filter(function(workspace) {
-            const appearance = root.appearanceSettings || ({})
-            const all = appearance.all || ({})
-            const entries = appearance.workspaces || ({})
-            const individual = entries[workspace.id] || ({})
-            if (all.visibilityControl === true)
-                return all.visible !== false
-            return individual.visible !== false
-        })
+    readonly property var visibleWorkspaces: root.workspaceCatalog.slice(0, root.workspaceCount)
 
     function validAppearanceHex(value) {
         return /^#[0-9A-Fa-f]{6}$/.test(String(value || ""))
-    }
-
-    function appearanceWorkspace(slot) {
-        const workspaces = root.appearanceSettings && root.appearanceSettings.workspaces
-            ? root.appearanceSettings.workspaces : ({})
-        return workspaces[slot] || ({})
     }
 
     function appearanceAll() {
@@ -171,50 +142,27 @@ PanelWindow {
             ? root.appearanceSettings.all : ({})
     }
 
-    function containerColorFor(slot) {
+    function appearanceContainer(id) {
+        const containers = root.appearanceSettings && root.appearanceSettings.containers
+            ? root.appearanceSettings.containers : ({})
+        return containers[id] || ({})
+    }
+
+    function containerIsVisible(id) {
         const all = root.appearanceAll()
-        const individual = root.appearanceWorkspace(slot)
+        if (all.visibilityControl === true)
+            return all.visible !== false
+        return root.appearanceContainer(id).visible !== false
+    }
+
+    function containerColorFor(id) {
+        const all = root.appearanceAll()
+        const item = root.appearanceContainer(id)
         if (all.applyContainerColor === true && root.validAppearanceHex(all.containerColor))
             return String(all.containerColor)
-        if (individual.containerEnabled === true && root.validAppearanceHex(individual.containerColor))
-            return String(individual.containerColor)
-        return "transparent"
-    }
-
-    function contrastColorFor(value) {
-        const match = String(value || "").match(/^#([0-9A-Fa-f]{6})$/)
-        if (!match)
-            return "#111318"
-        const hex = match[1]
-        const r = parseInt(hex.slice(0, 2), 16)
-        const g = parseInt(hex.slice(2, 4), 16)
-        const b = parseInt(hex.slice(4, 6), 16)
-        const luminance = (r * 299 + g * 587 + b * 114) / 1000
-        return luminance >= 145 ? "#111318" : "#FFFFFF"
-    }
-
-    function markerColorFor(slot) {
-        const all = root.appearanceAll()
-        const individual = root.appearanceWorkspace(slot)
-        const buttonColor = root.containerColorFor(slot)
-        const surface = String(all.surfaceColor || "#FFFFFF")
-        const background = root.validAppearanceHex(buttonColor)
-            ? buttonColor : (root.validAppearanceHex(surface) ? surface : "#FFFFFF")
-        let desired = "auto"
-        if (all.applyIconColor === true)
-            desired = String(all.iconColor || "auto")
-        else if (individual.iconColor && individual.iconColor !== "inherit")
-            desired = String(individual.iconColor)
-
-        if (desired === "auto" || !root.validAppearanceHex(desired))
-            return root.contrastColorFor(background)
-
-        const requested = desired.toUpperCase()
-        const requestedLuminance = root.appearanceLuminance(requested)
-        const backgroundLuminance = root.appearanceLuminance(background)
-        if (Math.abs(requestedLuminance - backgroundLuminance) < 95)
-            return root.contrastColorFor(background)
-        return requested
+        if (item.containerEnabled === true && root.validAppearanceHex(item.containerColor))
+            return String(item.containerColor)
+        return "#FFFFFF"
     }
 
     function appearanceLuminance(value) {
@@ -227,13 +175,43 @@ PanelWindow {
             + parseInt(hex.slice(4, 6), 16) * 114) / 1000
     }
 
-    function hoverColorFor(slot) {
-        const buttonColor = root.containerColorFor(slot)
-        if (!root.validAppearanceHex(buttonColor))
-            return root.hoverBackground
-        return root.appearanceLuminance(buttonColor) < 120
-            ? Qt.lighter(buttonColor, 1.24)
-            : Qt.darker(buttonColor, 1.06)
+    function contrastColorFor(value) {
+        return root.appearanceLuminance(value) >= 145 ? "#111318" : "#FFFFFF"
+    }
+
+    function containerBorderColorFor(id) {
+        return root.appearanceLuminance(root.containerColorFor(id)) < 120
+            ? "#3C424C" : "#D9DEE5"
+    }
+
+    function iconColorFor(id) {
+        const all = root.appearanceAll()
+        const item = root.appearanceContainer(id)
+        let desired = "inherit"
+        if (all.applyIconColor === true)
+            desired = String(all.iconColor || "auto")
+        else if (item.iconColor && item.iconColor !== "inherit")
+            desired = String(item.iconColor)
+
+        const background = root.containerColorFor(id)
+        if (desired === "auto" || desired === "inherit" || !root.validAppearanceHex(desired))
+            return root.contrastColorFor(background)
+
+        const requested = desired.toUpperCase()
+        if (Math.abs(root.appearanceLuminance(requested) - root.appearanceLuminance(background)) < 95)
+            return root.contrastColorFor(background)
+        return requested
+    }
+
+    function markerColorFor(slot) {
+        return root.iconColorFor("workspaces")
+    }
+
+    function hoverColorFor(id) {
+        const background = root.containerColorFor(id)
+        return root.appearanceLuminance(background) < 120
+            ? Qt.lighter(background, 1.24)
+            : Qt.darker(background, 1.04)
     }
 
     readonly property bool horizontalNavbar:
@@ -457,7 +435,7 @@ PanelWindow {
     PanelWindow {
         id: batteryStatusPanel
         screen: root.modelData
-        visible: root.dockVisible
+        visible: root.dockVisible && root.containerIsVisible("battery")
             && UPower.displayDevice.ready
             && UPower.displayDevice.isPresent
         color: "transparent"
@@ -509,6 +487,12 @@ PanelWindow {
         }
 
         function batteryIconColor() {
+            const all = root.appearanceAll()
+            const container = root.appearanceContainer("battery")
+            if (all.applyIconColor === true
+                || (container.iconColor && container.iconColor !== "inherit"))
+                return root.iconColorFor("battery")
+
             const state = UPower.displayDevice.state
 
             if (state === UPowerDeviceState.Charging
@@ -520,7 +504,7 @@ PanelWindow {
                 && UPower.onBattery)
                 return "#E5484D"
 
-            return "#111318"
+            return root.iconColorFor("battery")
         }
 
         Rectangle {
@@ -538,9 +522,9 @@ PanelWindow {
                 : (batteryHoverSensor.containsMouse ? 62 : 34)
             height: root.horizontalNavbar ? 32 : 40
             radius: 12
-            color: "#FFFFFF"
+            color: root.containerColorFor("battery")
             border.width: 1
-            border.color: "#D9DEE5"
+            border.color: root.containerBorderColorFor("battery")
             z: 1
 
             Behavior on width {
@@ -600,7 +584,7 @@ PanelWindow {
                 y: Math.round((batteryPill.height - height) / 2)
                 width: root.horizontalNavbar ? 38 : 32
                 text: batteryStatusPanel.batteryPercent() + "%"
-                color: "#111318"
+                color: root.iconColorFor("battery")
                 font.pixelSize: root.horizontalNavbar ? 11 : 10
                 font.weight: Font.DemiBold
                 horizontalAlignment: Text.AlignLeft
@@ -621,7 +605,7 @@ PanelWindow {
     PanelWindow {
         id: navbarClockPanel
         screen: root.modelData
-        visible: root.dockVisible
+        visible: root.dockVisible && root.containerIsVisible("time")
         color: "transparent"
         aboveWindows: true
         exclusionMode: ExclusionMode.Ignore
@@ -758,9 +742,9 @@ PanelWindow {
             anchors.fill: parent
             anchors.margins: root.horizontalNavbar ? 0 : 1
             radius: root.horizontalNavbar ? 17 : 16
-            color: "#FFFFFF"
+            color: root.containerColorFor("time")
             border.width: 1
-            border.color: "#D9DEE5"
+            border.color: root.containerBorderColorFor("time")
 
             Rectangle {
                 anchors.fill: parent
@@ -776,7 +760,7 @@ PanelWindow {
                 text: (((navbarClockPanel.clockNow.getHours() % 12) || 12)
                     + ":" + String(navbarClockPanel.clockNow.getMinutes()).padStart(2, "0")
                     + (navbarClockPanel.clockNow.getHours() >= 12 ? " PM" : " AM"))
-                color: "#111318"
+                color: root.iconColorFor("time")
                 font.family: "Monospace"
                 font.pixelSize: 11
                 font.weight: Font.DemiBold
@@ -793,7 +777,7 @@ PanelWindow {
                 Text {
                     width: 44
                     text: String((navbarClockPanel.clockNow.getHours() % 12) || 12)
-                    color: "#111318"
+                    color: root.iconColorFor("time")
                     font.family: "Monospace"
                     font.pixelSize: 13
                     font.weight: Font.DemiBold
@@ -812,7 +796,7 @@ PanelWindow {
                 Text {
                     width: 44
                     text: Qt.formatTime(navbarClockPanel.clockNow, "mm")
-                    color: "#111318"
+                    color: root.iconColorFor("time")
                     font.family: "Monospace"
                     font.pixelSize: 13
                     font.weight: Font.DemiBold
@@ -823,7 +807,7 @@ PanelWindow {
                 Text {
                     width: 44
                     text: navbarClockPanel.clockNow.getHours() >= 12 ? "PM" : "AM"
-                    color: "#606A76"
+                    color: root.iconColorFor("time")
                     font.family: "Monospace"
                     font.pixelSize: 7
                     font.weight: Font.DemiBold
@@ -862,7 +846,7 @@ PanelWindow {
     PanelWindow {
         id: navbarUtilitiesLauncher
         screen: root.modelData
-        visible: root.dockVisible
+        visible: root.dockVisible && root.containerIsVisible("utilities")
         color: "transparent"
         aboveWindows: true
         exclusionMode: ExclusionMode.Ignore
@@ -893,9 +877,9 @@ PanelWindow {
             anchors.fill: parent
             radius: 10
             color: utilitiesMainMouse.containsMouse || root.utilitiesExpanded
-                ? "#F0F2F5" : "#FFFFFF"
+                ? root.hoverColorFor("utilities") : root.containerColorFor("utilities")
             border.width: 1
-            border.color: root.utilitiesExpanded ? "#BFC7D1" : "#D9DEE5"
+            border.color: root.containerBorderColorFor("utilities")
 
             Rectangle {
                 anchors.fill: parent
@@ -905,15 +889,14 @@ PanelWindow {
                 z: -1
             }
 
-            Image {
+            NavbarImage {
                 anchors.centerIn: parent
                 width: 15
                 height: 15
-                source: Qt.resolvedUrl("../assets/icons/lucide-sliders-horizontal-dark.svg")
-                sourceSize.width: 30
-                sourceSize.height: 30
-                fillMode: Image.PreserveAspectFit
-                smooth: true
+                slot: "utilities"
+                generatedPath: root.generatedIconPath("utilities")
+                fallbackPath: root.fallbackIconPath("lucide-sliders-horizontal-dark.svg")
+                refreshRevision: root.navbarRevision
             }
 
             MouseArea {
@@ -930,7 +913,7 @@ PanelWindow {
     PanelWindow {
         id: navbarPowerPanel
         screen: root.modelData
-        visible: root.dockVisible
+        visible: root.dockVisible && root.containerIsVisible("power")
         color: "transparent"
         aboveWindows: true
         exclusionMode: ExclusionMode.Ignore
@@ -961,23 +944,23 @@ PanelWindow {
         Rectangle {
             anchors.fill: parent
             radius: 11
-            color: powerButtonMouse.containsMouse || root.powerMenuOpen ? "#F0F2F5" : "#FFFFFF"
+            color: powerButtonMouse.containsMouse || root.powerMenuOpen
+                ? root.hoverColorFor("power") : root.containerColorFor("power")
             border.width: 1
-            border.color: root.powerMenuOpen ? "#BFC7D1" : "#D9DEE5"
+            border.color: root.containerBorderColorFor("power")
 
             Behavior on color {
                 ColorAnimation { duration: 120 }
             }
 
-            Image {
+            NavbarImage {
                 anchors.centerIn: parent
                 width: 15
                 height: 15
-                source: Qt.resolvedUrl("../assets/icons/quick-power.svg")
-                sourceSize.width: 30
-                sourceSize.height: 30
-                fillMode: Image.PreserveAspectFit
-                smooth: true
+                slot: "power"
+                generatedPath: root.generatedIconPath("power")
+                fallbackPath: root.fallbackIconPath("quick-power.svg")
+                refreshRevision: root.navbarRevision
             }
 
             MouseArea {
@@ -1407,6 +1390,7 @@ PanelWindow {
                 : (root.navbarPosition === "bottom" ? parent.height + 2 : -height - 2))
             : Math.round((parent.height - height) / 2)
 
+        visible: root.containerIsVisible("workspaces")
         width: root.horizontalNavbar ? root.dockWidth : 44
         height: root.dockHeight
         radius: 18
@@ -1459,9 +1443,7 @@ PanelWindow {
                     readonly property bool active:
                         root.workspaceIsFocused(modelData.id)
 
-                    color: workspaceMouse.containsMouse
-                        ? root.hoverColorFor(modelData.id)
-                        : root.containerColorFor(modelData.id)
+                    color: "transparent"
 
                     // Keep the active marker on the physical edge of the screen.
                     // Explicit x/y geometry avoids stale conditional anchors when the

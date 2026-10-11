@@ -456,7 +456,11 @@ jobs:
           grep -Fq 'cp "$ROOT_DIR/quickshell/a16een/ui/"*.js "$TMP_DEPLOY/ui/"' scripts/install.sh
           grep -Fq 'navbar-appearance.json' quickshell/a16een/ui/Dock.qml
           grep -Fq 'function markerColorFor(slot)' quickshell/a16een/ui/Dock.qml
-          grep -Fq 'root.containerColorFor(modelData.id)' quickshell/a16een/ui/Dock.qml
+          grep -Fq 'root.containerColorFor("workspaces")' quickshell/a16een/ui/Dock.qml
+          grep -Fq 'containerIsVisible("battery")' quickshell/a16een/ui/Dock.qml
+          grep -Fq 'containerIsVisible("power")' quickshell/a16een/ui/Dock.qml
+          grep -Fq 'generate_icon "utilities"' scripts/a16een-navbar
+          grep -Fq 'generate_icon "power"' scripts/a16een-navbar
           grep -Fq 'apply_appearance_style' scripts/a16een-navbar
           grep -Fq 'NavbarAppearancePage {' quickshell/a16een/ui/NavbarManager.qml
           grep -Fq 'iconStyleLockMessage(slot)' quickshell/a16een/ui/NavbarManager.qml

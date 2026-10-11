@@ -176,20 +176,25 @@ apply_appearance_style() {
     local surface="#FFFFFF" all_container_on=false all_container="#15171A"
     local all_icon_on=false all_icon="auto"
     local individual_container_on=false individual_container="transparent"
-    local individual_icon="inherit" background
+    local individual_icon="inherit" background container
+
+    container="$slot"
+    if is_known_slot "$slot"; then
+        container="workspaces"
+    fi
 
     if [[ -s "$APPEARANCE_FILE" ]]; then
         IFS=$'\t' read -r surface all_container_on all_container all_icon_on all_icon \
             individual_container_on individual_container individual_icon < <(
-            jq -r --arg slot "$slot" '[
+            jq -r --arg container "$container" '[
                 (.all.surfaceColor // "#FFFFFF"),
                 (.all.applyContainerColor // false),
                 (.all.containerColor // "#15171A"),
                 (.all.applyIconColor // false),
                 (.all.iconColor // "auto"),
-                (.workspaces[$slot].containerEnabled // false),
-                (.workspaces[$slot].containerColor // "transparent"),
-                (.workspaces[$slot].iconColor // "inherit")
+                (.containers[$container].containerEnabled // false),
+                (.containers[$container].containerColor // "transparent"),
+                (.containers[$container].iconColor // "inherit")
             ] | @tsv' "$APPEARANCE_FILE"
         )
     fi
@@ -273,7 +278,13 @@ generate_icon() {
     if [[ -z "$configured_icon" ]]; then
         configured_icon="$(jq -r --arg id "$slot" '.[] | select(.id == $id) | .icon' "$REGISTRY_FILE")"
     fi
-    [[ -n "$configured_icon" && "$configured_icon" != "null" ]] || configured_icon="house.svg"
+    if [[ -z "$configured_icon" || "$configured_icon" == "null" ]]; then
+        case "$slot" in
+            utilities) configured_icon="lucide-sliders-horizontal-dark.svg" ;;
+            power) configured_icon="quick-power.svg" ;;
+            *) configured_icon="house.svg" ;;
+        esac
+    fi
 
     [[ -n "$configured_style" ]] || configured_style="solid:#111318"
     configured_style="$(apply_appearance_style "$slot" "$configured_style")"
@@ -436,6 +447,9 @@ main() {
         [[ -n "$slot" ]] || continue
         generate_icon "$slot"
     done < <(workspace_ids)
+
+    generate_icon "utilities"
+    generate_icon "power"
 
     touch "$OUTPUT_DIR/ready"
     echo "A16EEN navbar icons generated for $(active_count) active workspaces."
