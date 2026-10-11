@@ -79,6 +79,7 @@ PanelWindow {
             areaCaptureProcess.running = false
         if (captureProcess.running)
             captureProcess.running = false
+        preparationWatchdog.stop()
         if (root.snapshotPath.length)
             Quickshell.execDetached(["rm", "-f", root.snapshotPath])
         root.snapshotPath = ""
@@ -198,6 +199,7 @@ PanelWindow {
         onTriggered: {
             if (!root.opened)
                 return
+            preparationWatchdog.restart()
             if (root.phase === 3) {
                 captureProcess.command = ["/usr/local/bin/a16een-screenshot", "screen"]
                 captureProcess.running = false
@@ -210,12 +212,34 @@ PanelWindow {
         }
     }
 
+    Timer {
+        id: preparationWatchdog
+        interval: 12000
+        repeat: false
+        onTriggered: {
+            if (!root.preparingCapture || !root.opened)
+                return
+            if (areaPrepareProcess.running)
+                areaPrepareProcess.running = false
+            if (captureProcess.running)
+                captureProcess.running = false
+            root.preparingCapture = false
+            root.phase = 0
+            if (root.snapshotPath.length)
+                Quickshell.execDetached(["rm", "-f", root.snapshotPath])
+            root.snapshotPath = ""
+            Qt.callLater(() => root.forceActiveFocus())
+            console.warn("A16EEN screenshot process timed out; Screenshot Center restored.")
+        }
+    }
+
     Process {
         id: captureProcess
         running: false
 
         stdout: StdioCollector {
             onStreamFinished: {
+                preparationWatchdog.stop()
                 root.preparingCapture = false
                 root.phase = 0
                 root.closeRequested()
@@ -231,6 +255,7 @@ PanelWindow {
 
         onExited: (exitCode, exitStatus) => {
             if (exitCode !== 0 && root.opened) {
+                preparationWatchdog.stop()
                 root.preparingCapture = false
                 root.phase = 0
                 console.warn("A16EEN screenshot capture process exited with code", exitCode)
@@ -250,6 +275,7 @@ PanelWindow {
                 if (!path.length) {
                     // Recover to the menu instead of leaving an invisible
                     // full-screen overlay catching every click.
+                    preparationWatchdog.stop()
                     root.preparingCapture = false
                     root.phase = 0
                     Qt.callLater(root.forceActiveFocus)
@@ -257,6 +283,7 @@ PanelWindow {
                     return
                 }
 
+                preparationWatchdog.stop()
                 root.snapshotPath = path
                 root.resetSelection()
                 if (root.prepareCommand === "prepare-window")
@@ -270,6 +297,7 @@ PanelWindow {
 
         onExited: (exitCode, exitStatus) => {
             if (exitCode !== 0 && root.opened) {
+                preparationWatchdog.stop()
                 root.preparingCapture = false
                 root.phase = 0
                 Qt.callLater(root.forceActiveFocus)
@@ -633,6 +661,7 @@ PanelWindow {
     onOpenedChanged: {
         if (root.opened) {
             prepareCaptureTimer.stop()
+            preparationWatchdog.stop()
             root.preparingCapture = false
             root.phase = 0
             root.resetSelection()
