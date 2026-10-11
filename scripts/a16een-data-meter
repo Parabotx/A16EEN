@@ -98,9 +98,13 @@ def interface_candidates(class_root: Path = Path("/sys/class/net"),
             tx = int((base / "statistics/tx_bytes").read_text(encoding="ascii").strip())
         except (OSError, ValueError):
             continue
+        # Capture time beside the counters, before the optional NetworkManager
+        # lookup, so variable nmcli latency cannot skew the throughput interval.
+        sampled_at_ms = int(time.time() * 1000)
         kind, connection = connection_info(name, base)
         result.append({"name": name, "type": kind, "connection": connection,
-                       "is_default": name == default, "rx": rx, "tx": tx})
+                       "is_default": name == default, "rx": rx, "tx": tx,
+                       "sampled_at_ms": sampled_at_ms})
     return result
 
 def update_usage(previous: dict[str, Any], samples: list[dict[str, Any]],
@@ -131,6 +135,7 @@ def update_usage(previous: dict[str, Any], samples: list[dict[str, Any]],
             continue
         touched.add(name)
         rx, tx = max(0, int(sample.get("rx", 0))), max(0, int(sample.get("tx", 0)))
+        sample_time_ms = int(sample.get("sampled_at_ms", now_ms))
         old = records.get(name)
 
         if old:
@@ -138,7 +143,7 @@ def update_usage(previous: dict[str, Any], samples: list[dict[str, Any]],
             old_tx = max(0, int(old.get("last_tx", tx)))
             drx = rx - old_rx if rx >= old_rx else rx
             dtx = tx - old_tx if tx >= old_tx else tx
-            elapsed = (now_ms - int(old.get("last_sample_ms", now_ms))) / 1000
+            elapsed = (sample_time_ms - int(old.get("last_sample_ms", sample_time_ms))) / 1000
             rx_reset, tx_reset = rx < old_rx, tx < old_tx
             rx_today = (max(0, int(old.get("rx_today", 0))) if same_day else 0) + drx
             tx_today = (max(0, int(old.get("tx_today", 0))) if same_day else 0) + dtx
@@ -169,7 +174,7 @@ def update_usage(previous: dict[str, Any], samples: list[dict[str, Any]],
             "tx_today": tx_today,
             "rx_month": rx_month,
             "tx_month": tx_month,
-            "last_sample_ms": now_ms,
+            "last_sample_ms": sample_time_ms,
             "rx_bytes_per_second": round(in_rate, 1),
             "tx_bytes_per_second": round(out_rate, 1),
             "is_default": bool(sample.get("is_default")),
@@ -180,7 +185,7 @@ def update_usage(previous: dict[str, Any], samples: list[dict[str, Any]],
 
     for name, item in records.items():
         if name not in touched:
-            item["rx_bps"] = item["tx_bps"] = 0.0
+            item["rx_bytes_per_second"] = item["tx_bytes_per_second"] = 0.0
             item["is_default"] = False
 
     items = sorted(
