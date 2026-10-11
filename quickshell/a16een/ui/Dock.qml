@@ -273,8 +273,16 @@ PanelWindow {
         path: root.navbarReadyPath
         watchChanges: true
         printErrors: false
-        onFileChanged: root.navbarRevision++
-        onLoaded: root.navbarRevision++
+        onFileChanged: {
+            root.navbarRevision++
+            // Reload the JSON after atomic writes; the ready marker is stable
+            // even when the appearance file watcher was detached by rename.
+            navbarAppearanceFile.reload()
+        }
+        onLoaded: {
+            root.navbarRevision++
+            navbarAppearanceFile.reload()
+        }
     }
 
     FileView {
