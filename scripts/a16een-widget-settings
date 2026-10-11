@@ -10,10 +10,6 @@ STATE_DIR = STATE_HOME / "a16een"
 SETTINGS_FILE = STATE_DIR / "widget-settings.json"
 DEFAULTS = {
     "editorialTimeWidgetEnabled": True,
-    "calendarWidgetEnabled": False,
-    "pulseWidgetEnabled": False,
-    "workspaceWidgetEnabled": False,
-    "tasksWidgetEnabled": False,
     "musicWidgetEnabled": False,
     "quotesWidgetEnabled": False,
     "timeUse24Hour": True,
