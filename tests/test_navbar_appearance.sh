@@ -73,6 +73,13 @@ run set container battery containerColor '#070B13'
 run set container power iconColor auto
 run set container quick-actions containerColor '#E7E8EA'
 run set container quick-hub iconColor '#1D4ED8'
+# Visibility writes must notify the shell without triggering the expensive icon generator.
+apply_count_before="$(wc -l < "$APPLY_LOG")"
+run set container battery visible off
+apply_count_after="$(wc -l < "$APPLY_LOG")"
+[[ "$apply_count_before" -eq "$apply_count_after" ]]
+[[ -f "$XDG_STATE_HOME/a16een/navbar-icons/ready" ]]
+jq -e '.containers.battery.visible == false' "$XDG_STATE_HOME/a16een/navbar-appearance.json" >/dev/null
 jq -e '.containers["quick-actions"].containerEnabled == true
     and .containers["quick-actions"].containerColor == "#E7E8EA"
     and .containers["quick-hub"].iconColor == "#1D4ED8"
@@ -88,5 +95,12 @@ fi
 if run set container missing visible off 2>/dev/null; then
     echo "Expected an unknown container to be rejected." >&2; exit 1
 fi
-grep -q '^apply$' "$APPLY_LOG"
+grep -q '^apply
+ "$APPLY_LOG"
+grep -q '^apply-appearance power
+ "$APPLY_LOG"
+grep -q '^apply-appearance quick-actions
+ "$APPLY_LOG"
+grep -q '^apply-appearance quick-hub
+ "$APPLY_LOG"
 echo "Navbar container appearance tests passed."
