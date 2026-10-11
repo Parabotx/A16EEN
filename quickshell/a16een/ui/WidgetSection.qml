@@ -1,4 +1,5 @@
 import QtQuick
+import QtQuick.Layouts
 import "WidgetCatalog.js" as WidgetCatalog
 
 Item {
@@ -13,15 +14,16 @@ Item {
     property bool quotesEnabled: false
     property bool timeUse24Hour: true
     property bool timeShowSeconds: false
+    property string currentSection: "widgets"
 
-    readonly property color pageBackground: "#FFFFFF"
-    readonly property color panelBackground: "#FBFCFE"
-    readonly property color tileBackground: "#F7F9FC"
-    readonly property color borderColor: "#E2E8F0"
-    readonly property color strongText: "#18212B"
-    readonly property color secondaryText: "#617080"
-    readonly property color mutedText: "#8793A1"
-    readonly property color accent: "#2F80ED"
+    readonly property color textPrimary: "#111318"
+    readonly property color textSecondary: "#5D6875"
+    readonly property color textMuted: "#8993A0"
+    readonly property color hoverBackground: "#F4F6F8"
+    readonly property color selectedBackground: "#20262E"
+    readonly property color dividerColor: "#E8EBEF"
+    readonly property color controlBackground: "#F6F7F9"
+    readonly property color controlBorder: "#E3E8ED"
 
     signal backRequested()
     signal editorialTimeWidgetEnabledRequested(bool enabled)
@@ -34,6 +36,15 @@ Item {
     signal timeUse24HourRequested(bool enabled)
     signal timeShowSecondsRequested(bool enabled)
 
+    readonly property int activeCount:
+        (root.editorialTimeEnabled ? 1 : 0)
+        + (root.calendarEnabled ? 1 : 0)
+        + (root.pulseEnabled ? 1 : 0)
+        + (root.workspaceEnabled ? 1 : 0)
+        + (root.tasksEnabled ? 1 : 0)
+        + (root.musicEnabled ? 1 : 0)
+        + (root.quotesEnabled ? 1 : 0)
+
     function widgetEnabled(id) {
         if (id === "editorial-time") return root.editorialTimeEnabled
         if (id === "calendar") return root.calendarEnabled
@@ -45,14 +56,16 @@ Item {
         return false
     }
 
-    readonly property int activeCount:
-        (root.editorialTimeEnabled ? 1 : 0)
-        + (root.calendarEnabled ? 1 : 0)
-        + (root.pulseEnabled ? 1 : 0)
-        + (root.workspaceEnabled ? 1 : 0)
-        + (root.tasksEnabled ? 1 : 0)
-        + (root.musicEnabled ? 1 : 0)
-        + (root.quotesEnabled ? 1 : 0)
+    function widgetIcon(id) {
+        if (id === "editorial-time") return "lucide-monitor.svg"
+        if (id === "calendar") return "quick-calendar.svg"
+        if (id === "pulse") return "lucide-activity.svg"
+        if (id === "workspaces") return "layers.svg"
+        if (id === "tasks") return "quick-tasks.svg"
+        if (id === "music") return "music.svg"
+        if (id === "quotes") return "quote-mark.svg"
+        return "lucide-app-window.svg"
+    }
 
     function toggleWidget(id) {
         const next = !root.widgetEnabled(id)
@@ -76,561 +89,366 @@ Item {
     focus: visible
     activeFocusOnTab: true
 
-    Rectangle {
+    ColumnLayout {
         anchors.fill: parent
-        color: root.pageBackground
-    }
+        anchors.margins: 20
+        spacing: 10
 
-    Rectangle {
-        id: header
-        anchors.top: parent.top
-        anchors.left: parent.left
-        anchors.right: parent.right
-        anchors.margins: 22
-        height: 62
-        radius: 15
-        color: root.panelBackground
-        border.width: 1
-        border.color: root.borderColor
+        RowLayout {
+            Layout.fillWidth: true
+            Layout.preferredHeight: 32
+            Layout.minimumHeight: 32
+            Layout.maximumHeight: 32
+            spacing: 6
 
-        Row {
-            anchors.fill: parent
-            anchors.leftMargin: 18
-            anchors.rightMargin: 18
-            spacing: 12
+            Repeater {
+                model: [
+                    { id: "widgets", label: "Widgets" },
+                    { id: "clock", label: "Clock" }
+                ]
 
-            Column {
-                anchors.verticalCenter: parent.verticalCenter
-                spacing: 3
+                delegate: Rectangle {
+                    required property var modelData
+                    Layout.preferredWidth: 104
+                    Layout.preferredHeight: 32
+                    radius: 9
+                    color: root.currentSection === modelData.id
+                        ? root.selectedBackground
+                        : (tabMouse.containsMouse ? "#EEF1F4" : root.controlBackground)
+                    border.width: 1
+                    border.color: root.currentSection === modelData.id
+                        ? root.selectedBackground : root.controlBorder
 
-                Text {
-                    text: "WIDGETS"
-                    color: root.strongText
-                    font.pixelSize: 15
-                    font.weight: Font.DemiBold
-                    font.letterSpacing: 1.5
-                }
+                    Text {
+                        anchors.centerIn: parent
+                        text: modelData.label
+                        color: root.currentSection === modelData.id ? "#FFFFFF" : root.textSecondary
+                        font.pixelSize: 10
+                        font.weight: Font.DemiBold
+                    }
 
-                Text {
-                    text: "DESKTOP MODULES"
-                    color: root.mutedText
-                    font.pixelSize: 7
-                    font.weight: Font.DemiBold
-                    font.letterSpacing: 1.2
+                    MouseArea {
+                        id: tabMouse
+                        anchors.fill: parent
+                        hoverEnabled: true
+                        cursorShape: Qt.PointingHandCursor
+                        onClicked: root.currentSection = modelData.id
+                    }
                 }
             }
 
-            Item { width: Math.max(1, parent.width - 185); height: 1 }
+            Item { Layout.fillWidth: true }
 
-            Rectangle {
-                width: 135
-                height: 40
-                anchors.verticalCenter: parent.verticalCenter
-                radius: 11
-                color: "#FFFFFF"
-                border.width: 1
-                border.color: root.borderColor
-
-                Column {
-                    anchors.centerIn: parent
-                    spacing: 2
-
-                    Text {
-                        width: 105
-                        horizontalAlignment: Text.AlignHCenter
-                        text: "ACTIVE"
-                        color: root.secondaryText
-                        font.pixelSize: 6
-                        font.weight: Font.DemiBold
-                        font.letterSpacing: 1
-                    }
-
-                    Text {
-                        width: 105
-                        horizontalAlignment: Text.AlignHCenter
-                        text: root.activeCount
-                        color: root.accent
-                        font.pixelSize: 11
-                        font.weight: Font.DemiBold
-                    }
-                }
+            Text {
+                text: root.activeCount + " / " + WidgetCatalog.definitions.length + " ACTIVE"
+                color: root.textMuted
+                font.pixelSize: 8
+                font.weight: Font.DemiBold
+                font.letterSpacing: 0.8
+                verticalAlignment: Text.AlignVCenter
             }
         }
-    }
 
-    Row {
-        id: contentRow
-        anchors.top: header.bottom
-        anchors.left: parent.left
-        anchors.right: parent.right
-        anchors.bottom: footer.top
-        anchors.topMargin: 14
-        anchors.bottomMargin: 14
-        anchors.leftMargin: 22
-        anchors.rightMargin: 22
-        spacing: 12
-
-        Rectangle {
-            id: registryPanel
-            width: Math.min(318, contentRow.width * 0.36)
-            height: parent.height
-            radius: 16
-            color: root.panelBackground
-            border.width: 1
-            border.color: root.borderColor
+        Item {
+            Layout.fillWidth: true
+            Layout.fillHeight: true
+            Layout.minimumHeight: 0
             clip: true
 
-            Column {
+            StackLayout {
                 anchors.fill: parent
-                anchors.margins: 16
-                spacing: 8
+                currentIndex: root.currentSection === "clock" ? 1 : 0
 
-                Text {
-                    text: "WIDGET REGISTRY"
-                    color: root.strongText
-                    font.pixelSize: 8
-                    font.weight: Font.DemiBold
-                    font.letterSpacing: 1.2
-                }
+                Item {
+                    id: widgetsPage
 
-                Text {
-                    width: parent.width
-                    text: "Choose which modules live on your desktop."
-                    color: root.secondaryText
-                    font.pixelSize: 7
-                    wrapMode: Text.WordWrap
-                    elide: Text.ElideRight
-                    maximumLineCount: 2
-                }
+                    ColumnLayout {
+                        anchors.fill: parent
+                        spacing: 0
 
-                Flickable {
-                    id: registryScroll
-                    width: parent.width
-                    height: Math.max(120, parent.height - 52)
-                    contentHeight: registryContent.implicitHeight
-                    clip: true
-                    boundsBehavior: Flickable.StopAtBounds
-                    flickableDirection: Flickable.VerticalFlick
+                        Text {
+                            Layout.fillWidth: true
+                            Layout.bottomMargin: 8
+                            text: "DESKTOP WIDGETS"
+                            color: root.textMuted
+                            font.pixelSize: 8
+                            font.weight: Font.DemiBold
+                            font.letterSpacing: 1.0
+                        }
 
-                    Column {
-                        id: registryContent
-                        width: registryScroll.width
-                        spacing: 7
+                        Flickable {
+                            id: widgetsScroll
+                            Layout.fillWidth: true
+                            Layout.fillHeight: true
+                            Layout.minimumHeight: 0
+                            clip: true
+                            contentWidth: width
+                            contentHeight: widgetRows.implicitHeight
+                            boundsBehavior: Flickable.StopAtBounds
+                            flickableDirection: Flickable.VerticalFlick
 
-                        Repeater {
-                            model: WidgetCatalog.definitions
+                            ColumnLayout {
+                                id: widgetRows
+                                width: widgetsScroll.width
+                                spacing: 0
 
-                            delegate: Rectangle {
-                                required property var modelData
-                                width: registryContent.width
-                                height: 58
-                                radius: 13
-                                color: root.widgetEnabled(modelData.id) ? "#F0F5FB" : "#FFFFFF"
-                                border.width: 1
-                                border.color: root.widgetEnabled(modelData.id) ? "#C8D9EA" : root.borderColor
+                                Repeater {
+                                    model: WidgetCatalog.definitions
 
-                                Row {
-                                    anchors.fill: parent
-                                    anchors.leftMargin: 11
-                                    anchors.rightMargin: 10
-                                    spacing: 9
+                                    delegate: Rectangle {
+                                        required property var modelData
+                                        Layout.fillWidth: true
+                                        Layout.preferredHeight: 58
+                                        color: rowMouse.containsMouse ? root.hoverBackground : "transparent"
+                                        radius: 8
 
-                                    Rectangle {
-                                        width: 34
-                                        height: 34
-                                        anchors.verticalCenter: parent.verticalCenter
-                                        radius: 10
-                                        color: root.widgetEnabled(modelData.id) ? "#EAF3FF" : "#F4F7FA"
-                                        border.width: 1
-                                        border.color: root.widgetEnabled(modelData.id) ? "#D3E5F9" : "#E6EBF0"
-
-                                        Text {
-                                            anchors.centerIn: parent
-                                            text: modelData.id === "quotes"
-                                                ? "“"
-                                                : modelData.id === "editorial-time"
-                                                    ? "T"
-                                                    : modelData.id === "calendar"
-                                                        ? "C"
-                                                        : modelData.id === "pulse"
-                                                            ? "P"
-                                                            : modelData.id === "tasks"
-                                                                ? "✓"
-                                                                : modelData.id === "music"
-                                                                    ? "♫"
-                                                                    : "W"
-                                            color: root.widgetEnabled(modelData.id) ? root.accent : root.mutedText
-                                            font.pixelSize: 12
-                                            font.weight: Font.DemiBold
-                                        }
-                                    }
-
-                                    Column {
-                                        width: Math.max(90, parent.width - 116)
-                                        anchors.verticalCenter: parent.verticalCenter
-                                        spacing: 3
-
-                                        Text {
-                                            width: parent.width
-                                            text: modelData.title
-                                            color: root.strongText
-                                            font.pixelSize: 8
-                                            font.weight: Font.DemiBold
-                                            elide: Text.ElideRight
+                                        Behavior on color {
+                                            ColorAnimation { duration: 100 }
                                         }
 
-                                        Text {
-                                            width: parent.width
-                                            text: modelData.subtitle
-                                            color: root.secondaryText
-                                            font.pixelSize: 6
-                                            elide: Text.ElideRight
-                                        }
+                                        RowLayout {
+                                            anchors.fill: parent
+                                            anchors.leftMargin: 10
+                                            anchors.rightMargin: 10
+                                            spacing: 12
 
-                                        Text {
-                                            width: parent.width
-                                            text: modelData.detail
-                                            color: root.mutedText
-                                            font.pixelSize: 6
-                                            elide: Text.ElideRight
-                                        }
-                                    }
+                                            NavbarIcon {
+                                                Layout.preferredWidth: 20
+                                                Layout.preferredHeight: 20
+                                                iconName: root.widgetIcon(modelData.id)
+                                                iconColor: root.widgetEnabled(modelData.id) ? root.textPrimary : "#8B95A2"
+                                            }
 
-                                    Rectangle {
-                                        width: 42
-                                        height: 24
-                                        anchors.verticalCenter: parent.verticalCenter
-                                        radius: 12
-                                        color: root.widgetEnabled(modelData.id) ? root.accent : "#D9E1E9"
+                                            ColumnLayout {
+                                                Layout.fillWidth: true
+                                                spacing: 3
 
-                                        Rectangle {
-                                            width: 18
-                                            height: 18
-                                            y: 3
-                                            x: root.widgetEnabled(modelData.id) ? 21 : 3
-                                            radius: 9
-                                            color: "#FFFFFF"
-                                            Behavior on x {
-                                                NumberAnimation { duration: 130; easing.type: Easing.OutCubic }
+                                                Text {
+                                                    Layout.fillWidth: true
+                                                    text: modelData.title
+                                                    color: root.textPrimary
+                                                    font.pixelSize: 9
+                                                    font.weight: Font.DemiBold
+                                                    elide: Text.ElideRight
+                                                }
+
+                                                Text {
+                                                    Layout.fillWidth: true
+                                                    text: modelData.subtitle
+                                                    color: root.textSecondary
+                                                    font.pixelSize: 8
+                                                    elide: Text.ElideRight
+                                                }
+                                            }
+
+                                            Text {
+                                                text: root.widgetEnabled(modelData.id) ? "ON" : "OFF"
+                                                color: root.widgetEnabled(modelData.id) ? root.textPrimary : root.textMuted
+                                                font.pixelSize: 7
+                                                font.weight: Font.DemiBold
+                                                font.letterSpacing: 0.6
+                                            }
+
+                                            Rectangle {
+                                                Layout.preferredWidth: 38
+                                                Layout.preferredHeight: 22
+                                                radius: 11
+                                                color: root.widgetEnabled(modelData.id) ? root.selectedBackground : "#DDE2E8"
+
+                                                Rectangle {
+                                                    width: 16
+                                                    height: 16
+                                                    y: 3
+                                                    x: root.widgetEnabled(modelData.id) ? 19 : 3
+                                                    radius: 8
+                                                    color: "#FFFFFF"
+
+                                                    Behavior on x {
+                                                        NumberAnimation { duration: 120; easing.type: Easing.OutCubic }
+                                                    }
+                                                }
                                             }
                                         }
 
                                         MouseArea {
+                                            id: rowMouse
                                             anchors.fill: parent
+                                            hoverEnabled: true
                                             cursorShape: Qt.PointingHandCursor
                                             onClicked: root.toggleWidget(modelData.id)
+                                        }
+
+                                        Rectangle {
+                                            anchors.left: parent.left
+                                            anchors.right: parent.right
+                                            anchors.bottom: parent.bottom
+                                            anchors.leftMargin: 10
+                                            anchors.rightMargin: 10
+                                            height: 1
+                                            color: root.dividerColor
+                                            visible: modelData.id !== "quotes"
                                         }
                                     }
                                 }
                             }
                         }
-                    }
-                }
-            }
-        }
-
-        Rectangle {
-            id: settingsPanel
-            width: contentRow.width - registryPanel.width - contentRow.spacing
-            height: parent.height
-            radius: 16
-            color: root.panelBackground
-            border.width: 1
-            border.color: root.borderColor
-
-            Column {
-                anchors.fill: parent
-                anchors.margins: 18
-                spacing: 10
-
-                Text {
-                    text: "TIME & DATE"
-                    color: root.strongText
-                    font.pixelSize: 10
-                    font.weight: Font.DemiBold
-                    font.letterSpacing: 1
-                }
-
-                Text {
-                    width: parent.width
-                    text: "Control the editorial clock without changing the wallpaper design."
-                    color: root.secondaryText
-                    font.pixelSize: 7
-                    wrapMode: Text.WordWrap
-                    maximumLineCount: 2
-                }
-
-                Rectangle {
-                    width: parent.width
-                    height: 82
-                    radius: 13
-                    color: "#FFFFFF"
-                    border.width: 1
-                    border.color: root.borderColor
-
-                    Row {
-                        anchors.fill: parent
-                        anchors.leftMargin: 16
-                        anchors.rightMargin: 16
-                        spacing: 12
-
-                        Column {
-                            width: Math.max(130, parent.width - 96)
-                            anchors.verticalCenter: parent.verticalCenter
-                            spacing: 4
-
-                            Text {
-                                width: parent.width
-                                text: root.editorialTimeEnabled ? "EDITORIAL TIME" : "TIME DISABLED"
-                                color: root.strongText
-                                font.pixelSize: 10
-                                font.weight: Font.DemiBold
-                                elide: Text.ElideRight
-                            }
-
-                            Text {
-                                width: parent.width
-                                text: root.editorialTimeEnabled
-                                    ? "Wide, container-free clock that blends into the wallpaper."
-                                    : "Enable Editorial Time from the widget registry."
-                                color: root.secondaryText
-                                font.pixelSize: 7
-                                wrapMode: Text.WordWrap
-                                maximumLineCount: 2
-                                elide: Text.ElideRight
-                            }
-                        }
 
                         Text {
-                            width: 72
-                            anchors.verticalCenter: parent.verticalCenter
-                            horizontalAlignment: Text.AlignRight
-                            text: root.editorialTimeEnabled ? "DEFAULT" : "OFF"
-                            color: root.editorialTimeEnabled ? root.accent : root.mutedText
+                            Layout.fillWidth: true
+                            Layout.topMargin: 7
+                            text: "Editorial Time and Calendar share the same desktop position."
+                            color: root.textMuted
                             font.pixelSize: 7
-                            font.weight: Font.DemiBold
-                            font.letterSpacing: 1
-                        }
-                    }
-                }
-
-                Text {
-                    text: "CLOCK FORMAT"
-                    color: root.strongText
-                    font.pixelSize: 7
-                    font.weight: Font.DemiBold
-                    font.letterSpacing: 1
-                }
-
-                Row {
-                    width: parent.width
-                    height: 40
-                    spacing: 7
-
-                    Rectangle {
-                        width: (parent.width - 7) / 2
-                        height: parent.height
-                        radius: 11
-                        color: root.timeUse24Hour ? "#EAF3FF" : "#FFFFFF"
-                        border.width: 1
-                        border.color: root.timeUse24Hour ? "#BBD7F5" : root.borderColor
-
-                        Text {
-                            anchors.centerIn: parent
-                            text: "24 HOUR"
-                            color: root.timeUse24Hour ? root.accent : root.secondaryText
-                            font.pixelSize: 7
-                            font.weight: Font.DemiBold
-                        }
-
-                        MouseArea {
-                            anchors.fill: parent
-                            cursorShape: Qt.PointingHandCursor
-                            onClicked: root.timeUse24HourRequested(true)
-                        }
-                    }
-
-                    Rectangle {
-                        width: (parent.width - 7) / 2
-                        height: parent.height
-                        radius: 11
-                        color: !root.timeUse24Hour ? "#EAF3FF" : "#FFFFFF"
-                        border.width: 1
-                        border.color: !root.timeUse24Hour ? "#BBD7F5" : root.borderColor
-
-                        Text {
-                            anchors.centerIn: parent
-                            text: "12 HOUR"
-                            color: !root.timeUse24Hour ? root.accent : root.secondaryText
-                            font.pixelSize: 7
-                            font.weight: Font.DemiBold
-                        }
-
-                        MouseArea {
-                            anchors.fill: parent
-                            cursorShape: Qt.PointingHandCursor
-                            onClicked: root.timeUse24HourRequested(false)
-                        }
-                    }
-                }
-
-                Rectangle {
-                    width: parent.width
-                    height: 50
-                    radius: 12
-                    color: "#FFFFFF"
-                    border.width: 1
-                    border.color: root.borderColor
-
-                    Row {
-                        anchors.fill: parent
-                        anchors.leftMargin: 13
-                        anchors.rightMargin: 13
-                        spacing: 10
-
-                        Column {
-                            anchors.verticalCenter: parent.verticalCenter
-                            spacing: 3
-
-                            Text {
-                                text: "SHOW SECONDS"
-                                color: root.strongText
-                                font.pixelSize: 7
-                                font.weight: Font.DemiBold
-                            }
-
-                            Text {
-                                text: root.timeShowSeconds ? "Visible" : "Hidden"
-                                color: root.secondaryText
-                                font.pixelSize: 6
-                            }
-                        }
-
-                        Item { width: Math.max(1, parent.width - 105); height: 1 }
-
-                        Rectangle {
-                            width: 46
-                            height: 24
-                            anchors.verticalCenter: parent.verticalCenter
-                            radius: 12
-                            color: root.timeShowSeconds ? root.accent : "#D9E1E9"
-
-                            Rectangle {
-                                width: 18
-                                height: 18
-                                y: 3
-                                x: root.timeShowSeconds ? 25 : 3
-                                radius: 9
-                                color: "#FFFFFF"
-                            }
-
-                            MouseArea {
-                                anchors.fill: parent
-                                cursorShape: Qt.PointingHandCursor
-                                onClicked: root.timeShowSecondsRequested(!root.timeShowSeconds)
-                            }
-                        }
-                    }
-                }
-
-                Rectangle {
-                    width: parent.width
-                    height: Math.max(42, parent.height - 292)
-                    radius: 12
-                    color: root.tileBackground
-                    border.width: 1
-                    border.color: "#E7ECF2"
-
-                    Column {
-                        anchors.fill: parent
-                        anchors.margins: 12
-                        spacing: 5
-
-                        Text {
-                            text: "DESKTOP BEHAVIOR"
-                            color: root.strongText
-                            font.pixelSize: 7
-                            font.weight: Font.DemiBold
-                            font.letterSpacing: 1
-                        }
-
-                        Text {
-                            width: parent.width
-                            text: "Editorial Time is shown on the wallpaper. Calendar, System Pulse and Workspace Matrix remain independent modules."
-                            color: root.secondaryText
-                            font.pixelSize: 6
-                            wrapMode: Text.WordWrap
-                            maximumLineCount: 3
                             elide: Text.ElideRight
                         }
                     }
                 }
+
+                Item {
+                    id: clockPage
+
+                    ColumnLayout {
+                        anchors.fill: parent
+                        anchors.topMargin: 12
+                        spacing: 0
+
+                        Text {
+                            text: "CLOCK FORMAT"
+                            color: root.textMuted
+                            font.pixelSize: 8
+                            font.weight: Font.DemiBold
+                            font.letterSpacing: 1.0
+                        }
+
+                        Text {
+                            Layout.topMargin: 5
+                            Layout.bottomMargin: 18
+                            text: "Choose how time appears on the desktop."
+                            color: root.textSecondary
+                            font.pixelSize: 9
+                        }
+
+                        RowLayout {
+                            Layout.fillWidth: true
+                            spacing: 6
+
+                            Repeater {
+                                model: [
+                                    { value: true, label: "24 HOUR" },
+                                    { value: false, label: "12 HOUR" }
+                                ]
+
+                                delegate: Rectangle {
+                                    required property var modelData
+                                    Layout.fillWidth: true
+                                    Layout.preferredHeight: 38
+                                    radius: 8
+                                    color: root.timeUse24Hour === modelData.value
+                                        ? root.selectedBackground : root.controlBackground
+                                    border.width: 1
+                                    border.color: root.timeUse24Hour === modelData.value
+                                        ? root.selectedBackground : root.controlBorder
+
+                                    Text {
+                                        anchors.centerIn: parent
+                                        text: modelData.label
+                                        color: root.timeUse24Hour === modelData.value ? "#FFFFFF" : root.textSecondary
+                                        font.pixelSize: 9
+                                        font.weight: Font.DemiBold
+                                    }
+
+                                    MouseArea {
+                                        anchors.fill: parent
+                                        cursorShape: Qt.PointingHandCursor
+                                        onClicked: root.timeUse24HourRequested(modelData.value)
+                                    }
+                                }
+                            }
+                        }
+
+                        Rectangle {
+                            Layout.fillWidth: true
+                            Layout.topMargin: 14
+                            Layout.bottomMargin: 14
+                            height: 1
+                            color: root.dividerColor
+                        }
+
+                        RowLayout {
+                            Layout.fillWidth: true
+                            Layout.preferredHeight: 48
+                            spacing: 10
+
+                            ColumnLayout {
+                                Layout.fillWidth: true
+                                spacing: 3
+
+                                Text {
+                                    text: "SHOW SECONDS"
+                                    color: root.textPrimary
+                                    font.pixelSize: 9
+                                    font.weight: Font.DemiBold
+                                }
+
+                                Text {
+                                    text: root.timeShowSeconds ? "Seconds are visible" : "Seconds are hidden"
+                                    color: root.textSecondary
+                                    font.pixelSize: 8
+                                }
+                            }
+
+                            Rectangle {
+                                Layout.preferredWidth: 38
+                                Layout.preferredHeight: 22
+                                radius: 11
+                                color: root.timeShowSeconds ? root.selectedBackground : "#DDE2E8"
+
+                                Rectangle {
+                                    width: 16
+                                    height: 16
+                                    y: 3
+                                    x: root.timeShowSeconds ? 19 : 3
+                                    radius: 8
+                                    color: "#FFFFFF"
+
+                                    Behavior on x {
+                                        NumberAnimation { duration: 120; easing.type: Easing.OutCubic }
+                                    }
+                                }
+
+                                MouseArea {
+                                    anchors.fill: parent
+                                    cursorShape: Qt.PointingHandCursor
+                                    onClicked: root.timeShowSecondsRequested(!root.timeShowSeconds)
+                                }
+                            }
+                        }
+
+                        Rectangle {
+                            Layout.fillWidth: true
+                            Layout.topMargin: 14
+                            height: 1
+                            color: root.dividerColor
+                        }
+
+                        Text {
+                            Layout.topMargin: 14
+                            text: root.editorialTimeEnabled
+                                ? "These options apply to Editorial Time."
+                                : "Enable Editorial Time in the Widgets tab to use these options."
+                            color: root.textMuted
+                            font.pixelSize: 8
+                            wrapMode: Text.WordWrap
+                        }
+
+                        Item { Layout.fillHeight: true }
+                    }
+                }
             }
         }
     }
 
-    Row {
-        id: footer
-        anchors.left: parent.left
-        anchors.right: parent.right
-        anchors.bottom: parent.bottom
-        anchors.leftMargin: 22
-        anchors.rightMargin: 22
-        anchors.bottomMargin: 22
-        height: 38
-        spacing: 9
-
-        Rectangle {
-            width: 38
-            height: 38
-            radius: 11
-            color: root.panelBackground
-            border.width: 1
-            border.color: root.borderColor
-
-            Text {
-                anchors.centerIn: parent
-                text: "←"
-                color: root.strongText
-                font.pixelSize: 14
-                font.weight: Font.DemiBold
-            }
-
-            MouseArea {
-                anchors.fill: parent
-                cursorShape: Qt.PointingHandCursor
-                onClicked: root.backRequested()
-            }
-        }
-
-        Column {
-            anchors.verticalCenter: parent.verticalCenter
-            spacing: 2
-
-            Text {
-                text: "BACK"
-                color: root.strongText
-                font.pixelSize: 6
-                font.weight: Font.DemiBold
-                font.letterSpacing: 1
-            }
-
-            Text {
-                text: "Return to command search"
-                color: root.secondaryText
-                font.pixelSize: 7
-            }
-        }
-
-        Item { width: Math.max(1, parent.width - 215); height: 1 }
-
-        Text {
-            anchors.verticalCenter: parent.verticalCenter
-            text: root.activeCount + " ACTIVE"
-            color: root.secondaryText
-            font.pixelSize: 6
-            font.weight: Font.DemiBold
-            font.letterSpacing: 0.8
-        }
-    }
+    Keys.onEscapePressed: root.backRequested()
+    focus: root.visible
+    activeFocusOnTab: true
 }
