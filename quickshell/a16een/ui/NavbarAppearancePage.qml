@@ -33,7 +33,8 @@ Item {
         { id: "utilities", name: "Utilities", detail: "Wi-Fi and Bluetooth" },
         { id: "power", name: "Power", detail: "Power button" },
         { id: "quick-actions", name: "Tasks, Notes & Presets", detail: "Productivity shortcut group" },
-        { id: "quick-hub", name: "Notifications & Tools", detail: "Notifications and tools group" }
+        { id: "quick-hub", name: "Notifications & Tools", detail: "Notifications and tools group" },
+        { id: "data-meter", name: "Data Speed Meter", detail: "Live upload and download speed" }
     ]
     readonly property var containerColors: [
         { value: "transparent", label: "Default", swatch: "#F4F5F7" },
@@ -302,7 +303,7 @@ Item {
                         Text {
                             Layout.fillWidth: true
                             text: root.isAllScope
-                                ? "Shared settings for Workspaces, Battery, Clock, Utilities, Power, Tasks/Notes/Presets and Notifications/Tools."
+                                ? "Shared settings for navbar containers, the speed meter, and popup-card colors."
                                 : root.containerChoices.find(function(item) { return item.id === root.selectedScope }).detail
                             color: "#7B8591"
                             font.pixelSize: 8
@@ -380,15 +381,6 @@ Item {
                         ToggleRow {
                             visible: root.isAllScope
                             Layout.fillWidth: true
-                            title: "Show network speed meter"
-                            detail: "Show live upload/download speed in the navbar; detailed usage stays in Tools."
-                            checked: root.dataMeterEnabled
-                            enabledControl: !root.writing
-                            onToggleRequested: root.dataMeterToggleRequested(!root.dataMeterEnabled)
-                        }
-                        ToggleRow {
-                            visible: root.isAllScope
-                            Layout.fillWidth: true
                             title: "Override icon colors"
                             detail: "Apply one color across every navbar icon."
                             checked: root.allSetting("applyIconColor", false)
@@ -407,7 +399,16 @@ Item {
                         }
 
                         ToggleRow {
-                            visible: !root.isAllScope
+                            visible: root.selectedScope === "data-meter"
+                            Layout.fillWidth: true
+                            title: "Show network speed meter"
+                            detail: "Live upload/download in the navbar; detailed usage remains in Tools."
+                            checked: root.dataMeterEnabled
+                            enabledControl: !root.writing
+                            onToggleRequested: root.dataMeterToggleRequested(!root.dataMeterEnabled)
+                        }
+                        ToggleRow {
+                            visible: !root.isAllScope && root.selectedScope !== "data-meter"
                             Layout.fillWidth: true
                             title: "Show this container"
                             detail: "Hide or show only this navbar element."

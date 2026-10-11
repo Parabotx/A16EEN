@@ -36,22 +36,81 @@ Item {
         return /^#[0-9A-Fa-f]{6}$/.test(String(value || ""))
     }
 
-    readonly property color backgroundColor: {
-        if (root.allSettings.applyPopupCardColor !== true)
+    function luminance(value) {
+        // QColor may stringify as either #RRGGBB or #AARRGGBB; read the
+        // final six digits so contrast works with both representations.
+        const match = String(value || "").match(/#(?:[0-9A-Fa-f]{2})?([0-9A-Fa-f]{6})$/)
+        if (!match)
+            return 255
+        const hex = match[1]
+        return (parseInt(hex.slice(0, 2), 16) * 299
+            + parseInt(hex.slice(2, 4), 16) * 587
+            + parseInt(hex.slice(4, 6), 16) * 114) / 1000
+    }
+    function validHexColor(value) {
+        return /^#[0-9A-Fa-f]{6}$/.test(String(value || ""))
+    }
+
+    // The speed capsule shares the per-container palette. Popup cards honour
+    // their separate master switch, so individual navbar colors stay opt-in.
+    property color backgroundColor: {
+        if (root.containerId !== "data-meter" && root.allSettings.applyPopupCardColor !== true)
             return "#FFFFFF"
-        if (root.allSettings.applyContainerColor === true && root.validColor(root.allSettings.containerColor))
+        if (root.allSettings.applyContainerColor === true && root.validHexColor(root.allSettings.containerColor))
             return String(root.allSettings.containerColor)
-        if (root.selectedContainer.containerEnabled === true && root.validColor(root.selectedContainer.containerColor))
+        if (root.selectedContainer.containerEnabled === true
+            && root.validHexColor(root.selectedContainer.containerColor))
             return String(root.selectedContainer.containerColor)
         return "#FFFFFF"
     }
-    readonly property color borderColor: {
-        const hex = String(root.backgroundColor).replace("#", "")
-        const brightness = (parseInt(hex.slice(0, 2), 16) * 299
-            + parseInt(hex.slice(2, 4), 16) * 587
-            + parseInt(hex.slice(4, 6), 16) * 114) / 1000
-        return brightness < 120 ? "#3C424C" : "#D9DEE5"
+    Behavior on backgroundColor {
+        ColorAnimation { duration: 140; easing.type: Easing.OutCubic }
     }
+
+    readonly property bool darkMode: root.luminance(root.backgroundColor) < 138
+
+    property color textColor: root.darkMode ? "#F3F5F8" : "#1B2027"
+    property color secondaryTextColor: root.darkMode ? "#BAC3CE" : "#667180"
+    property color mutedTextColor: root.darkMode ? "#929BA8" : "#8A939E"
+    property color fieldColor: root.darkMode ? Qt.lighter(root.backgroundColor, 1.16) : "#FAFBFC"
+    property color subtleSurfaceColor: root.darkMode ? Qt.lighter(root.backgroundColor, 1.10) : "#F7F8FA"
+    property color hoverSurfaceColor: root.darkMode ? Qt.lighter(root.backgroundColor, 1.24) : "#EEF1F4"
+    property color selectedSurfaceColor: root.darkMode ? Qt.lighter(root.backgroundColor, 1.34) : "#E9EDF1"
+    property color fieldBorderColor: root.darkMode ? "#454D58" : "#E4E9EF"
+    property color focusBorderColor: root.darkMode ? "#728198" : "#B8C5D4"
+    property color actionColor: root.darkMode ? Qt.lighter(root.backgroundColor, 1.65) : "#242A32"
+    property color actionHoverColor: root.darkMode ? Qt.lighter(root.backgroundColor, 1.90) : "#171C23"
+    property color actionTextColor: "#F3F5F8"
+
+    property color iconColor: {
+        let desired = "inherit"
+        if (root.allSettings.applyIconColor === true)
+            desired = String(root.allSettings.iconColor || "auto")
+        else if (root.selectedContainer.iconColor)
+            desired = String(root.selectedContainer.iconColor)
+
+        if (desired === "auto" || desired === "inherit" || !root.validHexColor(desired))
+            return root.textColor
+        if (Math.abs(root.luminance(desired) - root.luminance(root.backgroundColor)) < 78)
+            return root.textColor
+        return desired
+    }
+
+    property color borderColor: root.darkMode ? "#3C424C" : "#D9DEE5"
+    Behavior on textColor { ColorAnimation { duration: 130; easing.type: Easing.OutCubic } }
+    Behavior on secondaryTextColor { ColorAnimation { duration: 130; easing.type: Easing.OutCubic } }
+    Behavior on mutedTextColor { ColorAnimation { duration: 130; easing.type: Easing.OutCubic } }
+    Behavior on fieldColor { ColorAnimation { duration: 130; easing.type: Easing.OutCubic } }
+    Behavior on subtleSurfaceColor { ColorAnimation { duration: 130; easing.type: Easing.OutCubic } }
+    Behavior on hoverSurfaceColor { ColorAnimation { duration: 130; easing.type: Easing.OutCubic } }
+    Behavior on selectedSurfaceColor { ColorAnimation { duration: 130; easing.type: Easing.OutCubic } }
+    Behavior on fieldBorderColor { ColorAnimation { duration: 130; easing.type: Easing.OutCubic } }
+    Behavior on focusBorderColor { ColorAnimation { duration: 130; easing.type: Easing.OutCubic } }
+    Behavior on actionColor { ColorAnimation { duration: 130; easing.type: Easing.OutCubic } }
+    Behavior on actionHoverColor { ColorAnimation { duration: 130; easing.type: Easing.OutCubic } }
+    Behavior on actionTextColor { ColorAnimation { duration: 130; easing.type: Easing.OutCubic } }
+    Behavior on iconColor { ColorAnimation { duration: 130; easing.type: Easing.OutCubic } }
+    Behavior on borderColor { ColorAnimation { duration: 130; easing.type: Easing.OutCubic } }
 
     FileView {
         id: appearanceFile

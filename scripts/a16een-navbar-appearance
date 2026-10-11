@@ -8,7 +8,7 @@ NAVBAR_CMD="$(printenv A16EEN_NAVBAR_CMD 2>/dev/null || printf '%s' /usr/local/b
 
 default_all='{"visibilityControl":false,"visible":true,"applyContainerColor":false,"containerColor":"#15171A","applyIconColor":false,"iconColor":"auto","applyPopupCardColor":false,"surfaceColor":"#FFFFFF"}'
 default_container='{"visible":true,"containerEnabled":false,"containerColor":"transparent","iconColor":"inherit"}'
-container_ids='["workspaces","battery","time","utilities","power","quick-actions","quick-hub"]'
+container_ids='["workspaces","battery","time","utilities","power","quick-actions","quick-hub","data-meter"]'
 
 ensure_settings() {
     mkdir -p "$STATE_DIR"
@@ -98,7 +98,7 @@ write_all() {
 write_container() {
     local id="$1" key="$2" value="$3" tmp
     case "$id" in
-        workspaces|battery|time|utilities|power|quick-actions|quick-hub) ;;
+        workspaces|battery|time|utilities|power|quick-actions|quick-hub|data-meter) ;;
         *) echo "A16EEN appearance: unknown navbar container: $id" >&2; return 2 ;;
     esac
     case "$key" in
@@ -199,7 +199,7 @@ main() {
                             workspaces|utilities|power|quick-actions|quick-hub)
                                 appearance_target="$id"
                                 ;;
-                            battery|time)
+                            battery|time|data-meter)
                                 appearance_target="none"
                                 ;;
                         esac

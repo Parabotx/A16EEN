@@ -1,9 +1,15 @@
 import QtQuick
+import qs.ui
 import Quickshell
 import Quickshell.Wayland
 
 PanelWindow {
     id: root
+
+    PopupCardStyle {
+        id: popupCardStyle
+        containerId: "data-meter"
+    }
 
     required property var modelData
     required property string navbarPosition
@@ -34,7 +40,8 @@ PanelWindow {
     aboveWindows: true
     exclusionMode: ExclusionMode.Ignore
     exclusiveZone: 0
-    width: Math.max(70, Math.min(102, speedContent.implicitWidth + 20))
+    // Stable width prevents tiny layout shifts as B/s, KiB/s and MiB/s change.
+    width: 102
     height: root.horizontalNavbar ? 30 : 34
 
     // On a vertical dock, match the power button's top position. The capsule
@@ -62,9 +69,11 @@ PanelWindow {
     Rectangle {
         anchors.fill: parent
         radius: 12
-        color: speedMouse.containsMouse ? "#F2F4F7" : "#FFFFFF"
+        color: speedMouse.containsMouse ? popupCardStyle.hoverSurfaceColor : popupCardStyle.backgroundColor
         border.width: 1
-        border.color: "#D9DEE5"
+        border.color: popupCardStyle.borderColor
+        Behavior on color { ColorAnimation { duration: 130; easing.type: Easing.OutCubic } }
+        Behavior on border.color { ColorAnimation { duration: 130; easing.type: Easing.OutCubic } }
 
         Rectangle {
             anchors.fill: parent
@@ -85,9 +94,10 @@ PanelWindow {
                 height: 22
                 radius: 7
                 anchors.verticalCenter: parent.verticalCenter
-                color: root.showingDownload ? "#E9EDF2" : "#F2F4F7"
+                color: root.showingDownload ? popupCardStyle.selectedSurfaceColor : popupCardStyle.subtleSurfaceColor
                 border.width: 1
-                border.color: "#E3E7EC"
+                border.color: popupCardStyle.fieldBorderColor
+                Behavior on color { ColorAnimation { duration: 130; easing.type: Easing.OutCubic } }
 
                 Item {
                     id: directionGlyph
@@ -106,7 +116,7 @@ PanelWindow {
                         width: 3
                         height: 1.5
                         radius: 1
-                        color: "#A6B0BC"
+                        color: popupCardStyle.mutedTextColor
                     }
                     Rectangle {
                         x: 2
@@ -114,7 +124,7 @@ PanelWindow {
                         width: 2
                         height: 1.5
                         radius: 1
-                        color: "#C0C7D0"
+                        color: popupCardStyle.secondaryTextColor
                     }
                     Rectangle {
                         x: 8
@@ -122,7 +132,7 @@ PanelWindow {
                         width: 2
                         height: 9
                         radius: 1
-                        color: "#252B34"
+                        color: popupCardStyle.iconColor
                     }
                     Rectangle {
                         x: 4
@@ -131,7 +141,7 @@ PanelWindow {
                         height: 6
                         radius: 1
                         rotation: -45
-                        color: "#252B34"
+                        color: popupCardStyle.iconColor
                     }
                     Rectangle {
                         x: 10
@@ -140,7 +150,7 @@ PanelWindow {
                         height: 6
                         radius: 1
                         rotation: 45
-                        color: "#252B34"
+                        color: popupCardStyle.iconColor
                     }
                 }
             }
@@ -160,7 +170,7 @@ PanelWindow {
                             : 0)
                         return reading.value
                     }
-                    color: "#171B21"
+                    color: popupCardStyle.iconColor
                     font.pixelSize: 14
                     font.weight: Font.DemiBold
                 }
@@ -176,7 +186,7 @@ PanelWindow {
                             : 0)
                         return reading.unit
                     }
-                    color: "#7D8793"
+                    color: popupCardStyle.secondaryTextColor
                     font.pixelSize: 7
                     font.weight: Font.DemiBold
                 }
