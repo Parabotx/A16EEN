@@ -1,0 +1,120 @@
+#!/usr/bin/env bash
+set -Eeuo pipefail
+umask 077
+
+CONFIG_DIR="${XDG_CONFIG_HOME:-$HOME/.config}/a16een"
+CONFIG_FILE="$CONFIG_DIR/lockscreen.conf"
+STATE_DIR="${XDG_STATE_HOME:-$HOME/.local/state}/a16een"
+READY_FILE="$STATE_DIR/lockscreen-ready"
+
+idle_enabled=true
+idle_minutes=5
+sleep_lock=true
+
+valid_bool() {
+    [[ "$1" == "true" || "$1" == "false" ]]
+}
+
+valid_minutes() {
+    [[ "$1" =~ ^(1|3|5|10|15|30)$ ]]
+}
+
+read_settings() {
+    idle_enabled=true
+    idle_minutes=5
+    sleep_lock=true
+
+    [[ -r "$CONFIG_FILE" ]] || return 0
+    while IFS='=' read -r key value || [[ -n "${key:-}" ]]; do
+        case "${key:-}" in
+            idle_enabled)
+                valid_bool "${value:-}" && idle_enabled="$value"
+                ;;
+            idle_minutes)
+                valid_minutes "${value:-}" && idle_minutes="$value"
+                ;;
+            sleep_lock)
+                valid_bool "${value:-}" && sleep_lock="$value"
+                ;;
+        esac
+    done < "$CONFIG_FILE"
+}
+
+write_settings() {
+    mkdir -p "$CONFIG_DIR" "$STATE_DIR"
+    local tmp="$CONFIG_DIR/.lockscreen.conf.$$"
+    {
+        printf 'idle_enabled=%s\n' "$idle_enabled"
+        printf 'idle_minutes=%s\n' "$idle_minutes"
+        printf 'sleep_lock=%s\n' "$sleep_lock"
+    } > "$tmp"
+    chmod 600 "$tmp"
+    mv -f -- "$tmp" "$CONFIG_FILE"
+}
+
+usage() {
+    cat <<'EOF'
+A16EEN lock screen settings
+
+Usage:
+  a16een-lockscreen get
+  a16een-lockscreen set-all <idle-enabled> <idle-minutes> <sleep-lock>
+  a16een-lockscreen prepare-sleep
+EOF
+}
+
+mkdir -p "$STATE_DIR"
+
+case "${1:-get}" in
+    get)
+        [[ $# -le 1 ]] || { usage >&2; exit 2; }
+        read_settings
+        if [[ ! -e "$CONFIG_FILE" ]]; then
+            write_settings
+        fi
+        printf 'idle_enabled=%s\n' "$idle_enabled"
+        printf 'idle_minutes=%s\n' "$idle_minutes"
+        printf 'sleep_lock=%s\n' "$sleep_lock"
+        ;;
+    set-all)
+        [[ $# -eq 4 ]] || { usage >&2; exit 2; }
+        valid_bool "$2" || { echo "idle-enabled must be true or false." >&2; exit 2; }
+        valid_minutes "$3" || { echo "idle-minutes must be one of: 1, 3, 5, 10, 15, 30." >&2; exit 2; }
+        valid_bool "$4" || { echo "sleep-lock must be true or false." >&2; exit 2; }
+        idle_enabled="$2"
+        idle_minutes="$3"
+        sleep_lock="$4"
+        write_settings
+        ;;
+    prepare-sleep)
+        [[ $# -eq 1 ]] || { usage >&2; exit 2; }
+        if ! command -v qs >/dev/null 2>&1; then
+            echo "Quickshell IPC is unavailable; cannot confirm the A16EEN lock screen." >&2
+            exit 1
+        fi
+
+        # The IPC handler starts the existing A16EEN lock flow immediately.
+        # Wait for its secure-ready marker before allowing the sleep hook to finish.
+        if ! qs ipc call lock-screen prepare >/dev/null 2>&1; then
+            echo "Could not request A16EEN's lock screen before sleep." >&2
+            exit 1
+        fi
+
+        for ((attempt = 0; attempt < 200; attempt++)); do
+            if [[ -r "$READY_FILE" ]] && [[ "$(<"$READY_FILE")" == "ready" ]]; then
+                exit 0
+            fi
+            sleep 0.05
+        done
+
+        echo "A16EEN lock screen did not confirm readiness before sleep." >&2
+        exit 1
+        ;;
+    -h|--help|help)
+        usage
+        ;;
+    *)
+        usage >&2
+        exit 2
+        ;;
+esac
