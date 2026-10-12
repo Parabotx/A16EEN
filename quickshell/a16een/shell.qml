@@ -35,7 +35,28 @@ ShellRoot {
     property bool lockProcessRunning: false
     property bool lockSessionActive: false
     property string lockErrorMessage: ""
-    // Only hide A16EEN surfaces after swaylock confirms the session is locked.
+    property bool lockSettingsLoaded: false
+    property bool lockIdleEnabled: true
+    property int lockIdleMinutes: 5
+    property bool lockOnSleepEnabled: true
+    property bool lockWatcherRunning: false
+    readonly property string lockReadyStatusPath: {
+        const stateHome = Quickshell.env("XDG_STATE_HOME")
+        const home = Quickshell.env("HOME") || ""
+        const base = stateHome && stateHome.length ? stateHome : home + "/.local/state"
+        return base + "/a16een/lockscreen-ready"
+    }
+    readonly property var lockWatcherCommand: {
+        const args = ["swayidle", "-w"]
+        if (root.lockIdleEnabled)
+            args.push("timeout", String(root.lockIdleMinutes * 60), "qs ipc call lock-screen request")
+        if (root.lockOnSleepEnabled) {
+            args.push("before-sleep", "a16een-lockscreen prepare-sleep")
+            args.push("after-resume", "qs ipc call lock-screen request")
+        }
+        return args
+    }
+    // Only hide A16EEN surfaces after GTKLock/swaylock confirms the session is locked.
     readonly property bool secureLockActive: root.lockSessionActive
 
     Timer {
@@ -47,6 +68,92 @@ ShellRoot {
             // A16EEN_LOCK_READY only after Niri/Wayland confirms screen security.
             root.lockProcessRunning = true
             root.lockLaunchQueued = false
+        }
+    }
+
+    Timer {
+        id: lockWatcherRestartTimer
+        interval: 250
+        repeat: false
+        onTriggered: {
+            root.lockWatcherRunning = root.lockSettingsLoaded
+                && (root.lockIdleEnabled || root.lockOnSleepEnabled)
+        }
+    }
+
+    Timer {
+        id: lockSettingsSaveTimer
+        interval: 180
+        repeat: false
+        onTriggered: {
+            lockSettingsWriter.running = false
+            Qt.callLater(() => lockSettingsWriter.running = true)
+        }
+    }
+
+    FileView {
+        id: lockReadyStatusFile
+        path: root.lockReadyStatusPath
+        printErrors: false
+        atomicWrites: true
+    }
+
+    Process {
+        id: lockSettingsReader
+        command: ["a16een-lockscreen", "get"]
+        running: true
+
+        stdout: StdioCollector {
+            onStreamFinished: root.parseLockSettings(text)
+        }
+
+        stderr: StdioCollector {
+            onStreamFinished: {
+                const message = String(text || "").trim()
+                if (message.length)
+                    console.warn("A16EEN lock-screen settings:", message)
+            }
+        }
+    }
+
+    Process {
+        id: lockSettingsWriter
+        command: [
+            "a16een-lockscreen", "set-all",
+            root.lockIdleEnabled ? "true" : "false",
+            String(root.lockIdleMinutes),
+            root.lockOnSleepEnabled ? "true" : "false"
+        ]
+        running: false
+
+        stderr: StdioCollector {
+            onStreamFinished: {
+                const message = String(text || "").trim()
+                if (message.length)
+                    console.warn("A16EEN could not save lock-screen settings:", message)
+            }
+        }
+    }
+
+    Process {
+        id: idleLockWatcher
+        command: root.lockWatcherCommand
+        running: root.lockWatcherRunning
+
+        stderr: StdioCollector {
+            onStreamFinished: {
+                const message = String(text || "").trim()
+                if (message.length)
+                    console.warn("A16EEN idle lock watcher:", message)
+            }
+        }
+
+        onExited: (exitCode, exitStatus) => {
+            if (root.lockWatcherRunning) {
+                root.lockWatcherRunning = false
+                if (exitCode !== 0)
+                    console.warn("A16EEN idle lock watcher exited with status", exitCode)
+            }
         }
     }
 
@@ -66,6 +173,7 @@ ShellRoot {
                     root.navbarRevealed = false
                     root.lockSessionActive = true
                     root.lockLaunchQueued = false
+                    lockReadyStatusFile.setText("ready\n")
                     console.info("A16EEN screen locker is ready.")
                 }
             }
@@ -86,6 +194,7 @@ ShellRoot {
             root.lockProcessRunning = false
             root.lockSessionActive = false
             root.lockLaunchQueued = false
+            lockReadyStatusFile.setText("unlocked\n")
             if (!hadReadySignal || exitCode !== 0) {
                 const reason = root.lockErrorMessage.length
                     ? root.lockErrorMessage
@@ -113,11 +222,60 @@ ShellRoot {
         }
     }
 
-    function requestLockScreen() {
+    function parseLockSettings(rawText) {
+        const values = ({})
+        for (const line of String(rawText || "").split("\n")) {
+            const index = line.indexOf("=")
+            if (index < 0)
+                continue
+            values[line.slice(0, index).trim()] = line.slice(index + 1).trim()
+        }
+
+        const idleEnabled = values.idle_enabled !== "false"
+        const parsedMinutes = Number(values.idle_minutes || 5)
+        const idleMinutes = [1, 3, 5, 10, 15, 30].includes(parsedMinutes) ? parsedMinutes : 5
+        const sleepLockEnabled = values.sleep_lock !== "false"
+        root.applyLockSettings(idleEnabled, idleMinutes, sleepLockEnabled, false)
+    }
+
+    function applyLockSettings(idleEnabled, idleMinutes, sleepLockEnabled, persist) {
+        const parsedMinutes = Number(idleMinutes)
+        const safeMinutes = [1, 3, 5, 10, 15, 30].includes(parsedMinutes) ? parsedMinutes : 5
+        root.lockIdleEnabled = idleEnabled === true
+        root.lockIdleMinutes = safeMinutes
+        root.lockOnSleepEnabled = sleepLockEnabled === true
+        root.lockSettingsLoaded = true
+
+        // Restart only the idle watcher after options have settled. No periodic
+        // polling is needed; settings edits trigger this small restart directly.
+        root.lockWatcherRunning = false
+        lockWatcherRestartTimer.restart()
+        if (persist)
+            lockSettingsSaveTimer.restart()
+    }
+
+    function prepareLockBeforeSleep() {
+        if (root.lockSessionActive) {
+            lockReadyStatusFile.setText("ready\n")
+            return
+        }
+
+        lockReadyStatusFile.setText("pending\n")
+        if (root.lockLaunchQueued) {
+            lockLaunchTimer.stop()
+            root.lockLaunchQueued = false
+            root.lockProcessRunning = true
+            return
+        }
+        root.requestLockScreen(true)
+    }
+
+    function requestLockScreen(immediate) {
         if (root.lockLaunchQueued || root.lockProcessRunning || root.lockSessionActive)
             return
 
         root.lockErrorMessage = ""
+        lockReadyStatusFile.setText("pending\n")
         root.notificationCenterOpen = false
         root.toolsPanelOpen = false
         root.toolsPanelPage = "tools"
@@ -135,7 +293,13 @@ ShellRoot {
         root.screenshotSettingsOpen = false
         root.screenshotPreviewOpen = false
         root.lockLaunchQueued = true
-        lockLaunchTimer.restart()
+        if (immediate === true) {
+            lockLaunchTimer.stop()
+            root.lockProcessRunning = true
+            root.lockLaunchQueued = false
+        } else {
+            lockLaunchTimer.restart()
+        }
     }
 
     readonly property string navbarLayoutPath: {
@@ -605,6 +769,18 @@ ShellRoot {
             }
         } catch (error) {
             // Ignore malformed or version-incompatible event lines.
+        }
+    }
+
+    IpcHandler {
+        target: "lock-screen"
+
+        function request(): void {
+            root.requestLockScreen(false)
+        }
+
+        function prepare(): void {
+            root.prepareLockBeforeSleep()
         }
     }
 
@@ -1432,6 +1608,9 @@ ShellRoot {
         modelData: root.primaryScreen
         dataMeterEnabled: root.dataMeterEnabled
         opened: root.commandCenterOpen
+        lockIdleEnabled: root.lockIdleEnabled
+        lockIdleMinutes: root.lockIdleMinutes
+        lockOnSleepEnabled: root.lockOnSleepEnabled
         widgetViewOpen: root.widgetsCenterOpen
         editorialTimeWidgetEnabled: root.editorialTimeWidgetEnabled
         musicWidgetEnabled: root.musicWidgetEnabled
@@ -1447,6 +1626,8 @@ ShellRoot {
             root.commandCenterOpen = false
         }
         onPresetsRequested: root.openQuickPresets()
+        onLockScreenSettingsChanged: root.applyLockSettings(idleEnabled, idleMinutes, lockOnSleepEnabled, true)
+        onLockNowRequested: root.requestLockScreen(false)
 
         onNavbarPositionChanged: {
             if (["left", "right", "top", "bottom"].includes(position))
