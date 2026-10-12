@@ -121,7 +121,7 @@ PanelWindow {
             return hours + "h " + minutes + "m"
         if (minutes > 0)
             return minutes + "m"
-        return "0m"
+        return seconds > 0 ? seconds + "s" : "0m"
     }
 
     function calculate(sourceText) {
@@ -776,9 +776,9 @@ PanelWindow {
 
                         Repeater {
                             model: [
-                                { label: "TODAY", seconds: root.screenTimeTodaySeconds },
-                                { label: "WEEK", seconds: root.screenTimeWeekSeconds },
-                                { label: "MONTH", seconds: root.screenTimeMonthSeconds }
+                                { id: "today", label: "TODAY" },
+                                { id: "week", label: "WEEK" },
+                                { id: "month", label: "MONTH" }
                             ]
 
                             delegate: Rectangle {
@@ -809,7 +809,10 @@ PanelWindow {
 
                                     Text {
                                         width: parent.width
-                                        text: root.formatDuration(screenTimePeriodCard.modelData.seconds)
+                                        text: root.formatDuration(screenTimePeriodCard.modelData.id === "today"
+                                            ? root.screenTimeTodaySeconds
+                                            : (screenTimePeriodCard.modelData.id === "week"
+                                                ? root.screenTimeWeekSeconds : root.screenTimeMonthSeconds))
                                         color: popupCardStyle.textColor
                                         font.pixelSize: 13
                                         font.weight: Font.DemiBold
