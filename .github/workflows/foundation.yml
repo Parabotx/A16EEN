@@ -37,6 +37,8 @@ jobs:
           bash -n scripts/a16een
           bash -n scripts/a16een-mpv-theme
           bash -n scripts/a16een-wallpaper
+          bash -n tests/test_wallpaper_automation.sh
+          bash tests/test_wallpaper_automation.sh
           bash -n scripts/a16een-icons
           bash -n scripts/a16een-screenshot
           bash -n scripts/a16een-navbar
