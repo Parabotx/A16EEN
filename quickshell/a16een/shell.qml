@@ -343,6 +343,7 @@ ShellRoot {
     property bool quotesWidgetEnabled: false
     property bool appShelfWidgetEnabled: false
     property string appShelfShape: "capsule"
+    property bool appShelfRotationEnabled: true
     property var appShelfApps: []
     property bool timeUse24Hour: true
     property bool timeShowSeconds: false
@@ -356,6 +357,7 @@ ShellRoot {
             quotesWidgetEnabled: root.quotesWidgetEnabled,
             appShelfWidgetEnabled: root.appShelfWidgetEnabled,
             appShelfShape: root.appShelfShape,
+            appShelfRotationEnabled: root.appShelfRotationEnabled,
             appShelfApps: root.appShelfApps,
             timeUse24Hour: root.timeUse24Hour,
             timeShowSeconds: root.timeShowSeconds
@@ -373,6 +375,7 @@ ShellRoot {
     onQuotesWidgetEnabledChanged: root.requestWidgetSettingsSave()
     onAppShelfWidgetEnabledChanged: root.requestWidgetSettingsSave()
     onAppShelfShapeChanged: root.requestWidgetSettingsSave()
+    onAppShelfRotationEnabledChanged: root.requestWidgetSettingsSave()
     onAppShelfAppsChanged: root.requestWidgetSettingsSave()
     onTimeUse24HourChanged: root.requestWidgetSettingsSave()
     onTimeShowSecondsChanged: root.requestWidgetSettingsSave()
@@ -391,6 +394,7 @@ ShellRoot {
                         "musicWidgetEnabled",
                         "quotesWidgetEnabled",
                         "appShelfWidgetEnabled",
+                        "appShelfRotationEnabled",
                         "timeUse24Hour",
                         "timeShowSeconds"
                     ]
@@ -1439,6 +1443,7 @@ ShellRoot {
             widgetEnabled: root.appShelfWidgetEnabled && !root.secureLockActive
             apps: root.appShelfApps
             shape: root.appShelfShape
+            rotationEnabled: root.appShelfRotationEnabled
             navbarPosition: root.navbarPosition
         }
     }
@@ -1677,6 +1682,7 @@ ShellRoot {
         quotesWidgetEnabled: root.quotesWidgetEnabled
         appShelfWidgetEnabled: root.appShelfWidgetEnabled
         appShelfShape: root.appShelfShape
+        appShelfRotationEnabled: root.appShelfRotationEnabled
         appShelfApps: root.appShelfApps
         timeUse24Hour: root.timeUse24Hour
         timeShowSeconds: root.timeShowSeconds
@@ -1753,6 +1759,10 @@ ShellRoot {
         }
         onAppShelfWidgetEnabledRequested: {
             root.appShelfWidgetEnabled = enabled
+            root.requestWidgetSettingsSave()
+        }
+        onAppShelfRotationEnabledRequested: {
+            root.appShelfRotationEnabled = enabled
             root.requestWidgetSettingsSave()
         }
         onAppShelfShapeRequested: {
