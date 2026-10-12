@@ -1,25 +1,24 @@
 -- A16EEN MPV controls
--- Separate rounded containers inspired by the A16EEN navbar.
--- Video-only UI: the hidden audio player used by the Music widget is untouched.
+-- Clean white, rounded, single-row control bar with subtle A16EEN gold.
+-- Video-only: the audio-only player used by the Music widget is left untouched.
 
 local mp = require "mp"
 
 local overlay = mp.create_osd_overlay("ass-events")
-local accent = "#D7B56D"
-local ink = "#15171A"
-local paper = "#F1F3F6"
-local muted = "#9CA3AF"
-local soft = "#5D6674"
+local gold = "#D7B56D"
+local black = "#15171A"
+local white = "#FFFFFF"
+local border = "#D9DDE2"
+local muted = "#707782"
 
 local visible = false
-local tick_timer = nil
+local locked = false
+local open_menu = ""
+local timer = nil
 local last_activity = 0
 local mouse = { x = -10000, y = -10000, hover = false }
 local areas = {}
-local control_names = {
-    "chapter_prev", "rewind", "play", "forward", "chapter_next",
-    "subtitle", "audio", "speed", "mute", "loop", "screenshot", "fullscreen"
-}
+local menu_choices = {}
 
 local function has_video()
     local vid = mp.get_property_native("vid")
@@ -30,6 +29,10 @@ end
 
 local function inside(x, y, area)
     return area and x >= area.x1 and x <= area.x2 and y >= area.y1 and y <= area.y2
+end
+
+local function clamp(value, minimum, maximum)
+    return math.max(minimum, math.min(maximum, value))
 end
 
 local function ass_color(hex)
@@ -47,9 +50,8 @@ local function escape_ass(value)
 end
 
 local function rounded_path(w, h, radius)
-    -- ASS vector drawing uses integer coordinates; progress fills may be fractional.
-    w = math.floor(w)
-    h = math.floor(h)
+    w = math.max(1, math.floor(w))
+    h = math.max(1, math.floor(h))
     local r = math.max(0, math.min(radius, math.floor(math.min(w, h) / 2)))
     local k = math.floor(r * 0.552 + 0.5)
     return string.format(
@@ -73,20 +75,19 @@ local function add_round(lines, x, y, w, h, radius, color, alpha)
 end
 
 local function add_card(lines, x, y, w, h, radius)
-    -- A quiet 1px outline around a near-opaque dark surface.
-    add_round(lines, x, y, w, h, radius, "#FFFFFF", 0xE7)
-    add_round(lines, x + 1, y + 1, w - 2, h - 2, math.max(2, radius - 1), "#111318", 0x12)
+    add_round(lines, x, y, w, h, radius, border, 0)
+    add_round(lines, x + 1, y + 1, w - 2, h - 2, math.max(2, radius - 1), white, 0)
 end
 
-local function add_text(lines, x, y, text, size, color, align, bold, clip)
+local function add_text(lines, x, y, value, size, color, align, bold, clip)
     local clip_tag = ""
     if clip then
         clip_tag = string.format("\\clip(%d,%d,%d,%d)", clip.x1, clip.y1, clip.x2, clip.y2)
     end
     lines[#lines + 1] = string.format(
         "{\\an%d\\pos(%d,%d)\\fnInter\\fs%d\\b%d\\bord0\\shad0\\blur0\\1c&H%s&%s}%s",
-        align or 7, math.floor(x), math.floor(y), size, bold and 1 or 0,
-        ass_color(color), clip_tag, escape_ass(text)
+        align or 5, math.floor(x), math.floor(y), size, bold and 1 or 0,
+        ass_color(color), clip_tag, escape_ass(value)
     )
 end
 
@@ -99,6 +100,12 @@ local function format_time(value)
     return string.format("%d:%02d", minutes, rest)
 end
 
+local function shorten(value, limit)
+    local text = tostring(value or ""):gsub("[\r\n]", " ")
+    if #text <= limit then return text end
+    return text:sub(1, math.max(1, limit - 1)) .. "…"
+end
+
 local function current_mouse()
     local pos = mp.get_property_native("mouse-pos")
     if type(pos) == "table" then
@@ -107,222 +114,308 @@ local function current_mouse()
     return mouse.x, mouse.y, mouse.hover
 end
 
-local function hovered(name, mx, my, hovering)
+local function is_hovered(name, mx, my, hovering)
     return hovering and inside(mx, my, areas[name])
 end
 
-local function draw_button(lines, name, cx, cy, w, h, label, size, opts)
+local function draw_button(lines, name, x, y, w, h, label, opts)
     opts = opts or {}
-    local x, y = cx - w / 2, cy - h / 2
-    areas[name] = { x1 = x - 4, y1 = y - 4, x2 = x + w + 4, y2 = y + h + 4 }
-
-    local is_hovered = hovered(name, opts.mx or -10000, opts.my or -10000, opts.hovering or false)
+    areas[name] = { x1 = x, y1 = y, x2 = x + w, y2 = y + h }
+    local cx, cy = x + w / 2, y + h / 2
     if opts.active then
-        add_round(lines, x, y, w, h, math.floor(h / 2), opts.active_color or accent, 0x00)
-        add_text(lines, cx, cy, label, size, opts.active_text or ink, 5, opts.bold or false)
-    elseif is_hovered then
-        add_round(lines, x, y, w, h, math.floor(h / 2), "#FFFFFF", 0xE2)
-        add_text(lines, cx, cy, label, size, paper, 5, opts.bold or false)
+        add_round(lines, x, y, w, h, math.floor(h / 2), opts.active_color or gold, 0)
+        add_text(lines, cx, cy, label, opts.size or 12, opts.active_text or black, 5, opts.bold or false)
+    elseif is_hovered(name, opts.mx or -10000, opts.my or -10000, opts.hovering or false) then
+        add_round(lines, x, y, w, h, math.floor(h / 2), "#F0F2F4", 0)
+        add_text(lines, cx, cy, label, opts.size or 12, black, 5, opts.bold or false)
     else
-        add_text(lines, cx, cy, label, size, opts.color or paper, 5, opts.bold or false)
+        add_text(lines, cx, cy, label, opts.size or 12, opts.color or black, 5, opts.bold or false)
     end
 end
 
-local function draw_volume_slider(lines, x, y, w, volume, mx, my, hovering)
-    local track_x = x + 65
-    local track_w = math.max(24, w - 82)
-    local track_y = y + 55
-    areas.volume = { x1 = track_x - 5, y1 = track_y - 8, x2 = track_x + track_w + 5, y2 = track_y + 8, track_x = track_x, track_w = track_w }
+local function available_tracks(kind)
+    local all = mp.get_property_native("track-list", {})
+    local filtered = {}
+    if type(all) ~= "table" then return filtered end
 
-    add_text(lines, x + 13, track_y - 5, "VOL", 8, muted, 7, true)
-    add_round(lines, track_x, track_y, track_w, 3, 2, "#FFFFFF", 0xD7)
-    local ratio = math.max(0, math.min(1, (tonumber(volume) or 0) / 130))
-    if ratio > 0 then
-        add_round(lines, track_x, track_y, math.max(2, track_w * ratio), 3, 2, accent, 0)
+    for _, track in ipairs(all) do
+        if type(track) == "table" and track.type == kind and track.id ~= nil then
+            local name = tostring(track.title or track.lang or "")
+            if name == "" then
+                name = (kind == "sub" and "Subtitle " or "Audio ") .. tostring(#filtered + 1)
+            elseif track.lang and track.title and track.lang ~= track.title then
+                name = name .. " · " .. tostring(track.lang)
+            end
+            if track.external then name = name .. " · external" end
+            filtered[#filtered + 1] = {
+                id = track.id,
+                name = name,
+                selected = track.selected == true,
+            }
+        end
     end
-    local knob_x = track_x + track_w * ratio
-    add_round(lines, knob_x - 4, track_y - 3, 8, 9, 4, accent, 0)
-    if hovering and inside(mx, my, areas.volume) then
-        add_text(lines, x + w - 12, track_y - 5, tostring(math.floor(volume + 0.5)) .. "%", 8, paper, 9, false)
+    return filtered
+end
+
+local function get_title()
+    local title = mp.get_property("media-title", "")
+    if title == "" then title = mp.get_property("filename", "Now playing") end
+    return tostring(title):gsub("[\r\n]", " ")
+end
+
+local function render_locked(lines, width, height, mx, my, hovering)
+    local w, h = 84, 48
+    local x = math.floor((width - w) / 2)
+    local y = math.floor(height - h - 25)
+    add_card(lines, x, y, w, h, 16)
+    draw_button(lines, "lock", x + 5, y + 5, w - 10, h - 10, "UNLOCK", {
+        size = 10, bold = true, color = black, mx = mx, my = my, hovering = hovering,
+    })
+    areas.ui = { x1 = x, y1 = y, x2 = x + w, y2 = y + h }
+    areas.lock_container = areas.ui
+end
+
+local function render_track_menu(lines, width, height, row_y, tracks_x, tracks_w, mx, my, hovering)
+    if open_menu ~= "sub" and open_menu ~= "audio" then return end
+
+    local is_sub = open_menu == "sub"
+    local kind = is_sub and "sub" or "audio"
+    local tracks = available_tracks(kind)
+    local active_id = mp.get_property(is_sub and "sid" or "aid", "no")
+    local choices = {}
+
+    if is_sub then
+        choices[#choices + 1] = { id = "no", name = "Off", selected = active_id == "no" }
     end
+    for _, track in ipairs(tracks) do
+        choices[#choices + 1] = {
+            id = track.id,
+            name = track.name,
+            selected = track.selected or tostring(active_id) == tostring(track.id),
+        }
+    end
+
+    local empty_label = is_sub and "No subtitles available" or "No audio tracks available"
+    local empty = #tracks == 0
+    local header_h, row_h = 34, 30
+    local row_count = math.max(1, #choices)
+    local max_h = math.max(120, height - 72)
+    local max_rows = math.max(1, math.floor((max_h - header_h - 8) / row_h))
+    local display_rows = math.min(row_count, max_rows)
+    local menu_h = header_h + display_rows * row_h + 8
+    local menu_w = math.min(math.max(220, tracks_w + 90), width - 24)
+    local anchor = is_sub and areas.subtitle or areas.audio
+    local center = anchor and (anchor.x1 + anchor.x2) / 2 or (tracks_x + tracks_w / 2)
+    local menu_x = clamp(center - menu_w / 2, 12, width - menu_w - 12)
+    local menu_y = math.max(12, row_y - menu_h - 8)
+
+    add_card(lines, menu_x, menu_y, menu_w, menu_h, 15)
+    add_text(lines, menu_x + 13, menu_y + 8, is_sub and "SUBTITLES" or "AUDIO TRACKS", 9, muted, 7, true)
+    add_round(lines, menu_x + 10, menu_y + 27, menu_w - 20, 1, 1, border, 0)
+
+    menu_choices = {}
+    if empty then
+        local message_y = menu_y + header_h + row_h / 2
+        add_text(lines, menu_x + menu_w / 2, message_y, empty_label, 10, muted, 5, false)
+        if is_sub then
+            local item_y = menu_y + header_h
+            local area = { x1 = menu_x + 8, y1 = item_y, x2 = menu_x + menu_w - 8, y2 = item_y + row_h - 2 }
+            areas["menu-1"] = area
+            add_text(lines, menu_x + menu_w / 2, item_y + 8, "Off", 10, black, 5, true)
+            menu_choices[#menu_choices + 1] = { area = area, kind = "sub", id = "no" }
+        end
+        areas.menu = { x1 = menu_x, y1 = menu_y, x2 = menu_x + menu_w, y2 = menu_y + menu_h }
+        return
+    end
+
+    local start = 1
+    if #choices > display_rows then
+        for i, choice in ipairs(choices) do
+            if choice.selected then
+                start = math.max(1, math.min(i, #choices - display_rows + 1))
+                break
+            end
+        end
+    end
+
+    for row = 1, display_rows do
+        local choice = choices[start + row - 1]
+        if choice then
+            local item_y = menu_y + header_h + (row - 1) * row_h
+            local item_x = menu_x + 8
+            local item_w = menu_w - 16
+            local area = { x1 = item_x, y1 = item_y, x2 = item_x + item_w, y2 = item_y + row_h - 2 }
+            local name = "menu-" .. tostring(row)
+            areas[name] = area
+
+            if choice.selected then
+                add_round(lines, item_x, item_y, item_w, row_h - 2, 8, "#F6E8C9", 0)
+            elseif inside(mx, my, area) and hovering then
+                add_round(lines, item_x, item_y, item_w, row_h - 2, 8, "#F0F2F4", 0)
+            end
+
+            add_text(lines, item_x + 10, item_y + 8, shorten(choice.name, math.max(12, math.floor((menu_w - 52) / 7))), 10, black, 7, choice.selected)
+            if choice.selected then add_text(lines, item_x + item_w - 10, item_y + 8, "✓", 10, black, 9, true) end
+            menu_choices[#menu_choices + 1] = { area = area, kind = kind, id = choice.id }
+        end
+    end
+
+    areas.menu = { x1 = menu_x, y1 = menu_y, x2 = menu_x + menu_w, y2 = menu_y + menu_h }
 end
 
 local function render()
-    if not visible or not has_video() then return end
-
+    if not visible and not locked then return end
     local width, height = mp.get_osd_size()
-    if not width or not height or width < 300 or height < 160 then return end
+    if not width or not height or width < 220 or height < 120 then return end
 
-    local total_w = math.min(1020, width - 28)
-    local card_h = 74
-    local gap = 10
-    local tiny = width < 760
-    local compact = width < 1020
-    local row_x = math.floor((width - total_w) / 2)
-    local row_y = math.floor(height - card_h - 25)
     local mx, my, hovering = current_mouse()
     local lines = {}
-
-    local info_w = tiny and 0 or math.min(270, math.max(205, math.floor(total_w * 0.28)))
-    local transport_w = tiny and math.min(224, total_w - 150) or math.min(270, math.max(230, math.floor(total_w * 0.27)))
-    local tool_x
-    local tool_w
-    local info_x = row_x
-    local transport_x
-
-    if tiny then
-        transport_x = row_x
-        tool_x = transport_x + transport_w + gap
-        tool_w = total_w - transport_w - gap
-    else
-        transport_x = info_x + info_w + gap
-        tool_x = transport_x + transport_w + gap
-        tool_w = total_w - info_w - transport_w - gap * 2
-    end
-    tool_w = math.max(0, tool_w)
-
-    local progress_w = math.min(620, total_w - 20)
-    local progress_h = 29
-    local progress_x = math.floor((width - progress_w) / 2)
-    local progress_y = row_y - progress_h - 9
-
-    areas = {
-        ui = { x1 = row_x, y1 = progress_y, x2 = row_x + total_w, y2 = row_y + card_h },
-        row = { x1 = row_x, y1 = row_y, x2 = row_x + total_w, y2 = row_y + card_h }
-    }
+    areas = {}
+    menu_choices = {}
     overlay.res_x = width
     overlay.res_y = height
 
-    -- Timeline is its own floating capsule, separated from the control cards.
-    add_card(lines, progress_x, progress_y, progress_w, progress_h, 14)
+    if locked then
+        render_locked(lines, width, height, mx, my, hovering)
+        overlay.data = table.concat(lines, "\n")
+        overlay:update()
+        return
+    end
+
+    local bar_w = math.min(900, width - 24)
+    local compact = bar_w < 650
+    local gap = compact and 4 or 8
+    local play_w = compact and 50 or 60
+    local tracks_w = compact and 86 or 112
+    local lock_w = compact and 42 or 54
+    local progress_w = compact and math.max(112, math.floor(bar_w * 0.29)) or clamp(math.floor(bar_w * 0.36), 205, 320)
+    local title_w = bar_w - play_w - tracks_w - lock_w - progress_w - gap * 4
+
+    if title_w < 92 then
+        local reduction = 92 - title_w
+        progress_w = math.max(compact and 100 or 165, progress_w - reduction)
+        title_w = bar_w - play_w - tracks_w - lock_w - progress_w - gap * 4
+    end
+
+    local card_h = 50
+    local x = math.floor((width - bar_w) / 2)
+    local y = math.floor(height - card_h - 27)
+    local cursor = x
+    areas.ui = { x1 = x, y1 = y, x2 = x + bar_w, y2 = y + card_h }
+
+    -- Container 1: file or video name.
+    add_card(lines, cursor, y, title_w, card_h, 16)
+    add_text(lines, cursor + 13, y + card_h / 2,
+        shorten(get_title(), math.max(12, math.floor((title_w - 24) / 7))),
+        12, black, 7, true,
+        { x1 = cursor + 9, y1 = y + 4, x2 = cursor + title_w - 9, y2 = y + card_h - 4 })
+    areas.title = { x1 = cursor, y1 = y, x2 = cursor + title_w, y2 = y + card_h }
+    cursor = cursor + title_w + gap
+
+    -- Container 2: only the gold play/pause button.
+    add_card(lines, cursor, y, play_w, card_h, 16)
+    local paused = mp.get_property_bool("pause", false)
+    local button_w = compact and 38 or 44
+    local button_h = 40
+    local button_x = cursor + (play_w - button_w) / 2
+    local button_y = y + (card_h - button_h) / 2
+    draw_button(lines, "play", button_x, button_y, button_w, button_h, paused and "▶" or "Ⅱ", {
+        active = true, active_color = gold, active_text = black, size = compact and 18 or 20, bold = true,
+    })
+    areas.play_container = { x1 = cursor, y1 = y, x2 = cursor + play_w, y2 = y + card_h }
+    cursor = cursor + play_w + gap
+
+    -- Container 3: white timeline with a bold black played portion.
+    add_card(lines, cursor, y, progress_w, card_h, 16)
     local duration = math.max(0, mp.get_property_number("duration", 0))
     local position = math.max(0, mp.get_property_number("time-pos", 0))
-    local ratio = duration > 0 and math.max(0, math.min(1, position / duration)) or 0
-    local time_left = duration > 0 and ("-" .. format_time(math.max(0, duration - position))) or "--:--"
-    add_text(lines, progress_x + 12, progress_y + 8, format_time(position), 9, muted, 7, false)
-    add_text(lines, progress_x + progress_w - 12, progress_y + 8, time_left, 9, muted, 9, false)
-    local seek_x = progress_x + 78
-    local seek_w = math.max(24, progress_w - 156)
-    local seek_y = progress_y + 13
-    add_round(lines, seek_x, seek_y, seek_w, 3, 2, "#FFFFFF", 0xD7)
-    local played_w = seek_w * ratio
-    if played_w > 1 then
-        add_round(lines, seek_x, seek_y, played_w, 3, 2, accent, 0)
-        add_round(lines, seek_x + played_w - 3, seek_y - 3, 8, 9, 4, accent, 0)
+    local ratio = duration > 0 and clamp(position / duration, 0, 1) or 0
+    add_text(lines, cursor + 12, y + 6, format_time(position), 8, muted, 7, false)
+    add_text(lines, cursor + progress_w - 12, y + 6, duration > 0 and format_time(duration) or "--:--", 8, muted, 9, false)
+    local track_x = cursor + 12
+    local track_w = progress_w - 24
+    local track_y = y + 29
+    add_round(lines, track_x, track_y, track_w, 7, 4, "#E2E5E9", 0)
+    local played_w = math.floor(track_w * ratio)
+    if played_w > 0 then
+        add_round(lines, track_x, track_y, played_w, 7, 4, black, 0)
+        add_round(lines, track_x + played_w - 3, track_y - 2, 9, 11, 5, black, 0)
     end
-    areas.seek = { x1 = seek_x - 6, y1 = progress_y + 2, x2 = seek_x + seek_w + 6, y2 = progress_y + progress_h - 2 }
+    areas.timeline = { x1 = cursor, y1 = y, x2 = cursor + progress_w, y2 = y + card_h }
+    areas.seek = { x1 = track_x, y1 = y + 17, x2 = track_x + track_w, y2 = y + card_h, track_x = track_x, track_w = track_w }
+    cursor = cursor + progress_w + gap
 
-    -- Container 1: title and file context, omitted on narrow windows.
-    local title = mp.get_property("media-title", "")
-    if title == "" then title = mp.get_property("filename", "A16EEN Player") end
-    title = title:gsub("[\r\n]", " ")
-    local metadata = mp.get_property_native("metadata", {})
-    local artist = ""
-    if type(metadata) == "table" then
-        artist = tostring(metadata.artist or metadata.ARTIST or metadata.album_artist or metadata.ALBUM_ARTIST or "")
-    end
-    artist = artist:gsub("[\r\n]", " ")
-    if artist == "" then artist = mp.get_property("filename", "VIDEO") end
-    if not tiny then
-        add_card(lines, info_x, row_y, info_w, card_h, 18)
-        add_text(lines, info_x + 16, row_y + 10, "NOW PLAYING", 8, accent, 7, true)
-        local clip = { x1 = info_x + 12, y1 = row_y + 18, x2 = info_x + info_w - 12, y2 = row_y + 47 }
-        add_text(lines, info_x + 16, row_y + 25, title, 14, paper, 7, true, clip)
-        add_text(lines, info_x + 16, row_y + 50, artist, 9, muted, 7, false, clip)
-    end
+    -- Container 4: subtitle and audio pickers only.
+    add_card(lines, cursor, y, tracks_w, card_h, 16)
+    local sub_w = compact and 32 or 42
+    local audio_w = compact and 32 or 42
+    local items_w = sub_w + audio_w + 6
+    local sub_x = cursor + (tracks_w - items_w) / 2
+    draw_button(lines, "subtitle", sub_x, y + 8, sub_w, card_h - 16, "CC", {
+        size = 10, bold = true, color = black, mx = mx, my = my, hovering = hovering,
+    })
+    draw_button(lines, "audio", sub_x + sub_w + 6, y + 8, audio_w, card_h - 16, "♪", {
+        size = 16, color = black, mx = mx, my = my, hovering = hovering,
+    })
+    areas.tracks = { x1 = cursor, y1 = y, x2 = cursor + tracks_w, y2 = y + card_h }
+    cursor = cursor + tracks_w + gap
 
-    -- Container 2: dedicated playback cluster, with chapters and precise seeking.
-    add_card(lines, transport_x, row_y, transport_w, card_h, 18)
-    local transport_cy = row_y + 32
-    local transport_items
-    if transport_w < 195 then
-        transport_items = { "rewind", "play", "forward" }
-    else
-        transport_items = { "chapter_prev", "rewind", "play", "forward", "chapter_next" }
-    end
-    local transport_button_w = transport_w < 195 and 31 or 29
-    local transport_gap = transport_w < 195 and 9 or 5
-    local transport_group_w = #transport_items * transport_button_w + (#transport_items - 1) * transport_gap
-    local transport_start = transport_x + (transport_w - transport_group_w) / 2 + transport_button_w / 2
-    local paused = mp.get_property_bool("pause", false)
-    local transport_labels = {
-        chapter_prev = "‹|", rewind = "−10", play = paused and "▶" or "Ⅱ",
-        forward = "+10", chapter_next = "|›"
-    }
-    for i, name in ipairs(transport_items) do
-        local bx = transport_start + (i - 1) * (transport_button_w + transport_gap)
-        local active = name == "play"
-        draw_button(lines, name, bx, transport_cy, transport_button_w, 34,
-            transport_labels[name], name == "play" and 14 or (name == "rewind" or name == "forward") and 9 or 12,
-            { active = active, color = muted, bold = false, mx = mx, my = my, hovering = hovering })
-    end
-    add_text(lines, transport_x + transport_w / 2, row_y + 56, "PLAYBACK", 8, soft, 5, true)
+    -- Container 5: lock/unlock. When locked, this is the only visible control.
+    add_card(lines, cursor, y, lock_w, card_h, 16)
+    draw_button(lines, "lock", cursor + 4, y + 8, lock_w - 8, card_h - 16, "LOCK", {
+        size = 9, bold = true, color = black, mx = mx, my = my, hovering = hovering,
+    })
+    areas.lock_container = { x1 = cursor, y1 = y, x2 = cursor + lock_w, y2 = y + card_h }
 
-    -- Container 3: compact tools. Advanced controls are hidden at small widths.
-    add_card(lines, tool_x, row_y, tool_w, card_h, 18)
-    local items
-    if tool_w < 205 then
-        items = { "subtitle", "mute", "fullscreen" }
-    elseif tiny or compact then
-        items = { "subtitle", "audio", "speed", "mute", "fullscreen" }
-    else
-        items = { "subtitle", "audio", "speed", "mute", "loop", "screenshot", "fullscreen" }
-    end
-    local labels = {
-        subtitle = "CC",
-        audio = "♪",
-        speed = string.format("%.2g×", mp.get_property_number("speed", 1)),
-        mute = mp.get_property_bool("mute", false) and "×" or "◖",
-        loop = "↻",
-        screenshot = "▣",
-        fullscreen = mp.get_property_bool("fullscreen", false) and "↙" or "⛶"
-    }
-    local button_w = tool_w < 205 and 30 or 28
-    local button_gap = tool_w < 205 and 8 or 4
-    local group_w = #items * button_w + (#items - 1) * button_gap
-    local start_cx = tool_x + (tool_w - group_w) / 2 + button_w / 2
-    local loop_enabled = mp.get_property("loop-file", "no") == "inf"
-    for i, name in ipairs(items) do
-        local bx = start_cx + (i - 1) * (button_w + button_gap)
-        local active = (name == "loop" and loop_enabled)
-            or (name == "subtitle" and mp.get_property_number("sid", -1) >= 0)
-            or (name == "mute" and mp.get_property_bool("mute", false))
-        draw_button(lines, name, bx, row_y + 25, button_w, 29, labels[name],
-            (name == "speed" or name == "subtitle") and 9 or 13,
-            { active = active, active_color = active and name == "mute" and "#E7A2A2" or accent,
-              active_text = ink, color = name == "speed" and accent or paper,
-              mx = mx, my = my, hovering = hovering })
-    end
-
-    local volume = math.max(0, math.min(130, mp.get_property_number("volume", 100)))
-    draw_volume_slider(lines, tool_x, row_y, tool_w, volume, mx, my, hovering)
-
+    render_track_menu(lines, width, height, y, areas.tracks.x1, tracks_w, mx, my, hovering)
     overlay.data = table.concat(lines, "\n")
     overlay:update()
 end
 
-local function hide_controls()
-    visible = false
-    if tick_timer then
-        tick_timer:kill()
-        tick_timer = nil
+local function remove_wheel_lock()
+    for _, name in ipairs({
+        "a16een-lock-wheel-up", "a16een-lock-wheel-down",
+        "a16een-lock-wheel-left", "a16een-lock-wheel-right"
+    }) do
+        mp.remove_key_binding(name)
     end
-    overlay:remove()
 end
 
-local function point_on_ui(x, y)
-    return inside(x, y, areas.ui)
+local function add_wheel_lock()
+    local function swallow() end
+    mp.add_forced_key_binding("WHEEL_UP", "a16een-lock-wheel-up", swallow)
+    mp.add_forced_key_binding("WHEEL_DOWN", "a16een-lock-wheel-down", swallow)
+    mp.add_forced_key_binding("WHEEL_LEFT", "a16een-lock-wheel-left", swallow)
+    mp.add_forced_key_binding("WHEEL_RIGHT", "a16een-lock-wheel-right", swallow)
+end
+
+local function hide_controls()
+    visible = false
+    open_menu = ""
+    if timer then
+        timer:kill()
+        timer = nil
+    end
+    if not locked then overlay:remove() end
 end
 
 local function show_controls()
     if not has_video() then return end
+    if locked then
+        render()
+        return
+    end
     visible = true
     last_activity = mp.get_time()
-    if not tick_timer then
-        tick_timer = mp.add_periodic_timer(0.20, function()
+    if not timer then
+        timer = mp.add_periodic_timer(0.18, function()
+            if locked then
+                render()
+                return
+            end
             if not visible then return end
             local mx, my, hovering = current_mouse()
-            if mp.get_time() - last_activity > 2.6 and not (hovering and point_on_ui(mx, my)) then
+            if mp.get_time() - last_activity > 2.5 and not (hovering and inside(mx, my, areas.ui)) then
                 hide_controls()
                 return
             end
@@ -332,142 +425,143 @@ local function show_controls()
     render()
 end
 
-local function seek_by(amount)
-    local duration = mp.get_property_number("duration", 0)
-    local position = mp.get_property_number("time-pos", 0)
-    if duration > 0 then
-        mp.set_property_number("time-pos", math.max(0, math.min(duration, position + amount)))
-    else
-        mp.commandv("seek", amount, "relative")
-    end
+local function lock_controls()
+    locked = true
+    visible = true
+    open_menu = ""
+    add_wheel_lock()
+    render()
 end
 
-local function activate(name)
-    if name == "chapter_prev" then
-        mp.commandv("add", "chapter", "-1")
-    elseif name == "rewind" then
-        seek_by(-10)
-    elseif name == "play" then
-        mp.set_property_bool("pause", not mp.get_property_bool("pause", false))
-    elseif name == "forward" then
-        seek_by(10)
-    elseif name == "chapter_next" then
-        mp.commandv("add", "chapter", "1")
-    elseif name == "subtitle" then
-        mp.commandv("cycle", "sid")
-    elseif name == "audio" then
-        mp.commandv("cycle", "aid")
-    elseif name == "speed" then
-        local speeds = { 0.5, 0.75, 1.0, 1.25, 1.5, 2.0 }
-        local current = mp.get_property_number("speed", 1)
-        local next_index = 1
-        for i, speed in ipairs(speeds) do
-            if math.abs(speed - current) < 0.02 then
-                next_index = (i % #speeds) + 1
-                break
-            end
-        end
-        mp.set_property_number("speed", speeds[next_index])
-    elseif name == "mute" then
-        mp.set_property_bool("mute", not mp.get_property_bool("mute", false))
-    elseif name == "loop" then
-        mp.set_property("loop-file", mp.get_property("loop-file", "no") == "inf" and "no" or "inf")
-    elseif name == "screenshot" then
-        mp.commandv("screenshot")
-    elseif name == "fullscreen" then
-        mp.set_property_bool("fullscreen", not mp.get_property_bool("fullscreen", false))
-    end
+local function unlock_controls()
+    locked = false
+    visible = true
+    last_activity = mp.get_time()
+    remove_wheel_lock()
     show_controls()
 end
 
-local function handle_click(mx, my)
-    for _, name in ipairs(control_names) do
-        if inside(mx, my, areas[name]) then
-            activate(name)
-            return true
+local function choose_track(choice)
+    if choice.kind == "sub" then
+        if tostring(choice.id) == "no" then
+            mp.set_property("sid", "no")
+        else
+            mp.set_property_number("sid", tonumber(choice.id) or 0)
         end
+    else
+        mp.set_property_number("aid", tonumber(choice.id) or 0)
     end
+    open_menu = ""
+    show_controls()
+end
 
-    if inside(mx, my, areas.seek) then
-        local duration = mp.get_property_number("duration", 0)
-        if duration > 0 then
-            local ratio = math.max(0, math.min(1, (mx - areas.seek.x1) / (areas.seek.x2 - areas.seek.x1)))
-            mp.set_property_number("time-pos", duration * ratio)
-        end
-        show_controls()
-        return true
-    end
-
-    if inside(mx, my, areas.volume) then
-        local volume = math.max(0, math.min(130, 130 * (mx - areas.volume.track_x) / areas.volume.track_w))
-        mp.set_property_number("volume", volume)
-        mp.set_property_bool("mute", false)
-        show_controls()
-        return true
-    end
-
-    return false
+local function seek_from_mouse(mx)
+    local area = areas.seek
+    local duration = mp.get_property_number("duration", 0)
+    if not area or duration <= 0 or area.track_w <= 0 then return end
+    local ratio = clamp((mx - area.track_x) / area.track_w, 0, 1)
+    mp.set_property_number("time-pos", duration * ratio)
+    show_controls()
 end
 
 local function on_click()
     local mx, my, hovering = current_mouse()
     if not hovering then return end
 
-    if not visible then
-        show_controls()
-        if handle_click(mx, my) then return end
-        if inside(mx, my, areas.ui) then return end
-        -- Preserve click-to-pause outside the control containers.
-        mp.commandv("cycle", "pause")
-        show_controls()
+    if locked then
+        if inside(mx, my, areas.lock) then unlock_controls() end
         return
     end
 
+    if not visible then show_controls() end
     last_activity = mp.get_time()
-    if handle_click(mx, my) then return end
 
-    -- Empty areas inside a control card are inert; clicking the video toggles pause.
-    if not inside(mx, my, areas.ui) then
-        mp.commandv("cycle", "pause")
+    for _, choice in ipairs(menu_choices) do
+        if inside(mx, my, choice.area) then
+            choose_track(choice)
+            return
+        end
     end
+
+    if inside(mx, my, areas.lock_container) then
+        lock_controls()
+        return
+    elseif inside(mx, my, areas.play_container) then
+        mp.set_property_bool("pause", not mp.get_property_bool("pause", false))
+        show_controls()
+        return
+    elseif inside(mx, my, areas.subtitle) then
+        open_menu = open_menu == "sub" and "" or "sub"
+        show_controls()
+        return
+    elseif inside(mx, my, areas.audio) then
+        open_menu = open_menu == "audio" and "" or "audio"
+        show_controls()
+        return
+    elseif inside(mx, my, areas.timeline) then
+        seek_from_mouse(mx)
+        return
+    elseif open_menu ~= "" and inside(mx, my, areas.menu) then
+        return
+    elseif open_menu ~= "" then
+        open_menu = ""
+        render()
+        if inside(mx, my, areas.ui) then return end
+    end
+
+    if inside(mx, my, areas.ui) then return end
+    mp.commandv("cycle", "pause")
     show_controls()
 end
 
 mp.add_key_binding("MBTN_LEFT", "a16een-mpv-click", on_click)
 mp.add_key_binding("MBTN_LEFT_DBL", "a16een-mpv-double-click", function()
+    if locked then return end
     mp.set_property_bool("fullscreen", not mp.get_property_bool("fullscreen", false))
     show_controls()
+end)
+mp.add_key_binding("ESC", "a16een-mpv-close-menu", function()
+    if open_menu ~= "" then
+        open_menu = ""
+        show_controls()
+    end
 end)
 
 mp.observe_property("mouse-pos", "native", function(_, value)
     if type(value) ~= "table" then return end
     local new_x, new_y = tonumber(value.x), tonumber(value.y)
     if not new_x or not new_y then return end
-
     local moved = new_x ~= mouse.x or new_y ~= mouse.y or (value.hover ~= false and not mouse.hover)
     mouse = { x = new_x, y = new_y, hover = value.hover ~= false }
 
-    if not mouse.hover then
+    if locked then
+        render()
+    elseif not mouse.hover then
+        if open_menu ~= "" then open_menu = "" end
         hide_controls()
-    elseif moved and has_video() then
+    elseif moved then
         show_controls()
     end
 end)
 
 mp.register_event("file-loaded", function()
+    open_menu = ""
     if has_video() then show_controls() else hide_controls() end
 end)
-mp.register_event("end-file", hide_controls)
-mp.register_event("shutdown", hide_controls)
+mp.register_event("end-file", function()
+    open_menu = ""
+    hide_controls()
+end)
+mp.register_event("shutdown", function()
+    remove_wheel_lock()
+    hide_controls()
+end)
 mp.register_event("video-reconfig", function()
-    if visible then render() end
+    if visible or locked then render() end
 end)
 
-for _, prop in ipairs({
-    "pause", "fullscreen", "time-pos", "duration", "volume", "mute",
-    "speed", "sid", "aid", "loop-file", "media-title"
-}) do
-    mp.observe_property(prop, "native", function()
-        if visible then render() end
+for _, property in ipairs({ "pause", "time-pos", "duration", "track-list", "sid", "aid", "media-title" }) do
+    mp.observe_property(property, "native", function()
+        if visible or locked then render() end
     end)
 end
