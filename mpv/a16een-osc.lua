@@ -475,6 +475,7 @@ local function choose_track(choice)
         mp.set_property_number("aid", tonumber(choice.id) or 0)
     end
     open_menu = ""
+    remove_menu_wheel_bindings()
     show_controls()
 end
 
@@ -585,6 +586,7 @@ end)
 
 mp.register_event("file-loaded", function()
     open_menu = ""
+    remove_menu_wheel_bindings()
     if has_video() then show_controls() else hide_controls() end
 end)
 mp.register_event("end-file", function()
