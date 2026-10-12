@@ -20,7 +20,7 @@ jobs:
       - name: Check QML syntax
         run: |
           sudo apt-get update
-          sudo apt-get install -y qt6-declarative-dev-tools
+          sudo apt-get install -y qt6-declarative-dev-tools lua5.4
           export PATH="/usr/lib/qt6/bin:$PATH"
           # Parse every QML component: checking shell.qml alone does not validate its children.
           find quickshell/a16een -type f -name '*.qml' -print0 | xargs -0 -n1 qmlformat >/dev/null
@@ -35,6 +35,7 @@ jobs:
           bash -n scripts/a16een-update
           bash -n scripts/a16een-doctor
           bash -n scripts/a16een
+          bash -n scripts/a16een-mpv-theme
           bash -n scripts/a16een-wallpaper
           bash -n scripts/a16een-icons
           bash -n scripts/a16een-screenshot
@@ -42,6 +43,7 @@ jobs:
           bash -n scripts/a16een-navbar-appearance
           bash -n tests/test_screenshot_capture.sh
           bash -n tests/test_navbar_appearance.sh
+          bash -n tests/test_mpv_theme.sh
           bash -n scripts/a16een-control
           python3 -m py_compile scripts/a16een-clipboard scripts/a16een-app-stash scripts/a16een-system-monitor scripts/a16een-data-meter
           python3 tests/test_app_stash.py
@@ -50,10 +52,15 @@ jobs:
           node tests/test_window_geometry.js
           bash tests/test_screenshot_capture.sh
           bash tests/test_navbar_appearance.sh
+          bash tests/test_mpv_theme.sh
           bash -n scripts/a16een-icon-theme
+          luac5.4 -p mpv/a16een-osc.lua
           bash -n scripts/a16een-workspace-preset
           python3 -m py_compile scripts/a16een-music scripts/a16een-widget-settings
           grep -Fq 'a16een-workspace-preset' scripts/install.sh
+          grep -Fq 'a16een-mpv-theme' scripts/install.sh
+          grep -Fq 'mpv theme status' scripts/a16een
+          grep -Fq 'script=~~/../a16een/mpv/a16een-osc.lua' mpv/a16een.conf
           grep -Fq 'a16een-clipboard' scripts/install.sh
           grep -Fq 'a16een-app-stash' scripts/install.sh
           grep -Fq 'workspace "app-stash"' niri/config.kdl
