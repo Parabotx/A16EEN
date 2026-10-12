@@ -1,5 +1,6 @@
 import QtQuick
 import QtMultimedia
+import QtQuick.Dialogs
 import Quickshell
 import Quickshell.Io
 import Quickshell.Wayland
@@ -123,7 +124,8 @@ PanelWindow {
             Repeater {
                 model: [
                     { key: "wallpaper", label: "Wallpaper" },
-                    { key: "animated", label: "Animated" }
+                    { key: "animated", label: "Animated" },
+                    { key: "settings", label: "Settings" }
                 ]
 
                 delegate: Rectangle {
@@ -174,9 +176,96 @@ PanelWindow {
             anchors.bottomMargin: 22
             clip: true
 
+            Column {
+                id: wallpaperSettings
+                anchors.fill: parent
+                spacing: 14
+                visible: root.activeTab === "settings"
+
+                Text {
+                    text: "Wallpaper settings"
+                    color: "#171717"
+                    font.pixelSize: 19
+                    font.weight: Font.DemiBold
+                }
+
+                Text {
+                    text: "Choose any supported image, animated image, or video from your files. A16EEN uses the original file in place — you do not need to copy it into a wallpaper folder."
+                    color: "#707070"
+                    font.pixelSize: 11
+                    wrapMode: Text.WordWrap
+                    width: parent.width
+                }
+
+                Rectangle {
+                    width: parent.width
+                    height: 86
+                    radius: 14
+                    color: "#F6F6F6"
+                    border.width: 1
+                    border.color: "#E7E7E7"
+
+                    Row {
+                        anchors.fill: parent
+                        anchors.margins: 14
+                        spacing: 12
+
+                        Rectangle {
+                            width: 42
+                            height: 42
+                            radius: 12
+                            color: "#E9E9E9"
+                            anchors.verticalCenter: parent.verticalCenter
+
+                            Text {
+                                anchors.centerIn: parent
+                                text: "↗"
+                                color: "#222222"
+                                font.pixelSize: 21
+                            }
+                        }
+
+                        Column {
+                            anchors.verticalCenter: parent.verticalCenter
+                            width: parent.width - 120
+                            spacing: 4
+
+                            Text {
+                                text: "Choose from files"
+                                color: "#222222"
+                                font.pixelSize: 12
+                                font.weight: Font.DemiBold
+                            }
+
+                            Text {
+                                text: "PNG, JPG, WEBP, GIF, MP4, WEBM and more"
+                                color: "#777777"
+                                font.pixelSize: 10
+                                wrapMode: Text.WordWrap
+                            }
+                        }
+                    }
+
+                    MouseArea {
+                        anchors.fill: parent
+                        cursorShape: Qt.PointingHandCursor
+                        onClicked: wallpaperFileDialog.open()
+                    }
+                }
+
+                Text {
+                    text: "Your selected file stays wherever it is. If you move or delete it later, choose it again from here."
+                    color: "#858585"
+                    font.pixelSize: 10
+                    wrapMode: Text.WordWrap
+                    width: parent.width
+                }
+            }
+
             Flickable {
                 id: wallpaperScroll
                 anchors.fill: parent
+                visible: root.activeTab !== "settings"
                 contentWidth: width
                 contentHeight: Math.max(root.gridHeight, height)
                 boundsBehavior: Flickable.StopAtBounds
@@ -442,6 +531,24 @@ PanelWindow {
                     font.pixelSize: 11
                 }
             }
+        }
+    }
+
+    FileDialog {
+        id: wallpaperFileDialog
+        title: "Choose a wallpaper"
+        fileMode: FileDialog.OpenFile
+        nameFilters: [
+            "Supported wallpapers (*.png *.jpg *.jpeg *.webp *.bmp *.tif *.tiff *.tga *.svg *.ppm *.pgm *.pbm *.xpm *.xbm *.gif *.mp4 *.webm *.mov *.m4v *.mkv)",
+            "All files (*)"
+        ]
+
+        onAccepted: {
+            let path = selectedFile.toString()
+            if (path.startsWith("file://"))
+                path = decodeURIComponent(path.replace(/^file:\/\//, ""))
+            root.closeRequested()
+            Quickshell.execDetached(["a16een-wallpaper", "set-path", path])
         }
     }
 
