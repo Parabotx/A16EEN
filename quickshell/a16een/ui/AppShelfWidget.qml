@@ -14,10 +14,11 @@ PanelWindow {
 
     readonly property int bottomGap: root.navbarPosition === "bottom" ? 84 : 34
     readonly property int shelfWidth: root.modelData
-        ? Math.min(Math.max(208, root.activeApps.length * 49 + 20), Math.max(180, root.modelData.width - 24))
-        : 240
-    readonly property int shelfRadius: root.shape === "capsule" ? 32
-        : root.shape === "rounded" ? 17 : 9
+        ? Math.min(Math.max(root.activeApps.length > 0 ? root.activeApps.length * 39 + 22 : 166,
+            root.activeApps.length > 0 ? 58 : 150), Math.max(150, root.modelData.width - 24))
+        : 200
+    readonly property int shelfRadius: root.shape === "capsule" ? 24
+        : root.shape === "rounded" ? 12 : 7
     readonly property var activeApps: {
         const catalog = [...DesktopEntries.applications.values]
         const resolved = []
@@ -55,7 +56,7 @@ PanelWindow {
     Rectangle {
         id: shelfCard
         width: root.shelfWidth
-        height: root.activeApps.length ? 64 : 46
+        height: root.activeApps.length ? 48 : 38
         anchors.horizontalCenter: parent.horizontalCenter
         anchors.bottom: parent.bottom
         anchors.bottomMargin: root.bottomGap
@@ -84,25 +85,24 @@ PanelWindow {
 
                 delegate: Item {
                     required property var modelData
-                    width: 46
-                    height: 54
+                    width: 36
+                    height: 36
 
                     Rectangle {
                         id: appTile
-                        anchors.horizontalCenter: parent.horizontalCenter
-                        anchors.top: parent.top
-                        width: 43
-                        height: 43
-                        radius: root.shape === "capsule" ? 14
-                            : root.shape === "rounded" ? 10 : 5
+                        anchors.centerIn: parent
+                        width: 32
+                        height: 32
+                        radius: root.shape === "capsule" ? 12
+                            : root.shape === "rounded" ? 8 : 4
                         color: appMouse.containsMouse ? "#28FFFFFF" : "transparent"
                         border.width: appMouse.containsMouse ? 1 : 0
                         border.color: "#28FFFFFF"
 
                         Image {
                             anchors.centerIn: parent
-                            width: 25
-                            height: 25
+                            width: 21
+                            height: 21
                             source: modelData.icon.length
                                 ? Quickshell.iconPath(modelData.icon, "application-x-executable")
                                 : Quickshell.iconPath("application-x-executable", "application-x-executable")
@@ -129,18 +129,6 @@ PanelWindow {
                                 }
                             }
                         }
-                    }
-
-                    Text {
-                        anchors.top: appTile.bottom
-                        anchors.topMargin: 1
-                        width: parent.width
-                        text: modelData.name
-                        color: "#AEB8C5"
-                        font.family: "Inter"
-                        font.pixelSize: 6
-                        horizontalAlignment: Text.AlignHCenter
-                        elide: Text.ElideRight
                     }
 
                     Rectangle {
