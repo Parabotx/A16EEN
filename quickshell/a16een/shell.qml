@@ -1649,6 +1649,9 @@ ShellRoot {
         editorialTimeWidgetEnabled: root.editorialTimeWidgetEnabled
         musicWidgetEnabled: root.musicWidgetEnabled
         quotesWidgetEnabled: root.quotesWidgetEnabled
+        appShelfWidgetEnabled: root.appShelfWidgetEnabled
+        appShelfShape: root.appShelfShape
+        appShelfApps: root.appShelfApps
         timeUse24Hour: root.timeUse24Hour
         timeShowSeconds: root.timeShowSeconds
         doNotDisturb: root.doNotDisturb
