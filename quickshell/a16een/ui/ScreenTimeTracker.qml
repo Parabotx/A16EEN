@@ -18,6 +18,9 @@ Item {
     property bool usageLoaded: false
     property bool usageDirty: false
     property int clockRevision: 0
+    // Sampling baseline is recreated after reload, idle, lock, or a long event-loop pause.
+    property double lastSampleMs: 0
+    property double pendingActiveMs: 0
 
     readonly property string usagePath: Quickshell.stateDir + "/screen-time.json"
 
@@ -41,6 +44,18 @@ Item {
         for (let offset = 0; offset < 7; offset++) {
             total += Math.max(0, Number((days[root.dateKey(date)] || {}).totalSeconds) || 0)
             date.setDate(date.getDate() - 1)
+        }
+        return total
+    }
+
+    readonly property int monthSeconds: {
+        root.clockRevision
+        const days = root.usageData && root.usageData.days ? root.usageData.days : ({})
+        const monthPrefix = root.todayKey.slice(0, 7)
+        let total = 0
+        for (const dayKey in days) {
+            if (String(dayKey).slice(0, 7) === monthPrefix)
+                total += Math.max(0, Number(days[dayKey].totalSeconds) || 0)
         }
         return total
     }
@@ -93,11 +108,20 @@ Item {
         if (!window)
             return null
 
-        const rawId = String(window.app_id || window.appId || window.title || "").trim()
+        // Only count real application windows. Falling back to the title made
+        // Quickshell/A16EEN surfaces look like apps during shell restarts.
+        const rawId = String(window.app_id || window.appId || "").trim()
         if (!rawId)
             return null
 
         const normalized = root.normalizeId(rawId)
+        const internalAppPrefixes = [
+            "quickshell", "orgquickshell", "a16een", "orga16een",
+            "niri", "orgniri", "swaylock", "orgswaylock", "gtklock", "orggtklock"
+        ]
+        if (internalAppPrefixes.some(prefix => normalized.startsWith(prefix)))
+            return null
+
         const leaf = root.normalizeId(rawId.split(".").pop())
         const entries = [...DesktopEntries.applications.values]
         const entry = entries.find(candidate => {
@@ -124,6 +148,8 @@ Item {
         if (root.idle === nextValue)
             return
         root.idle = nextValue
+        root.lastSampleMs = 0
+        root.pendingActiveMs = 0
         if (nextValue)
             saveTimer.restart()
     }
@@ -166,7 +192,7 @@ Item {
         }
 
         const keys = Object.keys(cleanedDays).sort()
-        while (keys.length > 30)
+        while (keys.length > 90)
             delete cleanedDays[keys.shift()]
 
         root.usageData = { version: 1, days: cleanedDays }
@@ -176,12 +202,40 @@ Item {
 
     function recordSecond() {
         root.clockRevision++
-        if (!root.trackingActive)
+        const now = Date.now()
+
+        if (!root.usageLoaded || !root.trackingActive) {
+            root.lastSampleMs = 0
+            root.pendingActiveMs = 0
             return
+        }
 
         const info = root.activeAppInfo()
-        if (!info || !info.id)
+        if (!info || !info.id) {
+            root.lastSampleMs = 0
+            root.pendingActiveMs = 0
             return
+        }
+
+        // Establish a fresh baseline after startup, focus loss, or idle.
+        // This prevents a restart / suspended event loop from being credited as usage.
+        if (root.lastSampleMs <= 0) {
+            root.lastSampleMs = now
+            return
+        }
+
+        const elapsedMs = now - root.lastSampleMs
+        root.lastSampleMs = now
+        if (!Number.isFinite(elapsedMs) || elapsedMs <= 0 || elapsedMs > 2500) {
+            root.pendingActiveMs = 0
+            return
+        }
+
+        root.pendingActiveMs += elapsedMs
+        const elapsedSeconds = Math.floor(root.pendingActiveMs / 1000)
+        if (elapsedSeconds < 1)
+            return
+        root.pendingActiveMs -= elapsedSeconds * 1000
 
         const key = root.dateKey(new Date())
         const oldDays = root.usageData && root.usageData.days ? root.usageData.days : ({})
@@ -198,21 +252,23 @@ Item {
         const oldApp = nextApps[info.id] || ({ seconds: 0, name: info.name })
         nextApps[info.id] = {
             name: info.name,
-            seconds: Math.max(0, Number(oldApp.seconds) || 0) + 1
+            seconds: Math.max(0, Number(oldApp.seconds) || 0) + elapsedSeconds
         }
 
-        const nextTotal = Math.max(0, Number(oldDay.totalSeconds) || 0) + 1
+        const previousTotal = Math.max(0, Number(oldDay.totalSeconds) || 0)
+        const nextTotal = previousTotal + elapsedSeconds
         nextDays[key] = { totalSeconds: nextTotal, apps: nextApps }
 
+        // Keep enough history for the full current calendar month and weekly totals.
         const keys = Object.keys(nextDays).sort()
-        while (keys.length > 30)
+        while (keys.length > 90)
             delete nextDays[keys.shift()]
 
         root.usageData = { version: 1, days: nextDays }
         root.usageDirty = true
 
-        // Persist every 15 seconds instead of continuously writing the state file.
-        if (nextTotal % 15 === 0)
+        // Save on each 15-second boundary crossed, including delayed timer ticks.
+        if (Math.floor(nextTotal / 15) > Math.floor(previousTotal / 15))
             saveTimer.restart()
     }
 
@@ -282,6 +338,8 @@ Item {
     }
 
     onLockedChanged: {
+        root.lastSampleMs = 0
+        root.pendingActiveMs = 0
         if (root.locked)
             saveTimer.restart()
     }
