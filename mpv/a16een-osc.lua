@@ -263,7 +263,7 @@ local function render()
     elseif tiny or compact then
         items = { "subtitle", "audio", "speed", "mute", "fullscreen" }
     else
-        items = { "subtitle", "audio", "speed", "volume", "loop", "screenshot", "fullscreen" }
+        items = { "subtitle", "audio", "speed", "mute", "loop", "screenshot", "fullscreen" }
     end
     local labels = {
         subtitle = "CC",
@@ -286,7 +286,7 @@ local function render()
             or (name == "mute" and mp.get_property_bool("mute", false))
         draw_button(lines, name, bx, row_y + 25, button_w, 29, labels[name],
             (name == "speed" or name == "subtitle") and 9 or 13,
-            { active = active, active_color = active and name == "volume" and "#E7A2A2" or accent,
+            { active = active, active_color = active and name == "mute" and "#E7A2A2" or accent,
               active_text = ink, color = name == "speed" and accent or paper,
               mx = mx, my = my, hovering = hovering })
     end
