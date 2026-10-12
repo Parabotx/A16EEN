@@ -1,0 +1,121 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+CONFIG_HOME="\${XDG_CONFIG_HOME:-$HOME/.config}"
+STATE_HOME="\${XDG_STATE_HOME:-$HOME/.local/state}"
+MPV_DIR="$CONFIG_HOME/mpv"
+MPV_CONF="$MPV_DIR/mpv.conf"
+THEME_CONF="$MPV_DIR/a16een.conf"
+SCRIPT_FILE="$CONFIG_HOME/a16een/mpv/a16een-osc.lua"
+STATE_DIR="$STATE_HOME/a16een"
+BACKUP_ROOT="$STATE_DIR/backups"
+DISABLED_MARKER="$STATE_DIR/mpv-theme-disabled"
+
+BEGIN_MARKER="# >>> A16EEN MPV theme (managed)"
+END_MARKER="# <<< A16EEN MPV theme (managed)"
+INCLUDE_LINE="include=~~/a16een.conf"
+
+die() {
+    printf 'A16EEN MPV theme: %s\n' "$*" >&2
+    exit 1
+}
+
+backup_config() {
+    [[ -f "$MPV_CONF" ]] || return 0
+    local stamp backup_dir
+    stamp="$(date +%Y%m%d-%H%M%S)-$$"
+    backup_dir="$BACKUP_ROOT/mpv-$stamp"
+    mkdir -p "$backup_dir"
+    cp -L -- "$MPV_CONF" "$backup_dir/mpv.conf"
+    printf 'Backed up MPV configuration to %s\n' "$backup_dir/mpv.conf"
+}
+
+is_enabled() {
+    [[ -f "$MPV_CONF" ]] &&
+        grep -Eq '^[[:space:]]*include[[:space:]]*=[[:space:]]*~~/a16een\.conf([[:space:]]*(#.*)?)?$' "$MPV_CONF"
+}
+
+enable_theme() {
+    [[ -s "$THEME_CONF" && -s "$SCRIPT_FILE" ]] ||
+        die "the theme files are missing; run the A16EEN installer first."
+
+    mkdir -p "$MPV_DIR" "$STATE_DIR"
+    touch "$MPV_CONF"
+
+    if ! is_enabled; then
+        backup_config
+        {
+            printf '\n%s\n' "$BEGIN_MARKER"
+            printf '%s\n' "$INCLUDE_LINE"
+            printf '%s\n' "$END_MARKER"
+        } >> "$MPV_CONF"
+    fi
+
+    rm -f "$DISABLED_MARKER"
+    printf 'A16EEN MPV controls enabled. Restart MPV to apply.\n'
+}
+
+disable_theme() {
+    mkdir -p "$MPV_DIR" "$STATE_DIR"
+    if [[ ! -f "$MPV_CONF" ]] || ! is_enabled; then
+        : > "$DISABLED_MARKER"
+        printf 'A16EEN MPV controls are already disabled.\n'
+        return 0
+    fi
+
+    backup_config
+    local tmp
+    tmp="$(mktemp "$MPV_DIR/.mpv.conf.XXXXXX")"
+    awk -v begin="$BEGIN_MARKER" -v end="$END_MARKER" '
+        $0 == begin { skipping = 1; next }
+        skipping && $0 == end { skipping = 0; next }
+        skipping { next }
+        /^[[:space:]]*include[[:space:]]*=[[:space:]]*~~\/a16een\.conf([[:space:]]*(#.*)?)?$/ { next }
+        { print }
+    ' "$MPV_CONF" > "$tmp"
+    cat "$tmp" > "$MPV_CONF"
+    rm -f "$tmp"
+    : > "$DISABLED_MARKER"
+    printf 'A16EEN MPV controls disabled. MPV will use its normal on-screen controller after restart.\n'
+}
+
+show_status() {
+    if [[ -f "$DISABLED_MARKER" ]]; then
+        printf 'A16EEN MPV theme: disabled by user\n'
+    elif is_enabled; then
+        printf 'A16EEN MPV theme: enabled\n'
+    else
+        printf 'A16EEN MPV theme: not enabled\n'
+    fi
+    printf 'Theme config: %s\n' "$THEME_CONF"
+    printf 'Theme script: %s\n' "$SCRIPT_FILE"
+}
+
+action="\${1:-status}"
+case "$action" in
+    on|enable) enable_theme ;;
+    off|disable) disable_theme ;;
+    status) show_status ;;
+    install)
+        if [[ -f "$DISABLED_MARKER" ]]; then
+            printf 'Keeping the user-disabled MPV theme disabled.\n'
+        else
+            enable_theme
+        fi
+        ;;
+    -h|--help|help)
+        cat <<'HELP'
+A16EEN MPV theme
+
+Usage:
+  a16 mpv theme status   Show theme status
+  a16 mpv theme on       Enable the A16EEN controls
+  a16 mpv theme off      Restore MPV's normal on-screen controller
+
+Restart MPV after changing the setting. Existing MPV configuration is backed up
+before this command changes mpv.conf. User settings outside the A16EEN include
+are preserved.
+HELP
+        ;;
+    *) die "usage: a16 mpv theme on|off|status" ;;
+esac
