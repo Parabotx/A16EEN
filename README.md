@@ -29,11 +29,20 @@ The project is being designed as a cohesive desktop product rather than a conven
 - Searchable 24-hour text clipboard history with one-line previews and click-to-copy
 - Safe session controls with confirmation for reboot and power-off
 - GTKLock password-entry lock screen with visible cursor, live time/date, and the current wallpaper (including a captured frame for animated backgrounds)
+- Configurable inactivity locking, plus secure lock-before-suspend and lock-on-resume behavior
 - Volume, microphone, media, and brightness keybindings
 - Dedicated **A16EEN** Wayland session entry
 - Lightweight curated font set for UI, display, text, and mono use
 - Persistent user wallpaper collection with `a16 wallpaper`
 - Isolated configuration under `~/.config/a16een/`
+
+## Lock screen
+
+Open the Command Center with **Super + /** and run:
+
+    /lockscreen
+
+Choose whether to lock after inactivity and select a timeout of **1, 3, 5, 10, 15, or 30 minutes**. The page also controls locking around suspend/lid-close and resume. Before sleep, A16EEN requests its existing secure lock flow and waits for the locker's ready signal; after wake it requests the lock again as a fallback. Settings are stored in `~/.config/a16een/lockscreen.conf`.
 
 ## Clipboard history
 
