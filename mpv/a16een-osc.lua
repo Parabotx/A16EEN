@@ -123,7 +123,7 @@ local function render()
     local y = math.floor(height - h - 24)
     local cx = x + w / 2
     local compact = width < 760
-    local tiny = width < 520
+    local tiny = width < 420
     local mx, my, hovering = current_mouse()
     local lines = {}
     areas = {
@@ -169,7 +169,7 @@ local function render()
     end
 
     local cy = y + 37
-    local gap = compact and 58 or 70
+    local gap = tiny and 44 or compact and 58 or 70
     draw_button(lines, "rewind", cx - gap, cy, 34, 34, "−10", 10, paper, nil, 0xE2, mx, my, hovering)
 
     local paused = mp.get_property_bool("pause", false)
@@ -179,7 +179,7 @@ local function render()
     -- Keep secondary controls quiet; shrink the group on narrow windows.
     local right_items
     if tiny then
-        right_items = { "volume", "fullscreen" }
+        right_items = {}
     elseif compact then
         right_items = { "subtitle", "audio", "volume", "fullscreen" }
     else
