@@ -530,7 +530,7 @@ PanelWindow {
         root.selectedCommandIndex = 0
         root.widgetsRequested()
         Qt.callLater(() => {
-            if (root.widgetViewOpen)
+            if (root.opened && root.widgetViewOpen)
                 widgetSection.forceActiveFocus()
         })
     }
@@ -539,7 +539,10 @@ PanelWindow {
         root.widgetsCloseRequested()
         root.commandText = "/"
         root.selectedCommandIndex = 0
-        Qt.callLater(() => search.forceActiveFocus())
+        Qt.callLater(() => {
+            if (root.opened && !root.widgetViewOpen)
+                search.forceActiveFocus()
+        })
     }
 
     screen: modelData
@@ -1709,12 +1712,20 @@ PanelWindow {
             root.controlDetail = ""
             Qt.callLater(() => widgetSection.forceActiveFocus())
         } else if (root.opened && !root.powerViewOpen && !root.controlViewOpen && !root.iconThemeViewOpen && !root.workspacePresetViewOpen && !root.navbarViewOpen && !root.lockScreenViewOpen) {
-            Qt.callLater(() => search.forceActiveFocus())
+            Qt.callLater(() => {
+                if (root.opened && !root.widgetViewOpen && !root.powerViewOpen
+                        && !root.controlViewOpen && !root.iconThemeViewOpen
+                        && !root.workspacePresetViewOpen && !root.navbarViewOpen
+                        && !root.lockScreenViewOpen)
+                    search.forceActiveFocus()
+            })
         }
     }
 
     onOpenedChanged: {
         if (!opened) {
+            // A closed command surface must not leave a hidden nested view latched open.
+            root.widgetsCloseRequested()
             root.powerViewOpen = false
             root.controlViewOpen = false
             root.controlDetail = ""
