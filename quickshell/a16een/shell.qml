@@ -1619,6 +1619,7 @@ ShellRoot {
         dataMeterError: root.dataMeterError
         screenTimeTodaySeconds: screenTimeTracker.todaySeconds
         screenTimeWeekSeconds: screenTimeTracker.weekSeconds
+        screenTimeMonthSeconds: screenTimeTracker.monthSeconds
         screenTimeTopApps: screenTimeTracker.topApps
         screenTimeTrackingActive: screenTimeTracker.trackingActive
         screenTimeStatus: screenTimeTracker.statusText
