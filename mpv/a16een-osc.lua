@@ -258,9 +258,9 @@ local function activate(name)
     elseif name == "forward" then
         seek_by(10)
     elseif name == "subtitle" then
-        mp.commandv("cycle", "sub")
+        mp.commandv("cycle", "sid")
     elseif name == "audio" then
-        mp.commandv("cycle", "audio")
+        mp.commandv("cycle", "aid")
     elseif name == "volume" then
         mp.set_property_bool("mute", not mp.get_property_bool("mute", false))
     elseif name == "fullscreen" then
