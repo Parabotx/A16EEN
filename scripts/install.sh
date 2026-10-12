@@ -11,6 +11,12 @@ BACKUP_ROOT="$STATE_DIR/backups"
 USER_WALLPAPER_DIR="$HOME/Pictures/a16een"
 WALLPAPER_STATE="$STATE_DIR/wallpaper"
 
+# MPV theme files live in an A16EEN-owned sibling directory so the user's
+# existing MPV scripts and configuration remain untouched.
+MPV_XDG_CONFIG="${XDG_CONFIG_HOME:-$HOME/.config}"
+MPV_CONFIG_DIR="$MPV_XDG_CONFIG/mpv"
+MPV_THEME_DIR="$MPV_XDG_CONFIG/a16een/mpv"
+
 PACKAGES="
 niri
 quickshell
@@ -305,6 +311,32 @@ install -m644 "$ROOT_DIR/lockscreen/gtklock.css" "$LOCKSCREEN_DIR/gtklock.css"
 install -m644 "$ROOT_DIR/lockscreen/gtklock.ui" "$LOCKSCREEN_DIR/gtklock.ui"
 install -m644 "$ROOT_DIR/lockscreen/gtklock.ini" "$LOCKSCREEN_DIR/gtklock.ini"
 
+# Deploy MPV's A16EEN controls separately from the user's normal MPV settings.
+# Back up only A16EEN-owned theme files when an update replaces a changed file.
+echo "==> Deploying A16EEN MPV theme"
+mkdir -p "$MPV_CONFIG_DIR" "$MPV_THEME_DIR"
+for theme_file in a16een-osc.lua a16een.conf; do
+    case "$theme_file" in
+        a16een-osc.lua)
+            source_file="$ROOT_DIR/mpv/a16een-osc.lua"
+            target_file="$MPV_THEME_DIR/a16een-osc.lua"
+            ;;
+        a16een.conf)
+            source_file="$ROOT_DIR/mpv/a16een.conf"
+            target_file="$MPV_CONFIG_DIR/a16een.conf"
+            ;;
+    esac
+
+    if [ -f "$target_file" ] && ! cmp -s "$source_file" "$target_file"; then
+        MPV_BACKUP_DIR="$BACKUP_ROOT/mpv-$(date +%Y%m%d-%H%M%S)-$"
+        mkdir -p "$MPV_BACKUP_DIR"
+        cp -L "$target_file" "$MPV_BACKUP_DIR/$theme_file"
+        echo "==> Backed up the previous A16EEN MPV theme file: $MPV_BACKUP_DIR/$theme_file"
+    fi
+    install -m644 "$source_file" "$target_file"
+done
+
+
 # Restore the persistent A16EEN workspace registry after every deployment.
 # Workspace creation/removal is handled live through Niri IPC; the source
 # script recreates any user-defined named workspaces that are not currently
@@ -359,6 +391,10 @@ sudo install -Dm755 "$ROOT_DIR/scripts/a16een-navbar-content" /usr/local/bin/a16
 sudo install -Dm755 "$ROOT_DIR/scripts/a16een-workspaces" /usr/local/bin/a16een-workspaces
 sudo install -Dm755 "$ROOT_DIR/scripts/a16een-focus-workspace" /usr/local/bin/a16een-focus-workspace
 sudo install -Dm755 "$ROOT_DIR/scripts/a16een-workspace-preset" /usr/local/bin/a16een-workspace-preset
+sudo install -Dm755 "$ROOT_DIR/scripts/a16een-mpv-theme" /usr/local/bin/a16een-mpv-theme
+
+# Enable the MPV theme on first install/update, but respect an explicit user opt-out.
+/usr/local/bin/a16een-mpv-theme install
 
 # Initialize persistent navbar appearance state from the saved workspace registry.
 # The helper merges defaults and never overwrites any previously stored choices.
