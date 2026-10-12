@@ -59,4 +59,10 @@ with tempfile.TemporaryDirectory() as temp:
     loaded = run(env, "load")
     assert loaded["appShelfApps"] == saved["appShelfApps"]
 
+    # Circle is a supported persistent layout, not only a visual-only setting.
+    circle_saved = run(env, "save", json.dumps({"appShelfShape": "circle"}))
+    assert circle_saved["appShelfShape"] == "circle"
+    circle_loaded = run(env, "load")
+    assert circle_loaded["appShelfShape"] == "circle"
+
 print("Widget settings persistence tests passed.")
