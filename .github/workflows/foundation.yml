@@ -263,7 +263,12 @@ jobs:
           grep -Fq 'appShelfApps: root.appShelfApps' quickshell/a16een/shell.qml
           grep -Fq 'appShelfAppsRequested' quickshell/a16een/ui/WidgetSection.qml
           grep -Fq 'onClicked: root.removeAppShelfApplication(modelData.desktopId)' quickshell/a16een/ui/WidgetSection.qml
-          grep -Fq 'height: root.activeApps.length ? 48 : 38' quickshell/a16een/ui/AppShelfWidget.qml
+          grep -Fq 'anchors.bottomMargin: root.centerFromBottom - height / 2' quickshell/a16een/ui/AppShelfWidget.qml
+          grep -Fq 'NumberAnimation {' quickshell/a16een/ui/AppShelfWidget.qml
+          grep -Fq 'function orbitAngleFor(index)' quickshell/a16een/ui/AppShelfWidget.qml
+          grep -Fq '{ value: "circle", label: "CIRCLE" }' quickshell/a16een/ui/WidgetSection.qml
+          grep -Fq 'Layout.preferredHeight: root.selectedWidgetId === "app-shelf" ? 38 : 48' quickshell/a16een/ui/WidgetSection.qml
+          grep -Fq '"circle"' scripts/a16een-widget-settings
           grep -Fq 'visible: root.selectedWidgetId !== "app-shelf"' quickshell/a16een/ui/WidgetSection.qml
           grep -Fq 'anchors.horizontalCenter: parent.horizontalCenter' quickshell/a16een/ui/AppShelfWidget.qml
           test -f quickshell/a16een/assets/quotes.json
