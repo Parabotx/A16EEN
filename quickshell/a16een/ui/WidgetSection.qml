@@ -374,13 +374,14 @@ Item {
 
                 Rectangle {
                     Layout.fillWidth: true
-                    Layout.topMargin: 10
-                    Layout.bottomMargin: 18
+                    Layout.topMargin: root.selectedWidgetId === "app-shelf" ? 4 : 10
+                    Layout.bottomMargin: root.selectedWidgetId === "app-shelf" ? 8 : 18
                     height: 1
                     color: root.dividerColor
                 }
 
                 Text {
+                    visible: root.selectedWidgetId !== "app-shelf"
                     text: "ABOUT THIS WIDGET"
                     color: root.textMuted
                     font.pixelSize: 8
@@ -389,6 +390,7 @@ Item {
                 }
 
                 Text {
+                    visible: root.selectedWidgetId !== "app-shelf"
                     Layout.fillWidth: true
                     Layout.topMargin: 8
                     text: root.selectedWidget.detail || ""
@@ -397,7 +399,10 @@ Item {
                     wrapMode: Text.WordWrap
                 }
 
-                Item { Layout.preferredHeight: 12 }
+                Item {
+                    visible: root.selectedWidgetId !== "app-shelf"
+                    Layout.preferredHeight: 12
+                }
 
                 // Editorial Time is the first widget with configurable options.
                 // Other widgets can add their own controls to this same panel.
@@ -549,7 +554,15 @@ Item {
                     Layout.fillWidth: true
                     Layout.fillHeight: true
                     Layout.minimumHeight: 0
-                    spacing: 8
+                    spacing: 7
+
+                    Text {
+                        text: "APP SHELF SETTINGS"
+                        color: root.textMuted
+                        font.pixelSize: 8
+                        font.weight: Font.DemiBold
+                        font.letterSpacing: 1.0
+                    }
 
                     Text {
                         text: "DOCK SHAPE"
@@ -646,7 +659,7 @@ Item {
 
                     Flickable {
                         Layout.fillWidth: true
-                        Layout.preferredHeight: root.appShelfApps.length > 0 ? 50 : 0
+                        Layout.preferredHeight: root.appShelfApps.length > 0 ? 42 : 0
                         contentWidth: pinnedAppRow.implicitWidth
                         contentHeight: height
                         clip: true
@@ -663,8 +676,8 @@ Item {
 
                                 delegate: Rectangle {
                                     required property var modelData
-                                    width: 116
-                                    height: 30
+                                    width: 148
+                                    height: 34
                                     anchors.verticalCenter: parent.verticalCenter
                                     radius: 8
                                     color: root.controlBackground
@@ -674,25 +687,25 @@ Item {
                                     Row {
                                         anchors.fill: parent
                                         anchors.leftMargin: 7
-                                        anchors.rightMargin: 3
+                                        anchors.rightMargin: 4
                                         spacing: 5
 
                                         Image {
-                                            width: 16
-                                            height: 16
+                                            width: 17
+                                            height: 17
                                             anchors.verticalCenter: parent.verticalCenter
                                             source: modelData.icon.length
                                                 ? Quickshell.iconPath(modelData.icon, "application-x-executable")
                                                 : Quickshell.iconPath("application-x-executable", "application-x-executable")
-                                            sourceSize.width: 32
-                                            sourceSize.height: 32
+                                            sourceSize.width: 34
+                                            sourceSize.height: 34
                                             asynchronous: true
                                             smooth: true
                                             fillMode: Image.PreserveAspectFit
                                         }
 
                                         Text {
-                                            width: 66
+                                            width: 76
                                             height: parent.height
                                             text: modelData.name
                                             color: root.textPrimary
@@ -701,14 +714,23 @@ Item {
                                             elide: Text.ElideRight
                                         }
 
-                                        Text {
-                                            width: 13
-                                            height: parent.height
-                                            text: "×"
-                                            color: removePinMouse.containsMouse ? "#111318" : root.textMuted
-                                            font.pixelSize: 13
-                                            horizontalAlignment: Text.AlignHCenter
-                                            verticalAlignment: Text.AlignVCenter
+                                        Rectangle {
+                                            width: 22
+                                            height: 22
+                                            anchors.verticalCenter: parent.verticalCenter
+                                            radius: 7
+                                            color: removePinMouse.containsMouse ? "#E2E5EA" : "#ECEFF3"
+                                            border.width: 1
+                                            border.color: root.controlBorder
+                                            z: 2
+
+                                            Text {
+                                                anchors.centerIn: parent
+                                                text: "×"
+                                                color: root.textPrimary
+                                                font.pixelSize: 14
+                                                font.weight: Font.Medium
+                                            }
 
                                             MouseArea {
                                                 id: removePinMouse
