@@ -259,7 +259,12 @@ jobs:
           test -f quickshell/a16een/ui/AppShelfWidget.qml
           grep -Fq 'id: "app-shelf"' quickshell/a16een/ui/WidgetCatalog.js
           grep -Fq 'appShelfWidgetEnabled' quickshell/a16een/shell.qml
+          grep -Fq 'appShelfWidgetEnabled: root.appShelfWidgetEnabled' quickshell/a16een/shell.qml
+          grep -Fq 'appShelfApps: root.appShelfApps' quickshell/a16een/shell.qml
           grep -Fq 'appShelfAppsRequested' quickshell/a16een/ui/WidgetSection.qml
+          grep -Fq 'onClicked: root.removeAppShelfApplication(modelData.desktopId)' quickshell/a16een/ui/WidgetSection.qml
+          grep -Fq 'height: root.activeApps.length ? 48 : 38' quickshell/a16een/ui/AppShelfWidget.qml
+          grep -Fq 'visible: root.selectedWidgetId !== "app-shelf"' quickshell/a16een/ui/WidgetSection.qml
           grep -Fq 'anchors.horizontalCenter: parent.horizontalCenter' quickshell/a16een/ui/AppShelfWidget.qml
           test -f quickshell/a16een/assets/quotes.json
           test -f quickshell/a16een/assets/icons/quote-mark.svg
