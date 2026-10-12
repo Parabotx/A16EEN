@@ -1,7 +1,7 @@
 {
-  "version": 4,
+  "version": 5,
   "title": "A16EEN — The Wealth Mindset",
-  "description": "An offline collection of original, hard-edged reflections on capital, ownership, cash flow, business, negotiation, leverage, risk, and ambition.",
+  "description": "An offline collection of original reflections on wealth, capital, power, human nature, influence, manipulation awareness, strategy, reputation, and ambition.",
   "quotes": [
     {
       "id": "big-money",
@@ -448,6 +448,496 @@
       "id": "a16een-prize",
       "category": "A16EEN",
       "text": "Build something that keeps paying after the applause stops.",
+      "author": "A16EEN",
+      "source": "The Wealth Mindset"
+    },
+    {
+      "id": "power-quiet",
+      "category": "Power",
+      "text": "Real power rarely announces itself; it changes what becomes possible.",
+      "author": "A16EEN",
+      "source": "The Wealth Mindset"
+    },
+    {
+      "id": "silence-leverage",
+      "category": "Strategy",
+      "text": "Silence is leverage when everyone else is desperate to be understood.",
+      "author": "A16EEN",
+      "source": "The Wealth Mindset"
+    },
+    {
+      "id": "reason-behind-reason",
+      "category": "Human nature",
+      "text": "Listen for the reason behind the reason.",
+      "author": "A16EEN",
+      "source": "The Wealth Mindset"
+    },
+    {
+      "id": "attention-currency",
+      "category": "Influence",
+      "text": "Attention is currency. Spend it where the return is real.",
+      "author": "A16EEN",
+      "source": "The Wealth Mindset"
+    },
+    {
+      "id": "fear-respect",
+      "category": "Power",
+      "text": "Some people call it respect when what they feel is fear.",
+      "author": "A16EEN",
+      "source": "The Wealth Mindset"
+    },
+    {
+      "id": "govern-self",
+      "category": "Discipline",
+      "text": "The first person you must learn to govern is yourself.",
+      "author": "A16EEN",
+      "source": "The Wealth Mindset"
+    },
+    {
+      "id": "read-room",
+      "category": "Strategy",
+      "text": "Read the room before you try to rule it.",
+      "author": "A16EEN",
+      "source": "The Wealth Mindset"
+    },
+    {
+      "id": "secret-access",
+      "category": "Influence",
+      "text": "A secret can buy access; integrity decides what you do with it.",
+      "author": "A16EEN",
+      "source": "The Wealth Mindset"
+    },
+    {
+      "id": "approval-cost",
+      "category": "Human nature",
+      "text": "The need to be liked is expensive in a negotiation.",
+      "author": "A16EEN",
+      "source": "The Wealth Mindset"
+    },
+    {
+      "id": "flattery-question",
+      "category": "Manipulation",
+      "text": "Flattery is sometimes a question disguised as a compliment.",
+      "author": "A16EEN",
+      "source": "The Wealth Mindset"
+    },
+    {
+      "id": "patterns-promises",
+      "category": "Judgment",
+      "text": "Watch patterns, not promises. Repetition speaks plainly.",
+      "author": "A16EEN",
+      "source": "The Wealth Mindset"
+    },
+    {
+      "id": "charm-character",
+      "category": "Human nature",
+      "text": "Charm opens the door. Character tells you what entered.",
+      "author": "A16EEN",
+      "source": "The Wealth Mindset"
+    },
+    {
+      "id": "urgency-scarcity",
+      "category": "Manipulation",
+      "text": "Scarcity creates urgency; clear thinking keeps urgency from owning you.",
+      "author": "A16EEN",
+      "source": "The Wealth Mindset"
+    },
+    {
+      "id": "emotional-handle",
+      "category": "Dark psychology",
+      "text": "Whoever can provoke you on command has found a handle.",
+      "author": "A16EEN",
+      "source": "The Wealth Mindset"
+    },
+    {
+      "id": "insult-steering",
+      "category": "Discipline",
+      "text": "If every insult controls your next move, you are being steered.",
+      "author": "A16EEN",
+      "source": "The Wealth Mindset"
+    },
+    {
+      "id": "learn-manipulation",
+      "category": "Dark psychology",
+      "text": "Study manipulation so you recognize its shadow before it reaches you.",
+      "author": "A16EEN",
+      "source": "The Wealth Mindset"
+    },
+    {
+      "id": "false-choice",
+      "category": "Manipulation",
+      "text": "A false choice is still a cage, even when both doors look golden.",
+      "author": "A16EEN",
+      "source": "The Wealth Mindset"
+    },
+    {
+      "id": "confidence-theater",
+      "category": "Judgment",
+      "text": "Confidence can be theater. Verify what the performance is selling.",
+      "author": "A16EEN",
+      "source": "The Wealth Mindset"
+    },
+    {
+      "id": "approval-leash",
+      "category": "Human nature",
+      "text": "Approval becomes a leash when you cannot live without it.",
+      "author": "A16EEN",
+      "source": "The Wealth Mindset"
+    },
+    {
+      "id": "proximity-trust",
+      "category": "Trust",
+      "text": "Access is not loyalty, and proximity is not trust.",
+      "author": "A16EEN",
+      "source": "The Wealth Mindset"
+    },
+    {
+      "id": "values-inconvenient",
+      "category": "Character",
+      "text": "People reveal their values when loyalty becomes inconvenient.",
+      "author": "A16EEN",
+      "source": "The Wealth Mindset"
+    },
+    {
+      "id": "information-balance",
+      "category": "Strategy",
+      "text": "Information changes the balance before the first word is spoken.",
+      "author": "A16EEN",
+      "source": "The Wealth Mindset"
+    },
+    {
+      "id": "unspoken-agenda",
+      "category": "Power",
+      "text": "Every room has an agenda; not every agenda is spoken aloud.",
+      "author": "A16EEN",
+      "source": "The Wealth Mindset"
+    },
+    {
+      "id": "power-restraint",
+      "category": "Power",
+      "text": "Power is not proving you can hurt someone. It is knowing you do not need to.",
+      "author": "A16EEN",
+      "source": "The Wealth Mindset"
+    },
+    {
+      "id": "revenge-interest",
+      "category": "Discipline",
+      "text": "Revenge rents space in your mind and charges interest.",
+      "author": "A16EEN",
+      "source": "The Wealth Mindset"
+    },
+    {
+      "id": "envy-study",
+      "category": "Human nature",
+      "text": "Envy studies your life more closely than admiration ever will.",
+      "author": "A16EEN",
+      "source": "The Wealth Mindset"
+    },
+    {
+      "id": "ego-prison",
+      "category": "Power",
+      "text": "An unchecked ego can turn a king into his own prisoner.",
+      "author": "A16EEN",
+      "source": "The Wealth Mindset"
+    },
+    {
+      "id": "reputation-after",
+      "category": "Reputation",
+      "text": "Reputation keeps working long after you leave the room.",
+      "author": "A16EEN",
+      "source": "The Wealth Mindset"
+    },
+    {
+      "id": "boundary-access",
+      "category": "Boundaries",
+      "text": "A boundary is the price of access to your peace.",
+      "author": "A16EEN",
+      "source": "The Wealth Mindset"
+    },
+    {
+      "id": "time-cost",
+      "category": "Leverage",
+      "text": "Make your time valuable by refusing what costs too much.",
+      "author": "A16EEN",
+      "source": "The Wealth Mindset"
+    },
+    {
+      "id": "moment-outcome",
+      "category": "Strategy",
+      "text": "Never confuse winning a moment with controlling the outcome.",
+      "author": "A16EEN",
+      "source": "The Wealth Mindset"
+    },
+    {
+      "id": "trust-verify",
+      "category": "Trust",
+      "text": "Trust slowly, verify quietly, and keep your judgment awake.",
+      "author": "A16EEN",
+      "source": "The Wealth Mindset"
+    },
+    {
+      "id": "timing-cost",
+      "category": "Strategy",
+      "text": "The right move at the wrong time is still the wrong move.",
+      "author": "A16EEN",
+      "source": "The Wealth Mindset"
+    },
+    {
+      "id": "deception-evidence",
+      "category": "Dark psychology",
+      "text": "Deception thrives where comfort matters more than evidence.",
+      "author": "A16EEN",
+      "source": "The Wealth Mindset"
+    },
+    {
+      "id": "consensus-power",
+      "category": "Judgment",
+      "text": "Power begins when you stop needing everyone to agree with you.",
+      "author": "A16EEN",
+      "source": "The Wealth Mindset"
+    },
+    {
+      "id": "patience-deliberate",
+      "category": "Strategy",
+      "text": "Patience is not passivity when the next move is deliberate.",
+      "author": "A16EEN",
+      "source": "The Wealth Mindset"
+    },
+    {
+      "id": "leverage-outcome",
+      "category": "Leverage",
+      "text": "Leverage changes an outcome without multiplying your effort.",
+      "author": "A16EEN",
+      "source": "The Wealth Mindset"
+    },
+    {
+      "id": "blindspots-expensive",
+      "category": "Power",
+      "text": "The higher you rise, the more expensive your blind spots become.",
+      "author": "A16EEN",
+      "source": "The Wealth Mindset"
+    },
+    {
+      "id": "money-compliance",
+      "category": "Money and power",
+      "text": "Money can buy compliance; it cannot purchase genuine allegiance.",
+      "author": "A16EEN",
+      "source": "The Wealth Mindset"
+    },
+    {
+      "id": "wealth-insecurity",
+      "category": "Wealth",
+      "text": "The loudest display of wealth can be a quiet confession of insecurity.",
+      "author": "A16EEN",
+      "source": "The Wealth Mindset"
+    },
+    {
+      "id": "money-choice",
+      "category": "Money",
+      "text": "Money is stored choice. Waste it, and your choices shrink.",
+      "author": "A16EEN",
+      "source": "The Wealth Mindset"
+    },
+    {
+      "id": "capital-time",
+      "category": "Capital",
+      "text": "Capital gives you time, and time gives you room to refuse.",
+      "author": "A16EEN",
+      "source": "The Wealth Mindset"
+    },
+    {
+      "id": "borrowed-future",
+      "category": "Debt",
+      "text": "Debt can turn tomorrow's labor into today's illusion of power.",
+      "author": "A16EEN",
+      "source": "The Wealth Mindset"
+    },
+    {
+      "id": "quiet-habits",
+      "category": "Wealth",
+      "text": "Build wealth quietly enough that your habits become the proof.",
+      "author": "A16EEN",
+      "source": "The Wealth Mindset"
+    },
+    {
+      "id": "money-score",
+      "category": "Human nature",
+      "text": "Watch how someone handles money when nobody is keeping score.",
+      "author": "A16EEN",
+      "source": "The Wealth Mindset"
+    },
+    {
+      "id": "desperation-terms",
+      "category": "Negotiation",
+      "text": "Desperation is expensive; it makes bad terms look like rescue.",
+      "author": "A16EEN",
+      "source": "The Wealth Mindset"
+    },
+    {
+      "id": "system-rules",
+      "category": "Ownership",
+      "text": "The person who owns the system often gets to set the rules.",
+      "author": "A16EEN",
+      "source": "The Wealth Mindset"
+    },
+    {
+      "id": "narrative-facts",
+      "category": "Influence",
+      "text": "A story can shape the room; facts decide what survives.",
+      "author": "A16EEN",
+      "source": "The Wealth Mindset"
+    },
+    {
+      "id": "incentives-ignore",
+      "category": "Strategy",
+      "text": "Learn what people protect, what they fear, and what they are paid to ignore.",
+      "author": "A16EEN",
+      "source": "The Wealth Mindset"
+    },
+    {
+      "id": "disclose-purpose",
+      "category": "Privacy",
+      "text": "Disclose with purpose. Privacy is not dishonesty.",
+      "author": "A16EEN",
+      "source": "The Wealth Mindset"
+    },
+    {
+      "id": "emotion-negotiate",
+      "category": "Discipline",
+      "text": "Keep your emotions honest, but never let them negotiate for you.",
+      "author": "A16EEN",
+      "source": "The Wealth Mindset"
+    },
+    {
+      "id": "observe-not-guarded",
+      "category": "Judgment",
+      "text": "Stay calm enough to observe, not so guarded that you become blind.",
+      "author": "A16EEN",
+      "source": "The Wealth Mindset"
+    },
+    {
+      "id": "distance-reveals",
+      "category": "Human nature",
+      "text": "Distance reveals what constant access keeps hidden.",
+      "author": "A16EEN",
+      "source": "The Wealth Mindset"
+    },
+    {
+      "id": "influence-not-dominate",
+      "category": "Power",
+      "text": "You do not need to dominate every room to influence its direction.",
+      "author": "A16EEN",
+      "source": "The Wealth Mindset"
+    },
+    {
+      "id": "fear-vs-respect",
+      "category": "Power",
+      "text": "Fear produces obedience; respect survives your absence.",
+      "author": "A16EEN",
+      "source": "The Wealth Mindset"
+    },
+    {
+      "id": "priced-choices",
+      "category": "Leverage",
+      "text": "If someone can set your price, they can limit your choices.",
+      "author": "A16EEN",
+      "source": "The Wealth Mindset"
+    },
+    {
+      "id": "truth-invoice",
+      "category": "Truth",
+      "text": "The truth can be costly; the lie usually sends the invoice later.",
+      "author": "A16EEN",
+      "source": "The Wealth Mindset"
+    },
+    {
+      "id": "silence-fear",
+      "category": "Human nature",
+      "text": "Not every silence is wisdom; some are fear in expensive clothes.",
+      "author": "A16EEN",
+      "source": "The Wealth Mindset"
+    },
+    {
+      "id": "decisions-not-intentions",
+      "category": "Reality",
+      "text": "The world does not reward intentions; it responds to decisions.",
+      "author": "A16EEN",
+      "source": "The Wealth Mindset"
+    },
+    {
+      "id": "rule-writers",
+      "category": "Power",
+      "text": "Learn the rules, understand who wrote them, then choose your game.",
+      "author": "A16EEN",
+      "source": "The Wealth Mindset"
+    },
+    {
+      "id": "applause-compass",
+      "category": "Ambition",
+      "text": "Power begins when applause stops being your compass.",
+      "author": "A16EEN",
+      "source": "The Wealth Mindset"
+    },
+    {
+      "id": "crowd-mistake",
+      "category": "Judgment",
+      "text": "Crowds can validate a mistake as easily as a truth.",
+      "author": "A16EEN",
+      "source": "The Wealth Mindset"
+    },
+    {
+      "id": "status-games",
+      "category": "Status",
+      "text": "Some status games are designed so the prize is your own time.",
+      "author": "A16EEN",
+      "source": "The Wealth Mindset"
+    },
+    {
+      "id": "urgency-costume",
+      "category": "Manipulation",
+      "text": "Urgency is an old costume worn by many bad decisions.",
+      "author": "A16EEN",
+      "source": "The Wealth Mindset"
+    },
+    {
+      "id": "walk-away-leverage",
+      "category": "Negotiation",
+      "text": "Become difficult to bargain against by knowing when to walk away.",
+      "author": "A16EEN",
+      "source": "The Wealth Mindset"
+    },
+    {
+      "id": "attention-pay",
+      "category": "Human nature",
+      "text": "People pay closest attention to what costs them something.",
+      "author": "A16EEN",
+      "source": "The Wealth Mindset"
+    },
+    {
+      "id": "unreadable-calm",
+      "category": "Discipline",
+      "text": "Be composed enough to think clearly when others want a reaction.",
+      "author": "A16EEN",
+      "source": "The Wealth Mindset"
+    },
+    {
+      "id": "hidden-cost",
+      "category": "Strategy",
+      "text": "Every shortcut has a cost; the clever ones hide the receipt.",
+      "author": "A16EEN",
+      "source": "The Wealth Mindset"
+    },
+    {
+      "id": "private-ambition",
+      "category": "Ambition",
+      "text": "Guard your ambition from applause until it has become undeniable.",
+      "author": "A16EEN",
+      "source": "The Wealth Mindset"
+    },
+    {
+      "id": "power-ownership",
+      "category": "Ownership",
+      "text": "The deepest leverage is owning an option nobody can take away.",
       "author": "A16EEN",
       "source": "The Wealth Mindset"
     }
