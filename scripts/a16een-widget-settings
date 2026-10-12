@@ -2,19 +2,76 @@
 """Read and atomically save A16EEN widget preferences outside the deployed config."""
 import json
 import os
+import re
 import sys
 from pathlib import Path
 
 STATE_HOME = Path(os.environ.get("XDG_STATE_HOME") or (Path.home() / ".local/state"))
 STATE_DIR = STATE_HOME / "a16een"
 SETTINGS_FILE = STATE_DIR / "widget-settings.json"
+SHAPES = {"capsule", "rounded", "compact"}
+BOOLEAN_KEYS = {
+    "editorialTimeWidgetEnabled",
+    "musicWidgetEnabled",
+    "quotesWidgetEnabled",
+    "appShelfWidgetEnabled",
+    "timeUse24Hour",
+    "timeShowSeconds",
+}
 DEFAULTS = {
     "editorialTimeWidgetEnabled": True,
     "musicWidgetEnabled": False,
     "quotesWidgetEnabled": False,
+    "appShelfWidgetEnabled": False,
+    "appShelfShape": "capsule",
+    "appShelfApps": [],
     "timeUse24Hour": True,
     "timeShowSeconds": False,
 }
+
+
+def clean_app_entries(value):
+    if not isinstance(value, list):
+        return None
+
+    result = []
+    seen = set()
+    for item in value[:16]:
+        if not isinstance(item, dict):
+            continue
+        desktop_id = item.get("desktopId")
+        if (
+            not isinstance(desktop_id, str)
+            or not desktop_id
+            or len(desktop_id) > 255
+            or not re.fullmatch(r"[A-Za-z0-9_.-]+", desktop_id)
+            or desktop_id in seen
+        ):
+            continue
+
+        name = item.get("name", "")
+        icon = item.get("icon", "")
+        if not isinstance(name, str):
+            name = ""
+        if not isinstance(icon, str):
+            icon = ""
+        result.append({
+            "desktopId": desktop_id,
+            "name": name[:120],
+            "icon": icon[:255],
+        })
+        seen.add(desktop_id)
+    return result
+
+
+def normalize_value(key, value):
+    if key in BOOLEAN_KEYS:
+        return value if isinstance(value, bool) else None
+    if key == "appShelfShape":
+        return value if isinstance(value, str) and value in SHAPES else None
+    if key == "appShelfApps":
+        return clean_app_entries(value)
+    return None
 
 
 def load_settings():
@@ -27,9 +84,10 @@ def load_settings():
         pass
 
     result = dict(DEFAULTS)
+    result["appShelfApps"] = []
     for key in DEFAULTS:
-        value = saved.get(key)
-        if isinstance(value, bool):
+        value = normalize_value(key, saved.get(key))
+        if value is not None:
             result[key] = value
     return result
 
@@ -41,8 +99,10 @@ def save_settings(raw):
 
     merged = load_settings()
     for key in DEFAULTS:
-        value = incoming.get(key)
-        if isinstance(value, bool):
+        if key not in incoming:
+            continue
+        value = normalize_value(key, incoming[key])
+        if value is not None:
             merged[key] = value
 
     STATE_DIR.mkdir(parents=True, exist_ok=True)

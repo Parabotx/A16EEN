@@ -1,5 +1,6 @@
 import QtQuick
 import QtQuick.Layouts
+import Quickshell
 import "WidgetCatalog.js" as WidgetCatalog
 
 Item {
@@ -8,6 +9,10 @@ Item {
     property bool editorialTimeEnabled: true
     property bool musicEnabled: false
     property bool quotesEnabled: false
+    property bool appShelfEnabled: false
+    property string appShelfShape: "capsule"
+    property var appShelfApps: []
+    property string appShelfSearch: ""
     property bool timeUse24Hour: true
     property bool timeShowSeconds: false
     property string selectedWidgetId: "editorial-time"
@@ -26,6 +31,9 @@ Item {
     signal editorialTimeWidgetEnabledRequested(bool enabled)
     signal musicWidgetEnabledRequested(bool enabled)
     signal quotesWidgetEnabledRequested(bool enabled)
+    signal appShelfWidgetEnabledRequested(bool enabled)
+    signal appShelfShapeRequested(string shape)
+    signal appShelfAppsRequested(var apps)
     signal timeUse24HourRequested(bool enabled)
     signal timeShowSecondsRequested(bool enabled)
 
@@ -33,8 +41,21 @@ Item {
         (root.editorialTimeEnabled ? 1 : 0)
         + (root.musicEnabled ? 1 : 0)
         + (root.quotesEnabled ? 1 : 0)
+        + (root.appShelfEnabled ? 1 : 0)
 
     readonly property var selectedWidget: root.widgetDefinition(root.selectedWidgetId)
+
+    readonly property var filteredAppShelfApplications: {
+        const query = root.appShelfSearch.trim().toLowerCase()
+        if (!query.length)
+            return []
+        return [...DesktopEntries.applications.values]
+            .filter(entry => entry && !entry.noDisplay)
+            .filter(entry => !root.appShelfApps.some(app => String(app.desktopId || "") === String(entry.id || "")))
+            .filter(entry => [entry.name, entry.genericName, entry.comment, ...(entry.keywords || [])]
+                .filter(value => value).join(" ").toLowerCase().includes(query))
+            .sort((a, b) => String(a.name || "").localeCompare(String(b.name || "")))
+    }
 
     function widgetDefinition(id) {
         for (let i = 0; i < WidgetCatalog.definitions.length; ++i) {
@@ -48,6 +69,7 @@ Item {
         if (id === "editorial-time") return root.editorialTimeEnabled
         if (id === "music") return root.musicEnabled
         if (id === "quotes") return root.quotesEnabled
+        if (id === "app-shelf") return root.appShelfEnabled
         return false
     }
 
@@ -55,6 +77,7 @@ Item {
         if (id === "editorial-time") return "lucide-monitor.svg"
         if (id === "music") return "music.svg"
         if (id === "quotes") return "quote-mark.svg"
+        if (id === "app-shelf") return "lucide-app-window.svg"
         return "lucide-app-window.svg"
     }
 
@@ -67,6 +90,28 @@ Item {
             root.musicWidgetEnabledRequested(next)
         else if (id === "quotes")
             root.quotesWidgetEnabledRequested(next)
+        else if (id === "app-shelf")
+            root.appShelfWidgetEnabledRequested(next)
+    }
+
+    function addAppShelfApplication(entry) {
+        if (!entry || root.appShelfApps.length >= 16)
+            return
+        const desktopId = String(entry.id || "")
+        if (!desktopId || root.appShelfApps.some(app => String(app.desktopId || "") === desktopId))
+            return
+        const next = root.appShelfApps.concat([{
+            desktopId: desktopId,
+            name: String(entry.name || "Application"),
+            icon: String(entry.icon || "")
+        }])
+        root.appShelfAppsRequested(next)
+        root.appShelfSearch = ""
+    }
+
+    function removeAppShelfApplication(desktopId) {
+        root.appShelfAppsRequested(root.appShelfApps.filter(app =>
+            String(app.desktopId || "") !== String(desktopId || "")))
     }
 
     ColumnLayout {
@@ -498,7 +543,306 @@ Item {
                     }
                 }
 
-                Item { Layout.fillHeight: true }
+                ColumnLayout {
+                    id: appShelfSettings
+                    visible: root.selectedWidgetId === "app-shelf"
+                    Layout.fillWidth: true
+                    Layout.fillHeight: true
+                    Layout.minimumHeight: 0
+                    spacing: 8
+
+                    Text {
+                        text: "DOCK SHAPE"
+                        color: root.textMuted
+                        font.pixelSize: 8
+                        font.weight: Font.DemiBold
+                        font.letterSpacing: 1.0
+                    }
+
+                    RowLayout {
+                        Layout.fillWidth: true
+                        spacing: 6
+
+                        Repeater {
+                            model: [
+                                { value: "capsule", label: "CAPSULE" },
+                                { value: "rounded", label: "ROUNDED" },
+                                { value: "compact", label: "COMPACT" }
+                            ]
+
+                            delegate: Rectangle {
+                                required property var modelData
+                                Layout.fillWidth: true
+                                Layout.preferredHeight: 31
+                                radius: modelData.value === "capsule" ? 15
+                                    : modelData.value === "rounded" ? 8 : 4
+                                color: root.appShelfShape === modelData.value
+                                    ? root.activeBackground : root.controlBackground
+                                border.width: 1
+                                border.color: root.appShelfShape === modelData.value
+                                    ? root.activeBackground : root.controlBorder
+
+                                Text {
+                                    anchors.centerIn: parent
+                                    text: modelData.label
+                                    color: root.appShelfShape === modelData.value ? "#FFFFFF" : root.textSecondary
+                                    font.pixelSize: 7
+                                    font.weight: Font.DemiBold
+                                }
+
+                                MouseArea {
+                                    anchors.fill: parent
+                                    cursorShape: Qt.PointingHandCursor
+                                    onClicked: root.appShelfShapeRequested(modelData.value)
+                                }
+                            }
+                        }
+                    }
+
+                    Rectangle {
+                        Layout.fillWidth: true
+                        height: 1
+                        color: root.dividerColor
+                    }
+
+                    RowLayout {
+                        Layout.fillWidth: true
+                        spacing: 8
+
+                        Text {
+                            text: "PINNED APPLICATIONS"
+                            color: root.textMuted
+                            font.pixelSize: 8
+                            font.weight: Font.DemiBold
+                            font.letterSpacing: 0.8
+                        }
+
+                        Item { Layout.fillWidth: true }
+
+                        Text {
+                            text: root.appShelfApps.length + " / 16"
+                            color: root.textMuted
+                            font.pixelSize: 8
+                        }
+                    }
+
+                    Text {
+                        Layout.fillWidth: true
+                        text: "Choose installed apps. Click an icon on the desktop shelf to launch it."
+                        color: root.textSecondary
+                        font.pixelSize: 8
+                        wrapMode: Text.WordWrap
+                    }
+
+                    Text {
+                        visible: root.appShelfApps.length === 0
+                        Layout.fillWidth: true
+                        Layout.preferredHeight: visible ? 22 : 0
+                        text: "No apps pinned yet."
+                        color: root.textMuted
+                        font.pixelSize: 8
+                        verticalAlignment: Text.AlignVCenter
+                    }
+
+                    Flickable {
+                        Layout.fillWidth: true
+                        Layout.preferredHeight: root.appShelfApps.length > 0 ? 50 : 0
+                        contentWidth: pinnedAppRow.implicitWidth
+                        contentHeight: height
+                        clip: true
+                        boundsBehavior: Flickable.StopAtBounds
+                        flickableDirection: Flickable.HorizontalFlick
+
+                        Row {
+                            id: pinnedAppRow
+                            height: parent.height
+                            spacing: 6
+
+                            Repeater {
+                                model: root.appShelfApps
+
+                                delegate: Rectangle {
+                                    required property var modelData
+                                    width: 116
+                                    height: 30
+                                    anchors.verticalCenter: parent.verticalCenter
+                                    radius: 8
+                                    color: root.controlBackground
+                                    border.width: 1
+                                    border.color: root.controlBorder
+
+                                    Row {
+                                        anchors.fill: parent
+                                        anchors.leftMargin: 7
+                                        anchors.rightMargin: 3
+                                        spacing: 5
+
+                                        Image {
+                                            width: 16
+                                            height: 16
+                                            anchors.verticalCenter: parent.verticalCenter
+                                            source: modelData.icon.length
+                                                ? Quickshell.iconPath(modelData.icon, "application-x-executable")
+                                                : Quickshell.iconPath("application-x-executable", "application-x-executable")
+                                            sourceSize.width: 32
+                                            sourceSize.height: 32
+                                            asynchronous: true
+                                            smooth: true
+                                            fillMode: Image.PreserveAspectFit
+                                        }
+
+                                        Text {
+                                            width: 66
+                                            height: parent.height
+                                            text: modelData.name
+                                            color: root.textPrimary
+                                            font.pixelSize: 7
+                                            verticalAlignment: Text.AlignVCenter
+                                            elide: Text.ElideRight
+                                        }
+
+                                        Text {
+                                            width: 13
+                                            height: parent.height
+                                            text: "×"
+                                            color: removePinMouse.containsMouse ? "#111318" : root.textMuted
+                                            font.pixelSize: 13
+                                            horizontalAlignment: Text.AlignHCenter
+                                            verticalAlignment: Text.AlignVCenter
+
+                                            MouseArea {
+                                                id: removePinMouse
+                                                anchors.fill: parent
+                                                hoverEnabled: true
+                                                cursorShape: Qt.PointingHandCursor
+                                                onClicked: root.removeAppShelfApplication(modelData.desktopId)
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+
+                    Rectangle {
+                        Layout.fillWidth: true
+                        Layout.preferredHeight: 34
+                        radius: 8
+                        color: root.controlBackground
+                        border.width: 1
+                        border.color: root.controlBorder
+
+                        TextInput {
+                            id: appShelfSearchInput
+                            anchors.fill: parent
+                            anchors.leftMargin: 10
+                            anchors.rightMargin: 10
+                            color: root.textPrimary
+                            selectionColor: "#858D98"
+                            selectedTextColor: "#FFFFFF"
+                            font.pixelSize: 9
+                            verticalAlignment: TextInput.AlignVCenter
+                            selectByMouse: true
+                            clip: true
+                            text: root.appShelfSearch
+                            onTextChanged: root.appShelfSearch = text
+
+                            Text {
+                                anchors.fill: parent
+                                verticalAlignment: Text.AlignVCenter
+                                text: "Search installed applications…"
+                                color: root.textMuted
+                                font.pixelSize: 9
+                                visible: !appShelfSearchInput.text.length
+                            }
+                        }
+                    }
+
+                    Flickable {
+                        id: appShelfSearchResults
+                        Layout.fillWidth: true
+                        Layout.preferredHeight: visible
+                            ? Math.min(124, Math.max(28, Math.min(root.filteredAppShelfApplications.length, 4) * 30))
+                            : 0
+                        visible: root.appShelfSearch.trim().length > 0
+                        contentWidth: width
+                        contentHeight: appSearchResultsColumn.implicitHeight
+                        clip: true
+                        boundsBehavior: Flickable.StopAtBounds
+
+                        Column {
+                            id: appSearchResultsColumn
+                            width: appShelfSearchResults.width
+                            spacing: 2
+
+                            Repeater {
+                                model: root.filteredAppShelfApplications.slice(0, 16)
+
+                                delegate: Rectangle {
+                                    required property var modelData
+                                    width: appSearchResultsColumn.width
+                                    height: 28
+                                    radius: 6
+                                    color: appResultMouse.containsMouse ? root.hoverBackground : root.controlBackground
+                                    border.width: 1
+                                    border.color: root.controlBorder
+
+                                    Row {
+                                        anchors.fill: parent
+                                        anchors.leftMargin: 8
+                                        anchors.rightMargin: 8
+                                        spacing: 7
+
+                                        Image {
+                                            width: 17
+                                            height: 17
+                                            anchors.verticalCenter: parent.verticalCenter
+                                            source: modelData.icon
+                                                ? Quickshell.iconPath(modelData.icon, "application-x-executable")
+                                                : Quickshell.iconPath("application-x-executable", "application-x-executable")
+                                            sourceSize.width: 34
+                                            sourceSize.height: 34
+                                            asynchronous: true
+                                            smooth: true
+                                            fillMode: Image.PreserveAspectFit
+                                        }
+
+                                        Text {
+                                            width: parent.width - 32
+                                            height: parent.height
+                                            text: modelData.name || "Application"
+                                            color: root.textPrimary
+                                            font.pixelSize: 8
+                                            verticalAlignment: Text.AlignVCenter
+                                            elide: Text.ElideRight
+                                        }
+                                    }
+
+                                    MouseArea {
+                                        id: appResultMouse
+                                        anchors.fill: parent
+                                        hoverEnabled: true
+                                        cursorShape: Qt.PointingHandCursor
+                                        onClicked: root.addAppShelfApplication(modelData)
+                                    }
+                                }
+                            }
+                        }
+                    }
+
+                    Text {
+                        visible: root.appShelfSearch.trim().length > 0
+                            && root.filteredAppShelfApplications.length === 0
+                        Layout.fillWidth: true
+                        Layout.preferredHeight: visible ? 24 : 0
+                        text: "No matching applications."
+                        color: root.textMuted
+                        font.pixelSize: 8
+                        verticalAlignment: Text.AlignVCenter
+                    }
+                }
+
+                Item { Layout.fillHeight: root.selectedWidgetId !== "app-shelf" }
             }
         }
     }

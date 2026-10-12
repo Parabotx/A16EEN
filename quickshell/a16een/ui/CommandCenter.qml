@@ -31,6 +31,9 @@ PanelWindow {
     property bool editorialTimeWidgetEnabled: true
     property bool musicWidgetEnabled: false
     property bool quotesWidgetEnabled: false
+    property bool appShelfWidgetEnabled: false
+    property string appShelfShape: "capsule"
+    property var appShelfApps: []
     property bool timeUse24Hour: true
     property bool timeShowSeconds: false
 
@@ -57,6 +60,9 @@ PanelWindow {
     signal editorialTimeWidgetEnabledRequested(bool enabled)
     signal musicWidgetEnabledRequested(bool enabled)
     signal quotesWidgetEnabledRequested(bool enabled)
+    signal appShelfWidgetEnabledRequested(bool enabled)
+    signal appShelfShapeRequested(string shape)
+    signal appShelfAppsRequested(var apps)
     signal timeUse24HourRequested(bool enabled)
     signal timeShowSecondsRequested(bool enabled)
     signal iconThemeChanged(string themeId)
@@ -879,6 +885,9 @@ PanelWindow {
             editorialTimeEnabled: root.editorialTimeWidgetEnabled
             musicEnabled: root.musicWidgetEnabled
             quotesEnabled: root.quotesWidgetEnabled
+            appShelfEnabled: root.appShelfWidgetEnabled
+            appShelfShape: root.appShelfShape
+            appShelfApps: root.appShelfApps
             timeUse24Hour: root.timeUse24Hour
             timeShowSeconds: root.timeShowSeconds
 
@@ -886,6 +895,9 @@ PanelWindow {
             onEditorialTimeWidgetEnabledRequested: root.editorialTimeWidgetEnabledRequested(enabled)
             onMusicWidgetEnabledRequested: root.musicWidgetEnabledRequested(enabled)
             onQuotesWidgetEnabledRequested: root.quotesWidgetEnabledRequested(enabled)
+            onAppShelfWidgetEnabledRequested: root.appShelfWidgetEnabledRequested(enabled)
+            onAppShelfShapeRequested: root.appShelfShapeRequested(shape)
+            onAppShelfAppsRequested: root.appShelfAppsRequested(apps)
             onTimeUse24HourRequested: root.timeUse24HourRequested(enabled)
             onTimeShowSecondsRequested: root.timeShowSecondsRequested(enabled)
         }

@@ -21,5 +21,12 @@ var definitions = [
         subtitle: "Daily perspective",
         detail: "A curated quote collection with one-tap rotation",
         defaultEnabled: false
+    },
+    {
+        id: "app-shelf",
+        title: "APP SHELF",
+        subtitle: "Pinned applications",
+        detail: "A compact floating dock for the applications you choose, with adjustable shape and click-to-launch icons",
+        defaultEnabled: false
     }
 ]

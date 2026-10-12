@@ -60,6 +60,7 @@ jobs:
           luac5.4 -p mpv/a16een-osc.lua
           bash -n scripts/a16een-workspace-preset
           python3 -m py_compile scripts/a16een-music scripts/a16een-widget-settings
+          python3 tests/test_widget_settings.py
           grep -Fq 'a16een-workspace-preset' scripts/install.sh
           grep -Fq 'a16een-mpv-theme' scripts/install.sh
           grep -Fq 'mpv theme status' scripts/a16een
@@ -255,6 +256,11 @@ jobs:
           test -f quickshell/a16een/ui/WidgetCatalog.js
           test -f quickshell/a16een/ui/MusicWidget.qml
           test -f quickshell/a16een/ui/QuotesWidget.qml
+          test -f quickshell/a16een/ui/AppShelfWidget.qml
+          grep -Fq 'id: "app-shelf"' quickshell/a16een/ui/WidgetCatalog.js
+          grep -Fq 'appShelfWidgetEnabled' quickshell/a16een/shell.qml
+          grep -Fq 'appShelfAppsRequested' quickshell/a16een/ui/WidgetSection.qml
+          grep -Fq 'anchors.horizontalCenter: parent.horizontalCenter' quickshell/a16een/ui/AppShelfWidget.qml
           test -f quickshell/a16een/assets/quotes.json
           test -f quickshell/a16een/assets/icons/quote-mark.svg
           python3 -m json.tool quickshell/a16een/assets/quotes.json >/dev/null
@@ -655,21 +661,21 @@ jobs:
           ! grep -Fq 'text: "Applications"' quickshell/a16een/ui/Dock.qml
           ! grep -Fq 'launcherMouse.containsMouse ? root.hoverBackground' quickshell/a16een/ui/Dock.qml
           grep -Fq 'GridView {' quickshell/a16een/ui/Launcher.qml
-          grep -Fq 'cellWidth: 88' quickshell/a16een/ui/Launcher.qml
-          grep -Fq 'cellHeight: 72' quickshell/a16een/ui/Launcher.qml
+          grep -Fq 'cellWidth: 78' quickshell/a16een/ui/Launcher.qml
+          grep -Fq 'cellHeight: 78' quickshell/a16een/ui/Launcher.qml
           grep -Fq 'text: appTile.entry.name' quickshell/a16een/ui/Launcher.qml
           ! grep -Fq 'QUICK LAUNCH' quickshell/a16een/ui/Launcher.qml
-          grep -Fq 'width: Math.min(480, parent.width - 64)' quickshell/a16een/ui/Launcher.qml
-          grep -Fq 'height: Math.min(360, parent.height - 80)' quickshell/a16een/ui/Launcher.qml
+          grep -Fq 'width: Math.max(280, Math.min(parent.width - 48, 480))' quickshell/a16een/ui/Launcher.qml
+          grep -Fq 'height: Math.max(280, Math.min(parent.height - 64, 360))' quickshell/a16een/ui/Launcher.qml
           grep -Fq 'text: appTile.entry.name' quickshell/a16een/ui/Launcher.qml
-          grep -Fq 'acceptedButtons: Qt.NoButton' quickshell/a16een/ui/Launcher.qml
+          grep -Fq 'hoverEnabled: true' quickshell/a16een/ui/Launcher.qml
           grep -Fq 'TextInput {' quickshell/a16een/ui/Launcher.qml
           grep -Fq 'Quickshell.iconPath' quickshell/a16een/ui/Launcher.qml
           ! grep -Fq 'QUICK LAUNCH' quickshell/a16een/ui/Launcher.qml
           ! grep -Fq 'appGrid.columns' quickshell/a16een/ui/Launcher.qml
           ! grep -Fq 'search.svg' quickshell/a16een/ui/Launcher.qml
-          grep -Fq 'Layout.preferredWidth: 300' quickshell/a16een/ui/Launcher.qml
-          grep -Fq 'height: 36' quickshell/a16een/ui/Launcher.qml
+          grep -Fq 'Layout.preferredWidth: Math.min(content.width, 560)' quickshell/a16een/ui/Launcher.qml
+          grep -Fq 'Layout.preferredHeight: 36' quickshell/a16een/ui/Launcher.qml
           grep -Fq 'xwayland-satellite' niri/config.kdl
           grep -Fq 'Mod+Return { spawn "foot"; }' niri/config.kdl
           grep -Fq 'XF86AudioPlay allow-when-locked=true { spawn "playerctl" "play-pause"; }' niri/config.kdl
