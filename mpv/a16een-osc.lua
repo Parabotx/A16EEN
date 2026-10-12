@@ -129,11 +129,11 @@ local function draw_volume_slider(lines, x, y, w, volume, mx, my, hovering)
     local track_x = x + 65
     local track_w = math.max(24, w - 82)
     local track_y = y + 55
-    areas.volume = { x1 = track_x - 5, y1 = track_y - 8, x2 = track_x + track_w + 5, y2 = track_y + 8 }
+    areas.volume = { x1 = track_x - 5, y1 = track_y - 8, x2 = track_x + track_w + 5, y2 = track_y + 8, track_x = track_x, track_w = track_w }
 
     add_text(lines, x + 13, track_y - 5, "VOL", 8, muted, 7, true)
     add_round(lines, track_x, track_y, track_w, 3, 2, "#FFFFFF", 0xD7)
-    local ratio = math.max(0, math.min(1, (tonumber(volume) or 0) / 100))
+    local ratio = math.max(0, math.min(1, (tonumber(volume) or 0) / 130))
     if ratio > 0 then
         add_round(lines, track_x, track_y, math.max(2, track_w * ratio), 3, 2, accent, 0)
     end
@@ -396,7 +396,7 @@ local function handle_click(mx, my)
     end
 
     if inside(mx, my, areas.volume) then
-        local volume = math.max(0, math.min(130, 130 * (mx - areas.volume.x1) / (areas.volume.x2 - areas.volume.x1)))
+        local volume = math.max(0, math.min(130, 130 * (mx - areas.volume.track_x) / areas.volume.track_w))
         mp.set_property_number("volume", volume)
         mp.set_property_bool("mute", false)
         show_controls()
@@ -413,6 +413,7 @@ local function on_click()
     if not visible then
         show_controls()
         if handle_click(mx, my) then return end
+        if inside(mx, my, areas.ui) then return end
         -- Preserve click-to-pause outside the control containers.
         mp.commandv("cycle", "pause")
         show_controls()
@@ -423,7 +424,7 @@ local function on_click()
     if handle_click(mx, my) then return end
 
     -- Empty areas inside a control card are inert; clicking the video toggles pause.
-    if not inside(mx, my, areas.row) and not inside(mx, my, areas.seek) then
+    if not inside(mx, my, areas.ui) then
         mp.commandv("cycle", "pause")
     end
     show_controls()
