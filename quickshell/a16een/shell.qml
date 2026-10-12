@@ -341,6 +341,9 @@ ShellRoot {
     property bool editorialTimeWidgetEnabled: true
     property bool musicWidgetEnabled: false
     property bool quotesWidgetEnabled: false
+    property bool appShelfWidgetEnabled: false
+    property string appShelfShape: "capsule"
+    property var appShelfApps: []
     property bool timeUse24Hour: true
     property bool timeShowSeconds: false
     property bool widgetSettingsLoaded: false
@@ -351,6 +354,9 @@ ShellRoot {
             editorialTimeWidgetEnabled: root.editorialTimeWidgetEnabled,
             musicWidgetEnabled: root.musicWidgetEnabled,
             quotesWidgetEnabled: root.quotesWidgetEnabled,
+            appShelfWidgetEnabled: root.appShelfWidgetEnabled,
+            appShelfShape: root.appShelfShape,
+            appShelfApps: root.appShelfApps,
             timeUse24Hour: root.timeUse24Hour,
             timeShowSeconds: root.timeShowSeconds
         }
@@ -365,6 +371,9 @@ ShellRoot {
     onEditorialTimeWidgetEnabledChanged: root.requestWidgetSettingsSave()
     onMusicWidgetEnabledChanged: root.requestWidgetSettingsSave()
     onQuotesWidgetEnabledChanged: root.requestWidgetSettingsSave()
+    onAppShelfWidgetEnabledChanged: root.requestWidgetSettingsSave()
+    onAppShelfShapeChanged: root.requestWidgetSettingsSave()
+    onAppShelfAppsChanged: root.requestWidgetSettingsSave()
     onTimeUse24HourChanged: root.requestWidgetSettingsSave()
     onTimeShowSecondsChanged: root.requestWidgetSettingsSave()
 
@@ -381,6 +390,7 @@ ShellRoot {
                         "editorialTimeWidgetEnabled",
                         "musicWidgetEnabled",
                         "quotesWidgetEnabled",
+                        "appShelfWidgetEnabled",
                         "timeUse24Hour",
                         "timeShowSeconds"
                     ]
@@ -388,6 +398,18 @@ ShellRoot {
                         const key = keys[i]
                         if (saved && typeof saved[key] === "boolean")
                             root[key] = saved[key]
+                    }
+                    if (saved && ["capsule", "rounded", "compact"].includes(saved.appShelfShape))
+                        root.appShelfShape = saved.appShelfShape
+                    if (saved && Array.isArray(saved.appShelfApps)) {
+                        root.appShelfApps = saved.appShelfApps
+                            .filter(app => app && typeof app.desktopId === "string" && app.desktopId.length > 0)
+                            .slice(0, 16)
+                            .map(app => ({
+                                desktopId: String(app.desktopId),
+                                name: String(app.name || "Application"),
+                                icon: String(app.icon || "")
+                            }))
                     }
                 } catch (error) {
                     console.warn("A16EEN could not load saved widget preferences:", error)
@@ -1392,6 +1414,18 @@ ShellRoot {
     Variants {
         model: Quickshell.screens
 
+        AppShelfWidget {
+            modelData: modelData
+            widgetEnabled: root.appShelfWidgetEnabled && !root.secureLockActive
+            apps: root.appShelfApps
+            shape: root.appShelfShape
+            navbarPosition: root.navbarPosition
+        }
+    }
+
+    Variants {
+        model: Quickshell.screens
+
         Dock {
             modelData: modelData
             workspaces: root.workspaces
@@ -1686,6 +1720,20 @@ ShellRoot {
         }
         onQuotesWidgetEnabledRequested: {
             root.quotesWidgetEnabled = enabled
+            root.requestWidgetSettingsSave()
+        }
+        onAppShelfWidgetEnabledRequested: {
+            root.appShelfWidgetEnabled = enabled
+            root.requestWidgetSettingsSave()
+        }
+        onAppShelfShapeRequested: {
+            if (["capsule", "rounded", "compact"].includes(shape)) {
+                root.appShelfShape = shape
+                root.requestWidgetSettingsSave()
+            }
+        }
+        onAppShelfAppsRequested: {
+            root.appShelfApps = Array.isArray(apps) ? apps.slice(0, 16) : []
             root.requestWidgetSettingsSave()
         }
         onTimeUse24HourRequested: {
