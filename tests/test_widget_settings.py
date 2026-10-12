@@ -27,11 +27,13 @@ with tempfile.TemporaryDirectory() as temp:
     initial = run(env, "load")
     assert initial["appShelfWidgetEnabled"] is False
     assert initial["appShelfShape"] == "capsule"
+    assert initial["appShelfRotationEnabled"] is True
     assert initial["appShelfApps"] == []
 
     payload = {
         "appShelfWidgetEnabled": True,
         "appShelfShape": "rounded",
+        "appShelfRotationEnabled": False,
         "appShelfApps": [
             {"desktopId": "firefox.desktop", "name": "Firefox", "icon": "firefox"},
             {"desktopId": "org.gnome.Nautilus.desktop", "name": "Files", "icon": "folder"},
@@ -42,6 +44,7 @@ with tempfile.TemporaryDirectory() as temp:
     saved = run(env, "save", json.dumps(payload))
     assert saved["appShelfWidgetEnabled"] is True
     assert saved["appShelfShape"] == "rounded"
+    assert saved["appShelfRotationEnabled"] is False
     assert [app["desktopId"] for app in saved["appShelfApps"]] == [
         "firefox.desktop", "org.gnome.Nautilus.desktop"
     ]
@@ -50,6 +53,7 @@ with tempfile.TemporaryDirectory() as temp:
     second = run(env, "save", json.dumps({"timeShowSeconds": True}))
     assert second["timeShowSeconds"] is True
     assert second["appShelfWidgetEnabled"] is True
+    assert second["appShelfRotationEnabled"] is False
     assert len(second["appShelfApps"]) == 2
 
     # Invalid shapes are ignored and cannot erase the saved choice.
@@ -64,5 +68,6 @@ with tempfile.TemporaryDirectory() as temp:
     assert circle_saved["appShelfShape"] == "circle"
     circle_loaded = run(env, "load")
     assert circle_loaded["appShelfShape"] == "circle"
+    assert circle_loaded["appShelfRotationEnabled"] is False
 
 print("Widget settings persistence tests passed.")
