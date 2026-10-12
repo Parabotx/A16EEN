@@ -288,7 +288,7 @@ PanelWindow {
                             text: "Type to find an application…"
                             color: root.mutedText
                             font.pixelSize: 17
-                            visible: search.text.length === 0 && !search.activeFocus
+                            visible: search.text.length === 0
                             elide: Text.ElideRight
                         }
                     }
