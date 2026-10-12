@@ -1733,6 +1733,7 @@ ShellRoot {
         modelData: root.primaryScreen
         opened: root.wallpaperPickerOpen
         onCloseRequested: root.wallpaperPickerOpen = false
+        onOpenRequested: root.wallpaperPickerOpen = true
     }
 
     Launcher {

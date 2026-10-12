@@ -35,6 +35,7 @@ swayidle
 ffmpeg
 xwayland-satellite
 xdg-desktop-portal-gtk
+zenity
 networkmanager
 grim
 imagemagick

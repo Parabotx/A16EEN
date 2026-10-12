@@ -1,6 +1,5 @@
 import QtQuick
 import QtMultimedia
-import QtQuick.Dialogs
 import Quickshell
 import Quickshell.Io
 import Quickshell.Wayland
@@ -22,8 +21,13 @@ PanelWindow {
     property string eveningTime: "19:00"
     property string morningPath: ""
     property string eveningPath: ""
+    property string tabAfterPicker: "wallpaper"
+    property bool reopenAfterPicker: false
+    property bool pickerOutputReady: false
+    property bool pickerFinishHandled: false
 
     signal closeRequested()
+    signal openRequested()
 
     readonly property var visibleWallpapers: {
         const result = []
@@ -72,7 +76,7 @@ PanelWindow {
         stdout: StdioCollector {
             onStreamFinished: {
                 const values = {}
-                for (const line of text.trim().split(/\\r?\\n/)) {
+                for (const line of text.trim().split(/\r?\n/)) {
                     const split = line.indexOf("=")
                     if (split > 0)
                         values[line.slice(0, split)] = line.slice(split + 1)
@@ -92,6 +96,64 @@ PanelWindow {
 
     function setSetting(key, value) {
         Quickshell.execDetached(["a16een-wallpaper", "settings", "set", key, String(value)])
+    }
+
+    function launchFilePicker(purpose) {
+        root.fileDialogPurpose = purpose
+        root.tabAfterPicker = root.activeTab
+        root.reopenAfterPicker = true
+        root.pickerOutputReady = false
+        root.pickerFinishHandled = false
+        // A layer-shell overlay stays above ordinary desktop windows. Hide it
+        // before launching the desktop chooser so it cannot cover the dialog.
+        root.closeRequested()
+        Qt.callLater(function() {
+            wallpaperFilePickerProcess.running = false
+            wallpaperFilePickerProcess.running = true
+        })
+    }
+
+    function finishFilePicker() {
+        if (!root.pickerOutputReady || wallpaperFilePickerProcess.running || root.pickerFinishHandled)
+            return
+        root.pickerFinishHandled = true
+        const path = String(wallpaperFilePickerOutput.text || "").trim()
+        const purpose = root.fileDialogPurpose
+        if (path.length > 0) {
+            if (purpose === "morning")
+                root.morningPath = path
+            else if (purpose === "evening")
+                root.eveningPath = path
+            // The helper applies/saves the selection before returning it.
+            if (purpose === "set") {
+                root.reopenAfterPicker = false
+                root.tabAfterPicker = "wallpaper"
+            }
+            root.fileDialogPurpose = "set"
+        }
+        // Reopen on cancellation/error, and after choosing a scheduled file.
+        // A normal wallpaper selection intentionally leaves the manager closed.
+        if (root.reopenAfterPicker) {
+            root.reopenAfterPicker = false
+            root.openRequested()
+        }
+    }
+
+    Process {
+        id: wallpaperFilePickerProcess
+        command: ["a16een-wallpaper", "pick-file", root.fileDialogPurpose]
+        running: false
+        stdout: StdioCollector {
+            id: wallpaperFilePickerOutput
+            onStreamFinished: {
+                root.pickerOutputReady = true
+                root.finishFilePicker()
+            }
+        }
+        onRunningChanged: {
+            if (!running)
+                root.finishFilePicker()
+        }
     }
 
     Process {
@@ -295,7 +357,7 @@ PanelWindow {
                     MouseArea {
                         anchors.fill: parent
                         cursorShape: Qt.PointingHandCursor
-                        onClicked: wallpaperFileDialog.open()
+                        onClicked: root.launchFilePicker("set")
                     }
                 }
 
@@ -400,7 +462,7 @@ PanelWindow {
                     Rectangle {
                         width: parent.width - 160; height: 32; radius: 8; color: "#F3F3F3"; anchors.verticalCenter: parent.verticalCenter
                         Text { anchors.centerIn: parent; text: root.morningPath ? root.morningPath.split("/").pop() : "Choose morning file"; color: "#333333"; font.pixelSize: 9; elide: Text.ElideMiddle; width: parent.width - 12 }
-                        MouseArea { anchors.fill: parent; onClicked: { root.fileDialogPurpose = "morning"; wallpaperFileDialog.open() } }
+                        MouseArea { anchors.fill: parent; onClicked: root.launchFilePicker("morning") }
                     }
                 }
                 Row {
@@ -414,7 +476,7 @@ PanelWindow {
                     Rectangle {
                         width: parent.width - 152; height: 32; radius: 8; color: "#F3F3F3"; anchors.verticalCenter: parent.verticalCenter
                         Text { anchors.centerIn: parent; text: root.eveningPath ? root.eveningPath.split("/").pop() : "Choose evening file"; color: "#333333"; font.pixelSize: 9; elide: Text.ElideMiddle; width: parent.width - 12 }
-                        MouseArea { anchors.fill: parent; onClicked: { root.fileDialogPurpose = "evening"; wallpaperFileDialog.open() } }
+                        MouseArea { anchors.fill: parent; onClicked: root.launchFilePicker("evening") }
                     }
                 }
                 }
@@ -700,32 +762,6 @@ PanelWindow {
         }
     }
 
-    FileDialog {
-        id: wallpaperFileDialog
-        title: "Choose a wallpaper"
-        fileMode: FileDialog.OpenFile
-        nameFilters: [
-            "Supported wallpapers (*.png *.jpg *.jpeg *.webp *.bmp *.tif *.tiff *.tga *.svg *.ppm *.pgm *.pbm *.xpm *.xbm *.gif *.mp4 *.webm *.mov *.m4v *.mkv)",
-            "All files (*)"
-        ]
-
-        onAccepted: {
-            let path = selectedFile.toString()
-            if (path.startsWith("file://"))
-                path = decodeURIComponent(path.replace(/^file:\/\//, ""))
-            if (root.fileDialogPurpose === "morning" || root.fileDialogPurpose === "evening") {
-                const key = root.fileDialogPurpose + "_path"
-                root.setSetting(key, path)
-                if (root.fileDialogPurpose === "morning") root.morningPath = path
-                else root.eveningPath = path
-                root.fileDialogPurpose = "set"
-            } else {
-                root.closeRequested()
-                Quickshell.execDetached(["a16een-wallpaper", "set-path", path])
-            }
-        }
-    }
-
     MouseArea {
         anchors.fill: parent
         z: 1
@@ -736,7 +772,8 @@ PanelWindow {
 
     onOpenedChanged: {
         if (opened) {
-            root.activeTab = "wallpaper"
+            root.activeTab = root.tabAfterPicker
+            root.tabAfterPicker = "wallpaper"
             root.fileDialogPurpose = "set"
             root.wallpapers = []
             settingsProcess.running = false
