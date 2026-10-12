@@ -14,6 +14,7 @@ local muted = "#707782"
 local visible = false
 local locked = false
 local open_menu = ""
+local menu_scroll = 0
 local timer = nil
 local last_activity = 0
 local mouse = { x = -10000, y = -10000, hover = false }
@@ -196,7 +197,7 @@ local function render_track_menu(lines, width, height, row_y, tracks_x, tracks_w
     end
 
     local empty_label = is_sub and "No subtitles available" or "No audio tracks available"
-    local empty = #tracks == 0
+    local empty = #tracks == 0 and not is_sub
     local header_h, row_h = 34, 30
     local row_count = math.max(1, #choices)
     local max_h = math.max(120, height - 72)
@@ -228,15 +229,17 @@ local function render_track_menu(lines, width, height, row_y, tracks_x, tracks_w
         return
     end
 
-    local start = 1
-    if #choices > display_rows then
+    local max_start = math.max(1, #choices - display_rows + 1)
+    local start = clamp(menu_scroll, 1, max_start)
+    if menu_scroll <= 0 then
         for i, choice in ipairs(choices) do
             if choice.selected then
-                start = math.max(1, math.min(i, #choices - display_rows + 1))
+                start = clamp(i, 1, max_start)
                 break
             end
         end
     end
+    menu_scroll = start
 
     for row = 1, display_rows do
         local choice = choices[start + row - 1]
@@ -372,6 +375,24 @@ local function render()
     overlay:update()
 end
 
+local function remove_menu_wheel_bindings()
+    mp.remove_key_binding("a16een-menu-wheel-up")
+    mp.remove_key_binding("a16een-menu-wheel-down")
+end
+
+local function scroll_menu(delta)
+    if locked or open_menu == "" then return end
+    local mx, my, hovering = current_mouse()
+    if not hovering or not inside(mx, my, areas.menu) then return end
+    menu_scroll = math.max(1, menu_scroll + delta)
+    render()
+end
+
+local function add_menu_wheel_bindings()
+    mp.add_forced_key_binding("WHEEL_UP", "a16een-menu-wheel-up", function() scroll_menu(-1) end)
+    mp.add_forced_key_binding("WHEEL_DOWN", "a16een-menu-wheel-down", function() scroll_menu(1) end)
+end
+
 local function remove_wheel_lock()
     for _, name in ipairs({
         "a16een-lock-wheel-up", "a16een-lock-wheel-down",
@@ -392,6 +413,7 @@ end
 local function hide_controls()
     visible = false
     open_menu = ""
+    remove_menu_wheel_bindings()
     if timer then
         timer:kill()
         timer = nil
@@ -429,6 +451,7 @@ local function lock_controls()
     locked = true
     visible = true
     open_menu = ""
+    remove_menu_wheel_bindings()
     add_wheel_lock()
     render()
 end
@@ -491,11 +514,25 @@ local function on_click()
         show_controls()
         return
     elseif inside(mx, my, areas.subtitle) then
-        open_menu = open_menu == "sub" and "" or "sub"
+        if open_menu == "sub" then
+            open_menu = ""
+            remove_menu_wheel_bindings()
+        else
+            open_menu = "sub"
+            menu_scroll = 0
+            add_menu_wheel_bindings()
+        end
         show_controls()
         return
     elseif inside(mx, my, areas.audio) then
-        open_menu = open_menu == "audio" and "" or "audio"
+        if open_menu == "audio" then
+            open_menu = ""
+            remove_menu_wheel_bindings()
+        else
+            open_menu = "audio"
+            menu_scroll = 0
+            add_menu_wheel_bindings()
+        end
         show_controls()
         return
     elseif inside(mx, my, areas.timeline) then
@@ -505,6 +542,7 @@ local function on_click()
         return
     elseif open_menu ~= "" then
         open_menu = ""
+        remove_menu_wheel_bindings()
         render()
         if inside(mx, my, areas.ui) then return end
     end
@@ -523,6 +561,7 @@ end)
 mp.add_key_binding("ESC", "a16een-mpv-close-menu", function()
     if open_menu ~= "" then
         open_menu = ""
+        remove_menu_wheel_bindings()
         show_controls()
     end
 end)
@@ -550,6 +589,7 @@ mp.register_event("file-loaded", function()
 end)
 mp.register_event("end-file", function()
     open_menu = ""
+    remove_menu_wheel_bindings()
     hide_controls()
 end)
 mp.register_event("shutdown", function()
