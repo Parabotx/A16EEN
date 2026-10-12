@@ -308,7 +308,7 @@ local function render()
 
     -- Container 1: file or video name.
     add_card(lines, cursor, y, title_w, card_h, 16)
-    add_text(lines, cursor + 13, y + card_h / 2,
+    add_text(lines, cursor + 13, y + card_h / 2 - 7,
         shorten(get_title(), math.max(12, math.floor((title_w - 24) / 7))),
         12, black, 7, true,
         { x1 = cursor + 9, y1 = y + 4, x2 = cursor + title_w - 9, y2 = y + card_h - 4 })
