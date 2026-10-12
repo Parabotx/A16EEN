@@ -1,8 +1,8 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-CONFIG_HOME="\${XDG_CONFIG_HOME:-$HOME/.config}"
-STATE_HOME="\${XDG_STATE_HOME:-$HOME/.local/state}"
+CONFIG_HOME="${XDG_CONFIG_HOME:-$HOME/.config}"
+STATE_HOME="${XDG_STATE_HOME:-$HOME/.local/state}"
 MPV_DIR="$CONFIG_HOME/mpv"
 MPV_CONF="$MPV_DIR/mpv.conf"
 THEME_CONF="$MPV_DIR/a16een.conf"
@@ -91,7 +91,7 @@ show_status() {
     printf 'Theme script: %s\n' "$SCRIPT_FILE"
 }
 
-action="\${1:-status}"
+action="${1:-status}"
 case "$action" in
     on|enable) enable_theme ;;
     off|disable) disable_theme ;;
