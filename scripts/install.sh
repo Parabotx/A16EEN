@@ -328,7 +328,7 @@ for theme_file in a16een-osc.lua a16een.conf; do
     esac
 
     if [ -f "$target_file" ] && ! cmp -s "$source_file" "$target_file"; then
-        MPV_BACKUP_DIR="$BACKUP_ROOT/mpv-$(date +%Y%m%d-%H%M%S)-$"
+        MPV_BACKUP_DIR="$BACKUP_ROOT/mpv-$(date +%Y%m%d-%H%M%S)-$$"
         mkdir -p "$MPV_BACKUP_DIR"
         cp -L "$target_file" "$MPV_BACKUP_DIR/$theme_file"
         echo "==> Backed up the previous A16EEN MPV theme file: $MPV_BACKUP_DIR/$theme_file"
