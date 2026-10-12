@@ -43,6 +43,7 @@ jobs:
           bash -n tests/test_screenshot_capture.sh
           bash -n tests/test_navbar_appearance.sh
           bash -n scripts/a16een-control
+          bash -n scripts/a16een-lockscreen
           python3 -m py_compile scripts/a16een-clipboard scripts/a16een-app-stash scripts/a16een-system-monitor scripts/a16een-data-meter
           python3 tests/test_app_stash.py
           python3 tests/test_system_monitor.py
@@ -453,6 +454,8 @@ jobs:
           grep -Fq 'jq' scripts/install.sh
           grep -Fq 'wlsunset' scripts/install.sh
           grep -Fq 'a16een-control' scripts/install.sh
+          grep -Fq 'a16een-lockscreen' scripts/install.sh
+          grep -Fq 'swayidle' scripts/install.sh
           grep -Fq 'a16een-screenshot' scripts/install.sh
           grep -Fq 'USER_WALLPAPER_DIR="$HOME/Pictures/a16een"' scripts/install.sh
           grep -Fq 'property bool wallpaperPickerOpen' quickshell/a16een/shell.qml
@@ -530,6 +533,12 @@ jobs:
           grep -Fq 'signal doNotDisturbRequested(bool enabled)' quickshell/a16een/ui/CommandCenter.qml
           grep -Fq 'onControlRequested: root.openControlDetail(key)' quickshell/a16een/ui/CommandCenter.qml
           grep -Fq 'id: "controls"' quickshell/a16een/ui/CommandCenter.qml
+          grep -Fq '{ id: "lockscreen", name: "lockscreen"' quickshell/a16een/ui/CommandCenter.qml
+          grep -Fq 'LockScreenSection {' quickshell/a16een/ui/CommandCenter.qml
+          grep -Fq 'signal lockScreenSettingsChanged' quickshell/a16een/ui/CommandCenter.qml
+          test -f quickshell/a16een/ui/LockScreenSection.qml
+          grep -Fq 'target: "lock-screen"' quickshell/a16een/shell.qml
+          grep -Fq 'a16een-lockscreen prepare-sleep' quickshell/a16een/shell.qml
           grep -Fq 'id: "icons"' quickshell/a16een/ui/CommandCenter.qml
           grep -Fq 'IconThemeSection {' quickshell/a16een/ui/CommandCenter.qml
           grep -Fq 'ControlCenterSection {' quickshell/a16een/ui/CommandCenter.qml
