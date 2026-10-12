@@ -18,17 +18,22 @@ PanelWindow {
 
     signal closeRequested()
 
-    readonly property color surface: "#FFFFFFFF"
-    readonly property color borderColor: "#E4E7EB"
-    readonly property color primaryText: "#15171A"
-    readonly property color secondaryText: "#7A7F87"
-    readonly property color searchBackground: "#F6F7F8"
-    readonly property color searchHoverBackground: "#FAFBFC"
-    readonly property color searchFocusBackground: "#FFFFFF"
-    readonly property color searchBorder: "#E3E6EA"
-    readonly property color searchHoverBorder: "#CDD2D8"
-    readonly property color searchFocusBorder: "#AEB5BE"
-    readonly property color selectedBackground: "#EEF1F3"
+    readonly property color accent: "#D8B16A"
+    readonly property color primaryText: "#F2F3F5"
+    readonly property color secondaryText: "#9DA3AE"
+    readonly property color mutedText: "#737A86"
+    readonly property color tileBackground: "#12FFFFFF"
+    readonly property color tileHoverBackground: "#1ED8B16A"
+    readonly property color tileSelectedBackground: "#25D8B16A"
+    readonly property color tileBorder: "#1EFFFFFF"
+    readonly property color tileActiveBorder: "#A88750"
+    readonly property int navigationColumns: Math.max(1, Math.floor(appGrid.width / appGrid.cellWidth))
+    readonly property string selectedAppDescription: {
+        const item = appGrid.currentItem
+        if (!item || !item.entry)
+            return "Search by name, description, or keyword"
+        return String(item.entry.genericName || item.entry.comment || item.entry.name || "")
+    }
 
     screen: modelData
     color: "transparent"
@@ -85,6 +90,7 @@ PanelWindow {
         return root.resolvedIconPaths[name]
             || Quickshell.iconPath(name, "application-x-executable")
     }
+
     function launch(entry) {
         root.launchError = ""
 
@@ -129,134 +135,186 @@ PanelWindow {
             onStreamFinished: root.parseIconPaths(text)
         }
     }
+
+    // Keep the overlay itself transparent: only individual applications receive tiles.
     Rectangle {
         anchors.fill: parent
-        color: "#000000"
-        opacity: root.opened ? 0.12 : 0
+        color: "#05070B"
+        opacity: root.opened ? 0.18 : 0
     }
 
-    Rectangle {
-        id: card
+    Item {
+        id: content
         z: 2
-        width: Math.min(480, parent.width - 64)
-        height: Math.min(360, parent.height - 80)
         anchors.centerIn: parent
-        radius: 22
-        color: root.surface
-        border.width: 1
-        border.color: root.borderColor
-
-        Rectangle {
-            anchors.fill: parent
-            anchors.margins: -4
-            radius: 26
-            color: "#12000000"
-            z: -1
-        }
+        width: Math.max(280, Math.min(parent.width - 48, 1040))
+        height: Math.max(260, Math.min(parent.height - 64, 700))
 
         ColumnLayout {
             anchors.fill: parent
-            anchors.margins: 12
-            spacing: 8
+            spacing: 12
 
-            Rectangle {
-                id: searchBox
-                Layout.preferredWidth: 300
-                Layout.alignment: Qt.AlignHCenter
-                height: 36
-                radius: 12
-                color: search.activeFocus
-                    ? root.searchFocusBackground
-                    : (searchMouse.containsMouse
-                        ? root.searchHoverBackground
-                        : root.searchBackground)
-                border.width: 1
-                border.color: search.activeFocus
-                    ? root.searchFocusBorder
-                    : (searchMouse.containsMouse
-                        ? root.searchHoverBorder
-                        : root.searchBorder)
+            RowLayout {
+                Layout.fillWidth: true
+                Layout.preferredHeight: 20
+                spacing: 8
 
                 Text {
-                    anchors.left: parent.left
-                    anchors.leftMargin: 12
-                    anchors.verticalCenter: parent.verticalCenter
-                    text: "Search"
+                    text: "A16EEN"
+                    color: root.accent
+                    font.pixelSize: 11
+                    font.weight: Font.DemiBold
+                    font.letterSpacing: 2.2
+                }
+
+                Text {
+                    text: "/"
+                    color: "#4F5662"
+                    font.pixelSize: 10
+                }
+
+                Text {
+                    text: "APPLICATIONS"
                     color: root.secondaryText
-                    font.pixelSize: 11
-                    visible: search.text.length === 0 && !search.activeFocus
+                    font.pixelSize: 10
+                    font.letterSpacing: 1.8
                 }
 
-                TextInput {
-                    id: search
-                    anchors.fill: parent
-                    anchors.leftMargin: 12
-                    anchors.rightMargin: 12
-                    color: root.primaryText
-                    selectionColor: "#DDE2E7"
-                    selectedTextColor: root.primaryText
-                    font.pixelSize: 11
-                    clip: true
-                    focus: root.opened
-                    activeFocusOnPress: true
-                    verticalAlignment: Text.AlignVCenter
-                    text: root.searchText
-                    selectByMouse: true
+                Item {
+                    Layout.fillWidth: true
+                }
 
-                    onTextChanged: {
-                        root.searchText = text
-                        appGrid.currentIndex = appGrid.count > 0 ? 0 : -1
-                        root.launchError = ""
+                Text {
+                    text: appGrid.count + (appGrid.count === 1 ? " RESULT" : " RESULTS")
+                    color: root.mutedText
+                    font.pixelSize: 9
+                    font.letterSpacing: 1.2
+                }
+            }
+
+            ColumnLayout {
+                Layout.alignment: Qt.AlignHCenter
+                Layout.preferredWidth: Math.min(content.width, 560)
+                Layout.maximumWidth: content.width
+                spacing: 0
+
+                RowLayout {
+                    Layout.fillWidth: true
+                    Layout.preferredHeight: 48
+                    spacing: 12
+
+                    Text {
+                        text: "⌕"
+                        color: root.accent
+                        font.pixelSize: 30
+                        font.weight: Font.Light
+                        verticalAlignment: Text.AlignVCenter
                     }
 
+                    Item {
+                        id: searchInputSurface
+                        Layout.fillWidth: true
+                        Layout.preferredHeight: 44
 
-    Keys.onEscapePressed: root.closeRequested()
+                        TextInput {
+                            id: search
+                            anchors.fill: parent
+                            color: root.primaryText
+                            selectionColor: "#6B5737"
+                            selectedTextColor: "#FFFFFF"
+                            cursorDelegate: Rectangle {
+                                width: 1.5
+                                color: root.accent
+                            }
+                            font.pixelSize: 17
+                            font.weight: Font.Normal
+                            clip: true
+                            focus: root.opened
+                            activeFocusOnPress: true
+                            verticalAlignment: Text.AlignVCenter
+                            text: root.searchText
+                            selectByMouse: true
+                            renderType: Text.NativeRendering
 
-                    Keys.onReturnPressed: {
-                        if (appGrid.currentItem && appGrid.currentItem.entry)
-                            root.launch(appGrid.currentItem.entry)
-                    }
+                            onTextChanged: {
+                                root.searchText = text
+                                appGrid.currentIndex = appGrid.count > 0 ? 0 : -1
+                                root.launchError = ""
+                            }
 
-                    Keys.onRightPressed: {
-                        if (appGrid.currentIndex >= 0)
-                            appGrid.currentIndex = Math.min(
-                                appGrid.count - 1,
-                                appGrid.currentIndex + 1
-                            )
-                    }
+                            Keys.onEscapePressed: root.closeRequested()
 
-                    Keys.onLeftPressed: {
-                        if (appGrid.currentIndex > 0)
-                            appGrid.currentIndex -= 1
-                    }
+                            Keys.onReturnPressed: {
+                                if (appGrid.currentItem && appGrid.currentItem.entry)
+                                    root.launch(appGrid.currentItem.entry)
+                            }
 
-                    Keys.onDownPressed: {
-                        if (appGrid.count > 0) {
-                            const columns = 5
-                            appGrid.currentIndex = Math.min(
-                                appGrid.count - 1,
-                                appGrid.currentIndex + columns
-                            )
+                            Keys.onRightPressed: {
+                                if (appGrid.currentIndex >= 0)
+                                    appGrid.currentIndex = Math.min(
+                                        appGrid.count - 1,
+                                        appGrid.currentIndex + 1
+                                    )
+                            }
+
+                            Keys.onLeftPressed: {
+                                if (appGrid.currentIndex > 0)
+                                    appGrid.currentIndex -= 1
+                            }
+
+                            Keys.onDownPressed: {
+                                if (appGrid.count > 0) {
+                                    appGrid.currentIndex = Math.min(
+                                        appGrid.count - 1,
+                                        appGrid.currentIndex + root.navigationColumns
+                                    )
+                                }
+                            }
+
+                            Keys.onUpPressed: {
+                                if (appGrid.count > 0) {
+                                    appGrid.currentIndex = Math.max(
+                                        0,
+                                        appGrid.currentIndex - root.navigationColumns
+                                    )
+                                }
+                            }
+                        }
+
+                        Text {
+                            anchors.left: parent.left
+                            anchors.right: parent.right
+                            anchors.verticalCenter: parent.verticalCenter
+                            text: "Type to find an application…"
+                            color: root.mutedText
+                            font.pixelSize: 17
+                            visible: search.text.length === 0 && !search.activeFocus
+                            elide: Text.ElideRight
                         }
                     }
 
-                    Keys.onUpPressed: {
-                        if (appGrid.count > 0) {
-                            const columns = 5
-                            appGrid.currentIndex = Math.max(
-                                0,
-                                appGrid.currentIndex - columns
-                            )
-                        }
+                    Text {
+                        text: "↵  OPEN"
+                        color: root.mutedText
+                        font.pixelSize: 9
+                        font.letterSpacing: 1
+                        verticalAlignment: Text.AlignVCenter
                     }
                 }
 
-                MouseArea {
-                    id: searchMouse
-                    anchors.fill: parent
-                    acceptedButtons: Qt.NoButton
-                    hoverEnabled: true
-                    z: 1
+                Rectangle {
+                    Layout.fillWidth: true
+                    height: search.activeFocus ? 2 : 1
+                    radius: 1
+                    color: search.activeFocus ? root.accent : "#42FFFFFF"
+
+                    Behavior on color {
+                        ColorAnimation { duration: 120 }
+                    }
+
+                    Behavior on height {
+                        NumberAnimation { duration: 120 }
+                    }
                 }
             }
 
@@ -265,33 +323,56 @@ PanelWindow {
                 Layout.fillWidth: true
                 Layout.fillHeight: true
                 clip: true
-                cellWidth: 88
-                cellHeight: 72
+                cellWidth: 104
+                cellHeight: 108
                 currentIndex: count > 0 ? 0 : -1
+                keyNavigationWraps: true
+                boundsBehavior: Flickable.StopAtBounds
+                reuseItems: true
 
                 model: ScriptModel {
                     id: appModel
                     objectProp: "id"
-                    values: [...DesktopEntries.applications.values]
-                        .filter(entry => {
-                            if (!root.searchText.length)
-                                return true
+                    values: {
+                        const q = root.searchText.toLowerCase().trim()
+                        const entries = [...DesktopEntries.applications.values]
+                            .filter(entry => {
+                                if (!q)
+                                    return true
 
-                            const q = root.searchText.toLowerCase().trim()
-                            const haystack = [
-                                entry.name,
-                                entry.genericName,
-                                entry.comment,
-                                ...(entry.keywords || [])
-                            ].filter(value => value)
-                             .join(" ")
-                             .toLowerCase()
+                                const haystack = [
+                                    entry.name,
+                                    entry.genericName,
+                                    entry.comment,
+                                    ...(entry.keywords || [])
+                                ].filter(value => value)
+                                 .join(" ")
+                                 .toLowerCase()
 
-                            return haystack.includes(q)
+                                return haystack.includes(q)
+                            })
+
+                        const rank = entry => {
+                            if (!q)
+                                return 3
+                            const name = String(entry.name || "").toLowerCase()
+                            if (name === q)
+                                return 0
+                            if (name.startsWith(q))
+                                return 1
+                            if (name.includes(q))
+                                return 2
+                            return 3
+                        }
+
+                        entries.sort((a, b) => {
+                            const rankDifference = rank(a) - rank(b)
+                            if (rankDifference !== 0)
+                                return rankDifference
+                            return (a.name || "").localeCompare(b.name || "")
                         })
-                        .sort((a, b) =>
-                            (a.name || "").localeCompare(b.name || "")
-                        )
+                        return entries
+                    }
                 }
 
                 delegate: Rectangle {
@@ -300,55 +381,65 @@ PanelWindow {
                     required property var modelData
                     required property int index
 
-                    width: 82
-                    height: 68
-                    radius: 13
+                    width: 92
+                    height: 96
+                    radius: 15
                     color: appMouse.containsMouse
-                        ? "#F7F8FA"
+                        ? root.tileHoverBackground
                         : (GridView.isCurrentItem
-                            ? root.selectedBackground
-                            : "transparent")
+                            ? root.tileSelectedBackground
+                            : root.tileBackground)
+                    border.width: GridView.isCurrentItem || appMouse.containsMouse ? 1 : 1
+                    border.color: GridView.isCurrentItem || appMouse.containsMouse
+                        ? root.tileActiveBorder
+                        : root.tileBorder
 
                     property var entry: modelData
 
+                    Behavior on color {
+                        ColorAnimation { duration: 100 }
+                    }
+
+                    Behavior on border.color {
+                        ColorAnimation { duration: 100 }
+                    }
+
                     Column {
                         anchors.fill: parent
-                        anchors.topMargin: 4
-                        anchors.bottomMargin: 4
-                        anchors.leftMargin: 2
-                        anchors.rightMargin: 2
-                        spacing: 2
+                        anchors.margins: 7
+                        spacing: 4
 
                         Item {
                             width: parent.width
-                            height: 34
+                            height: 48
 
                             Image {
                                 anchors.centerIn: parent
-                                width: 28
-                                height: 28
+                                width: 34
+                                height: 34
                                 sourceSize.width: width
                                 sourceSize.height: height
                                 fillMode: Image.PreserveAspectFit
                                 asynchronous: true
                                 smooth: true
                                 mipmap: true
-                                cache: false
+                                cache: true
                                 source: root.iconSource(appTile.entry.icon)
                             }
                         }
 
                         Text {
                             width: parent.width
-                            height: 20
+                            height: 28
                             text: appTile.entry.name || "Application"
                             color: root.primaryText
-                            font.pixelSize: 9
+                            font.pixelSize: 10
                             font.weight: Font.Medium
                             horizontalAlignment: Text.AlignHCenter
                             verticalAlignment: Text.AlignVCenter
                             elide: Text.ElideRight
-                            maximumLineCount: 1
+                            maximumLineCount: 2
+                            wrapMode: Text.Wrap
                         }
                     }
 
@@ -364,31 +455,62 @@ PanelWindow {
 
                 Text {
                     anchors.centerIn: parent
+                    width: Math.min(parent.width - 48, 420)
                     visible: appGrid.count === 0
-                    text: "No applications found"
+                    text: root.searchText.trim().length
+                        ? "No applications match “" + root.searchText.trim() + "”"
+                        : "No applications found"
                     color: root.secondaryText
-                    font.pixelSize: 11
+                    font.pixelSize: 13
+                    horizontalAlignment: Text.AlignHCenter
+                    wrapMode: Text.Wrap
                 }
             }
 
-            Rectangle {
+            Text {
                 Layout.fillWidth: true
+                Layout.preferredHeight: root.launchError.length > 0 ? 18 : 0
                 visible: root.launchError.length > 0
-                height: 28
-                radius: 10
-                color: "#FFF5F5"
-                border.width: 1
-                border.color: "#F1D3D3"
+                text: root.launchError
+                color: "#F0A3A3"
+                font.pixelSize: 10
+                horizontalAlignment: Text.AlignHCenter
+                verticalAlignment: Text.AlignVCenter
+                elide: Text.ElideRight
+            }
+
+            RowLayout {
+                Layout.fillWidth: true
+                Layout.preferredHeight: 18
+                spacing: 12
 
                 Text {
-                    anchors.fill: parent
-                    anchors.leftMargin: 10
-                    anchors.rightMargin: 10
-                    verticalAlignment: Text.AlignVCenter
-                    text: root.launchError
-                    color: "#9B3A3A"
-                    font.pixelSize: 8
+                    Layout.fillWidth: true
+                    text: root.selectedAppDescription
+                    color: root.mutedText
+                    font.pixelSize: 10
                     elide: Text.ElideRight
+                }
+
+                Text {
+                    text: "↑ ↓  MOVE"
+                    color: root.mutedText
+                    font.pixelSize: 9
+                    font.letterSpacing: 0.8
+                }
+
+                Text {
+                    text: "↵  LAUNCH"
+                    color: root.mutedText
+                    font.pixelSize: 9
+                    font.letterSpacing: 0.8
+                }
+
+                Text {
+                    text: "ESC  CLOSE"
+                    color: root.mutedText
+                    font.pixelSize: 9
+                    font.letterSpacing: 0.8
                 }
             }
         }
@@ -413,7 +535,10 @@ PanelWindow {
         root.launchError = ""
 
         if (opened) {
-            Qt.callLater(() => search.forceActiveFocus())
+            Qt.callLater(() => {
+                search.forceActiveFocus()
+                search.cursorPosition = search.text.length
+            })
         } else {
             search.text = ""
         }
