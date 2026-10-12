@@ -131,7 +131,7 @@ PanelWindow {
                         }
                     }
 
-remove permanent labels under icons                    Rectangle {
+                    Rectangle {
                         visible: root.hoveredDesktopId === modelData.desktopId
                         anchors.horizontalCenter: parent.horizontalCenter
                         anchors.bottom: parent.top
