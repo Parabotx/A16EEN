@@ -52,9 +52,10 @@ PanelWindow {
         }
         return false
     }
-    readonly property int orbitDiameter: root.activeApps.length > 13 ? 260
-        : root.activeApps.length > 5 ? 194
-        : root.activeApps.length > 1 ? 132 : 82
+    // Give every orbit enough breathing room and a consistent outer margin.
+    readonly property int orbitDiameter: root.activeApps.length > 13 ? 280
+        : root.activeApps.length > 5 ? 214
+        : root.activeApps.length > 1 ? 132 : 92
     readonly property int shelfWidth: root.shape === "circle" ? root.orbitDiameter
         : root.modelData
             ? Math.min(Math.max(root.activeApps.length > 0 ? root.activeApps.length * 39 + 22 : 166,
@@ -94,8 +95,8 @@ PanelWindow {
         if (index <= 4)
             return 43
         if (index <= 12)
-            return 75
-        return 107
+            return 80
+        return 117
     }
 
     function orbitSlotFor(index) {
@@ -192,9 +193,9 @@ PanelWindow {
         anchors.bottom: parent.bottom
         anchors.bottomMargin: root.centerFromBottom - height / 2
         radius: root.shelfRadius
-        color: "#D911151D"
+        color: root.shape === "circle" ? "#D90B1017" : "#D911151D"
         border.width: 1
-        border.color: "#35FFFFFF"
+        border.color: root.shape === "circle" ? "#3C91A7BF" : "#35FFFFFF"
         clip: false
 
         Rectangle {
@@ -203,7 +204,7 @@ PanelWindow {
             radius: Math.max(4, root.shelfRadius - 1)
             color: "transparent"
             border.width: 1
-            border.color: "#0FFFFFFF"
+            border.color: root.shape === "circle" ? "#18B2C4D8" : "#0FFFFFFF"
         }
 
         // Hovering anywhere on the circle freezes the current angles rather than
@@ -216,9 +217,9 @@ PanelWindow {
         // Concentric tracks stay still while the app buttons orbit smoothly.
         Repeater {
             model: [
-                { size: 86, visible: root.activeApps.length > 1 },
-                { size: 150, visible: root.activeApps.length > 5 },
-                { size: 214, visible: root.activeApps.length > 13 }
+                { size: 86, visible: root.activeApps.length > 1, color: "#2A9DB2C8" },
+                { size: 160, visible: root.activeApps.length > 5, color: "#24889CB2" },
+                { size: 234, visible: root.activeApps.length > 13, color: "#207B90A6" }
             ]
 
             delegate: Rectangle {
@@ -229,7 +230,7 @@ PanelWindow {
                 radius: width / 2
                 color: "transparent"
                 border.width: 1
-                border.color: "#22FFFFFF"
+                border.color: modelData.color
                 visible: root.shape === "circle" && modelData.visible
             }
         }
@@ -325,7 +326,7 @@ PanelWindow {
                 required property var modelData
                 required property int index
                 visible: root.shape === "circle"
-                width: index === 0 ? 40 : 34
+                width: index === 0 ? 42 : 32
                 height: width
                 x: (shelfCard.width - width) / 2
                     + (index === 0 ? 0 : Math.cos(root.orbitAngleFor(index) * Math.PI / 180)
@@ -340,13 +341,29 @@ PanelWindow {
                     anchors.fill: parent
                     radius: width / 2
                     color: orbitMouse.containsMouse
-                        ? "#35FFFFFF" : (parent.index === 0 ? "#26FFFFFF" : "#14FFFFFF")
-                    border.width: parent.index === 0 || orbitMouse.containsMouse ? 1 : 0
-                    border.color: "#45FFFFFF"
+                        ? "#3298B3CB"
+                        : parent.index === 0 ? "#29334251" : "#1B202B38"
+                    border.width: 1
+                    border.color: orbitMouse.containsMouse
+                        ? "#8BC7D9EC"
+                        : parent.index === 0 ? "#5A8FA6C0" : "#32869BB1"
+                    scale: orbitMouse.containsMouse ? 1.055 : 1.0
+
+                    Behavior on color {
+                        ColorAnimation { duration: 120; easing.type: Easing.OutCubic }
+                    }
+
+                    Behavior on border.color {
+                        ColorAnimation { duration: 120; easing.type: Easing.OutCubic }
+                    }
+
+                    Behavior on scale {
+                        NumberAnimation { duration: 110; easing.type: Easing.OutCubic }
+                    }
 
                     Image {
                         anchors.centerIn: parent
-                        width: parent.parent.index === 0 ? 24 : 21
+                        width: parent.parent.index === 0 ? 25 : 19
                         height: width
                         source: modelData.icon.length
                             ? Quickshell.iconPath(modelData.icon, "application-x-executable")
@@ -400,26 +417,37 @@ PanelWindow {
 
         Column {
             anchors.centerIn: parent
-            spacing: 4
+            spacing: 6
             visible: root.shape === "circle" && root.activeApps.length === 0
 
-            Image {
+            Rectangle {
                 anchors.horizontalCenter: parent.horizontalCenter
-                width: 18
-                height: 18
-                source: Qt.resolvedUrl("../assets/icons/lucide-app-window.svg")
-                sourceSize.width: 36
-                sourceSize.height: 36
-                smooth: true
+                width: 36
+                height: 36
+                radius: 18
+                color: "#1CFFFFFF"
+                border.width: 1
+                border.color: "#318CA4BA"
+
+                Image {
+                    anchors.centerIn: parent
+                    width: 18
+                    height: 18
+                    source: Qt.resolvedUrl("../assets/icons/lucide-app-window.svg")
+                    sourceSize.width: 36
+                    sourceSize.height: 36
+                    smooth: true
+                }
             }
 
             Text {
-                text: "PIN APPS"
-                color: "#CAD2DD"
+                anchors.horizontalCenter: parent.horizontalCenter
+                text: "PIN YOUR APPS"
+                color: "#B8C4D2"
                 font.family: "Inter"
-                font.pixelSize: 6
+                font.pixelSize: 7
                 font.weight: Font.DemiBold
-                font.letterSpacing: 0.6
+                font.letterSpacing: 0.8
             }
         }
 
