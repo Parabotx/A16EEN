@@ -11,6 +11,7 @@ Item {
     property bool quotesEnabled: false
     property bool appShelfEnabled: false
     property string appShelfShape: "capsule"
+    property bool appShelfRotationEnabled: true
     property var appShelfApps: []
     property string appShelfSearch: ""
     property bool timeUse24Hour: true
@@ -33,6 +34,7 @@ Item {
     signal quotesWidgetEnabledRequested(bool enabled)
     signal appShelfWidgetEnabledRequested(bool enabled)
     signal appShelfShapeRequested(string shape)
+    signal appShelfRotationEnabledRequested(bool enabled)
     signal appShelfAppsRequested(var apps)
     signal timeUse24HourRequested(bool enabled)
     signal timeShowSecondsRequested(bool enabled)
@@ -117,7 +119,7 @@ Item {
     ColumnLayout {
         anchors.fill: parent
         anchors.margins: 20
-        spacing: 16
+        spacing: root.selectedWidgetId === "app-shelf" ? 4 : 16
 
         RowLayout {
             Layout.fillWidth: true
@@ -557,14 +559,6 @@ Item {
                     spacing: 7
 
                     Text {
-                        text: "APP SHELF SETTINGS"
-                        color: root.textMuted
-                        font.pixelSize: 8
-                        font.weight: Font.DemiBold
-                        font.letterSpacing: 1.0
-                    }
-
-                    Text {
                         text: "DOCK SHAPE"
                         color: root.textMuted
                         font.pixelSize: 8
@@ -610,6 +604,63 @@ Item {
                                     cursorShape: Qt.PointingHandCursor
                                     onClicked: root.appShelfShapeRequested(modelData.value)
                                 }
+                            }
+                        }
+                    }
+
+                    RowLayout {
+                        visible: root.appShelfShape === "circle"
+                        Layout.fillWidth: true
+                        Layout.preferredHeight: visible ? 38 : 0
+                        spacing: 8
+
+                        ColumnLayout {
+                            Layout.fillWidth: true
+                            spacing: 2
+
+                            Text {
+                                text: "ORBIT ROTATION"
+                                color: root.textPrimary
+                                font.pixelSize: 8
+                                font.weight: Font.DemiBold
+                            }
+
+                            Text {
+                                text: root.appShelfRotationEnabled ? "Apps rotate around the center" : "Apps stay fixed in their rings"
+                                color: root.textSecondary
+                                font.pixelSize: 7
+                            }
+                        }
+
+                        Item {
+                            Layout.preferredWidth: 38
+                            Layout.preferredHeight: 24
+
+                            Rectangle {
+                                anchors.centerIn: parent
+                                width: 34
+                                height: 20
+                                radius: 10
+                                color: root.appShelfRotationEnabled ? root.activeBackground : "#DDE2E8"
+
+                                Rectangle {
+                                    width: 14
+                                    height: 14
+                                    y: 3
+                                    x: root.appShelfRotationEnabled ? 17 : 3
+                                    radius: 7
+                                    color: "#FFFFFF"
+
+                                    Behavior on x {
+                                        NumberAnimation { duration: 120; easing.type: Easing.OutCubic }
+                                    }
+                                }
+                            }
+
+                            MouseArea {
+                                anchors.fill: parent
+                                cursorShape: Qt.PointingHandCursor
+                                onClicked: root.appShelfRotationEnabledRequested(!root.appShelfRotationEnabled)
                             }
                         }
                     }
