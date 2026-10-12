@@ -508,12 +508,20 @@ PanelWindow {
 
                                     onClicked: {
                                         root.closeRequested()
-                                        Quickshell.execDetached([
-                                            "a16een-wallpaper",
-                                            "set",
-                                            modelData.source,
-                                            modelData.name
-                                        ])
+                                        if (modelData.source === "external") {
+                                            Quickshell.execDetached([
+                                                "a16een-wallpaper",
+                                                "set-path",
+                                                modelData.path
+                                            ])
+                                        } else {
+                                            Quickshell.execDetached([
+                                                "a16een-wallpaper",
+                                                "set",
+                                                modelData.source,
+                                                modelData.name
+                                            ])
+                                        }
                                     }
                                 }
                             }
