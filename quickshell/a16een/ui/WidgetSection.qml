@@ -119,7 +119,8 @@ Item {
     ColumnLayout {
         anchors.fill: parent
         anchors.margins: 20
-        spacing: root.selectedWidgetId === "app-shelf" ? 4 : 16
+        anchors.topMargin: root.selectedWidgetId === "app-shelf" ? 8 : 20
+        spacing: root.selectedWidgetId === "app-shelf" ? 2 : 16
 
         RowLayout {
             Layout.fillWidth: true
