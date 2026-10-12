@@ -49,7 +49,7 @@ PanelWindow {
         : (root.page === "monitor" ? 310
         : (root.page === "calculator" ? 420
         : (root.page === "screen-time" ? 420
-        : (root.page === "data-meter" ? 390 : (root.page === "tools" ? 398 : 316)))))
+        : (root.page === "data-meter" ? 390 : 316))))
     property var monitorStats: null
     property string monitorError: ""
     readonly property var monitorMetrics: [
