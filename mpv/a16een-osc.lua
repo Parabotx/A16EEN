@@ -18,7 +18,7 @@ local mouse = { x = -10000, y = -10000, hover = false }
 local areas = {}
 local control_names = {
     "chapter_prev", "rewind", "play", "forward", "chapter_next",
-    "subtitle", "audio", "speed", "volume", "loop", "screenshot", "fullscreen"
+    "subtitle", "audio", "speed", "mute", "loop", "screenshot", "fullscreen"
 }
 
 local function has_video()
@@ -139,7 +139,7 @@ local function draw_volume_slider(lines, x, y, w, volume, mx, my, hovering)
     end
     local knob_x = track_x + track_w * ratio
     add_round(lines, knob_x - 4, track_y - 3, 8, 9, 4, accent, 0)
-    if hovered("volume", mx, my, hovering) then
+    if hovering and inside(mx, my, areas.volume) then
         add_text(lines, x + w - 12, track_y - 5, tostring(math.floor(volume + 0.5)) .. "%", 8, paper, 9, false)
     end
 end
@@ -259,9 +259,9 @@ local function render()
     add_card(lines, tool_x, row_y, tool_w, card_h, 18)
     local items
     if tool_w < 205 then
-        items = { "subtitle", "volume", "fullscreen" }
+        items = { "subtitle", "mute", "fullscreen" }
     elseif tiny or compact then
-        items = { "subtitle", "audio", "speed", "volume", "fullscreen" }
+        items = { "subtitle", "audio", "speed", "mute", "fullscreen" }
     else
         items = { "subtitle", "audio", "speed", "volume", "loop", "screenshot", "fullscreen" }
     end
@@ -269,7 +269,7 @@ local function render()
         subtitle = "CC",
         audio = "♪",
         speed = string.format("%.2g×", mp.get_property_number("speed", 1)),
-        volume = mp.get_property_bool("mute", false) and "×" or "◖",
+        mute = mp.get_property_bool("mute", false) and "×" or "◖",
         loop = "↻",
         screenshot = "▣",
         fullscreen = mp.get_property_bool("fullscreen", false) and "↙" or "⛶"
@@ -283,9 +283,9 @@ local function render()
         local bx = start_cx + (i - 1) * (button_w + button_gap)
         local active = (name == "loop" and loop_enabled)
             or (name == "subtitle" and mp.get_property_number("sid", -1) >= 0)
-            or (name == "volume" and mp.get_property_bool("mute", false))
+            or (name == "mute" and mp.get_property_bool("mute", false))
         draw_button(lines, name, bx, row_y + 25, button_w, 29, labels[name],
-            name == "speed" or name == "subtitle" and 9 or 13,
+            (name == "speed" or name == "subtitle") and 9 or 13,
             { active = active, active_color = active and name == "volume" and "#E7A2A2" or accent,
               active_text = ink, color = name == "speed" and accent or paper,
               mx = mx, my = my, hovering = hovering })
@@ -365,7 +365,7 @@ local function activate(name)
             end
         end
         mp.set_property_number("speed", speeds[next_index])
-    elseif name == "volume" then
+    elseif name == "mute" then
         mp.set_property_bool("mute", not mp.get_property_bool("mute", false))
     elseif name == "loop" then
         mp.set_property("loop-file", mp.get_property("loop-file", "no") == "inf" and "no" or "inf")
