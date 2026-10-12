@@ -232,7 +232,7 @@ catalog() {
     # Keep an externally selected file in place instead of copying it into A16EEN folders.
     if [ "$source" = "external" ] && [ -f "$filename" ]; then
         printf '%s\t%s\t%s\t%s\t1\t%s\n' \
-            "external" "$filename" "$(display_name "$filename")" "$filename" "$(media_type "$filename" "$filename")"
+            "external" "$filename" "$(display_name "${filename##*/}")" "$filename" "$(media_type "$filename" "$filename")"
     fi
 }
 
