@@ -39,6 +39,11 @@ Media / capture
   screenshot-screen           Capture the focused screen
   screenshot-window           Capture the focused window
 
+MPV player
+  mpv theme status            Show A16EEN MPV theme status
+  mpv theme on                Enable rounded A16EEN player controls
+  mpv theme off               Restore the default MPV controller
+
 Visuals
   wallpaper list              List available wallpapers
   wallpaper current           Show the active wallpaper
@@ -284,6 +289,12 @@ case "$command" in
         case "${1:-}" in
             shot|screenshot) command="screenshot"; shift ;;
             *) die "usage: a16 screen shot" ;;
+        esac
+        ;;
+    mpv)
+        case "${1:-}" in
+            theme) command="mpv-theme"; shift ;;
+            *) die "usage: a16 mpv theme on|off|status" ;;
         esac
         ;;
     system)
@@ -537,6 +548,15 @@ case "$command" in
         fi
         [[ -x "$SOURCE_DIR/scripts/a16een-wallpaper" ]] || die "A16EEN wallpaper manager is not installed."
         exec "$SOURCE_DIR/scripts/a16een-wallpaper" "$@"
+        ;;
+
+    mpv-theme)
+        [[ $# -eq 1 ]] || die "usage: a16 mpv theme on|off|status"
+        if [[ -x /usr/local/bin/a16een-mpv-theme ]]; then
+            exec /usr/local/bin/a16een-mpv-theme "$1"
+        fi
+        [[ -x "$SOURCE_DIR/scripts/a16een-mpv-theme" ]] || die "A16EEN MPV theme manager is not installed. Run the installer first."
+        exec "$SOURCE_DIR/scripts/a16een-mpv-theme" "$1"
         ;;
 
     icons)
