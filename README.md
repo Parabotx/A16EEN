@@ -151,7 +151,7 @@ Supported static image formats include PNG, JPG, JPEG, WEBP, BMP, TIFF, TGA, SVG
 
 ## MPV player theme
 
-A16EEN can apply a minimal MPV on-screen controller arranged as separate rounded containers, matching the desktop navbar: media information, playback controls, a standalone timeline, and a compact tools capsule. The design uses deep charcoal surfaces, thin borders, subtle gold accents, and responsive layouts that hide secondary controls on narrow windows. Features include click-to-seek, a volume slider and mute, chapter navigation, ±10-second seeking, playback speed presets, subtitle/audio-track cycling, per-file looping, screenshots, and fullscreen. Controls appear while the pointer moves and auto-hide when inactive. Audio-only MPV sessions used by the A16EEN music widget are left alone.
+A16EEN provides a clean white MPV on-screen controller as one centered row of separate rounded containers at the bottom: the media title, a gold play/pause button, a white timeline capsule with black played progress, subtitle/audio selectors, and a lock button. The subtitle and audio selectors open small menus above the bar so users can choose an available track. Lock mode hides every other control and blocks wheel actions until the user clicks Unlock. Controls appear while the pointer moves and auto-hide when inactive. Audio-only MPV sessions used by the A16EEN music widget are left alone.
 
 The installer deploys the theme into an A16EEN-owned directory and backs up changed theme files. It adds a small managed include block to `~/.config/mpv/mpv.conf` rather than replacing that file or the user's `input.conf`. The MPV configuration is backed up before the include block is added or removed.
 
