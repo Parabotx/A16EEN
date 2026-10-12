@@ -1390,11 +1390,11 @@ auto_check() {
     local now clock day last elapsed interval enabled path
     now="$(date +%s)"; clock="$(date +%H:%M)"; day="$(date +%Y%m%d)"
     enabled="$(setting_get enabled)"
-    if [ "$clock" = "$(setting_get morning_time)" ] && [ "$(setting_get last_morning)" != "$day" ]; then
+    if [[ "$clock" > "$(setting_get morning_time)" || "$clock" = "$(setting_get morning_time)" ]] && [ "$(setting_get last_morning)" != "$day" ] && [ -n "$(setting_get morning_path)" ]; then
         path="$(setting_get morning_path)"; [ -n "$path" ] && [ -f "$path" ] && set_external_path "$path"
         setting_set last_morning "$day"; exit 0
     fi
-    if [ "$clock" = "$(setting_get evening_time)" ] && [ "$(setting_get last_evening)" != "$day" ]; then
+    if [[ "$clock" > "$(setting_get evening_time)" || "$clock" = "$(setting_get evening_time)" ]] && [ "$(setting_get last_evening)" != "$day" ] && [ -n "$(setting_get evening_path)" ]; then
         path="$(setting_get evening_path)"; [ -n "$path" ] && [ -f "$path" ] && set_external_path "$path"
         setting_set last_evening "$day"; exit 0
     fi
