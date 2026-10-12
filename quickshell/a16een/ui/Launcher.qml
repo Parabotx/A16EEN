@@ -18,15 +18,15 @@ PanelWindow {
 
     signal closeRequested()
 
-    readonly property color accent: "#D8B16A"
-    readonly property color primaryText: "#F2F3F5"
-    readonly property color secondaryText: "#9DA3AE"
-    readonly property color mutedText: "#737A86"
-    readonly property color tileBackground: "#12FFFFFF"
-    readonly property color tileHoverBackground: "#1ED8B16A"
-    readonly property color tileSelectedBackground: "#25D8B16A"
-    readonly property color tileBorder: "#1EFFFFFF"
-    readonly property color tileActiveBorder: "#A88750"
+    readonly property color accent: "#687382"
+    readonly property color primaryText: "#E7E9ED"
+    readonly property color secondaryText: "#A4AAB4"
+    readonly property color mutedText: "#777F8A"
+    readonly property color tileBackground: "#CC11151B"
+    readonly property color tileHoverBackground: "#E01B222B"
+    readonly property color tileSelectedBackground: "#F0242C37"
+    readonly property color tileBorder: "#302D3540"
+    readonly property color tileActiveBorder: "#586371"
     readonly property int navigationColumns: Math.max(1, Math.floor(appGrid.width / appGrid.cellWidth))
     readonly property string selectedAppDescription: {
         const item = appGrid.currentItem
@@ -147,16 +147,16 @@ PanelWindow {
         id: content
         z: 2
         anchors.centerIn: parent
-        width: Math.max(280, Math.min(parent.width - 48, 1040))
-        height: Math.max(260, Math.min(parent.height - 64, 700))
+        width: Math.max(280, Math.min(parent.width - 48, 480))
+        height: Math.max(280, Math.min(parent.height - 64, 360))
 
         ColumnLayout {
             anchors.fill: parent
-            spacing: 12
+            spacing: 8
 
             RowLayout {
                 Layout.fillWidth: true
-                Layout.preferredHeight: 20
+                Layout.preferredHeight: 16
                 spacing: 8
 
                 Text {
@@ -200,33 +200,25 @@ PanelWindow {
 
                 RowLayout {
                     Layout.fillWidth: true
-                    Layout.preferredHeight: 48
-                    spacing: 12
-
-                    Text {
-                        text: "⌕"
-                        color: root.accent
-                        font.pixelSize: 30
-                        font.weight: Font.Light
-                        verticalAlignment: Text.AlignVCenter
-                    }
+                    Layout.preferredHeight: 36
+                    spacing: 0
 
                     Item {
                         id: searchInputSurface
                         Layout.fillWidth: true
-                        Layout.preferredHeight: 44
+                        Layout.preferredHeight: 34
 
                         TextInput {
                             id: search
                             anchors.fill: parent
                             color: root.primaryText
-                            selectionColor: "#6B5737"
+                            selectionColor: "#343D49"
                             selectedTextColor: "#FFFFFF"
                             cursorDelegate: Rectangle {
                                 width: 1.5
-                                color: root.accent
+                                color: root.tileActiveBorder
                             }
-                            font.pixelSize: 17
+                            font.pixelSize: 13
                             font.weight: Font.Normal
                             clip: true
                             focus: root.opened
@@ -287,26 +279,19 @@ PanelWindow {
                             anchors.verticalCenter: parent.verticalCenter
                             text: "Type to find an application…"
                             color: root.mutedText
-                            font.pixelSize: 17
+                            font.pixelSize: 13
                             visible: search.text.length === 0
                             elide: Text.ElideRight
                         }
                     }
 
-                    Text {
-                        text: "↵  OPEN"
-                        color: root.mutedText
-                        font.pixelSize: 9
-                        font.letterSpacing: 1
-                        verticalAlignment: Text.AlignVCenter
-                    }
                 }
 
                 Rectangle {
                     Layout.fillWidth: true
-                    height: search.activeFocus ? 2 : 1
+                    height: 1
                     radius: 1
-                    color: search.activeFocus ? root.accent : "#42FFFFFF"
+                    color: search.activeFocus ? root.tileActiveBorder : root.tileBorder
 
                     Behavior on color {
                         ColorAnimation { duration: 120 }
@@ -323,8 +308,8 @@ PanelWindow {
                 Layout.fillWidth: true
                 Layout.fillHeight: true
                 clip: true
-                cellWidth: 104
-                cellHeight: 108
+                cellWidth: 78
+                cellHeight: 78
                 currentIndex: count > 0 ? 0 : -1
                 keyNavigationWraps: true
                 boundsBehavior: Flickable.StopAtBounds
@@ -381,15 +366,15 @@ PanelWindow {
                     required property var modelData
                     required property int index
 
-                    width: 92
-                    height: 96
-                    radius: 15
+                    width: 70
+                    height: 70
+                    radius: 12
                     color: appMouse.containsMouse
                         ? root.tileHoverBackground
                         : (GridView.isCurrentItem
                             ? root.tileSelectedBackground
                             : root.tileBackground)
-                    border.width: GridView.isCurrentItem || appMouse.containsMouse ? 1 : 1
+                    border.width: 1
                     border.color: GridView.isCurrentItem || appMouse.containsMouse
                         ? root.tileActiveBorder
                         : root.tileBorder
@@ -406,17 +391,17 @@ PanelWindow {
 
                     Column {
                         anchors.fill: parent
-                        anchors.margins: 7
-                        spacing: 4
+                        anchors.margins: 5
+                        spacing: 2
 
                         Item {
                             width: parent.width
-                            height: 48
+                            height: 32
 
                             Image {
                                 anchors.centerIn: parent
-                                width: 34
-                                height: 34
+                                width: 26
+                                height: 26
                                 sourceSize.width: width
                                 sourceSize.height: height
                                 fillMode: Image.PreserveAspectFit
@@ -430,10 +415,10 @@ PanelWindow {
 
                         Text {
                             width: parent.width
-                            height: 28
+                            height: 24
                             text: appTile.entry.name || "Application"
                             color: root.primaryText
-                            font.pixelSize: 10
+                            font.pixelSize: 9
                             font.weight: Font.Medium
                             horizontalAlignment: Text.AlignHCenter
                             verticalAlignment: Text.AlignVCenter
@@ -481,8 +466,8 @@ PanelWindow {
 
             RowLayout {
                 Layout.fillWidth: true
-                Layout.preferredHeight: 18
-                spacing: 12
+                Layout.preferredHeight: 16
+                spacing: 8
 
                 Text {
                     Layout.fillWidth: true
