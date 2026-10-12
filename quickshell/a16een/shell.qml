@@ -456,6 +456,14 @@ ShellRoot {
     readonly property bool focusedWindowFullscreen: ToplevelManager.activeToplevel
         ? ToplevelManager.activeToplevel.fullscreen
         : false
+
+    ScreenTimeTracker {
+        id: screenTimeTracker
+        focusedWindowId: root.focusedWindowId
+        windows: root.windows
+        locked: root.lockLaunchQueued || root.secureLockActive
+    }
+
     readonly property bool wallpaperDesktopActive:
         root.focusedWindowId < 0
         && !root.focusedWindowFullscreen
@@ -803,6 +811,18 @@ ShellRoot {
 
         function prepare(): void {
             root.prepareLockBeforeSleep()
+        }
+    }
+
+    IpcHandler {
+        target: "screen-time"
+
+        function idle(): void {
+            screenTimeTracker.setIdleState(true)
+        }
+
+        function resume(): void {
+            screenTimeTracker.setIdleState(false)
         }
     }
 
@@ -1243,7 +1263,7 @@ ShellRoot {
 
     function activateHubTool(toolId) {
         const id = String(toolId || "")
-        if (["calculator", "monitor", "stash", "data-meter"].includes(id)) {
+        if (["calculator", "monitor", "stash", "data-meter", "screen-time"].includes(id)) {
             root.openToolsPage(id)
             return
         }
@@ -1586,6 +1606,12 @@ ShellRoot {
         dataMeterSnapshot: root.dataMeterSnapshot
         dataMeterSnapshotReady: root.dataMeterSnapshotReady
         dataMeterError: root.dataMeterError
+        screenTimeTodaySeconds: screenTimeTracker.todaySeconds
+        screenTimeWeekSeconds: screenTimeTracker.weekSeconds
+        screenTimeTopApps: screenTimeTracker.topApps
+        screenTimeTrackingActive: screenTimeTracker.trackingActive
+        screenTimeStatus: screenTimeTracker.statusText
+        screenTimeCurrentApp: screenTimeTracker.currentAppName
         onDataMeterToggleRequested: enabled => root.setDataMeterEnabled(enabled)
         onAppStashRequested: root.openToolsPage("stash")
         onBackRequested: root.toolsPanelPage = "tools"
