@@ -15,6 +15,7 @@ BOOLEAN_KEYS = {
     "musicWidgetEnabled",
     "quotesWidgetEnabled",
     "appShelfWidgetEnabled",
+    "appShelfRotationEnabled",
     "timeUse24Hour",
     "timeShowSeconds",
 }
@@ -24,6 +25,7 @@ DEFAULTS = {
     "quotesWidgetEnabled": False,
     "appShelfWidgetEnabled": False,
     "appShelfShape": "capsule",
+    "appShelfRotationEnabled": True,
     "appShelfApps": [],
     "timeUse24Hour": True,
     "timeShowSeconds": False,
