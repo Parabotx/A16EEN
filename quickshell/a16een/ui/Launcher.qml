@@ -15,18 +15,22 @@ PanelWindow {
     property int iconThemeRevision: 0
     property string iconThemeName: "system"
     property var resolvedIconPaths: ({})
+    property var appUsage: ({})
+    property var pendingAppUsage: ({})
+    property bool appUsageLoaded: false
+    readonly property string appUsagePath: Quickshell.stateDir + "/launcher-usage.json"
 
     signal closeRequested()
 
-    readonly property color accent: "#687382"
+    readonly property color accent: "#66717F"
     readonly property color primaryText: "#E7E9ED"
     readonly property color secondaryText: "#A4AAB4"
     readonly property color mutedText: "#777F8A"
-    readonly property color tileBackground: "#CC11151B"
-    readonly property color tileHoverBackground: "#E01B222B"
-    readonly property color tileSelectedBackground: "#F0242C37"
-    readonly property color tileBorder: "#302D3540"
-    readonly property color tileActiveBorder: "#586371"
+    readonly property color tileBackground: "#171B22"
+    readonly property color tileHoverBackground: "#202630"
+    readonly property color tileSelectedBackground: "#252D38"
+    readonly property color tileBorder: "#303844"
+    readonly property color tileActiveBorder: "#465263"
     readonly property int navigationColumns: Math.max(1, Math.floor(appGrid.width / appGrid.cellWidth))
     readonly property string selectedAppDescription: {
         const item = appGrid.currentItem
@@ -91,6 +95,86 @@ PanelWindow {
             || Quickshell.iconPath(name, "application-x-executable")
     }
 
+    function usageId(entry) {
+        return String(entry && (entry.id || entry.desktopFile || entry.name) || "").trim()
+    }
+
+    function usageCount(entry) {
+        const record = root.appUsage[root.usageId(entry)]
+        return Math.max(0, Number(record && record.count || 0))
+    }
+
+    function usageLastUsed(entry) {
+        const record = root.appUsage[root.usageId(entry)]
+        return Math.max(0, Number(record && record.lastUsed || 0))
+    }
+
+    function loadAppUsage(rawText) {
+        const saved = ({})
+        try {
+            const parsed = JSON.parse(String(rawText || "{}"))
+            const stored = parsed && parsed.usage && typeof parsed.usage === "object"
+                ? parsed.usage
+                : {}
+
+            for (const id in stored) {
+                const record = stored[id]
+                const count = Math.floor(Number(typeof record === "number" ? record : record && record.count || 0))
+                const lastUsed = Math.max(0, Number(record && typeof record === "object" ? record.lastUsed || 0 : 0))
+                if (id && isFinite(count) && count > 0)
+                    saved[id] = { count: count, lastUsed: isFinite(lastUsed) ? lastUsed : 0 }
+            }
+        } catch (error) {
+            console.warn("A16EEN launcher usage history could not be read:", error)
+        }
+
+        const pending = root.pendingAppUsage
+        for (const id in pending) {
+            const record = pending[id] || {}
+            const existing = saved[id] || { count: 0, lastUsed: 0 }
+            saved[id] = {
+                count: Number(existing.count || 0) + Number(record.count || 0),
+                lastUsed: Math.max(Number(existing.lastUsed || 0), Number(record.lastUsed || 0))
+            }
+        }
+
+        root.appUsage = saved
+        root.pendingAppUsage = ({})
+        root.appUsageLoaded = true
+        if (Object.keys(pending).length > 0)
+            appUsageSaveTimer.restart()
+    }
+
+    function recordAppUsage(entry) {
+        const id = root.usageId(entry)
+        if (!id)
+            return
+
+        if (!root.appUsageLoaded) {
+            const pending = ({})
+            for (const key in root.pendingAppUsage)
+                pending[key] = root.pendingAppUsage[key]
+            const previous = pending[id] || { count: 0, lastUsed: 0 }
+            pending[id] = {
+                count: Number(previous.count || 0) + 1,
+                lastUsed: Date.now()
+            }
+            root.pendingAppUsage = pending
+            return
+        }
+
+        const next = ({})
+        for (const key in root.appUsage)
+            next[key] = root.appUsage[key]
+        const previous = next[id] || { count: 0, lastUsed: 0 }
+        next[id] = {
+            count: Number(previous.count || 0) + 1,
+            lastUsed: Date.now()
+        }
+        root.appUsage = next
+        appUsageSaveTimer.restart()
+    }
+
     function launch(entry) {
         root.launchError = ""
 
@@ -101,12 +185,37 @@ PanelWindow {
 
         try {
             entry.execute()
+            root.recordAppUsage(entry)
             root.closeRequested()
             return true
         } catch (error) {
             root.launchError = "Couldn't launch " + entry.name + "."
             console.error("A16EEN launcher:", entry.name, error)
             return false
+        }
+    }
+
+    FileView {
+        id: appUsageFile
+        path: root.appUsagePath
+        preload: true
+        printErrors: false
+        atomicWrites: true
+        onLoaded: root.loadAppUsage(appUsageFile.text())
+        onLoadFailed: root.loadAppUsage("{}")
+    }
+
+    Timer {
+        id: appUsageSaveTimer
+        interval: 250
+        repeat: false
+        onTriggered: {
+            if (root.appUsageLoaded) {
+                appUsageFile.setText(JSON.stringify({
+                    version: 1,
+                    usage: root.appUsage
+                }))
+            }
         }
     }
 
@@ -153,44 +262,6 @@ PanelWindow {
         ColumnLayout {
             anchors.fill: parent
             spacing: 8
-
-            RowLayout {
-                Layout.fillWidth: true
-                Layout.preferredHeight: 16
-                spacing: 8
-
-                Text {
-                    text: "A16EEN"
-                    color: root.accent
-                    font.pixelSize: 11
-                    font.weight: Font.DemiBold
-                    font.letterSpacing: 2.2
-                }
-
-                Text {
-                    text: "/"
-                    color: "#4F5662"
-                    font.pixelSize: 10
-                }
-
-                Text {
-                    text: "APPLICATIONS"
-                    color: root.secondaryText
-                    font.pixelSize: 10
-                    font.letterSpacing: 1.8
-                }
-
-                Item {
-                    Layout.fillWidth: true
-                }
-
-                Text {
-                    text: appGrid.count + (appGrid.count === 1 ? " RESULT" : " RESULTS")
-                    color: root.mutedText
-                    font.pixelSize: 9
-                    font.letterSpacing: 1.2
-                }
-            }
 
             ColumnLayout {
                 Layout.alignment: Qt.AlignHCenter
@@ -273,16 +344,6 @@ PanelWindow {
                             }
                         }
 
-                        Text {
-                            anchors.left: parent.left
-                            anchors.right: parent.right
-                            anchors.verticalCenter: parent.verticalCenter
-                            text: "Type to find an application…"
-                            color: root.mutedText
-                            font.pixelSize: 13
-                            visible: search.text.length === 0
-                            elide: Text.ElideRight
-                        }
                     }
 
                 }
@@ -308,8 +369,8 @@ PanelWindow {
                 Layout.fillWidth: true
                 Layout.fillHeight: true
                 clip: true
-                cellWidth: 78
-                cellHeight: 78
+                cellWidth: 72
+                cellHeight: 72
                 currentIndex: count > 0 ? 0 : -1
                 keyNavigationWraps: true
                 boundsBehavior: Flickable.StopAtBounds
@@ -337,23 +398,43 @@ PanelWindow {
                                 return haystack.includes(q)
                             })
 
-                        const rank = entry => {
+                        const matchRank = entry => {
                             if (!q)
-                                return 3
+                                return 0
+
                             const name = String(entry.name || "").toLowerCase()
+                            const genericName = String(entry.genericName || "").toLowerCase()
+                            const comment = String(entry.comment || "").toLowerCase()
+                            const keywords = (entry.keywords || []).map(value => String(value).toLowerCase())
+
                             if (name === q)
                                 return 0
                             if (name.startsWith(q))
                                 return 1
-                            if (name.includes(q))
+                            if (genericName === q || keywords.includes(q))
                                 return 2
-                            return 3
+                            if (genericName.startsWith(q) || keywords.some(value => value.startsWith(q)))
+                                return 3
+                            if (name.includes(q))
+                                return 4
+                            if (genericName.includes(q) || comment.includes(q) || keywords.some(value => value.includes(q)))
+                                return 5
+                            return 6
                         }
 
                         entries.sort((a, b) => {
-                            const rankDifference = rank(a) - rank(b)
+                            const rankDifference = matchRank(a) - matchRank(b)
                             if (rankDifference !== 0)
                                 return rankDifference
+
+                            const usageDifference = root.usageCount(b) - root.usageCount(a)
+                            if (usageDifference !== 0)
+                                return usageDifference
+
+                            const recencyDifference = root.usageLastUsed(b) - root.usageLastUsed(a)
+                            if (recencyDifference !== 0)
+                                return recencyDifference
+
                             return (a.name || "").localeCompare(b.name || "")
                         })
                         return entries
@@ -366,9 +447,9 @@ PanelWindow {
                     required property var modelData
                     required property int index
 
-                    width: 70
-                    height: 70
-                    radius: 12
+                    width: 64
+                    height: 64
+                    radius: 11
                     color: appMouse.containsMouse
                         ? root.tileHoverBackground
                         : (GridView.isCurrentItem
@@ -391,17 +472,17 @@ PanelWindow {
 
                     Column {
                         anchors.fill: parent
-                        anchors.margins: 5
-                        spacing: 2
+                        anchors.margins: 4
+                        spacing: 1
 
                         Item {
                             width: parent.width
-                            height: 32
+                            height: 29
 
                             Image {
                                 anchors.centerIn: parent
-                                width: 26
-                                height: 26
+                                width: 24
+                                height: 24
                                 sourceSize.width: width
                                 sourceSize.height: height
                                 fillMode: Image.PreserveAspectFit
@@ -415,7 +496,7 @@ PanelWindow {
 
                         Text {
                             width: parent.width
-                            height: 24
+                            height: 21
                             text: appTile.entry.name || "Application"
                             color: root.primaryText
                             font.pixelSize: 9
