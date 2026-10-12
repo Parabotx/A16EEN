@@ -10,6 +10,7 @@ PanelWindow {
     property var apps: []
     property string shape: "capsule"
     property string navbarPosition: "right"
+    property bool rotationEnabled: true
     property string hoveredDesktopId: ""
     property real innerOrbitAngle: 0
     property real middleOrbitAngle: 0
@@ -17,10 +18,13 @@ PanelWindow {
 
     // Match the Music widget's vertical center (72 + half of its 170 px card).
     readonly property int centerFromBottom: root.navbarPosition === "bottom" ? 159 : 157
-    // Keep the shelf near the left-side Music card without overlapping it.
+    // Keep the shelf on the right half, beyond Music when the screen has room.
     readonly property int shelfCenterX: root.modelData
-        ? Math.round(Math.max(root.modelData.width * 0.40,
-            (root.navbarPosition === "left" ? 88 : 24) + 410 + 20 + root.shelfWidth / 2))
+        ? Math.round(Math.min(
+            root.modelData.width - root.shelfWidth / 2
+                - (root.navbarPosition === "right" ? 88 : 24),
+            Math.max(root.modelData.width * 0.64,
+                (root.navbarPosition === "left" ? 88 : 24) + 410 + 24 + root.shelfWidth / 2)))
         : 0
     readonly property int orbitDiameter: root.activeApps.length > 13 ? 260
         : root.activeApps.length > 5 ? 194
@@ -41,11 +45,15 @@ PanelWindow {
     readonly property var activeApps: {
         const catalog = [...DesktopEntries.applications.values]
         const resolved = []
+        const seenDesktopIds = new Set()
         for (const saved of root.apps) {
             const desktopId = String(saved.desktopId || "")
+            if (!desktopId || seenDesktopIds.has(desktopId))
+                continue
             const entry = catalog.find(app => String(app.id || "") === desktopId)
             if (!entry || entry.noDisplay)
                 continue
+            seenDesktopIds.add(desktopId)
             resolved.push({
                 desktopId: desktopId,
                 name: String(entry.name || saved.name || "Application"),
@@ -123,7 +131,8 @@ PanelWindow {
         to: 360
         duration: 26000
         loops: Animation.Infinite
-        running: root.widgetEnabled && root.shape === "circle" && root.innerOrbitCount > 0
+        running: root.widgetEnabled && root.shape === "circle" && root.rotationEnabled && root.innerOrbitCount > 0
+        paused: circleHoverHandler.hovered
     }
 
     NumberAnimation {
@@ -133,7 +142,8 @@ PanelWindow {
         to: 0
         duration: 36000
         loops: Animation.Infinite
-        running: root.widgetEnabled && root.shape === "circle" && root.middleOrbitCount > 0
+        running: root.widgetEnabled && root.shape === "circle" && root.rotationEnabled && root.middleOrbitCount > 0
+        paused: circleHoverHandler.hovered
     }
 
     NumberAnimation {
@@ -143,7 +153,8 @@ PanelWindow {
         to: 360
         duration: 48000
         loops: Animation.Infinite
-        running: root.widgetEnabled && root.shape === "circle" && root.outerOrbitCount > 0
+        running: root.widgetEnabled && root.shape === "circle" && root.rotationEnabled && root.outerOrbitCount > 0
+        paused: circleHoverHandler.hovered
     }
 
     Rectangle {
@@ -167,6 +178,13 @@ PanelWindow {
             color: "transparent"
             border.width: 1
             border.color: "#0FFFFFFF"
+        }
+
+        // Hovering anywhere on the circle freezes the current angles rather than
+        // restarting animations, so icons don't jump or flicker under the pointer.
+        HoverHandler {
+            id: circleHoverHandler
+            enabled: root.shape === "circle"
         }
 
         // Concentric tracks stay still while the app buttons orbit smoothly.
@@ -278,6 +296,7 @@ PanelWindow {
             delegate: Item {
                 required property var modelData
                 required property int index
+                visible: root.shape === "circle"
                 width: index === 0 ? 40 : 34
                 height: width
                 x: (shelfCard.width - width) / 2
