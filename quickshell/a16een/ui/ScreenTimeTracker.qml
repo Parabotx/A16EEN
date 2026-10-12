@@ -53,7 +53,7 @@ Item {
             seconds: Math.max(0, Number(apps[id].seconds) || 0)
         })).filter(app => app.seconds > 0)
           .sort((a, b) => b.seconds - a.seconds || a.name.localeCompare(b.name))
-          .slice(0, 5)
+          .slice(0, 4)
     }
 
     readonly property var focusedWindow: {
@@ -93,7 +93,7 @@ Item {
         if (!window)
             return null
 
-        const rawId = String(window.app_id || window.appId || window.appId || window.title || "").trim()
+        const rawId = String(window.app_id || window.appId || window.title || "").trim()
         if (!rawId)
             return null
 
