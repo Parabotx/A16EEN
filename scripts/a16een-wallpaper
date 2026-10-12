@@ -30,6 +30,7 @@ Usage:
   a16een wallpaper previous
   a16een wallpaper reset
   a16een-wallpaper set-path <absolute-file-path>
+  a16een-wallpaper pick-file <set|morning|evening>
   a16een-wallpaper settings show|set <key> <value>
   a16een-wallpaper auto-check
 
@@ -275,6 +276,30 @@ set_wallpaper() {
     notify_shell "$path"
 }
 
+pick_file() {
+    local purpose="$1" path="" filter
+    filter="*.png *.jpg *.jpeg *.webp *.bmp *.tif *.tiff *.tga *.svg *.ppm *.pgm *.pbm *.xpm *.xbm *.gif *.mp4 *.webm *.mov *.m4v *.mkv"
+    if command -v zenity >/dev/null 2>&1; then
+        path="$(zenity --file-selection --title="Choose a wallpaper" \
+            --file-filter="Supported wallpapers | $filter" \
+            --file-filter="All files | *" \
+            --filename="$USER_WALLPAPER_DIR/" 2>/dev/null)" || return 0
+    elif command -v kdialog >/dev/null 2>&1; then
+        path="$(kdialog --getopenfilename "$USER_WALLPAPER_DIR" \
+            "$filter|Supported wallpapers" "Choose a wallpaper" 2>/dev/null)" || return 0
+    else
+        echo "A16EEN: no desktop file chooser found. Install zenity (recommended) or kdialog." >&2
+        return 1
+    fi
+    [ -n "$path" ] || return 0
+    case "$purpose" in
+        set) set_external_path "$path" >/dev/null ;;
+        morning|evening) setting_set "${purpose}_path" "$path" ;;
+        *) echo "A16EEN: unknown file-picker purpose '$purpose'." >&2; return 1 ;;
+    esac
+    printf '%s\n' "$path"
+}
+
 set_external_path() {
     local path="$1"
     case "$path" in /*) ;; *) echo "A16EEN: selected wallpaper path must be absolute." >&2; exit 1 ;; esac
@@ -388,24 +413,32 @@ setting_set() {
         last_rotation|last_morning|last_evening) [[ "$value" =~ ^[0-9]+$ ]] || return 1 ;;
         *) echo "A16EEN: unknown wallpaper setting '$key'." >&2; exit 1 ;;
     esac
-    mkdir -p "$CONFIG_DIR"; touch "$SETTINGS_FILE"
+    mkdir -p "$CONFIG_DIR"
+    # The UI can issue enabled and last_rotation at the same time. Serialize
+    # read-modify-write transactions to prevent either update being lost.
+    exec 9>"$CONFIG_DIR/.wallpaper-settings.lock"
+    flock -x 9
+    touch "$SETTINGS_FILE"
     tmp="$(mktemp "$CONFIG_DIR/.wallpaper-settings.XXXXXX")"
     awk -F= -v key="$key" '$1 != key { print }' "$SETTINGS_FILE" > "$tmp"
     printf '%s=%s\n' "$key" "$value" >> "$tmp"
     chmod 600 "$tmp"; mv "$tmp" "$SETTINGS_FILE"
+    flock -u 9
+    exec 9>&-
 }
 settings_show() {
     local key
     for key in enabled interval mode source avoid_repeat morning_time evening_time morning_path evening_path; do printf '%s=%s\n' "$key" "$(setting_get "$key")"; done
 }
 eligible_catalog() {
-    local source filename display path selected type filter
+    local source filename display path type filter
     filter="$(setting_get source)"
-    while IFS=$'\t' read -r source filename display path selected type; do
+    # collect_entries emits five fields: source, filename, display, path, type.
+    while IFS=$'\t' read -r source filename display path type; do
         [ "$source" = "external" ] && continue
         [ "$type" = "static" ] && [ "$filter" = "animated" ] && continue
         [ "$type" != "static" ] && [ "$filter" = "static" ] && continue
-        printf '%s\t%s\t%s\t%s\t%s\t%s\n' "$source" "$filename" "$display" "$path" "$selected" "$type"
+        printf '%s\t%s\t%s\t%s\t%s\n' "$source" "$filename" "$display" "$path" "$type"
     done < <(collect_entries)
 }
 rotate_wallpaper() {
@@ -463,6 +496,10 @@ case "$command" in
         esac
         ;;
     auto-check) auto_check ;;
+    pick-file)
+        [ "$#" -eq 3 ] || { echo "A16EEN: usage: a16een-wallpaper pick-file <set|morning|evening>" >&2; exit 1; }
+        pick_file "$3"
+        ;;
     set-path)
         [ "$#" -eq 2 ] || { echo "A16EEN: usage: a16een-wallpaper set-path <absolute-file-path>" >&2; exit 1; }
         set_external_path "$2"
