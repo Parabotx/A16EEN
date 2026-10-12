@@ -23,6 +23,7 @@ The project is being designed as a cohesive desktop product rather than a conven
 - Visual wallpaper picker with live previews
 - Separate built-in and personal wallpaper collections
 - MPRIS media controls for compatible players
+- Optional rounded A16EEN MPV controls with playback, seeking, subtitle/audio switching, speed, mute, and fullscreen actions
 - Notification daemon integration
 - Network connection indicator
 - Bluetooth power indicator
@@ -138,6 +139,22 @@ a16 wallpaper reset
 ```
 
 Supported static image formats include PNG, JPG, JPEG, WEBP, BMP, TIFF, TGA, SVG, PPM, PGM, PBM, XPM, and XBM. Animated GIF and animated WebP files play in the Animated tab; still WebP images remain in the static Wallpaper tab. MP4, WEBM, MOV, M4V, and MKV wallpapers use Qt Multimedia's video renderer, loop silently, and pause or resume with A16EEN's desktop animation policy. Video previews play muted only while their tile is hovered, so opening the picker does not start every video at once. The installed `qt6-imageformats` and `qt6-multimedia` modules provide the image and video loading backends.
+
+## MPV player theme
+
+A16EEN can apply a minimal MPV on-screen controller with rounded dark controls, an understated gold play button, a slim progress track, and compact subtitle/audio/speed/volume/fullscreen actions. The controls appear while the pointer is moving and auto-hide when inactive. Audio-only MPV sessions used by the A16EEN music widget are left alone.
+
+The installer deploys the theme into an A16EEN-owned directory and backs up changed theme files. It adds a small managed include block to `~/.config/mpv/mpv.conf` rather than replacing that file or the user's `input.conf`. The MPV configuration is backed up before the include block is added or removed.
+
+Manage the theme from the terminal:
+
+```sh
+a16 mpv theme status
+a16 mpv theme off
+a16 mpv theme on
+```
+
+Changes take effect the next time MPV is opened. Turning the A16EEN theme off restores MPV's standard on-screen controller and keeps the rest of the user's settings intact. An explicit opt-out is retained across A16EEN updates.
 
 ## One-command installation
 
