@@ -54,8 +54,8 @@ local function rounded_path(w, h, radius)
         w, h - r,
         w, h - r + k, w - k, h, w - r, h,
         r, h,
-        r - k, 0, h - k, r, h - r,
-        r - k, 0, r, 0, r
+        r - k, h, 0, h - k, 0, h - r,
+        r, r - k, r - k, r, r
     )
 end
 
@@ -99,11 +99,14 @@ local function current_mouse()
     return mouse.x, mouse.y, mouse.hover
 end
 
-local function draw_button(lines, name, cx, cy, w, h, label, size, text_color, fill, alpha)
+local function draw_button(lines, name, cx, cy, w, h, label, size, text_color, fill, alpha, mx, my, hovering)
     local x, y = cx - w / 2, cy - h / 2
     areas[name] = { x1 = x - 3, y1 = y - 3, x2 = x + w + 3, y2 = y + h + 3 }
+    local is_hovered = hovering and inside(mx, my, areas[name])
     if fill then
         add_round(lines, x, y, w, h, math.floor(h / 2), fill, alpha or 0)
+    elseif is_hovered then
+        add_round(lines, x, y, w, h, math.floor(h / 2), "#FFFFFF", 0xE2)
     end
     add_text(lines, cx, cy, label, size, text_color, 5, false)
 end
@@ -167,11 +170,11 @@ local function render()
 
     local cy = y + 37
     local gap = compact and 58 or 70
-    draw_button(lines, "rewind", cx - gap, cy, 34, 34, "−10", 10, paper, (inside(mx, my, areas.rewind) and hovering) and "#FFFFFF" or nil, 0xE2)
+    draw_button(lines, "rewind", cx - gap, cy, 34, 34, "−10", 10, paper, nil, 0xE2, mx, my, hovering)
 
     local paused = mp.get_property_bool("pause", false)
-    draw_button(lines, "play", cx, cy, 40, 40, paused and "▶" or "Ⅱ", 16, ink, accent, 0x00)
-    draw_button(lines, "forward", cx + gap, cy, 34, 34, "+10", 10, paper, (inside(mx, my, areas.forward) and hovering) and "#FFFFFF" or nil, 0xE2)
+    draw_button(lines, "play", cx, cy, 40, 40, paused and "▶" or "Ⅱ", 16, ink, accent, 0x00, mx, my, hovering)
+    draw_button(lines, "forward", cx + gap, cy, 34, 34, "+10", 10, paper, nil, 0xE2, mx, my, hovering)
 
     -- Keep secondary controls quiet; shrink the group on narrow windows.
     local right_items
@@ -194,13 +197,12 @@ local function render()
     local start_cx = x + w - 20 - group_w + button_w / 2
     for i, name in ipairs(right_items) do
         local bx = start_cx + (i - 1) * (button_w + spacing)
-        local area = areas[name]
-        local hovered = inside(mx, my, area) and hovering
+        local size = (name == "speed" or name == "subtitle") and 9 or 14
         draw_button(
             lines, name, bx, cy, button_w, button_h, labels[name],
-            name == "speed" or name == "subtitle" and 9 or 14,
+            size,
             mp.get_property_bool("mute", false) and name == "volume" and accent or paper,
-            hovered and "#FFFFFF" or nil, 0xE2
+            nil, 0xE2, mx, my, hovering
         )
     end
 
