@@ -60,6 +60,7 @@ jobs:
           luac5.4 -p mpv/a16een-osc.lua
           bash -n scripts/a16een-workspace-preset
           python3 -m py_compile scripts/a16een-music scripts/a16een-widget-settings
+          python3 tests/test_widget_settings.py
           grep -Fq 'a16een-workspace-preset' scripts/install.sh
           grep -Fq 'a16een-mpv-theme' scripts/install.sh
           grep -Fq 'mpv theme status' scripts/a16een
@@ -255,6 +256,11 @@ jobs:
           test -f quickshell/a16een/ui/WidgetCatalog.js
           test -f quickshell/a16een/ui/MusicWidget.qml
           test -f quickshell/a16een/ui/QuotesWidget.qml
+          test -f quickshell/a16een/ui/AppShelfWidget.qml
+          grep -Fq 'id: "app-shelf"' quickshell/a16een/ui/WidgetCatalog.js
+          grep -Fq 'appShelfWidgetEnabled' quickshell/a16een/shell.qml
+          grep -Fq 'appShelfAppsRequested' quickshell/a16een/ui/WidgetSection.qml
+          grep -Fq 'anchors.horizontalCenter: parent.horizontalCenter' quickshell/a16een/ui/AppShelfWidget.qml
           test -f quickshell/a16een/assets/quotes.json
           test -f quickshell/a16een/assets/icons/quote-mark.svg
           python3 -m json.tool quickshell/a16een/assets/quotes.json >/dev/null
