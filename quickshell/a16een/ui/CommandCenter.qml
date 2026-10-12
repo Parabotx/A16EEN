@@ -33,6 +33,7 @@ PanelWindow {
     property bool quotesWidgetEnabled: false
     property bool appShelfWidgetEnabled: false
     property string appShelfShape: "capsule"
+    property bool appShelfRotationEnabled: true
     property var appShelfApps: []
     property bool timeUse24Hour: true
     property bool timeShowSeconds: false
@@ -62,6 +63,7 @@ PanelWindow {
     signal quotesWidgetEnabledRequested(bool enabled)
     signal appShelfWidgetEnabledRequested(bool enabled)
     signal appShelfShapeRequested(string shape)
+    signal appShelfRotationEnabledRequested(bool enabled)
     signal appShelfAppsRequested(var apps)
     signal timeUse24HourRequested(bool enabled)
     signal timeShowSecondsRequested(bool enabled)
@@ -887,6 +889,7 @@ PanelWindow {
             quotesEnabled: root.quotesWidgetEnabled
             appShelfEnabled: root.appShelfWidgetEnabled
             appShelfShape: root.appShelfShape
+            appShelfRotationEnabled: root.appShelfRotationEnabled
             appShelfApps: root.appShelfApps
             timeUse24Hour: root.timeUse24Hour
             timeShowSeconds: root.timeShowSeconds
@@ -897,6 +900,7 @@ PanelWindow {
             onQuotesWidgetEnabledRequested: root.quotesWidgetEnabledRequested(enabled)
             onAppShelfWidgetEnabledRequested: root.appShelfWidgetEnabledRequested(enabled)
             onAppShelfShapeRequested: root.appShelfShapeRequested(shape)
+            onAppShelfRotationEnabledRequested: root.appShelfRotationEnabledRequested(enabled)
             onAppShelfAppsRequested: root.appShelfAppsRequested(apps)
             onTimeUse24HourRequested: root.timeUse24HourRequested(enabled)
             onTimeShowSecondsRequested: root.timeShowSecondsRequested(enabled)
