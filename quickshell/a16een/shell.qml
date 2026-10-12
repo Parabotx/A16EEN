@@ -455,6 +455,25 @@ ShellRoot {
         }
     }
 
+    // A low-frequency check handles wallpaper rotation and time-of-day schedules.
+    // The helper exits immediately when automation is disabled; no shell restart is needed.
+    Timer {
+        id: wallpaperAutomationTimer
+        interval: 30000
+        repeat: true
+        running: true
+        onTriggered: {
+            wallpaperAutomationProcess.running = false
+            wallpaperAutomationProcess.running = true
+        }
+    }
+
+    Process {
+        id: wallpaperAutomationProcess
+        command: ["a16een-wallpaper", "auto-check"]
+        running: false
+    }
+
     Process {
         id: wallpaperPathProcess
         command: ["a16een-wallpaper", "current-path"]

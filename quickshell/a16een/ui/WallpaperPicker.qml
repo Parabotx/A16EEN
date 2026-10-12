@@ -1,5 +1,6 @@
 import QtQuick
 import QtMultimedia
+import QtQuick.Dialogs
 import Quickshell
 import Quickshell.Io
 import Quickshell.Wayland
@@ -11,6 +12,16 @@ PanelWindow {
     property bool opened: false
     property var wallpapers: []
     property string activeTab: "wallpaper"
+    property string fileDialogPurpose: "set"
+    property bool autoRotate: false
+    property int rotateInterval: 30
+    property string rotateMode: "random"
+    property string rotateSource: "both"
+    property bool avoidRepeat: true
+    property string morningTime: "07:00"
+    property string eveningTime: "19:00"
+    property string morningPath: ""
+    property string eveningPath: ""
 
     signal closeRequested()
 
@@ -54,6 +65,34 @@ PanelWindow {
     WlrLayershell.keyboardFocus: root.opened
         ? WlrKeyboardFocus.OnDemand
         : WlrKeyboardFocus.None
+
+    Process {
+        id: settingsProcess
+        command: ["a16een-wallpaper", "settings", "show"]
+        stdout: StdioCollector {
+            onStreamFinished: {
+                const values = {}
+                for (const line of text.trim().split(/\\r?\\n/)) {
+                    const split = line.indexOf("=")
+                    if (split > 0)
+                        values[line.slice(0, split)] = line.slice(split + 1)
+                }
+                root.autoRotate = values.enabled === "1"
+                root.rotateInterval = Number(values.interval || 30)
+                root.rotateMode = values.mode || "random"
+                root.rotateSource = values.source || "both"
+                root.avoidRepeat = values.avoid_repeat !== "0"
+                root.morningTime = values.morning_time || "07:00"
+                root.eveningTime = values.evening_time || "19:00"
+                root.morningPath = values.morning_path || ""
+                root.eveningPath = values.evening_path || ""
+            }
+        }
+    }
+
+    function setSetting(key, value) {
+        Quickshell.execDetached(["a16een-wallpaper", "settings", "set", key, String(value)])
+    }
 
     Process {
         id: catalogProcess
@@ -123,7 +162,8 @@ PanelWindow {
             Repeater {
                 model: [
                     { key: "wallpaper", label: "Wallpaper" },
-                    { key: "animated", label: "Animated" }
+                    { key: "animated", label: "Animated" },
+                    { key: "settings", label: "Settings" }
                 ]
 
                 delegate: Rectangle {
@@ -175,8 +215,215 @@ PanelWindow {
             clip: true
 
             Flickable {
+                id: wallpaperSettings
+                anchors.fill: parent
+                clip: true
+                visible: root.activeTab === "settings"
+                contentWidth: width
+                contentHeight: settingsContent.implicitHeight
+                boundsBehavior: Flickable.StopAtBounds
+
+                Column {
+                id: settingsContent
+                width: wallpaperSettings.width
+                spacing: 14
+
+                Text {
+                    text: "Wallpaper settings"
+                    color: "#171717"
+                    font.pixelSize: 19
+                    font.weight: Font.DemiBold
+                }
+
+                Text {
+                    text: "Choose any supported image, animated image, or video from your files. A16EEN uses the original file in place — you do not need to copy it into a wallpaper folder."
+                    color: "#707070"
+                    font.pixelSize: 11
+                    wrapMode: Text.WordWrap
+                    width: parent.width
+                }
+
+                Rectangle {
+                    width: parent.width
+                    height: 86
+                    radius: 14
+                    color: "#F6F6F6"
+                    border.width: 1
+                    border.color: "#E7E7E7"
+
+                    Row {
+                        anchors.fill: parent
+                        anchors.margins: 14
+                        spacing: 12
+
+                        Rectangle {
+                            width: 42
+                            height: 42
+                            radius: 12
+                            color: "#E9E9E9"
+                            anchors.verticalCenter: parent.verticalCenter
+
+                            Text {
+                                anchors.centerIn: parent
+                                text: "↗"
+                                color: "#222222"
+                                font.pixelSize: 21
+                            }
+                        }
+
+                        Column {
+                            anchors.verticalCenter: parent.verticalCenter
+                            width: parent.width - 120
+                            spacing: 4
+
+                            Text {
+                                text: "Choose from files"
+                                color: "#222222"
+                                font.pixelSize: 12
+                                font.weight: Font.DemiBold
+                            }
+
+                            Text {
+                                text: "PNG, JPG, WEBP, GIF, MP4, WEBM and more"
+                                color: "#777777"
+                                font.pixelSize: 10
+                                wrapMode: Text.WordWrap
+                            }
+                        }
+                    }
+
+                    MouseArea {
+                        anchors.fill: parent
+                        cursorShape: Qt.PointingHandCursor
+                        onClicked: wallpaperFileDialog.open()
+                    }
+                }
+
+                Text {
+                    text: "Your selected file stays wherever it is. If you move or delete it later, choose it again from here."
+                    color: "#858585"
+                    font.pixelSize: 10
+                    wrapMode: Text.WordWrap
+                    width: parent.width
+                }
+
+                Rectangle { width: parent.width; height: 1; color: "#EAEAEA" }
+
+                Text { text: "Automatic rotation"; color: "#171717"; font.pixelSize: 15; font.weight: Font.DemiBold }
+
+                Row {
+                    width: parent.width
+                    height: 42
+                    spacing: 10
+                    Text { text: "Change wallpaper automatically"; color: "#333333"; font.pixelSize: 11; anchors.verticalCenter: parent.verticalCenter; width: parent.width - 76 }
+                    Rectangle {
+                        width: 52; height: 28; radius: 14; anchors.verticalCenter: parent.verticalCenter
+                        color: root.autoRotate ? "#171717" : "#DADADA"
+                        Rectangle { x: root.autoRotate ? 27 : 3; y: 3; width: 22; height: 22; radius: 11; color: "#FFFFFF" }
+                        MouseArea { anchors.fill: parent; cursorShape: Qt.PointingHandCursor; onClicked: {
+                            root.autoRotate = !root.autoRotate
+                            root.setSetting("enabled", root.autoRotate ? 1 : 0)
+                            if (root.autoRotate)
+                                root.setSetting("last_rotation", Math.floor(Date.now() / 1000))
+                        } }
+                    }
+                }
+
+                Text { text: "Change every"; color: "#777777"; font.pixelSize: 10 }
+                Row {
+                    width: parent.width; spacing: 6
+                    Repeater {
+                        model: [{v:5,t:"5 min"},{v:15,t:"15 min"},{v:30,t:"30 min"},{v:60,t:"1 hour"},{v:120,t:"2 hours"},{v:1440,t:"Daily"}]
+                        delegate: Rectangle {
+                            required property var modelData
+                            width: (settingsContent.width - 30) / 6; height: 34; radius: 8
+                            color: root.rotateInterval === modelData.v ? "#171717" : "#F3F3F3"
+                            Text { anchors.centerIn: parent; text: modelData.t; color: root.rotateInterval === modelData.v ? "#FFFFFF" : "#555555"; font.pixelSize: 9 }
+                            MouseArea { anchors.fill: parent; cursorShape: Qt.PointingHandCursor; onClicked: { root.rotateInterval = modelData.v; root.setSetting("interval", modelData.v) } }
+                        }
+                    }
+                }
+
+                Text { text: "Selection mode"; color: "#777777"; font.pixelSize: 10 }
+                Row {
+                    width: parent.width; spacing: 8
+                    Repeater {
+                        model: [{v:"random",t:"Random"},{v:"sequential",t:"In order"}]
+                        delegate: Rectangle {
+                            required property var modelData
+                            width: (settingsContent.width - 8) / 2; height: 36; radius: 9
+                            color: root.rotateMode === modelData.v ? "#171717" : "#F3F3F3"
+                            Text { anchors.centerIn: parent; text: modelData.t; color: root.rotateMode === modelData.v ? "#FFFFFF" : "#555555"; font.pixelSize: 10 }
+                            MouseArea { anchors.fill: parent; cursorShape: Qt.PointingHandCursor; onClicked: { root.rotateMode = modelData.v; root.setSetting("mode", modelData.v) } }
+                        }
+                    }
+                }
+
+                Text { text: "Wallpaper types"; color: "#777777"; font.pixelSize: 10 }
+                Row {
+                    width: parent.width; spacing: 8
+                    Repeater {
+                        model: [{v:"both",t:"Static + animated"},{v:"static",t:"Static only"},{v:"animated",t:"Animated only"}]
+                        delegate: Rectangle {
+                            required property var modelData
+                            width: (settingsContent.width - 16) / 3; height: 36; radius: 9
+                            color: root.rotateSource === modelData.v ? "#171717" : "#F3F3F3"
+                            Text { anchors.centerIn: parent; text: modelData.t; color: root.rotateSource === modelData.v ? "#FFFFFF" : "#555555"; font.pixelSize: 9 }
+                            MouseArea { anchors.fill: parent; cursorShape: Qt.PointingHandCursor; onClicked: { root.rotateSource = modelData.v; root.setSetting("source", modelData.v) } }
+                        }
+                    }
+                }
+
+                Row {
+                    width: parent.width; height: 34; spacing: 8
+                    Text { text: "Avoid repeating current wallpaper"; color: "#555555"; font.pixelSize: 10; anchors.verticalCenter: parent.verticalCenter; width: parent.width - 52 }
+                    Rectangle {
+                        width: 42; height: 24; radius: 12; anchors.verticalCenter: parent.verticalCenter
+                        color: root.avoidRepeat ? "#171717" : "#DADADA"
+                        Rectangle { x: root.avoidRepeat ? 21 : 3; y: 3; width: 18; height: 18; radius: 9; color: "#FFFFFF" }
+                        MouseArea { anchors.fill: parent; cursorShape: Qt.PointingHandCursor; onClicked: { root.avoidRepeat = !root.avoidRepeat; root.setSetting("avoid_repeat", root.avoidRepeat ? 1 : 0) } }
+                    }
+                }
+
+                Rectangle { width: parent.width; height: 1; color: "#EAEAEA" }
+                Text { text: "Time-of-day wallpapers"; color: "#171717"; font.pixelSize: 15; font.weight: Font.DemiBold }
+                Text { text: "Choose a different wallpaper for morning and evening. Leave a slot empty to skip it."; color: "#777777"; font.pixelSize: 10; wrapMode: Text.WordWrap; width: parent.width }
+
+                Row {
+                    width: parent.width; spacing: 8; height: 38
+                    Text { text: "Morning"; color: "#333333"; font.pixelSize: 11; anchors.verticalCenter: parent.verticalCenter; width: 60 }
+                    Rectangle {
+                        width: 76; height: 32; radius: 8; color: "#F3F3F3"; anchors.verticalCenter: parent.verticalCenter
+                        Text { anchors.centerIn: parent; text: root.morningTime; color: "#333333"; font.pixelSize: 10 }
+                        MouseArea { anchors.fill: parent; onClicked: { let parts = root.morningTime.split(":"); let h = (Number(parts[0]) + 1) % 24; root.morningTime = (h < 10 ? "0" : "") + h + ":" + parts[1]; root.setSetting("morning_time", root.morningTime) } }
+                    }
+                    Rectangle {
+                        width: parent.width - 160; height: 32; radius: 8; color: "#F3F3F3"; anchors.verticalCenter: parent.verticalCenter
+                        Text { anchors.centerIn: parent; text: root.morningPath ? root.morningPath.split("/").pop() : "Choose morning file"; color: "#333333"; font.pixelSize: 9; elide: Text.ElideMiddle; width: parent.width - 12 }
+                        MouseArea { anchors.fill: parent; onClicked: { root.fileDialogPurpose = "morning"; wallpaperFileDialog.open() } }
+                    }
+                }
+                Row {
+                    width: parent.width; spacing: 8; height: 38
+                    Text { text: "Evening"; color: "#333333"; font.pixelSize: 11; anchors.verticalCenter: parent.verticalCenter; width: 60 }
+                    Rectangle {
+                        width: 76; height: 32; radius: 8; color: "#F3F3F3"; anchors.verticalCenter: parent.verticalCenter
+                        Text { anchors.centerIn: parent; text: root.eveningTime; color: "#333333"; font.pixelSize: 10 }
+                        MouseArea { anchors.fill: parent; onClicked: { let parts = root.eveningTime.split(":"); let h = (Number(parts[0]) + 1) % 24; root.eveningTime = (h < 10 ? "0" : "") + h + ":" + parts[1]; root.setSetting("evening_time", root.eveningTime) } }
+                    }
+                    Rectangle {
+                        width: parent.width - 152; height: 32; radius: 8; color: "#F3F3F3"; anchors.verticalCenter: parent.verticalCenter
+                        Text { anchors.centerIn: parent; text: root.eveningPath ? root.eveningPath.split("/").pop() : "Choose evening file"; color: "#333333"; font.pixelSize: 9; elide: Text.ElideMiddle; width: parent.width - 12 }
+                        MouseArea { anchors.fill: parent; onClicked: { root.fileDialogPurpose = "evening"; wallpaperFileDialog.open() } }
+                    }
+                }
+                }
+            }
+
+            Flickable {
                 id: wallpaperScroll
                 anchors.fill: parent
+                visible: root.activeTab !== "settings"
                 contentWidth: width
                 contentHeight: Math.max(root.gridHeight, height)
                 boundsBehavior: Flickable.StopAtBounds
@@ -419,12 +666,20 @@ PanelWindow {
 
                                     onClicked: {
                                         root.closeRequested()
-                                        Quickshell.execDetached([
-                                            "a16een-wallpaper",
-                                            "set",
-                                            modelData.source,
-                                            modelData.name
-                                        ])
+                                        if (modelData.source === "external") {
+                                            Quickshell.execDetached([
+                                                "a16een-wallpaper",
+                                                "set-path",
+                                                modelData.path
+                                            ])
+                                        } else {
+                                            Quickshell.execDetached([
+                                                "a16een-wallpaper",
+                                                "set",
+                                                modelData.source,
+                                                modelData.name
+                                            ])
+                                        }
                                     }
                                 }
                             }
@@ -445,6 +700,32 @@ PanelWindow {
         }
     }
 
+    FileDialog {
+        id: wallpaperFileDialog
+        title: "Choose a wallpaper"
+        fileMode: FileDialog.OpenFile
+        nameFilters: [
+            "Supported wallpapers (*.png *.jpg *.jpeg *.webp *.bmp *.tif *.tiff *.tga *.svg *.ppm *.pgm *.pbm *.xpm *.xbm *.gif *.mp4 *.webm *.mov *.m4v *.mkv)",
+            "All files (*)"
+        ]
+
+        onAccepted: {
+            let path = selectedFile.toString()
+            if (path.startsWith("file://"))
+                path = decodeURIComponent(path.replace(/^file:\/\//, ""))
+            if (root.fileDialogPurpose === "morning" || root.fileDialogPurpose === "evening") {
+                const key = root.fileDialogPurpose + "_path"
+                root.setSetting(key, path)
+                if (root.fileDialogPurpose === "morning") root.morningPath = path
+                else root.eveningPath = path
+                root.fileDialogPurpose = "set"
+            } else {
+                root.closeRequested()
+                Quickshell.execDetached(["a16een-wallpaper", "set-path", path])
+            }
+        }
+    }
+
     MouseArea {
         anchors.fill: parent
         z: 1
@@ -456,7 +737,10 @@ PanelWindow {
     onOpenedChanged: {
         if (opened) {
             root.activeTab = "wallpaper"
+            root.fileDialogPurpose = "set"
             root.wallpapers = []
+            settingsProcess.running = false
+            settingsProcess.running = true
             catalogProcess.running = false
             catalogProcess.running = true
         }
