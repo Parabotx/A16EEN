@@ -1027,31 +1027,33 @@ ShellRoot {
         target: "command-center"
 
         function toggle(): void {
-            root.commandCenterOpen = !root.commandCenterOpen
-            if (root.commandCenterOpen) {
-                root.toolsPanelOpen = false
-                root.toolsPanelPage = "tools"
-                root.calculatorOpen = false
-                root.launcherOpen = false
-                root.wallpaperPickerOpen = false
-                root.widgetsCenterOpen = false
-                root.screenshotCenterOpen = false
-                root.screenshotSettingsOpen = false
-            }
-        }
-
-        function open(): void {
-            root.commandCenterOpen = true
+            const shouldOpen = !root.commandCenterOpen
+            // Clear nested manager state before changing the PanelWindow's
+            // visibility, preventing a stale WidgetSection from stealing focus.
+            root.widgetsCenterOpen = false
             root.toolsPanelOpen = false
             root.toolsPanelPage = "tools"
             root.calculatorOpen = false
             root.launcherOpen = false
             root.wallpaperPickerOpen = false
-            root.widgetsCenterOpen = false
+            root.screenshotCenterOpen = false
             root.screenshotSettingsOpen = false
+            root.commandCenterOpen = shouldOpen
+        }
+
+        function open(): void {
+            root.widgetsCenterOpen = false
+            root.toolsPanelOpen = false
+            root.toolsPanelPage = "tools"
+            root.calculatorOpen = false
+            root.launcherOpen = false
+            root.wallpaperPickerOpen = false
+            root.screenshotSettingsOpen = false
+            root.commandCenterOpen = true
         }
 
         function close(): void {
+            root.widgetsCenterOpen = false
             root.commandCenterOpen = false
         }
     }
@@ -1445,6 +1447,10 @@ ShellRoot {
             shape: root.appShelfShape
             rotationEnabled: root.appShelfRotationEnabled
             navbarPosition: root.navbarPosition
+            windowItems: root.windows
+            workspaceItems: root.workspaces
+            focusedWorkspaceId: root.focusedWorkspaceId
+            focusedWindowId: root.focusedWindowId
         }
     }
 

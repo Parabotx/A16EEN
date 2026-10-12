@@ -1,6 +1,7 @@
 import QtQuick
 import Quickshell
 import Quickshell.Wayland
+import "WindowGeometry.js" as WindowGeometry
 
 PanelWindow {
     id: root
@@ -11,6 +12,10 @@ PanelWindow {
     property string shape: "capsule"
     property string navbarPosition: "right"
     property bool rotationEnabled: true
+    property var windowItems: []
+    property var workspaceItems: []
+    property int focusedWorkspaceId: -1
+    property int focusedWindowId: -1
     property string hoveredDesktopId: ""
     property real innerOrbitAngle: 0
     property real middleOrbitAngle: 0
@@ -18,14 +23,35 @@ PanelWindow {
 
     // Match the Music widget's vertical center (72 + half of its 170 px card).
     readonly property int centerFromBottom: root.navbarPosition === "bottom" ? 159 : 157
-    // Keep the shelf on the right half, beyond Music when the screen has room.
+    // Place it further toward the right, while respecting screen and navbar bounds.
     readonly property int shelfCenterX: root.modelData
         ? Math.round(Math.min(
             root.modelData.width - root.shelfWidth / 2
                 - (root.navbarPosition === "right" ? 88 : 24),
-            Math.max(root.modelData.width * 0.64,
+            Math.max(root.modelData.width * 0.78,
                 (root.navbarPosition === "left" ? 88 : 24) + 410 + 24 + root.shelfWidth / 2)))
         : 0
+    readonly property var windowCandidates: root.modelData
+        ? WindowGeometry.buildCandidates(
+            root.modelData.width, root.modelData.height, root.windowItems,
+            root.workspaceItems, root.focusedWorkspaceId, root.focusedWindowId)
+        : []
+    readonly property bool coveredByWindow: {
+        if (root.shape !== "circle" || !root.widgetEnabled || !root.rotationEnabled)
+            return false
+        const left = shelfCard.x
+        const top = shelfCard.y
+        const right = left + shelfCard.width
+        const bottom = top + shelfCard.height
+        const candidates = root.windowCandidates
+        for (let i = 0; i < candidates.length; i++) {
+            const rect = candidates[i].rect
+            if (rect.x < right && rect.x + rect.width > left
+                    && rect.y < bottom && rect.y + rect.height > top)
+                return true
+        }
+        return false
+    }
     readonly property int orbitDiameter: root.activeApps.length > 13 ? 260
         : root.activeApps.length > 5 ? 194
         : root.activeApps.length > 1 ? 132 : 82
@@ -131,8 +157,8 @@ PanelWindow {
         to: 360
         duration: 26000
         loops: Animation.Infinite
-        running: root.widgetEnabled && root.shape === "circle" && root.rotationEnabled && root.innerOrbitCount > 0
-        paused: circleHoverHandler.hovered
+        running: root.widgetEnabled && root.shape === "circle" && root.innerOrbitCount > 0
+        paused: circleHoverHandler.hovered || root.coveredByWindow || !root.rotationEnabled
     }
 
     NumberAnimation {
@@ -142,8 +168,8 @@ PanelWindow {
         to: 0
         duration: 36000
         loops: Animation.Infinite
-        running: root.widgetEnabled && root.shape === "circle" && root.rotationEnabled && root.middleOrbitCount > 0
-        paused: circleHoverHandler.hovered
+        running: root.widgetEnabled && root.shape === "circle" && root.middleOrbitCount > 0
+        paused: circleHoverHandler.hovered || root.coveredByWindow || !root.rotationEnabled
     }
 
     NumberAnimation {
@@ -153,8 +179,8 @@ PanelWindow {
         to: 360
         duration: 48000
         loops: Animation.Infinite
-        running: root.widgetEnabled && root.shape === "circle" && root.rotationEnabled && root.outerOrbitCount > 0
-        paused: circleHoverHandler.hovered
+        running: root.widgetEnabled && root.shape === "circle" && root.outerOrbitCount > 0
+        paused: circleHoverHandler.hovered || root.coveredByWindow || !root.rotationEnabled
     }
 
     Rectangle {
@@ -215,7 +241,8 @@ PanelWindow {
             visible: root.shape !== "circle" && root.activeApps.length > 0
 
             Repeater {
-                model: root.activeApps
+                // Don't create horizontal tiles at all in circle mode.
+                model: root.shape === "circle" ? [] : root.activeApps
 
                 delegate: Item {
                     required property var modelData
@@ -290,8 +317,9 @@ PanelWindow {
         // Circle mode: app zero remains in the hub; the next groups occupy
         // four, eight, then up to three points on successively larger orbits.
         Repeater {
-            model: root.activeApps
-            visible: root.shape === "circle"
+            // No orbit delegates exist in capsule modes, preventing duplicates
+            // and stray hit targets outside the capsule's bounds.
+            model: root.shape === "circle" ? root.activeApps : []
 
             delegate: Item {
                 required property var modelData
