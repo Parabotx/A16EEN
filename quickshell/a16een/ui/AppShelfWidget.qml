@@ -17,6 +17,11 @@ PanelWindow {
 
     // Match the Music widget's vertical center (72 + half of its 170 px card).
     readonly property int centerFromBottom: root.navbarPosition === "bottom" ? 159 : 157
+    // Keep the shelf near the left-side Music card without overlapping it.
+    readonly property int shelfCenterX: root.modelData
+        ? Math.round(Math.max(root.modelData.width * 0.40,
+            (root.navbarPosition === "left" ? 88 : 24) + 410 + 20 + root.shelfWidth / 2))
+        : 0
     readonly property int orbitDiameter: root.activeApps.length > 13 ? 260
         : root.activeApps.length > 5 ? 194
         : root.activeApps.length > 1 ? 132 : 82
@@ -146,7 +151,7 @@ PanelWindow {
         width: root.shelfWidth
         height: root.shelfHeight
         anchors.horizontalCenter: parent.horizontalCenter
-        anchors.horizontalCenterOffset: root.modelData ? -Math.round(root.modelData.width * 0.10) : 0
+        anchors.horizontalCenterOffset: root.modelData ? root.shelfCenterX - root.modelData.width / 2 : 0
         anchors.bottom: parent.bottom
         anchors.bottomMargin: root.centerFromBottom - height / 2
         radius: root.shelfRadius
