@@ -47,6 +47,9 @@ local function escape_ass(value)
 end
 
 local function rounded_path(w, h, radius)
+    -- ASS vector drawing uses integer coordinates; progress fills may be fractional.
+    w = math.floor(w)
+    h = math.floor(h)
     local r = math.max(0, math.min(radius, math.floor(math.min(w, h) / 2)))
     local k = math.floor(r * 0.552 + 0.5)
     return string.format(
