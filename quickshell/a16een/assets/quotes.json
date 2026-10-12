@@ -1,5 +1,5 @@
 {
-  "version": 5,
+  "version": 6,
   "title": "A16EEN — The Wealth Mindset",
   "description": "An offline collection of original reflections on wealth, capital, power, human nature, influence, manipulation awareness, strategy, reputation, and ambition.",
   "quotes": [
@@ -938,6 +938,818 @@
       "id": "power-ownership",
       "category": "Ownership",
       "text": "The deepest leverage is owning an option nobody can take away.",
+      "author": "A16EEN",
+      "source": "The Wealth Mindset"
+    },
+    {
+      "id": "power-cost-of-access",
+      "category": "Power",
+      "text": "Access to power is easy to mistake for power of your own.",
+      "author": "A16EEN",
+      "source": "The Wealth Mindset"
+    },
+    {
+      "id": "quiet-authority",
+      "category": "Power",
+      "text": "Authority that needs constant applause is already negotiating with doubt.",
+      "author": "A16EEN",
+      "source": "The Wealth Mindset"
+    },
+    {
+      "id": "control-the-self",
+      "category": "Discipline",
+      "text": "Control your impulses before you try to control your circumstances.",
+      "author": "A16EEN",
+      "source": "The Wealth Mindset"
+    },
+    {
+      "id": "the-room-remembers",
+      "category": "Reputation",
+      "text": "A room may forget your words; it remembers how you made decisions under pressure.",
+      "author": "A16EEN",
+      "source": "The Wealth Mindset"
+    },
+    {
+      "id": "the-hidden-bargain",
+      "category": "Human nature",
+      "text": "Every relationship has expectations; trouble begins when only one person knows the terms.",
+      "author": "A16EEN",
+      "source": "The Wealth Mindset"
+    },
+    {
+      "id": "fear-of-loss",
+      "category": "Manipulation awareness",
+      "text": "Fear of loss can make a bad offer look like your last chance.",
+      "author": "A16EEN",
+      "source": "The Wealth Mindset"
+    },
+    {
+      "id": "the-cost-of-validation",
+      "category": "Human nature",
+      "text": "When validation becomes your fuel, strangers get to hold the steering wheel.",
+      "author": "A16EEN",
+      "source": "The Wealth Mindset"
+    },
+    {
+      "id": "calm-is-clarity",
+      "category": "Discipline",
+      "text": "Calm is not weakness; it is room to see the move before you make it.",
+      "author": "A16EEN",
+      "source": "The Wealth Mindset"
+    },
+    {
+      "id": "the-patient-player",
+      "category": "Strategy",
+      "text": "The impatient player pays for speed; the patient one studies the board.",
+      "author": "A16EEN",
+      "source": "The Wealth Mindset"
+    },
+    {
+      "id": "ownership-of-attention",
+      "category": "Influence",
+      "text": "Guard your attention like capital; both disappear when spent carelessly.",
+      "author": "A16EEN",
+      "source": "The Wealth Mindset"
+    },
+    {
+      "id": "debt-of-ego",
+      "category": "Discipline",
+      "text": "Ego borrows confidence from the future and leaves judgment with the bill.",
+      "author": "A16EEN",
+      "source": "The Wealth Mindset"
+    },
+    {
+      "id": "power-and-proof",
+      "category": "Power",
+      "text": "A title can introduce you. Only decisions prove what you are.",
+      "author": "A16EEN",
+      "source": "The Wealth Mindset"
+    },
+    {
+      "id": "the-social-mask",
+      "category": "Human nature",
+      "text": "A mask is easiest to trust when it resembles what you already want to see.",
+      "author": "A16EEN",
+      "source": "The Wealth Mindset"
+    },
+    {
+      "id": "the-polished-trap",
+      "category": "Manipulation awareness",
+      "text": "A polished offer can still hide a costly surrender.",
+      "author": "A16EEN",
+      "source": "The Wealth Mindset"
+    },
+    {
+      "id": "the-real-price",
+      "category": "Money",
+      "text": "The price is what you pay; the cost is everything it makes you give up.",
+      "author": "A16EEN",
+      "source": "The Wealth Mindset"
+    },
+    {
+      "id": "scarcity-of-time",
+      "category": "Wealth",
+      "text": "Your scarcest asset is not money. It is the time you cannot buy back.",
+      "author": "A16EEN",
+      "source": "The Wealth Mindset"
+    },
+    {
+      "id": "profit-from-clarity",
+      "category": "Business",
+      "text": "Clarity is profitable because confusion makes expensive mistakes feel reasonable.",
+      "author": "A16EEN",
+      "source": "The Wealth Mindset"
+    },
+    {
+      "id": "the-exit-plan",
+      "category": "Negotiation",
+      "text": "Know your exit before entering; confidence without options is theater.",
+      "author": "A16EEN",
+      "source": "The Wealth Mindset"
+    },
+    {
+      "id": "borrowed-status",
+      "category": "Status",
+      "text": "Borrowed status expires the moment you can no longer afford the performance.",
+      "author": "A16EEN",
+      "source": "The Wealth Mindset"
+    },
+    {
+      "id": "the-quiet-ledger",
+      "category": "Wealth",
+      "text": "A quiet ledger is more convincing than a loud lifestyle.",
+      "author": "A16EEN",
+      "source": "The Wealth Mindset"
+    },
+    {
+      "id": "the-loyalty-test",
+      "category": "Trust",
+      "text": "Loyalty is easiest to claim when it costs nothing.",
+      "author": "A16EEN",
+      "source": "The Wealth Mindset"
+    },
+    {
+      "id": "the-incentive-shadow",
+      "category": "Strategy",
+      "text": "Look past the explanation and inspect the incentive casting the shadow.",
+      "author": "A16EEN",
+      "source": "The Wealth Mindset"
+    },
+    {
+      "id": "the-price-of-secrets",
+      "category": "Privacy",
+      "text": "Not every secret is dangerous, but every secret changes who holds leverage.",
+      "author": "A16EEN",
+      "source": "The Wealth Mindset"
+    },
+    {
+      "id": "the-pause-before-yes",
+      "category": "Discipline",
+      "text": "A pause before yes can save you months of regret.",
+      "author": "A16EEN",
+      "source": "The Wealth Mindset"
+    },
+    {
+      "id": "the-bargain-of-approval",
+      "category": "Influence",
+      "text": "People who sell approval often charge you in independence.",
+      "author": "A16EEN",
+      "source": "The Wealth Mindset"
+    },
+    {
+      "id": "the-obvious-weakness",
+      "category": "Judgment",
+      "text": "The weakness you refuse to examine becomes the strength of your opposition.",
+      "author": "A16EEN",
+      "source": "The Wealth Mindset"
+    },
+    {
+      "id": "the-illusion-of-control",
+      "category": "Power",
+      "text": "Control is not making every move; it is knowing which moves matter.",
+      "author": "A16EEN",
+      "source": "The Wealth Mindset"
+    },
+    {
+      "id": "the-expensive-lesson",
+      "category": "Strategy",
+      "text": "The market charges tuition for certainty that was never earned.",
+      "author": "A16EEN",
+      "source": "The Wealth Mindset"
+    },
+    {
+      "id": "the-silent-compounder",
+      "category": "Wealth",
+      "text": "Let your assets compound while your ego learns to be quiet.",
+      "author": "A16EEN",
+      "source": "The Wealth Mindset"
+    },
+    {
+      "id": "the-transactional-smile",
+      "category": "Human nature",
+      "text": "Warmth is meaningful, but watch whether it vanishes when the transaction ends.",
+      "author": "A16EEN",
+      "source": "The Wealth Mindset"
+    },
+    {
+      "id": "the-false-deadline",
+      "category": "Manipulation awareness",
+      "text": "A deadline deserves scrutiny when its only purpose is to stop you thinking.",
+      "author": "A16EEN",
+      "source": "The Wealth Mindset"
+    },
+    {
+      "id": "the-price-of-rushing",
+      "category": "Strategy",
+      "text": "Rushing trades information for motion and calls the exchange progress.",
+      "author": "A16EEN",
+      "source": "The Wealth Mindset"
+    },
+    {
+      "id": "the-cost-of-envy",
+      "category": "Human nature",
+      "text": "Envy makes another person's progress feel like evidence against your own.",
+      "author": "A16EEN",
+      "source": "The Wealth Mindset"
+    },
+    {
+      "id": "the-narrative-owner",
+      "category": "Influence",
+      "text": "Whoever frames the question often influences which answers seem acceptable.",
+      "author": "A16EEN",
+      "source": "The Wealth Mindset"
+    },
+    {
+      "id": "the-earned-no",
+      "category": "Boundaries",
+      "text": "A deliberate no protects the yes you actually mean.",
+      "author": "A16EEN",
+      "source": "The Wealth Mindset"
+    },
+    {
+      "id": "the-room-for-doubt",
+      "category": "Judgment",
+      "text": "Leave room for doubt; certainty is where weak arguments hide.",
+      "author": "A16EEN",
+      "source": "The Wealth Mindset"
+    },
+    {
+      "id": "the-hard-conversation",
+      "category": "Power",
+      "text": "A difficult conversation avoided today can become a dependency tomorrow.",
+      "author": "A16EEN",
+      "source": "The Wealth Mindset"
+    },
+    {
+      "id": "the-balance-of-leverage",
+      "category": "Leverage",
+      "text": "Leverage is useful only while you understand what can break it.",
+      "author": "A16EEN",
+      "source": "The Wealth Mindset"
+    },
+    {
+      "id": "the-cost-of-dependence",
+      "category": "Freedom",
+      "text": "Dependence turns favors into terms and terms into quiet control.",
+      "author": "A16EEN",
+      "source": "The Wealth Mindset"
+    },
+    {
+      "id": "the-receipt-of-promises",
+      "category": "Trust",
+      "text": "Promises are forecasts. Behavior is the record.",
+      "author": "A16EEN",
+      "source": "The Wealth Mindset"
+    },
+    {
+      "id": "the-fear-premium",
+      "category": "Negotiation",
+      "text": "Fear adds a premium to every decision made in a hurry.",
+      "author": "A16EEN",
+      "source": "The Wealth Mindset"
+    },
+    {
+      "id": "the-luxury-trap",
+      "category": "Wealth",
+      "text": "Luxury becomes a trap when maintaining the image outranks building the future.",
+      "author": "A16EEN",
+      "source": "The Wealth Mindset"
+    },
+    {
+      "id": "the-cash-reserve",
+      "category": "Capital",
+      "text": "Reserves may look idle until they buy you the freedom to refuse a bad deal.",
+      "author": "A16EEN",
+      "source": "The Wealth Mindset"
+    },
+    {
+      "id": "the-perfect-opportunity",
+      "category": "Risk",
+      "text": "The perfect opportunity often arrives wearing the disguise of a risk you have finally learned to price.",
+      "author": "A16EEN",
+      "source": "The Wealth Mindset"
+    },
+    {
+      "id": "the-hidden-fee",
+      "category": "Money",
+      "text": "Every easy promise deserves one hard question: what is the hidden fee?",
+      "author": "A16EEN",
+      "source": "The Wealth Mindset"
+    },
+    {
+      "id": "the-owner-mindset",
+      "category": "Ownership",
+      "text": "Ownership begins when you accept responsibility for both the upside and the cost.",
+      "author": "A16EEN",
+      "source": "The Wealth Mindset"
+    },
+    {
+      "id": "the-reputation-bank",
+      "category": "Reputation",
+      "text": "Trust is a bank you build slowly and can overdraw in a single afternoon.",
+      "author": "A16EEN",
+      "source": "The Wealth Mindset"
+    },
+    {
+      "id": "the-quiet-boundary",
+      "category": "Boundaries",
+      "text": "You do not need to announce every boundary; you need to enforce the important ones.",
+      "author": "A16EEN",
+      "source": "The Wealth Mindset"
+    },
+    {
+      "id": "the-provocation-test",
+      "category": "Manipulation awareness",
+      "text": "Provocation is a test: will you choose your response or donate it?",
+      "author": "A16EEN",
+      "source": "The Wealth Mindset"
+    },
+    {
+      "id": "the-permission-loop",
+      "category": "Human nature",
+      "text": "Ask for permission long enough and you may forget you were allowed to choose.",
+      "author": "A16EEN",
+      "source": "The Wealth Mindset"
+    },
+    {
+      "id": "the-need-to-win",
+      "category": "Discipline",
+      "text": "The need to win every exchange is how you lose the larger game.",
+      "author": "A16EEN",
+      "source": "The Wealth Mindset"
+    },
+    {
+      "id": "the-limits-of-charm",
+      "category": "Judgment",
+      "text": "Charm can soften your guard; it cannot replace evidence.",
+      "author": "A16EEN",
+      "source": "The Wealth Mindset"
+    },
+    {
+      "id": "the-private-standard",
+      "category": "Character",
+      "text": "Your private standard matters most when breaking it would be convenient.",
+      "author": "A16EEN",
+      "source": "The Wealth Mindset"
+    },
+    {
+      "id": "the-visible-victory",
+      "category": "Power",
+      "text": "Visible victories impress crowds; durable advantages change your options.",
+      "author": "A16EEN",
+      "source": "The Wealth Mindset"
+    },
+    {
+      "id": "the-cost-of-being-right",
+      "category": "Strategy",
+      "text": "Being right is not enough if you fail to understand what the moment requires.",
+      "author": "A16EEN",
+      "source": "The Wealth Mindset"
+    },
+    {
+      "id": "the-fact-pattern",
+      "category": "Judgment",
+      "text": "One event can mislead; a pattern is harder to explain away.",
+      "author": "A16EEN",
+      "source": "The Wealth Mindset"
+    },
+    {
+      "id": "the-map-and-territory",
+      "category": "Strategy",
+      "text": "A confident plan is a map, not the territory it claims to control.",
+      "author": "A16EEN",
+      "source": "The Wealth Mindset"
+    },
+    {
+      "id": "the-decision-maker",
+      "category": "Power",
+      "text": "Find who can make the decision, who can block it, and who pays if it fails.",
+      "author": "A16EEN",
+      "source": "The Wealth Mindset"
+    },
+    {
+      "id": "the-value-of-restraint",
+      "category": "Power",
+      "text": "Restraint is strength when action would only feed your ego.",
+      "author": "A16EEN",
+      "source": "The Wealth Mindset"
+    },
+    {
+      "id": "the-cost-of-display",
+      "category": "Status",
+      "text": "Every performance asks for an audience and charges the performer first.",
+      "author": "A16EEN",
+      "source": "The Wealth Mindset"
+    },
+    {
+      "id": "the-compounding-choice",
+      "category": "Wealth",
+      "text": "Small decisions compound quietly until they become a life you can no longer ignore.",
+      "author": "A16EEN",
+      "source": "The Wealth Mindset"
+    },
+    {
+      "id": "the-asset-of-skill",
+      "category": "Capital",
+      "text": "Money can disappear; a skill that solves real problems can rebuild it.",
+      "author": "A16EEN",
+      "source": "The Wealth Mindset"
+    },
+    {
+      "id": "the-profit-of-patience",
+      "category": "Business",
+      "text": "Patience in business is not waiting forever; it is refusing to confuse urgency with evidence.",
+      "author": "A16EEN",
+      "source": "The Wealth Mindset"
+    },
+    {
+      "id": "the-price-of-cheap",
+      "category": "Money",
+      "text": "Cheap can be expensive when it repeatedly fails at the moment you need it.",
+      "author": "A16EEN",
+      "source": "The Wealth Mindset"
+    },
+    {
+      "id": "the-risk-of-reputation",
+      "category": "Reputation",
+      "text": "Reputation is an asset, not armor; never use it as an excuse to stop checking your work.",
+      "author": "A16EEN",
+      "source": "The Wealth Mindset"
+    },
+    {
+      "id": "the-choice-behind-comfort",
+      "category": "Freedom",
+      "text": "Comfort is useful until its price is the freedom to change.",
+      "author": "A16EEN",
+      "source": "The Wealth Mindset"
+    },
+    {
+      "id": "the-deal-after-the-deal",
+      "category": "Negotiation",
+      "text": "Read what happens after the handshake; that is where many agreements reveal their character.",
+      "author": "A16EEN",
+      "source": "The Wealth Mindset"
+    },
+    {
+      "id": "the-noise-of-ambition",
+      "category": "Ambition",
+      "text": "Ambition without direction is noise with a calendar.",
+      "author": "A16EEN",
+      "source": "The Wealth Mindset"
+    },
+    {
+      "id": "the-discipline-of-wealth",
+      "category": "Wealth",
+      "text": "Wealth is built by repeated decisions that rarely look impressive in isolation.",
+      "author": "A16EEN",
+      "source": "The Wealth Mindset"
+    },
+    {
+      "id": "the-dangerous-assumption",
+      "category": "Judgment",
+      "text": "The most dangerous assumption is the one that makes you feel safest.",
+      "author": "A16EEN",
+      "source": "The Wealth Mindset"
+    },
+    {
+      "id": "the-cost-of-resentment",
+      "category": "Discipline",
+      "text": "Resentment keeps the wound open and calls the pain a strategy.",
+      "author": "A16EEN",
+      "source": "The Wealth Mindset"
+    },
+    {
+      "id": "the-value-of-distance",
+      "category": "Human nature",
+      "text": "Distance can reveal whether a bond has substance or merely routine.",
+      "author": "A16EEN",
+      "source": "The Wealth Mindset"
+    },
+    {
+      "id": "the-motive-underneath",
+      "category": "Human nature",
+      "text": "Listen to what people say; observe what their choices protect.",
+      "author": "A16EEN",
+      "source": "The Wealth Mindset"
+    },
+    {
+      "id": "the-test-of-power",
+      "category": "Power",
+      "text": "Power is revealed less by what someone can demand than by what they choose not to demand.",
+      "author": "A16EEN",
+      "source": "The Wealth Mindset"
+    },
+    {
+      "id": "the-influence-boundary",
+      "category": "Influence",
+      "text": "Influence offers a reason to choose; manipulation punishes you for choosing freely.",
+      "author": "A16EEN",
+      "source": "The Wealth Mindset"
+    },
+    {
+      "id": "the-pressure-pattern",
+      "category": "Manipulation awareness",
+      "text": "Pressure that forbids questions is asking for trust it has not earned.",
+      "author": "A16EEN",
+      "source": "The Wealth Mindset"
+    },
+    {
+      "id": "the-bait-of-outrage",
+      "category": "Manipulation awareness",
+      "text": "Outrage is easy bait when reaction matters more than resolution.",
+      "author": "A16EEN",
+      "source": "The Wealth Mindset"
+    },
+    {
+      "id": "the-cost-of-comparison",
+      "category": "Human nature",
+      "text": "Comparison makes someone else's highlight reel the judge of your real life.",
+      "author": "A16EEN",
+      "source": "The Wealth Mindset"
+    },
+    {
+      "id": "the-public-persona",
+      "category": "Reputation",
+      "text": "A public persona is a signal, not a full account of the person behind it.",
+      "author": "A16EEN",
+      "source": "The Wealth Mindset"
+    },
+    {
+      "id": "the-quiet-observer",
+      "category": "Strategy",
+      "text": "Observe long enough to separate what is said from what is repeated.",
+      "author": "A16EEN",
+      "source": "The Wealth Mindset"
+    },
+    {
+      "id": "the-purposeful-disclosure",
+      "category": "Privacy",
+      "text": "Share enough to be understood, not so much that every stranger gains a claim on you.",
+      "author": "A16EEN",
+      "source": "The Wealth Mindset"
+    },
+    {
+      "id": "the-strength-of-options",
+      "category": "Leverage",
+      "text": "Options turn pressure into a decision instead of a surrender.",
+      "author": "A16EEN",
+      "source": "The Wealth Mindset"
+    },
+    {
+      "id": "the-price-of-urgency",
+      "category": "Negotiation",
+      "text": "A rushed signature can turn a temporary problem into a permanent obligation.",
+      "author": "A16EEN",
+      "source": "The Wealth Mindset"
+    },
+    {
+      "id": "the-true-bottleneck",
+      "category": "Business",
+      "text": "Find the bottleneck before buying more effort to push against it.",
+      "author": "A16EEN",
+      "source": "The Wealth Mindset"
+    },
+    {
+      "id": "the-money-mirror",
+      "category": "Money",
+      "text": "Money magnifies habits; it does not automatically repair them.",
+      "author": "A16EEN",
+      "source": "The Wealth Mindset"
+    },
+    {
+      "id": "the-price-of-ego",
+      "category": "Business",
+      "text": "A business can survive a small mistake more easily than a leader who refuses to admit one.",
+      "author": "A16EEN",
+      "source": "The Wealth Mindset"
+    },
+    {
+      "id": "the-value-of-liquidity",
+      "category": "Capital",
+      "text": "Liquidity buys patience, and patience can keep you from accepting desperate terms.",
+      "author": "A16EEN",
+      "source": "The Wealth Mindset"
+    },
+    {
+      "id": "the-ownable-advantage",
+      "category": "Ownership",
+      "text": "Build an advantage you can keep, not an image you must constantly defend.",
+      "author": "A16EEN",
+      "source": "The Wealth Mindset"
+    },
+    {
+      "id": "the-cost-of-imitation",
+      "category": "Ambition",
+      "text": "Imitating another person's success without understanding its context is expensive theater.",
+      "author": "A16EEN",
+      "source": "The Wealth Mindset"
+    },
+    {
+      "id": "the-missing-variable",
+      "category": "Strategy",
+      "text": "When the numbers seem too good, search for the variable nobody has mentioned.",
+      "author": "A16EEN",
+      "source": "The Wealth Mindset"
+    },
+    {
+      "id": "the-boundary-of-mercy",
+      "category": "Boundaries",
+      "text": "Mercy without boundaries can become permission for the same harm to repeat.",
+      "author": "A16EEN",
+      "source": "The Wealth Mindset"
+    },
+    {
+      "id": "the-purpose-of-silence",
+      "category": "Strategy",
+      "text": "Silence is useful when it improves understanding, not when it disguises fear.",
+      "author": "A16EEN",
+      "source": "The Wealth Mindset"
+    },
+    {
+      "id": "the-difference-between-access-and-influence",
+      "category": "Influence",
+      "text": "Being invited into the room is not the same as shaping its decisions.",
+      "author": "A16EEN",
+      "source": "The Wealth Mindset"
+    },
+    {
+      "id": "the-trust-discount",
+      "category": "Trust",
+      "text": "Broken trust adds a cost to every future promise.",
+      "author": "A16EEN",
+      "source": "The Wealth Mindset"
+    },
+    {
+      "id": "the-value-of-accountability",
+      "category": "Character",
+      "text": "Accountability is power over your own mistakes before they become someone else's weapon.",
+      "author": "A16EEN",
+      "source": "The Wealth Mindset"
+    },
+    {
+      "id": "the-courage-to-revise",
+      "category": "Judgment",
+      "text": "Changing your mind after new evidence is strength, not defeat.",
+      "author": "A16EEN",
+      "source": "The Wealth Mindset"
+    },
+    {
+      "id": "the-cost-of-flattery",
+      "category": "Manipulation awareness",
+      "text": "Compliments deserve gratitude, not automatic access.",
+      "author": "A16EEN",
+      "source": "The Wealth Mindset"
+    },
+    {
+      "id": "the-hidden-audience",
+      "category": "Human nature",
+      "text": "Sometimes the audience you perform for is an imaginary critic you carry everywhere.",
+      "author": "A16EEN",
+      "source": "The Wealth Mindset"
+    },
+    {
+      "id": "the-price-of-control",
+      "category": "Power",
+      "text": "Trying to control everyone is a costly way to avoid governing yourself.",
+      "author": "A16EEN",
+      "source": "The Wealth Mindset"
+    },
+    {
+      "id": "the-discipline-of-not-knowing",
+      "category": "Discipline",
+      "text": "Admitting what you do not know protects you from paying for a false certainty.",
+      "author": "A16EEN",
+      "source": "The Wealth Mindset"
+    },
+    {
+      "id": "the-earned-confidence",
+      "category": "Ambition",
+      "text": "Confidence built on preparation survives questions that confidence built on image cannot.",
+      "author": "A16EEN",
+      "source": "The Wealth Mindset"
+    },
+    {
+      "id": "the-value-of-a-reliable-name",
+      "category": "Reputation",
+      "text": "A reliable name can open a door that money alone cannot keep open.",
+      "author": "A16EEN",
+      "source": "The Wealth Mindset"
+    },
+    {
+      "id": "the-cost-of-shortcuts",
+      "category": "Risk",
+      "text": "A shortcut is only smart when you understand which safeguards it removes.",
+      "author": "A16EEN",
+      "source": "The Wealth Mindset"
+    },
+    {
+      "id": "the-quiet-negotiation",
+      "category": "Negotiation",
+      "text": "The strongest terms are often secured before the negotiation looks dramatic.",
+      "author": "A16EEN",
+      "source": "The Wealth Mindset"
+    },
+    {
+      "id": "the-winner-of-attention",
+      "category": "Influence",
+      "text": "Whatever captures your attention repeatedly begins to shape your priorities.",
+      "author": "A16EEN",
+      "source": "The Wealth Mindset"
+    },
+    {
+      "id": "the-temptation-of-retaliation",
+      "category": "Discipline",
+      "text": "Retaliation can feel like control while handing the other person another hour of your life.",
+      "author": "A16EEN",
+      "source": "The Wealth Mindset"
+    },
+    {
+      "id": "the-difference-in-desire",
+      "category": "Human nature",
+      "text": "Desire tells you what someone wants; pressure reveals what they are willing to sacrifice for it.",
+      "author": "A16EEN",
+      "source": "The Wealth Mindset"
+    },
+    {
+      "id": "the-capital-of-trust",
+      "category": "Trust",
+      "text": "Trust makes cooperation cheaper; dishonesty makes every future transaction heavier.",
+      "author": "A16EEN",
+      "source": "The Wealth Mindset"
+    },
+    {
+      "id": "the-power-of-audit",
+      "category": "Strategy",
+      "text": "Audit your assumptions with the same discipline you apply to your accounts.",
+      "author": "A16EEN",
+      "source": "The Wealth Mindset"
+    },
+    {
+      "id": "the-math-of-freedom",
+      "category": "Freedom",
+      "text": "Freedom is partly a financial equation: fewer obligations, more options, and room to walk away.",
+      "author": "A16EEN",
+      "source": "The Wealth Mindset"
+    },
+    {
+      "id": "the-real-status-symbol",
+      "category": "Wealth",
+      "text": "The strongest status symbol is not needing to prove your status.",
+      "author": "A16EEN",
+      "source": "The Wealth Mindset"
+    },
+    {
+      "id": "the-price-of-dependence",
+      "category": "Leverage",
+      "text": "If one person controls every route forward, your first task is to create another route.",
+      "author": "A16EEN",
+      "source": "The Wealth Mindset"
+    },
+    {
+      "id": "the-obligation-trap",
+      "category": "Manipulation awareness",
+      "text": "A favor is generous when freely given; it becomes control when the debt is invented afterward.",
+      "author": "A16EEN",
+      "source": "The Wealth Mindset"
+    },
+    {
+      "id": "the-outcome-over-applause",
+      "category": "Ambition",
+      "text": "Choose the outcome that compounds over the applause that fades.",
+      "author": "A16EEN",
+      "source": "The Wealth Mindset"
+    },
+    {
+      "id": "the-strength-to-disengage",
+      "category": "Boundaries",
+      "text": "Leaving a pointless contest is not losing; it is withdrawing your investment.",
+      "author": "A16EEN",
+      "source": "The Wealth Mindset"
+    },
+    {
+      "id": "the-rule-of-receipts",
+      "category": "Money",
+      "text": "Keep records where memory, pride, and promises might disagree.",
       "author": "A16EEN",
       "source": "The Wealth Mindset"
     }
