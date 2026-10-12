@@ -25,6 +25,7 @@ PanelWindow {
     property string dataMeterPeriod: "today"
     property int screenTimeTodaySeconds: 0
     property int screenTimeWeekSeconds: 0
+    property int screenTimeMonthSeconds: 0
     property var screenTimeTopApps: []
     property bool screenTimeTrackingActive: false
     property string screenTimeStatus: "Waiting for an active window"
@@ -470,7 +471,7 @@ PanelWindow {
                                 ? "Your hidden windows, ready to return"
                                 : (root.page === "monitor" ? "Live usage while this card is open"
                                 : (root.page === "calculator" ? "Quick calculations, no waiting"
-                                : (root.page === "screen-time" ? "Daily total, weekly total, and most-used apps"
+                                : (root.page === "screen-time" ? "Today, week and month · active window time"
                                 : "Useful actions, one click away")))
                             color: popupCardStyle.mutedTextColor
                             font.pixelSize: 8
@@ -512,7 +513,7 @@ PanelWindow {
                     width: parent.width
                     flow: Flow.LeftToRight
                     spacing: 8
-                    height: 4 * 70 + 3 * spacing
+                    height: 3 * 70 + 2 * spacing
 
                     Repeater {
                         model: root.tools
@@ -520,9 +521,7 @@ PanelWindow {
                         delegate: Rectangle {
                             id: toolTile
                             required property var modelData
-                            width: (toolTile.modelData.id === "data-meter" || toolTile.modelData.id === "screen-time")
-                                ? toolsGrid.width
-                                : (toolsGrid.width - toolsGrid.spacing) / 2
+                            width: (toolsGrid.width - toolsGrid.spacing) / 2
                             height: 70
                             radius: 11
                             color: toolMouse.containsMouse ? popupCardStyle.hoverSurfaceColor : popupCardStyle.fieldColor
@@ -767,140 +766,95 @@ PanelWindow {
                     width: parent.width
                     height: Math.max(250, parent.height - 56)
 
-                    Rectangle {
-                        id: screenTimeHero
+                    Row {
+                        id: screenTimePeriodCards
                         anchors.left: parent.left
                         anchors.right: parent.right
                         anchors.top: parent.top
-                        height: 91
-                        radius: 12
-                        color: popupCardStyle.subtleSurfaceColor
-                        border.width: 1
-                        border.color: popupCardStyle.fieldBorderColor
+                        height: 68
+                        spacing: 7
 
-                        Column {
-                            anchors.left: parent.left
-                            anchors.leftMargin: 12
-                            anchors.verticalCenter: parent.verticalCenter
-                            width: parent.width - 112
-                            spacing: 4
+                        Repeater {
+                            model: [
+                                { label: "TODAY", seconds: root.screenTimeTodaySeconds },
+                                { label: "WEEK", seconds: root.screenTimeWeekSeconds },
+                                { label: "MONTH", seconds: root.screenTimeMonthSeconds }
+                            ]
 
-                            Text {
-                                width: parent.width
-                                text: "TODAY'S SCREEN TIME"
-                                color: popupCardStyle.mutedTextColor
-                                font.pixelSize: 8
-                                font.weight: Font.DemiBold
-                                font.letterSpacing: 0.75
+                            delegate: Rectangle {
+                                id: screenTimePeriodCard
+                                required property var modelData
+                                width: (screenTimePeriodCards.width - screenTimePeriodCards.spacing * 2) / 3
+                                height: screenTimePeriodCards.height
+                                radius: 10
+                                color: screenTimePeriodCard.modelData.label === "TODAY"
+                                    ? popupCardStyle.subtleSurfaceColor : popupCardStyle.fieldColor
+                                border.width: 1
+                                border.color: popupCardStyle.fieldBorderColor
+
+                                Column {
+                                    anchors.fill: parent
+                                    anchors.margins: 9
+                                    spacing: 8
+
+                                    Text {
+                                        width: parent.width
+                                        text: screenTimePeriodCard.modelData.label
+                                        color: popupCardStyle.mutedTextColor
+                                        font.pixelSize: 7
+                                        font.weight: Font.DemiBold
+                                        font.letterSpacing: 0.7
+                                        elide: Text.ElideRight
+                                    }
+
+                                    Text {
+                                        width: parent.width
+                                        text: root.formatDuration(screenTimePeriodCard.modelData.seconds)
+                                        color: popupCardStyle.textColor
+                                        font.pixelSize: 13
+                                        font.weight: Font.DemiBold
+                                        elide: Text.ElideRight
+                                    }
+                                }
                             }
-
-                            Text {
-                                width: parent.width
-                                text: root.formatDuration(root.screenTimeTodaySeconds)
-                                color: "#171B21"
-                                font.pixelSize: 29
-                                font.weight: Font.DemiBold
-                                elide: Text.ElideRight
-                            }
-
-                            Text {
-                                width: parent.width
-                                text: root.screenTimeCurrentApp
-                                color: popupCardStyle.secondaryTextColor
-                                font.pixelSize: 8
-                                elide: Text.ElideRight
-                            }
-                        }
-
-                        Rectangle {
-                            anchors.right: parent.right
-                            anchors.rightMargin: 10
-                            anchors.top: parent.top
-                            anchors.topMargin: 10
-                            width: 8
-                            height: 8
-                            radius: 4
-                            color: root.screenTimeTrackingActive ? "#3D9870" : "#9AA2AD"
                         }
                     }
 
                     Row {
-                        id: screenTimeSummary
+                        id: screenTimeStatusRow
                         anchors.left: parent.left
                         anchors.right: parent.right
-                        anchors.top: screenTimeHero.bottom
-                        anchors.topMargin: 8
-                        height: 53
-                        spacing: 8
+                        anchors.top: screenTimePeriodCards.bottom
+                        anchors.topMargin: 9
+                        height: 20
+                        spacing: 6
 
                         Rectangle {
-                            width: (screenTimeSummary.width - screenTimeSummary.spacing) / 2
-                            height: screenTimeSummary.height
-                            radius: 10
-                            color: popupCardStyle.fieldColor
-                            border.width: 1
-                            border.color: popupCardStyle.fieldBorderColor
-
-                            Column {
-                                anchors.fill: parent
-                                anchors.leftMargin: 10
-                                anchors.rightMargin: 6
-                                anchors.verticalCenter: parent.verticalCenter
-                                spacing: 4
-
-                                Text {
-                                    width: parent.width
-                                    text: "LAST 7 DAYS"
-                                    color: popupCardStyle.mutedTextColor
-                                    font.pixelSize: 7
-                                    font.weight: Font.DemiBold
-                                    font.letterSpacing: 0.5
-                                }
-
-                                Text {
-                                    width: parent.width
-                                    text: root.formatDuration(root.screenTimeWeekSeconds)
-                                    color: "#252D36"
-                                    font.pixelSize: 15
-                                    font.weight: Font.DemiBold
-                                    elide: Text.ElideRight
-                                }
-                            }
+                            width: 6
+                            height: 6
+                            radius: 3
+                            anchors.verticalCenter: parent.verticalCenter
+                            color: root.screenTimeTrackingActive ? "#3D9870" : "#9AA2AD"
                         }
 
-                        Rectangle {
-                            width: (screenTimeSummary.width - screenTimeSummary.spacing) / 2
-                            height: screenTimeSummary.height
-                            radius: 10
-                            color: popupCardStyle.fieldColor
-                            border.width: 1
-                            border.color: popupCardStyle.fieldBorderColor
+                        Text {
+                            width: parent.width - 82
+                            anchors.verticalCenter: parent.verticalCenter
+                            text: root.screenTimeTrackingActive
+                                ? root.screenTimeCurrentApp : root.screenTimeStatus
+                            color: popupCardStyle.secondaryTextColor
+                            font.pixelSize: 8
+                            elide: Text.ElideRight
+                        }
 
-                            Column {
-                                anchors.fill: parent
-                                anchors.leftMargin: 10
-                                anchors.rightMargin: 6
-                                anchors.verticalCenter: parent.verticalCenter
-                                spacing: 4
-
-                                Text {
-                                    width: parent.width
-                                    text: "TRACKING STATUS"
-                                    color: popupCardStyle.mutedTextColor
-                                    font.pixelSize: 7
-                                    font.weight: Font.DemiBold
-                                    font.letterSpacing: 0.5
-                                }
-
-                                Text {
-                                    width: parent.width
-                                    text: root.screenTimeTrackingActive ? "ACTIVE" : "PAUSED"
-                                    color: root.screenTimeTrackingActive ? "#327858" : "#68717D"
-                                    font.pixelSize: 11
-                                    font.weight: Font.DemiBold
-                                    elide: Text.ElideRight
-                                }
-                            }
+                        Text {
+                            width: 62
+                            anchors.verticalCenter: parent.verticalCenter
+                            text: root.screenTimeTrackingActive ? "TRACKING" : "PAUSED"
+                            color: root.screenTimeTrackingActive ? "#327858" : popupCardStyle.mutedTextColor
+                            font.pixelSize: 7
+                            font.weight: Font.DemiBold
+                            horizontalAlignment: Text.AlignRight
                         }
                     }
 
@@ -908,8 +862,8 @@ PanelWindow {
                         id: screenTimeAppsHeading
                         anchors.left: parent.left
                         anchors.right: parent.right
-                        anchors.top: screenTimeSummary.bottom
-                        anchors.topMargin: 12
+                        anchors.top: screenTimeStatusRow.bottom
+                        anchors.topMargin: 10
                         height: 12
                         text: "MOST USED TODAY"
                         color: popupCardStyle.mutedTextColor
@@ -998,15 +952,6 @@ PanelWindow {
                         horizontalAlignment: Text.AlignHCenter
                     }
 
-                    Text {
-                        anchors.left: parent.left
-                        anchors.right: parent.right
-                        anchors.bottom: parent.bottom
-                        text: root.screenTimeStatus
-                        color: popupCardStyle.mutedTextColor
-                        font.pixelSize: 8
-                        elide: Text.ElideRight
-                    }
                 }
 
                 Item {
@@ -1386,15 +1331,14 @@ PanelWindow {
                 }
 
                 Text {
-                    visible: root.page !== "data-meter"
+                    visible: ["stash", "monitor", "calculator", "screen-time"].includes(root.page)
                     width: parent.width
                     height: 11
                     text: root.page === "stash"
                         ? "Choose an icon to restore its window"
                         : (root.page === "monitor" ? "Refreshes only while open"
                         : (root.page === "calculator" ? "Basic arithmetic · percentage included"
-                        : (root.page === "screen-time" ? "Tracks focused apps; pauses after 60 seconds idle or screen lock"
-                            : "Nest · Ctrl + Super + H")))
+                        : "Tracks focused apps; pauses after 60 seconds idle or screen lock"))
                     color: popupCardStyle.mutedTextColor
                     font.pixelSize: 8
                     elide: Text.ElideRight
