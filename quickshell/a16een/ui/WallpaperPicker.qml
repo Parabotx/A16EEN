@@ -320,7 +320,12 @@ PanelWindow {
                         width: 52; height: 28; radius: 14; anchors.verticalCenter: parent.verticalCenter
                         color: root.autoRotate ? "#171717" : "#DADADA"
                         Rectangle { x: root.autoRotate ? 27 : 3; y: 3; width: 22; height: 22; radius: 11; color: "#FFFFFF" }
-                        MouseArea { anchors.fill: parent; cursorShape: Qt.PointingHandCursor; onClicked: { root.autoRotate = !root.autoRotate; root.setSetting("enabled", root.autoRotate ? 1 : 0) } }
+                        MouseArea { anchors.fill: parent; cursorShape: Qt.PointingHandCursor; onClicked: {
+                            root.autoRotate = !root.autoRotate
+                            root.setSetting("enabled", root.autoRotate ? 1 : 0)
+                            if (root.autoRotate)
+                                root.setSetting("last_rotation", Math.floor(Date.now() / 1000))
+                        } }
                     }
                 }
 
@@ -393,7 +398,7 @@ PanelWindow {
                         MouseArea { anchors.fill: parent; onClicked: { let parts = root.morningTime.split(":"); let h = (Number(parts[0]) + 1) % 24; root.morningTime = (h < 10 ? "0" : "") + h + ":" + parts[1]; root.setSetting("morning_time", root.morningTime) } }
                     }
                     Rectangle {
-                        width: parent.width - 152; height: 32; radius: 8; color: "#F3F3F3"; anchors.verticalCenter: parent.verticalCenter
+                        width: parent.width - 160; height: 32; radius: 8; color: "#F3F3F3"; anchors.verticalCenter: parent.verticalCenter
                         Text { anchors.centerIn: parent; text: root.morningPath ? root.morningPath.split("/").pop() : "Choose morning file"; color: "#333333"; font.pixelSize: 9; elide: Text.ElideMiddle; width: parent.width - 12 }
                         MouseArea { anchors.fill: parent; onClicked: { root.fileDialogPurpose = "morning"; wallpaperFileDialog.open() } }
                     }
