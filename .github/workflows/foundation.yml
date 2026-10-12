@@ -273,7 +273,8 @@ jobs:
           grep -Fq 'model: root.shape === "circle" ? [] : root.activeApps' quickshell/a16een/ui/AppShelfWidget.qml
           grep -Fq 'root.widgetsCenterOpen = false' quickshell/a16een/shell.qml
           grep -Fq 'root.widgetsCloseRequested()' quickshell/a16een/ui/CommandCenter.qml
-          grep -Fq 'root.selectedWidgetId === "app-shelf" ? 4 : 16' quickshell/a16een/ui/WidgetSection.qml
+          grep -Fq 'spacing: root.selectedWidgetId === "app-shelf" ? 2 : 16' quickshell/a16een/ui/WidgetSection.qml
+          grep -Fq 'anchors.topMargin: root.selectedWidgetId === "app-shelf" ? 8 : 20' quickshell/a16een/ui/WidgetSection.qml
           grep -Fq 'ORBIT ROTATION' quickshell/a16een/ui/WidgetSection.qml
           grep -Fq 'onClicked: root.removeAppShelfApplication(modelData.desktopId)' quickshell/a16een/ui/WidgetSection.qml
           grep -Fq 'anchors.bottomMargin: root.centerFromBottom - height / 2' quickshell/a16een/ui/AppShelfWidget.qml
