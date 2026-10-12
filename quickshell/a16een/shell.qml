@@ -399,7 +399,7 @@ ShellRoot {
                         if (saved && typeof saved[key] === "boolean")
                             root[key] = saved[key]
                     }
-                    if (saved && ["capsule", "rounded", "compact"].includes(saved.appShelfShape))
+                    if (saved && ["capsule", "rounded", "compact", "circle"].includes(saved.appShelfShape))
                         root.appShelfShape = saved.appShelfShape
                     if (saved && Array.isArray(saved.appShelfApps)) {
                         root.appShelfApps = saved.appShelfApps
@@ -1730,7 +1730,7 @@ ShellRoot {
             root.requestWidgetSettingsSave()
         }
         onAppShelfShapeRequested: {
-            if (["capsule", "rounded", "compact"].includes(shape)) {
+            if (["capsule", "rounded", "compact", "circle"].includes(shape)) {
                 root.appShelfShape = shape
                 root.requestWidgetSettingsSave()
             }
