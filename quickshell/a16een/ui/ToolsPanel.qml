@@ -23,6 +23,12 @@ PanelWindow {
     property bool dataMeterSnapshotReady: false
     property string dataMeterError: ""
     property string dataMeterPeriod: "today"
+    property int screenTimeTodaySeconds: 0
+    property int screenTimeWeekSeconds: 0
+    property var screenTimeTopApps: []
+    property bool screenTimeTrackingActive: false
+    property string screenTimeStatus: "Waiting for an active window"
+    property string screenTimeCurrentApp: "No active application"
     property string expression: "0"
     property string calculatorError: ""
     property bool justEvaluated: false
@@ -37,10 +43,12 @@ PanelWindow {
     readonly property bool horizontalNavbar: root.navbarPosition === "top" || root.navbarPosition === "bottom"
     readonly property real screenWidth: root.modelData ? root.modelData.width : 1920
     readonly property real screenHeight: root.modelData ? root.modelData.height : 1080
-    readonly property int popupWidth: root.page === "data-meter" ? 360 : 322
+    readonly property int popupWidth: (root.page === "data-meter" || root.page === "screen-time") ? 360 : 322
     readonly property int popupHeight: root.page === "stash" ? 388
         : (root.page === "monitor" ? 310
-        : (root.page === "calculator" ? 420 : (root.page === "data-meter" ? 390 : 316)))
+        : (root.page === "calculator" ? 420
+        : (root.page === "screen-time" ? 420
+        : (root.page === "data-meter" ? 390 : (root.page === "tools" ? 398 : 316)))))
     property var monitorStats: null
     property string monitorError: ""
     readonly property var monitorMetrics: [
@@ -78,6 +86,7 @@ PanelWindow {
         { id: "calculator", label: "Calculator", detail: "Quick calculations", icon: "lucide-calculator.svg" },
         { id: "monitor", label: "System Monitor", detail: "CPU, memory & disk", icon: "lucide-activity.svg" },
         { id: "stash", label: "Nest", detail: "Keep windows out of the way", icon: "lucide-archive.svg" },
+        { id: "screen-time", label: "Screen Time", detail: "Daily active time by app", icon: "lucide-activity.svg" },
         { id: "data-meter", label: "Data Meter", detail: "Daily internet usage and speed", icon: "lucide-activity.svg" }
     ]
 
@@ -101,6 +110,17 @@ PanelWindow {
         if (rate < 1024) return Math.round(rate) + " B/s"
         if (rate < 1024 * 1024) return (rate / 1024).toFixed(rate < 10240 ? 1 : 0) + " KB/s"
         return (rate / (1024 * 1024)).toFixed(1) + " MB/s"
+    }
+
+    function formatDuration(value) {
+        const seconds = Math.max(0, Math.floor(Number(value) || 0))
+        const hours = Math.floor(seconds / 3600)
+        const minutes = Math.floor((seconds % 3600) / 60)
+        if (hours > 0)
+            return hours + "h " + minutes + "m"
+        if (minutes > 0)
+            return minutes + "m"
+        return "0m"
     }
 
     function calculate(sourceText) {
@@ -416,7 +436,7 @@ PanelWindow {
                                     ? "../assets/icons/lucide-activity.svg"
                                     : (root.page === "calculator"
                                         ? "../assets/icons/lucide-calculator.svg"
-                                        : (root.page === "data-meter"
+                                        : ((root.page === "data-meter" || root.page === "screen-time")
                                             ? "../assets/icons/lucide-activity.svg"
                                             : "../assets/icons/lucide-toolbox.svg"))))
                             sourceSize.width: 48
@@ -435,7 +455,8 @@ PanelWindow {
                             text: root.page === "stash" ? "NEST"
                                 : (root.page === "monitor" ? "SYSTEM MONITOR"
                                 : (root.page === "calculator" ? "CALCULATOR"
-                                : (root.page === "data-meter" ? "DATA METER" : "QUICK TOOLS")))
+                                : (root.page === "screen-time" ? "SCREEN TIME"
+                                : (root.page === "data-meter" ? "DATA METER" : "QUICK TOOLS"))))
                             color: "#171B21"
                             font.pixelSize: 10
                             font.weight: Font.DemiBold
@@ -449,7 +470,8 @@ PanelWindow {
                                 ? "Your hidden windows, ready to return"
                                 : (root.page === "monitor" ? "Live usage while this card is open"
                                 : (root.page === "calculator" ? "Quick calculations, no waiting"
-                                : "Useful actions, one click away"))
+                                : (root.page === "screen-time" ? "Daily total, weekly total, and most-used apps"
+                                : "Useful actions, one click away")))
                             color: popupCardStyle.mutedTextColor
                             font.pixelSize: 8
                             elide: Text.ElideRight
@@ -490,7 +512,7 @@ PanelWindow {
                     width: parent.width
                     flow: Flow.LeftToRight
                     spacing: 8
-                    height: 3 * 70 + 2 * spacing
+                    height: 4 * 70 + 3 * spacing
 
                     Repeater {
                         model: root.tools
@@ -498,7 +520,7 @@ PanelWindow {
                         delegate: Rectangle {
                             id: toolTile
                             required property var modelData
-                            width: toolTile.modelData.id === "data-meter"
+                            width: (toolTile.modelData.id === "data-meter" || toolTile.modelData.id === "screen-time")
                                 ? toolsGrid.width
                                 : (toolsGrid.width - toolsGrid.spacing) / 2
                             height: 70
@@ -736,6 +758,254 @@ PanelWindow {
                                 }
                             }
                         }
+                    }
+                }
+
+                Item {
+                    id: screenTimePage
+                    visible: root.page === "screen-time"
+                    width: parent.width
+                    height: Math.max(250, parent.height - 56)
+
+                    Rectangle {
+                        id: screenTimeHero
+                        anchors.left: parent.left
+                        anchors.right: parent.right
+                        anchors.top: parent.top
+                        height: 91
+                        radius: 12
+                        color: popupCardStyle.subtleSurfaceColor
+                        border.width: 1
+                        border.color: popupCardStyle.fieldBorderColor
+
+                        Column {
+                            anchors.left: parent.left
+                            anchors.leftMargin: 12
+                            anchors.verticalCenter: parent.verticalCenter
+                            width: parent.width - 112
+                            spacing: 4
+
+                            Text {
+                                width: parent.width
+                                text: "TODAY'S SCREEN TIME"
+                                color: popupCardStyle.mutedTextColor
+                                font.pixelSize: 8
+                                font.weight: Font.DemiBold
+                                font.letterSpacing: 0.75
+                            }
+
+                            Text {
+                                width: parent.width
+                                text: root.formatDuration(root.screenTimeTodaySeconds)
+                                color: "#171B21"
+                                font.pixelSize: 29
+                                font.weight: Font.DemiBold
+                                elide: Text.ElideRight
+                            }
+
+                            Text {
+                                width: parent.width
+                                text: root.screenTimeCurrentApp
+                                color: popupCardStyle.secondaryTextColor
+                                font.pixelSize: 8
+                                elide: Text.ElideRight
+                            }
+                        }
+
+                        Rectangle {
+                            anchors.right: parent.right
+                            anchors.rightMargin: 10
+                            anchors.top: parent.top
+                            anchors.topMargin: 10
+                            width: 8
+                            height: 8
+                            radius: 4
+                            color: root.screenTimeTrackingActive ? "#3D9870" : "#9AA2AD"
+                        }
+                    }
+
+                    Row {
+                        id: screenTimeSummary
+                        anchors.left: parent.left
+                        anchors.right: parent.right
+                        anchors.top: screenTimeHero.bottom
+                        anchors.topMargin: 8
+                        height: 53
+                        spacing: 8
+
+                        Rectangle {
+                            width: (screenTimeSummary.width - screenTimeSummary.spacing) / 2
+                            height: screenTimeSummary.height
+                            radius: 10
+                            color: popupCardStyle.fieldColor
+                            border.width: 1
+                            border.color: popupCardStyle.fieldBorderColor
+
+                            Column {
+                                anchors.fill: parent
+                                anchors.leftMargin: 10
+                                anchors.rightMargin: 6
+                                anchors.verticalCenter: parent.verticalCenter
+                                spacing: 4
+
+                                Text {
+                                    width: parent.width
+                                    text: "LAST 7 DAYS"
+                                    color: popupCardStyle.mutedTextColor
+                                    font.pixelSize: 7
+                                    font.weight: Font.DemiBold
+                                    font.letterSpacing: 0.5
+                                }
+
+                                Text {
+                                    width: parent.width
+                                    text: root.formatDuration(root.screenTimeWeekSeconds)
+                                    color: "#252D36"
+                                    font.pixelSize: 15
+                                    font.weight: Font.DemiBold
+                                    elide: Text.ElideRight
+                                }
+                            }
+                        }
+
+                        Rectangle {
+                            width: (screenTimeSummary.width - screenTimeSummary.spacing) / 2
+                            height: screenTimeSummary.height
+                            radius: 10
+                            color: popupCardStyle.fieldColor
+                            border.width: 1
+                            border.color: popupCardStyle.fieldBorderColor
+
+                            Column {
+                                anchors.fill: parent
+                                anchors.leftMargin: 10
+                                anchors.rightMargin: 6
+                                anchors.verticalCenter: parent.verticalCenter
+                                spacing: 4
+
+                                Text {
+                                    width: parent.width
+                                    text: "TRACKING STATUS"
+                                    color: popupCardStyle.mutedTextColor
+                                    font.pixelSize: 7
+                                    font.weight: Font.DemiBold
+                                    font.letterSpacing: 0.5
+                                }
+
+                                Text {
+                                    width: parent.width
+                                    text: root.screenTimeTrackingActive ? "ACTIVE" : "PAUSED"
+                                    color: root.screenTimeTrackingActive ? "#327858" : "#68717D"
+                                    font.pixelSize: 11
+                                    font.weight: Font.DemiBold
+                                    elide: Text.ElideRight
+                                }
+                            }
+                        }
+                    }
+
+                    Text {
+                        id: screenTimeAppsHeading
+                        anchors.left: parent.left
+                        anchors.right: parent.right
+                        anchors.top: screenTimeSummary.bottom
+                        anchors.topMargin: 12
+                        height: 12
+                        text: "MOST USED TODAY"
+                        color: popupCardStyle.mutedTextColor
+                        font.pixelSize: 8
+                        font.weight: Font.DemiBold
+                        font.letterSpacing: 0.65
+                    }
+
+                    Column {
+                        id: screenTimeAppsList
+                        anchors.left: parent.left
+                        anchors.right: parent.right
+                        anchors.top: screenTimeAppsHeading.bottom
+                        anchors.topMargin: 6
+                        spacing: 5
+
+                        Repeater {
+                            model: root.screenTimeTopApps
+
+                            delegate: Item {
+                                id: screenTimeAppRow
+                                required property var modelData
+                                width: screenTimeAppsList.width
+                                height: 27
+
+                                Row {
+                                    anchors.left: parent.left
+                                    anchors.right: parent.right
+                                    anchors.top: parent.top
+                                    height: 17
+                                    spacing: 6
+
+                                    Text {
+                                        width: parent.width - 58
+                                        anchors.verticalCenter: parent.verticalCenter
+                                        text: screenTimeAppRow.modelData.name
+                                        color: "#29313B"
+                                        font.pixelSize: 9
+                                        font.weight: Font.Medium
+                                        elide: Text.ElideRight
+                                    }
+
+                                    Text {
+                                        width: 52
+                                        anchors.verticalCenter: parent.verticalCenter
+                                        text: root.formatDuration(screenTimeAppRow.modelData.seconds)
+                                        color: popupCardStyle.secondaryTextColor
+                                        font.pixelSize: 8
+                                        horizontalAlignment: Text.AlignRight
+                                        elide: Text.ElideLeft
+                                    }
+                                }
+
+                                Rectangle {
+                                    anchors.left: parent.left
+                                    anchors.right: parent.right
+                                    anchors.bottom: parent.bottom
+                                    height: 3
+                                    radius: 2
+                                    color: popupCardStyle.selectedSurfaceColor
+                                    clip: true
+
+                                    Rectangle {
+                                        width: parent.width * Math.max(0, Math.min(1,
+                                            Number(screenTimeAppRow.modelData.seconds)
+                                            / Math.max(1, Number(root.screenTimeTopApps.length
+                                                ? root.screenTimeTopApps[0].seconds : 1))))
+                                        height: parent.height
+                                        radius: 2
+                                        color: "#596676"
+                                    }
+                                }
+                            }
+                        }
+                    }
+
+                    Text {
+                        anchors.left: parent.left
+                        anchors.right: parent.right
+                        anchors.top: screenTimeAppsHeading.bottom
+                        anchors.topMargin: 12
+                        visible: root.screenTimeTopApps.length === 0
+                        text: "Your app breakdown will appear as you use A16EEN."
+                        color: popupCardStyle.mutedTextColor
+                        font.pixelSize: 9
+                        horizontalAlignment: Text.AlignHCenter
+                    }
+
+                    Text {
+                        anchors.left: parent.left
+                        anchors.right: parent.right
+                        anchors.bottom: parent.bottom
+                        text: root.screenTimeStatus
+                        color: popupCardStyle.mutedTextColor
+                        font.pixelSize: 8
+                        elide: Text.ElideRight
                     }
                 }
 
@@ -1123,7 +1393,8 @@ PanelWindow {
                         ? "Choose an icon to restore its window"
                         : (root.page === "monitor" ? "Refreshes only while open"
                         : (root.page === "calculator" ? "Basic arithmetic · percentage included"
-                            : "Nest · Ctrl + Super + H"))
+                        : (root.page === "screen-time" ? "Tracks focused apps; pauses after 60 seconds idle or screen lock"
+                            : "Nest · Ctrl + Super + H")))
                     color: popupCardStyle.mutedTextColor
                     font.pixelSize: 8
                     elide: Text.ElideRight
