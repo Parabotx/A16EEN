@@ -291,7 +291,7 @@ Item {
 
                 RowLayout {
                     Layout.fillWidth: true
-                    Layout.preferredHeight: 48
+                    Layout.preferredHeight: root.selectedWidgetId === "app-shelf" ? 38 : 48
                     spacing: 10
 
                     NavbarIcon {
@@ -374,8 +374,8 @@ Item {
 
                 Rectangle {
                     Layout.fillWidth: true
-                    Layout.topMargin: root.selectedWidgetId === "app-shelf" ? 4 : 10
-                    Layout.bottomMargin: root.selectedWidgetId === "app-shelf" ? 8 : 18
+                    Layout.topMargin: root.selectedWidgetId === "app-shelf" ? 0 : 10
+                    Layout.bottomMargin: root.selectedWidgetId === "app-shelf" ? 4 : 18
                     height: 1
                     color: root.dividerColor
                 }
@@ -580,7 +580,8 @@ Item {
                             model: [
                                 { value: "capsule", label: "CAPSULE" },
                                 { value: "rounded", label: "ROUNDED" },
-                                { value: "compact", label: "COMPACT" }
+                                { value: "compact", label: "COMPACT" },
+                                { value: "circle", label: "CIRCLE" }
                             ]
 
                             delegate: Rectangle {
@@ -588,7 +589,8 @@ Item {
                                 Layout.fillWidth: true
                                 Layout.preferredHeight: 31
                                 radius: modelData.value === "capsule" ? 15
-                                    : modelData.value === "rounded" ? 8 : 4
+                                    : modelData.value === "rounded" ? 8
+                                    : modelData.value === "circle" ? 15 : 4
                                 color: root.appShelfShape === modelData.value
                                     ? root.activeBackground : root.controlBackground
                                 border.width: 1
