@@ -340,6 +340,8 @@ ShellRoot {
     property bool widgetsCenterOpen: false
     property bool editorialTimeWidgetEnabled: true
     property bool musicWidgetEnabled: false
+    property string musicWidgetBackgroundColor: "#EAF2F8"
+    property int musicWidgetBackgroundOpacity: 72
     property bool quotesWidgetEnabled: false
     property bool appShelfWidgetEnabled: false
     property string appShelfShape: "capsule"
@@ -354,6 +356,8 @@ ShellRoot {
         return {
             editorialTimeWidgetEnabled: root.editorialTimeWidgetEnabled,
             musicWidgetEnabled: root.musicWidgetEnabled,
+            musicWidgetBackgroundColor: root.musicWidgetBackgroundColor,
+            musicWidgetBackgroundOpacity: root.musicWidgetBackgroundOpacity,
             quotesWidgetEnabled: root.quotesWidgetEnabled,
             appShelfWidgetEnabled: root.appShelfWidgetEnabled,
             appShelfShape: root.appShelfShape,
@@ -372,6 +376,8 @@ ShellRoot {
 
     onEditorialTimeWidgetEnabledChanged: root.requestWidgetSettingsSave()
     onMusicWidgetEnabledChanged: root.requestWidgetSettingsSave()
+    onMusicWidgetBackgroundColorChanged: root.requestWidgetSettingsSave()
+    onMusicWidgetBackgroundOpacityChanged: root.requestWidgetSettingsSave()
     onQuotesWidgetEnabledChanged: root.requestWidgetSettingsSave()
     onAppShelfWidgetEnabledChanged: root.requestWidgetSettingsSave()
     onAppShelfShapeChanged: root.requestWidgetSettingsSave()
@@ -403,6 +409,13 @@ ShellRoot {
                         if (saved && typeof saved[key] === "boolean")
                             root[key] = saved[key]
                     }
+                    if (saved && typeof saved.musicWidgetBackgroundColor === "string"
+                            && /^#[0-9a-fA-F]{6}$/.test(saved.musicWidgetBackgroundColor))
+                        root.musicWidgetBackgroundColor = saved.musicWidgetBackgroundColor
+                    if (saved && Number.isInteger(saved.musicWidgetBackgroundOpacity)
+                            && saved.musicWidgetBackgroundOpacity >= 0
+                            && saved.musicWidgetBackgroundOpacity <= 100)
+                        root.musicWidgetBackgroundOpacity = saved.musicWidgetBackgroundOpacity
                     if (saved && ["capsule", "rounded", "compact", "circle"].includes(saved.appShelfShape))
                         root.appShelfShape = saved.appShelfShape
                     if (saved && Array.isArray(saved.appShelfApps)) {
@@ -1434,6 +1447,8 @@ ShellRoot {
             modelData: modelData
             widgetEnabled: root.musicWidgetEnabled && !root.secureLockActive
             navbarPosition: root.navbarPosition
+            backgroundColor: root.musicWidgetBackgroundColor
+            backgroundOpacity: root.musicWidgetBackgroundOpacity
         }
     }
 
@@ -1688,6 +1703,8 @@ ShellRoot {
         widgetViewOpen: root.widgetsCenterOpen
         editorialTimeWidgetEnabled: root.editorialTimeWidgetEnabled
         musicWidgetEnabled: root.musicWidgetEnabled
+        musicWidgetBackgroundColor: root.musicWidgetBackgroundColor
+        musicWidgetBackgroundOpacity: root.musicWidgetBackgroundOpacity
         quotesWidgetEnabled: root.quotesWidgetEnabled
         appShelfWidgetEnabled: root.appShelfWidgetEnabled
         appShelfShape: root.appShelfShape
@@ -1760,6 +1777,16 @@ ShellRoot {
         }
         onMusicWidgetEnabledRequested: {
             root.musicWidgetEnabled = enabled
+            root.requestWidgetSettingsSave()
+        }
+        onMusicWidgetBackgroundColorRequested: {
+            if (typeof color === "string" && /^#[0-9a-fA-F]{6}$/.test(color)) {
+                root.musicWidgetBackgroundColor = color
+                root.requestWidgetSettingsSave()
+            }
+        }
+        onMusicWidgetBackgroundOpacityRequested: {
+            root.musicWidgetBackgroundOpacity = Math.max(0, Math.min(100, Number(opacity) || 0))
             root.requestWidgetSettingsSave()
         }
         onQuotesWidgetEnabledRequested: {
