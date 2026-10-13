@@ -520,12 +520,12 @@ PanelWindow {
                                 && root.selectedYear === root.calendarYear
                                 && root.selectedMonth === root.calendarMonth
                                 && root.selectedDay === dateCell.modelData.day
-                            color: dateCell.chosen ? "#20262E"
-                                : (dateCell.modelData.day > 0 ? "#F4F6F8" : "transparent")
+                            color: dateCell.chosen ? popupCardStyle.actionColor
+                                : (dateCell.modelData.day > 0 ? popupCardStyle.fieldColor : "transparent")
                             Text {
                                 anchors.centerIn: parent
                                 text: dateCell.modelData.day > 0 ? String(dateCell.modelData.day) : ""
-                                color: dateCell.chosen ? "#FFFFFF" : "#505B68"
+                                color: dateCell.chosen ? popupCardStyle.actionTextColor : popupCardStyle.textColor
                                 font.pixelSize: 10
                                 font.weight: dateCell.chosen ? Font.DemiBold : Font.Normal
                             }
@@ -573,11 +573,11 @@ PanelWindow {
                         width: (parent.width - 7) / 2
                         height: 29
                         radius: 9
-                        color: saveTaskHover.containsMouse ? "#161B22" : "#242A32"
+                        color: saveTaskHover.containsMouse ? popupCardStyle.actionHoverColor : popupCardStyle.actionColor
                         Text {
                             anchors.centerIn: parent
                             text: "Add task"
-                            color: "#FFFFFF"
+                            color: popupCardStyle.actionTextColor
                             font.pixelSize: 10
                             font.weight: Font.DemiBold
                         }
@@ -734,7 +734,7 @@ PanelWindow {
                             Text {
                                 anchors.centerIn: parent
                                 text: "×"
-                                color: deleteHover.containsMouse ? "#B9444A" : "#98A1AD"
+                                color: deleteHover.containsMouse ? popupCardStyle.dangerColor : popupCardStyle.mutedTextColor
                                 font.pixelSize: 15
                             }
                             MouseArea {
@@ -759,15 +759,15 @@ PanelWindow {
                 width: 31
                 height: 31
                 radius: 11
-                color: addHover.containsMouse ? "#171B20" : "#242A32"
+                color: addHover.containsMouse ? popupCardStyle.actionHoverColor : popupCardStyle.actionColor
                 border.width: 1
-                border.color: "#20262E"
+                border.color: popupCardStyle.actionColor
                 z: 3
 
                 Text {
                     anchors.centerIn: parent
                     text: "+"
-                    color: "#FFFFFF"
+                    color: popupCardStyle.actionTextColor
                     font.pixelSize: 21
                     font.weight: Font.Light
                 }

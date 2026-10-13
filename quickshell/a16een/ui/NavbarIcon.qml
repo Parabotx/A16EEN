@@ -65,7 +65,11 @@ Item {
         layer.enabled: !root.preserveSourceColors
 
         layer.effect: MultiEffect {
-            colorization: 1
+            // Lucide and quick-action SVGs use black strokes. Raise the glyph
+            // to neutral white before tinting so dark strokes do not stay black
+            // on dark popup cards.
+            brightness: 1.0
+            colorization: 1.0
             colorizationColor: root.iconColor
         }
 

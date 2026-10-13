@@ -358,7 +358,7 @@ PanelWindow {
                         Text {
                             anchors.centerIn: parent
                             text: root.editorOpen ? "‹" : "+"
-                            color: addHover.containsMouse && !root.editorOpen ? "#FFFFFF" : "#343D47"
+                            color: addHover.containsMouse ? popupCardStyle.actionTextColor : popupCardStyle.iconColor
                             font.pixelSize: 19
                         }
                         MouseArea {
@@ -465,7 +465,7 @@ PanelWindow {
                                     Text {
                                         anchors.centerIn: parent
                                         text: "▶"
-                                        color: launchHover.containsMouse ? "#FFFFFF" : "#374250"
+                                        color: launchHover.containsMouse ? popupCardStyle.actionTextColor : popupCardStyle.iconColor
                                         font.pixelSize: 10
                                     }
                                     MouseArea {
@@ -486,7 +486,7 @@ PanelWindow {
                                     Text {
                                         anchors.centerIn: parent
                                         text: "×"
-                                        color: deleteHover.containsMouse ? "#B9444A" : "#929BA7"
+                                        color: deleteHover.containsMouse ? popupCardStyle.dangerColor : popupCardStyle.mutedTextColor
                                         font.pixelSize: 15
                                     }
                                     MouseArea {

@@ -170,17 +170,16 @@ PanelWindow {
                                 anchors.centerIn: parent
                                 spacing: 6
 
-                                Image {
+                                NavbarIcon {
                                     width: 14
                                     height: 14
                                     anchors.verticalCenter: parent.verticalCenter
-                                    source: Qt.resolvedUrl("../assets/icons/"
+                                    iconPath: Qt.resolvedUrl("../assets/icons/"
                                         + "lucide-" + tabButton.modelData.icon
                                         + (root.selectedMode === tabButton.modelData.id
                                             ? "-refined.svg" : "-refined-dark.svg"))
-                                    sourceSize.width: 28
-                                    sourceSize.height: 28
-                                    smooth: true
+                                    iconColor: root.selectedMode === tabButton.modelData.id
+                                        ? popupCardStyle.actionTextColor : popupCardStyle.iconColor
                                 }
 
                                 Text {
@@ -396,14 +395,12 @@ PanelWindow {
                                     anchors.rightMargin: 8
                                     spacing: 7
 
-                                    Image {
+                                    NavbarIcon {
                                         width: 13
                                         height: 13
                                         anchors.verticalCenter: parent.verticalCenter
-                                        source: Qt.resolvedUrl("../assets/icons/search.svg")
-                                        sourceSize.width: 26
-                                        sourceSize.height: 26
-                                        smooth: true
+                                        iconPath: Qt.resolvedUrl("../assets/icons/search.svg")
+                                        iconColor: popupCardStyle.iconColor
                                     }
 
                                     Item {
@@ -427,7 +424,7 @@ PanelWindow {
                                             onTextChanged: clipboardContent.clipboardSearch = text
                                             color: popupCardStyle.textColor
                                             selectionColor: "#DDE5EF"
-                                            selectedTextColor: "#111318"
+                                            selectedTextColor: popupCardStyle.textColor
                                             font.pixelSize: 10
                                             clip: true
                                             activeFocusOnTab: true
@@ -500,7 +497,7 @@ PanelWindow {
                                                 Text {
                                                     anchors.centerIn: parent
                                                     text: "×"
-                                                    color: removeClipboardMouse.containsMouse ? "#111318" : "#98A1AC"
+                                                    color: removeClipboardMouse.containsMouse ? popupCardStyle.textColor : popupCardStyle.mutedTextColor
                                                     font.pixelSize: 14
                                                 }
 

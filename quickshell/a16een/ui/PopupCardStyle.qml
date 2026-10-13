@@ -89,7 +89,9 @@ Item {
         ColorAnimation { duration: 140; easing.type: Easing.OutCubic }
     }
 
-    readonly property bool darkMode: root.luminance(root.backgroundColor) < 138
+    // Select the foreground with stronger actual contrast for custom colors.
+    readonly property bool darkMode: root.contrastRatio("#F3F5F8", root.backgroundColor)
+        > root.contrastRatio("#1B2027", root.backgroundColor)
 
     property color textColor: root.darkMode ? "#F3F5F8" : "#1B2027"
     property color secondaryTextColor: root.darkMode ? "#BAC3CE" : "#667180"

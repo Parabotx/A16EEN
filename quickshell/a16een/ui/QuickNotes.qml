@@ -799,13 +799,12 @@ PanelWindow {
                     width: Math.min(240, parent.width)
                     spacing: 10
 
-                    Image {
+                    NavbarIcon {
                         anchors.horizontalCenter: parent.horizontalCenter
                         width: 28
                         height: 28
-                        source: Qt.resolvedUrl("../assets/icons/quick-lock-closed.svg")
-                        sourceSize.width: 56
-                        sourceSize.height: 56
+                        iconPath: Qt.resolvedUrl("../assets/icons/quick-lock-closed.svg")
+                        iconColor: popupCardStyle.iconColor
                     }
 
                     Text {
@@ -935,13 +934,12 @@ PanelWindow {
                         color: toggleNavHover.containsMouse ? popupCardStyle.hoverSurfaceColor : popupCardStyle.subtleSurfaceColor
                         border.width: 1
                         border.color: popupCardStyle.fieldBorderColor
-                        Image {
+                        NavbarIcon {
                             anchors.centerIn: parent
                             width: 15
                             height: 15
-                            source: Qt.resolvedUrl("../assets/icons/quick-menu.svg")
-                            sourceSize.width: 30
-                            sourceSize.height: 30
+                            iconPath: Qt.resolvedUrl("../assets/icons/quick-menu.svg")
+                            iconColor: popupCardStyle.iconColor
                         }
                         MouseArea {
                             id: toggleNavHover
@@ -993,13 +991,12 @@ PanelWindow {
                         color: lockHover.containsMouse ? popupCardStyle.hoverSurfaceColor : popupCardStyle.subtleSurfaceColor
                         border.width: 1
                         border.color: popupCardStyle.fieldBorderColor
-                        Image {
+                        NavbarIcon {
                             anchors.centerIn: parent
                             width: 15
                             height: 15
-                            source: Qt.resolvedUrl("../assets/icons/quick-lock-open.svg")
-                            sourceSize.width: 30
-                            sourceSize.height: 30
+                            iconPath: Qt.resolvedUrl("../assets/icons/quick-lock-open.svg")
+                            iconColor: popupCardStyle.iconColor
                         }
                         MouseArea {
                             id: lockHover
@@ -1176,12 +1173,11 @@ PanelWindow {
                                 Row {
                                     anchors.centerIn: parent
                                     spacing: 4
-                                    Image {
+                                    NavbarIcon {
                                         width: 13
                                         height: 13
-                                        source: Qt.resolvedUrl("../assets/icons/quick-mic.svg")
-                                        sourceSize.width: 26
-                                        sourceSize.height: 26
+                                        iconPath: Qt.resolvedUrl("../assets/icons/quick-mic.svg")
+                                        iconColor: root.isRecording ? popupCardStyle.dangerColor : popupCardStyle.iconColor
                                         anchors.verticalCenter: parent.verticalCenter
                                     }
                                     Text {
@@ -1211,12 +1207,11 @@ PanelWindow {
                                 Row {
                                     anchors.centerIn: parent
                                     spacing: 4
-                                    Image {
+                                    NavbarIcon {
                                         width: 13
                                         height: 13
-                                        source: Qt.resolvedUrl("../assets/icons/quick-image.svg")
-                                        sourceSize.width: 26
-                                        sourceSize.height: 26
+                                        iconPath: Qt.resolvedUrl("../assets/icons/quick-image.svg")
+                                        iconColor: popupCardStyle.iconColor
                                         anchors.verticalCenter: parent.verticalCenter
                                     }
                                     Text {
