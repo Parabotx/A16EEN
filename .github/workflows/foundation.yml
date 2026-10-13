@@ -317,24 +317,20 @@ jobs:
           grep -Fq 'cp "$ROOT_DIR/quickshell/a16een/assets/quotes.json" "$TMP_DEPLOY/assets/quotes.json"' scripts/install.sh
           test -f quickshell/a16een/ui/MusicDecor.qml
           grep -Fq 'MusicDecor {' quickshell/a16een/ui/MusicWidget.qml
-          grep -Fq 'readonly property real recordSize:' quickshell/a16een/ui/MusicDecor.qml
-          grep -Fq 'CD-inspired metallic disc' quickshell/a16een/ui/MusicDecor.qml
-          grep -Fq 'id: spinningDisc' quickshell/a16een/ui/MusicDecor.qml
-          grep -Fq 'RotationAnimation on rotation' quickshell/a16een/ui/MusicDecor.qml
-          grep -Fq 'running: root.playing' quickshell/a16een/ui/MusicDecor.qml
-          grep -Fq 'property string coverSource: ""' quickshell/a16een/ui/MusicDecor.qml
-          grep -Fq 'readonly property bool hasCover:' quickshell/a16een/ui/MusicDecor.qml
-          grep -Fq 'interval: 10000' quickshell/a16een/ui/MusicDecor.qml
-          grep -Fq 'root.woodTone ? "#D5BE9A" : "#E5EBF0"' quickshell/a16een/ui/MusicDecor.qml
-          grep -Fq 'maskEnabled: true' quickshell/a16een/ui/MusicDecor.qml
-          grep -Fq 'source: coverImage' quickshell/a16een/ui/MusicDecor.qml
-          grep -Fq 'coverSource: root.currentCover' quickshell/a16een/ui/MusicWidget.qml
+          grep -Fq 'property bool active: false' quickshell/a16een/ui/MusicDecor.qml
+          grep -Fq 'function chooseRandomElement()' quickshell/a16een/ui/MusicDecor.qml
+          grep -Fq 'onSelectionKeyChanged:' quickshell/a16een/ui/MusicDecor.qml
+          grep -Fq 'command: ["a16een-music", "elements"]' quickshell/a16een/ui/MusicDecor.qml
+          grep -Fq 'fillMode: Image.PreserveAspectFit' quickshell/a16een/ui/MusicDecor.qml
+          grep -Fq 'asynchronous: true' quickshell/a16een/ui/MusicDecor.qml
+          grep -Fq 'sourceSize.width: 192' quickshell/a16een/ui/MusicDecor.qml
+          ! grep -Fq 'RotationAnimation on rotation' quickshell/a16een/ui/MusicDecor.qml
+          ! grep -Fq 'MultiEffect' quickshell/a16een/ui/MusicDecor.qml
+          grep -Fq 'active: root.widgetEnabled' quickshell/a16een/ui/MusicWidget.qml
+          grep -Fq 'selectionKey: String(root.playback.path || "")' quickshell/a16een/ui/MusicWidget.qml
           grep -Fq 'readonly property color cream: "#B8EAF2F8"' quickshell/a16een/ui/MusicWidget.qml
-          grep -Fq 'gradient: Gradient {' quickshell/a16een/ui/MusicDecor.qml
           grep -Fq 'mask: Region {' quickshell/a16een/ui/MusicWidget.qml
           grep -Fq 'Region { item: card }' quickshell/a16een/ui/MusicWidget.qml
-          grep -Fq 'playing: root.isPlaying' quickshell/a16een/ui/MusicWidget.qml
-          grep -Fq 'MusicDecor {' quickshell/a16een/ui/MusicWidget.qml
           ! grep -Fq 'visualizerProcess' quickshell/a16een/ui/MusicWidget.qml
           ! grep -Fq 'refreshAudioLevel' quickshell/a16een/ui/MusicWidget.qml
           ! grep -Fq 'applyAudioLevelOutput' quickshell/a16een/ui/MusicWidget.qml
