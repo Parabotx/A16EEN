@@ -8,6 +8,7 @@ import socket
 import subprocess
 import sys
 import time
+import urllib.parse
 from pathlib import Path
 
 MUSIC_DIR = (Path.home() / "Music").resolve()
@@ -27,6 +28,8 @@ BUILTIN_ELEMENTS_DIR = (
 )
 USER_ELEMENTS_DIR = Path.home() / "Pictures" / "a16een" / "music-elements"
 COVER_CACHE_DIR = Path(os.environ.get("XDG_CACHE_HOME") or (Path.home() / ".cache")) / "a16een/music-covers"
+MUSIC_ELEMENTS_CACHE_DIR = Path(os.environ.get("XDG_CACHE_HOME") or (Path.home() / ".cache")) / "a16een/music-elements"
+MAX_PREPARED_MUSIC_VIDEOS = 4
 COVER_NAMES = ("cover", "folder", "front", "album", "albumart", "albumartsmall", "artwork", ".folder", "thumb")
 
 
@@ -164,6 +167,250 @@ def scan_music_elements():
         "builtInDirectory": str(BUILTIN_ELEMENTS_DIR),
         "elements": [path.as_uri() for path in unique_paths]
     }
+
+
+def music_element_path(raw_source):
+    """Resolve a WebM URL only if it belongs to A16EEN's known artwork folders."""
+    try:
+        parsed = urllib.parse.urlparse(str(raw_source))
+        if parsed.scheme == "file":
+            if parsed.netloc not in ("", "localhost"):
+                return None
+            candidate = Path(urllib.parse.unquote(parsed.path)).expanduser().resolve()
+        elif not parsed.scheme:
+            candidate = Path(str(raw_source)).expanduser().resolve()
+        else:
+            return None
+
+        if candidate.suffix.casefold() != ".webm" or not candidate.is_file():
+            return None
+
+        for root in (BUILTIN_ELEMENTS_DIR.resolve(), USER_ELEMENTS_DIR.resolve()):
+            try:
+                candidate.relative_to(root)
+                return candidate
+            except ValueError:
+                continue
+    except (OSError, RuntimeError, ValueError):
+        return None
+    return None
+
+
+def _prepared_video_path(source):
+    stat = source.stat()
+    key = hashlib.sha256(
+        f"{source}:{stat.st_size}:{stat.st_mtime_ns}".encode("utf-8")
+    ).hexdigest()[:32]
+    return MUSIC_ELEMENTS_CACHE_DIR / f"{key}.webp"
+
+
+def prepare_music_elements(raw_sources):
+    """Prepare up to four transparent, low-resolution animation caches from WebM files.
+
+    Qt Multimedia can render some WebM alpha streams as an opaque rectangle on
+    some backends. Re-encoding into animated WebP with an explicit RGBA filter
+    preserves alpha while keeping WebM as the user's source format. Only the
+    currently requested four-entry working set is kept on disk.
+    """
+    requested = []
+    seen = set()
+    for raw_source in raw_sources if isinstance(raw_sources, list) else []:
+        source = music_element_path(raw_source)
+        if source is None or source in seen:
+            continue
+        seen.add(source)
+        requested.append((str(raw_source), source))
+        if len(requested) >= MAX_PREPARED_MUSIC_VIDEOS:
+            break
+
+    MUSIC_ELEMENTS_CACHE_DIR.mkdir(parents=True, exist_ok=True)
+    lock_path = MUSIC_ELEMENTS_CACHE_DIR / ".prepare.lock"
+    items = []
+    errors = []
+
+    with open(lock_path, "a", encoding="utf-8") as lock_file:
+        fcntl.flock(lock_file, fcntl.LOCK_EX)
+        keep_paths = set()
+        for source_url, source in requested:
+            try:
+                destination = _prepared_video_path(source)
+                if not destination.is_file() or destination.stat().st_size == 0:
+                    temporary = MUSIC_ELEMENTS_CACHE_DIR / (
+                        f".{destination.stem}.{os.getpid()}.tmp.webp"
+                    )
+                    temporary.unlink(missing_ok=True)
+                    if not shutil_which("ffmpeg"):
+                        errors.append("ffmpeg is unavailable; transparent WebM preparation is disabled.")
+                        continue
+
+                    command = [
+                        "ffmpeg", "-hide_banner", "-loglevel", "error", "-nostdin", "-y",
+                        "-i", str(source),
+                        "-map", "0:v:0", "-an", "-sn", "-dn",
+                        "-vf",
+                        "fps=12,scale=192:192:force_original_aspect_ratio=decrease:"
+                        "force_divisible_by=2:flags=lanczos,format=rgba",
+                        "-c:v", "libwebp_anim",
+                        "-lossless", "0", "-quality", "82", "-compression_level", "4",
+                        "-loop", "0", str(temporary)
+                    ]
+                    try:
+                        result = subprocess.run(
+                            command,
+                            stdin=subprocess.DEVNULL,
+                            stdout=subprocess.DEVNULL,
+                            stderr=subprocess.PIPE,
+                            text=True,
+                            timeout=40,
+                            check=False
+                        )
+                    except (OSError, subprocess.TimeoutExpired) as error:
+                        result = None
+                        errors.append(f"{source.name}: {error}")
+                    if result is None or result.returncode != 0 or not temporary.is_file() or temporary.stat().st_size == 0:
+                        if result is not None:
+                            detail = (result.stderr or "").strip()
+                            errors.append(f"{source.name}: {detail or 'ffmpeg could not encode this WebM.'}")
+                        temporary.unlink(missing_ok=True)
+                        continue
+                    os.replace(temporary, destination)
+
+                os.utime(destination, None)
+                keep_paths.add(destination.resolve())
+                items.append({
+                    "source": source_url,
+                    "prepared": destination.resolve().as_uri()
+                })
+            except (OSError, RuntimeError, ValueError) as error:
+                errors.append(f"{source.name}: {error}")
+
+        # This is a rotating working set, not a growing media library. Files
+        # outside the selected queue are removed once the new queue is ready.
+        for cached in MUSIC_ELEMENTS_CACHE_DIR.glob("*.webp"):
+            try:
+                if cached.resolve() not in keep_paths:
+                    cached.unlink(missing_ok=True)
+            except OSError:
+                pass
+        for temporary in MUSIC_ELEMENTS_CACHE_DIR.glob(".*.tmp.webp"):
+            try:
+                temporary.unlink(missing_ok=True)
+            except OSError:
+                pass
+
+    return {
+        "items": items,
+        "cacheLimit": MAX_PREPARED_MUSIC_VIDEOS,
+        "errors": errors
+    }
+
+
+def rectangle_intersects(first, second):
+    """Return whether two logical-pixel rectangles overlap."""
+    ax, ay, aw, ah = first
+    bx, by, bw, bh = second
+    return (
+        aw > 0 and ah > 0 and bw > 0 and bh > 0
+        and ax < bx + bw and bx < ax + aw
+        and ay < by + bh and by < ay + ah
+    )
+
+
+def active_window_covers_region(windows, workspace_id, region):
+    """Check visible window tile rectangles on the artwork's active workspace."""
+    for window in windows if isinstance(windows, list) else []:
+        if window.get("workspace_id") != workspace_id:
+            continue
+        layout = window.get("layout") or {}
+        position = layout.get("tile_pos_in_workspace_view")
+        size = layout.get("tile_size")
+        if (
+            isinstance(position, (list, tuple)) and len(position) == 2
+            and isinstance(size, (list, tuple)) and len(size) == 2
+        ):
+            try:
+                candidate = (
+                    float(position[0]), float(position[1]),
+                    float(size[0]), float(size[1])
+                )
+            except (TypeError, ValueError):
+                continue
+            if rectangle_intersects(region, candidate):
+                return True
+        elif window.get("is_focused"):
+            # Some window types do not report a usable tile position. Pausing
+            # conservatively for the focused window is preferable to burning
+            # battery decoding artwork that may be completely covered.
+            return True
+    return False
+
+
+def check_music_artwork_occlusion(output_name, global_region):
+    """Fail open if Niri geometry is unavailable; otherwise detect covering windows."""
+    def niri_json(subcommand):
+        result = subprocess.run(
+            ["niri", "msg", "--json", subcommand],
+            stdin=subprocess.DEVNULL,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.DEVNULL,
+            text=True,
+            timeout=1.0,
+            check=False
+        )
+        if result.returncode != 0:
+            raise RuntimeError(f"niri msg {subcommand} failed")
+        return json.loads(result.stdout)
+
+    try:
+        outputs = niri_json("outputs")
+        workspaces = niri_json("workspaces")
+        windows = niri_json("windows")
+
+        if isinstance(outputs, list):
+            output_pairs = [(output.get("name", ""), output) for output in outputs if isinstance(output, dict)]
+        elif isinstance(outputs, dict):
+            raw_outputs = outputs.get("outputs", outputs)
+            output_pairs = [
+                (name, data) for name, data in raw_outputs.items()
+                if isinstance(data, dict)
+            ] if isinstance(raw_outputs, dict) else []
+        else:
+            output_pairs = []
+
+        target = next(
+            (data for name, data in output_pairs if name == output_name or data.get("name") == output_name),
+            None
+        )
+        logical = target.get("logical") if target else None
+        if not isinstance(logical, dict):
+            return False
+
+        active_workspace = next(
+            (
+                workspace for workspace in workspaces if isinstance(workspace, dict)
+                and workspace.get("output") == output_name
+                and workspace.get("is_active")
+            ),
+            None
+        ) if isinstance(workspaces, list) else None
+        if active_workspace is None:
+            return False
+
+        # QQuickItem.mapToGlobal returns compositor-global logical coordinates.
+        # Niri window tile coordinates are relative to this output's workspace view.
+        local_region = (
+            float(global_region[0]) - float(logical.get("x", 0)),
+            float(global_region[1]) - float(logical.get("y", 0)),
+            float(global_region[2]),
+            float(global_region[3])
+        )
+        covered = active_window_covers_region(
+            windows, active_workspace.get("id"), local_region
+        )
+        return covered
+    except (OSError, RuntimeError, subprocess.TimeoutExpired, json.JSONDecodeError, TypeError, ValueError):
+        # Missing IPC/geometry must never freeze the artwork or interrupt the shell.
+        return False
 
 
 def open_ipc(timeout=0.45):
@@ -426,6 +673,27 @@ def main():
 
     if action == "elements":
         emit(scan_music_elements())
+        return
+
+    if action == "prepare-elements":
+        try:
+            raw_sources = json.loads(args[1]) if len(args) > 1 else []
+        except json.JSONDecodeError:
+            raw_sources = []
+        emit(prepare_music_elements(raw_sources))
+        return
+
+    if action == "occlusion":
+        if len(args) < 6:
+            emit({"covered": False, "uncovered": True})
+            return
+        try:
+            region = tuple(float(value) for value in args[1:5])
+            output_name = args[5]
+            covered = check_music_artwork_occlusion(output_name, region)
+            emit({"covered": covered, "uncovered": not covered})
+        except (TypeError, ValueError):
+            emit({"covered": False, "uncovered": True})
         return
 
     if action == "status":
