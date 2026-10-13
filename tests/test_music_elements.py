@@ -1,0 +1,123 @@
+#!/usr/bin/env python3
+"""Focused regression tests for personal WebP discovery and MPV startup locking."""
+
+import importlib.util
+import json
+import os
+import subprocess
+import sys
+import tempfile
+import threading
+import time
+from pathlib import Path
+from types import SimpleNamespace
+from unittest.mock import patch
+
+
+ROOT = Path(__file__).resolve().parents[1]
+SCRIPT = ROOT / "scripts" / "a16een-music"
+
+
+def load_music_module():
+    spec = importlib.util.spec_from_file_location("a16een_music_test_module", SCRIPT)
+    module = importlib.util.module_from_spec(spec)
+    assert spec.loader is not None
+    spec.loader.exec_module(module)
+    return module
+
+
+def test_webp_elements_are_discovered_recursively_and_return_file_urls():
+    with tempfile.TemporaryDirectory() as temp:
+        home = Path(temp)
+        artwork = home / "Pictures" / "a16een" / "music-elements"
+        nested = artwork / "Telegram" / "stickers"
+        nested.mkdir(parents=True)
+        (artwork / "z-last.WEBP").write_bytes(b"webp")
+        (artwork / "a-first.webp").write_bytes(b"webp")
+        (nested / "middle.webp").write_bytes(b"webp")
+        (artwork / "not-art.png").write_bytes(b"png")
+        (artwork / "folder.webp").mkdir()
+
+        env = os.environ.copy()
+        env["HOME"] = str(home)
+        env["XDG_RUNTIME_DIR"] = str(home / "runtime")
+        result = subprocess.run(
+            [sys.executable, str(SCRIPT), "elements"],
+            env=env,
+            check=True,
+            capture_output=True,
+            text=True,
+            timeout=5,
+        )
+        payload = json.loads(result.stdout)
+        expected = sorted(
+            (path.resolve().as_uri()
+             for path in artwork.rglob("*")
+             if path.is_file() and path.suffix.casefold() == ".webp"),
+            key=str.casefold,
+        )
+        assert payload["directory"] == str(artwork)
+        assert payload["elements"] == expected
+        assert all(source.startswith("file://") for source in payload["elements"])
+
+
+def test_concurrent_play_requests_start_only_one_mpv_process():
+    with tempfile.TemporaryDirectory() as temp:
+        home = Path(temp)
+        music_dir = home / "Music"
+        runtime_dir = home / "runtime"
+        music_dir.mkdir()
+        runtime_dir.mkdir()
+        track = music_dir / "test-song.mp3"
+        track.write_bytes(b"audio")
+
+        module = load_music_module()
+        module.MUSIC_DIR = music_dir
+        module.RUNTIME_DIR = runtime_dir
+        module.SOCKET_PATH = runtime_dir / "a16een-music.sock"
+        module.START_LOCK_PATH = runtime_dir / "a16een-music-start.lock"
+        module.PLAYER_PID_PATH = runtime_dir / "a16een-music.pid"
+
+        player_started = threading.Event()
+        launch_calls = []
+        launch_lock = threading.Lock()
+        outcomes = []
+        start_barrier = threading.Barrier(3)
+
+        def fake_send_command(command, wait_for_response=False, timeout=0.65):
+            return {"ok": True} if player_started.is_set() else None
+
+        def fake_popen(*args, **kwargs):
+            with launch_lock:
+                launch_calls.append(args)
+            # Simulate a slow first startup so both callers have time to race.
+            time.sleep(0.15)
+            player_started.set()
+            return SimpleNamespace(pid=os.getpid())
+
+        def play():
+            start_barrier.wait()
+            outcomes.append(module.play_path(str(track)))
+
+        threads = [threading.Thread(target=play) for _ in range(2)]
+        with (
+            patch.object(module, "send_command", side_effect=fake_send_command),
+            patch.object(module, "shutil_which", return_value=True),
+            patch.object(module.subprocess, "Popen", side_effect=fake_popen),
+        ):
+            for thread in threads:
+                thread.start()
+            start_barrier.wait()
+            for thread in threads:
+                thread.join(timeout=8)
+
+        assert all(not thread.is_alive() for thread in threads), "player startup lock deadlocked"
+        assert len(launch_calls) == 1, f"expected one MPV process, got {len(launch_calls)}"
+        assert len(outcomes) == 2
+        assert all(outcome.get("ok") is True for outcome in outcomes)
+
+
+if __name__ == "__main__":
+    test_webp_elements_are_discovered_recursively_and_return_file_urls()
+    test_concurrent_play_requests_start_only_one_mpv_process()
+    print("Music WebP discovery and startup-lock tests passed.")
