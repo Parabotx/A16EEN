@@ -527,6 +527,7 @@ PanelWindow {
                     anchors.verticalCenter: parent.verticalCenter
                     active: root.widgetEnabled
                     playing: root.isPlaying
+                    outputName: String(root.modelData.name || "")
                     selectionKey: String(root.playback.path || "")
                 }
             }
