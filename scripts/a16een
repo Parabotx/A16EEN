@@ -44,6 +44,8 @@ MPV player
   mpv theme on                Enable rounded A16EEN player controls
   mpv theme off               Restore the default MPV controller
 
+  music diagnose               Diagnose music WebP artwork playback
+
 Visuals
   wallpaper list              List available wallpapers
   wallpaper current           Show the active wallpaper
@@ -295,6 +297,12 @@ case "$command" in
         case "${1:-}" in
             theme) command="mpv-theme"; shift ;;
             *) die "usage: a16 mpv theme on|off|status" ;;
+        esac
+        ;;
+    music)
+        case "${1:-}" in
+            diagnose|diagnostics|doctor) command="music-diagnose"; shift ;;
+            *) die "usage: a16 music diagnose" ;;
         esac
         ;;
     system)
@@ -557,6 +565,15 @@ case "$command" in
         fi
         [[ -x "$SOURCE_DIR/scripts/a16een-mpv-theme" ]] || die "A16EEN MPV theme manager is not installed. Run the installer first."
         exec "$SOURCE_DIR/scripts/a16een-mpv-theme" "$1"
+        ;;
+
+    music-diagnose)
+        require_no_args "$@"
+        if [[ -x /usr/local/bin/a16een-music-diagnose ]]; then
+            exec /usr/local/bin/a16een-music-diagnose
+        fi
+        [[ -x "$SOURCE_DIR/scripts/a16een-music-diagnose" ]] || die "A16EEN music diagnostic is not installed. Run a16 -u first."
+        exec "$SOURCE_DIR/scripts/a16een-music-diagnose"
         ;;
 
     icons)
