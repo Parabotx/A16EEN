@@ -29,6 +29,8 @@ DEFAULTS = {
     "appShelfApps": [],
     "timeUse24Hour": True,
     "timeShowSeconds": False,
+    "musicWidgetBackgroundColor": "#EAF2F8",
+    "musicWidgetBackgroundOpacity": 72,
 }
 
 
@@ -69,6 +71,10 @@ def clean_app_entries(value):
 def normalize_value(key, value):
     if key in BOOLEAN_KEYS:
         return value if isinstance(value, bool) else None
+    if key == "musicWidgetBackgroundColor":
+        return value.upper() if isinstance(value, str) and re.fullmatch(r"#[0-9A-Fa-f]{6}", value) else None
+    if key == "musicWidgetBackgroundOpacity":
+        return value if type(value) is int and 0 <= value <= 100 else None
     if key == "appShelfShape":
         return value if isinstance(value, str) and value in SHAPES else None
     if key == "appShelfApps":
