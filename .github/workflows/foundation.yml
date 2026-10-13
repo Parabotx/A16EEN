@@ -327,6 +327,7 @@ jobs:
           grep -Fq 'id: widgetListScroll' quickshell/a16een/ui/WidgetSection.qml
           grep -Fq 'cp "$ROOT_DIR/quickshell/a16een/assets/quotes.json" "$TMP_DEPLOY/assets/quotes.json"' scripts/install.sh
           test -f quickshell/a16een/ui/MusicDecor.qml
+          test -f quickshell/a16een/ui/MusicVideoDecor.qml
           grep -Fq 'MusicDecor {' quickshell/a16een/ui/MusicWidget.qml
           grep -Fq 'property bool active: false' quickshell/a16een/ui/MusicDecor.qml
           grep -Fq 'function chooseRandomElement()' quickshell/a16een/ui/MusicDecor.qml
@@ -337,12 +338,17 @@ jobs:
           grep -Fq 'paused: !root.active || !root.playing || !root.imageElement' quickshell/a16een/ui/MusicDecor.qml
           grep -Fq 'cache: false' quickshell/a16een/ui/MusicDecor.qml
           grep -Fq 'visible: !root.active || !root.playing' quickshell/a16een/ui/MusicDecor.qml
-          grep -Fq 'import QtMultimedia' quickshell/a16een/ui/MusicDecor.qml
-          grep -Fq 'MediaPlayer {' quickshell/a16een/ui/MusicDecor.qml
-          grep -Fq 'VideoOutput {' quickshell/a16een/ui/MusicDecor.qml
-          grep -Fq 'loops: MediaPlayer.Infinite' quickshell/a16een/ui/MusicDecor.qml
-          grep -Fq 'muted: true' quickshell/a16een/ui/MusicDecor.qml
-          grep -Fq 'WebM video load failed' quickshell/a16een/ui/MusicDecor.qml
+          ! grep -Fq 'import QtMultimedia' quickshell/a16een/ui/MusicDecor.qml
+          ! grep -Fq 'MediaPlayer {' quickshell/a16een/ui/MusicDecor.qml
+          grep -Fq 'source: active ? "MusicVideoDecor.qml" : ""' quickshell/a16een/ui/MusicDecor.qml
+          grep -Fq 'import QtMultimedia' quickshell/a16een/ui/MusicVideoDecor.qml
+          grep -Fq 'MediaPlayer {' quickshell/a16een/ui/MusicVideoDecor.qml
+          grep -Fq 'VideoOutput {' quickshell/a16een/ui/MusicVideoDecor.qml
+          grep -Fq 'loops: MediaPlayer.Infinite' quickshell/a16een/ui/MusicVideoDecor.qml
+          grep -Fq 'muted: true' quickshell/a16een/ui/MusicVideoDecor.qml
+          grep -Fq 'WebM video load failed' quickshell/a16een/ui/MusicVideoDecor.qml
+          ! grep -Fq 'playing: root.active && root.playing' quickshell/a16een/ui/MusicVideoDecor.qml
+          grep -Fq 'fillMode: Image.PreserveAspectFit' quickshell/a16een/ui/MusicDecor.qml
           grep -Fq 'fillMode: Image.PreserveAspectFit' quickshell/a16een/ui/MusicDecor.qml
           grep -Fq 'asynchronous: true' quickshell/a16een/ui/MusicDecor.qml
           grep -Fq 'sourceSize.width: 192' quickshell/a16een/ui/MusicDecor.qml
