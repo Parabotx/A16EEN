@@ -204,6 +204,36 @@ def _prepared_video_path(source):
     return MUSIC_ELEMENTS_CACHE_DIR / f"{key}.webp"
 
 
+def alpha_aware_decoder_args(source):
+    """Force libvpx to reconstruct VP8/VP9 WebM alpha side data before filtering."""
+    if not shutil_which("ffprobe"):
+        return []
+    try:
+        probe = subprocess.run(
+            [
+                "ffprobe", "-v", "error", "-select_streams", "v:0",
+                "-show_entries", "stream=codec_name", "-of", "json", str(source)
+            ],
+            stdin=subprocess.DEVNULL,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.DEVNULL,
+            text=True,
+            timeout=5,
+            check=False
+        )
+        if probe.returncode != 0:
+            return []
+        streams = json.loads(probe.stdout).get("streams", [])
+        codec = str(streams[0].get("codec_name", "")).lower() if streams else ""
+        if codec == "vp9":
+            return ["-c:v", "libvpx-vp9"]
+        if codec == "vp8":
+            return ["-c:v", "libvpx"]
+    except (OSError, subprocess.TimeoutExpired, json.JSONDecodeError, TypeError, ValueError):
+        pass
+    return []
+
+
 def prepare_music_elements(raw_sources):
     """Prepare up to four transparent, low-resolution animation caches from WebM files.
 
@@ -245,6 +275,7 @@ def prepare_music_elements(raw_sources):
 
                     command = [
                         "ffmpeg", "-hide_banner", "-loglevel", "error", "-nostdin", "-y",
+                        *alpha_aware_decoder_args(source),
                         "-i", str(source),
                         "-map", "0:v:0", "-an", "-sn", "-dn",
                         "-vf",
@@ -713,6 +744,11 @@ def main():
             emit({"ok": False, "error": "Choose a track to start playback."})
             return
         result = send_command(["set_property", "pause", not status.get("paused", True)], wait_for_response=True)
+        emit(result if result is not None else {"ok": False, "error": "The music player is not responding."})
+        return
+
+    if action == "pause":
+        result = send_command(["set_property", "pause", True], wait_for_response=True)
         emit(result if result is not None else {"ok": False, "error": "The music player is not responding."})
         return
 
