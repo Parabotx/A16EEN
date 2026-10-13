@@ -167,7 +167,7 @@ if command -v git >/dev/null 2>&1 && git -C "$ROOT_DIR" rev-parse HEAD >/dev/nul
     SOURCE_COMMIT=$(git -C "$ROOT_DIR" rev-parse HEAD)
 fi
 
-mkdir -p "$NIRI_DIR" "$QS_DIR/ui" "$QS_DIR/assets/wallpapers" "$QS_DIR/assets/animated" "$BACKUP_ROOT" "$USER_WALLPAPER_DIR" "$USER_WALLPAPER_DIR/animated"
+mkdir -p "$NIRI_DIR" "$QS_DIR/ui" "$QS_DIR/assets/wallpapers" "$QS_DIR/assets/animated" "$BACKUP_ROOT" "$USER_WALLPAPER_DIR" "$USER_WALLPAPER_DIR/animated" "$USER_WALLPAPER_DIR/music-elements"
 # Event file used by the lightweight volume/brightness OSD watcher.
 # It is intentionally separate from Quickshell's private state directory.
 printf '%s\n' "" > "$STATE_DIR/control-indicator"
