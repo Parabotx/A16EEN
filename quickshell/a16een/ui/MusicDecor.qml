@@ -32,6 +32,17 @@ Item {
         }
         return null
     }
+    readonly property bool preparedCurrentVideoReady: {
+        if (!root.preparedCurrentVideo)
+            return false
+        for (let index = 0; index < root.preparedVideos.length; index++) {
+            if (root.preparedVideos[index].source === root.elementSource) {
+                const item = videoCacheRepeater.itemAt(index)
+                return item && item.status === AnimatedImage.Ready
+            }
+        }
+        return false
+    }
 
     function shuffled(values) {
         const result = values.slice()
@@ -135,6 +146,14 @@ Item {
             addUnique(entry && entry.source)
         for (const source of shuffled(allVideos))
             addUnique(source)
+
+        // With fewer than four distinct WebM sources, keep the cache full
+        // with the existing used item rather than shrinking the working set.
+        const desiredCount = Math.min(4, allVideos.length)
+        if (queue.length < desiredCount && root.retiredVideoSource
+            && allVideos.includes(root.retiredVideoSource)
+            && !queue.includes(root.retiredVideoSource))
+            queue.push(root.retiredVideoSource)
 
         if (!queue.length) {
             root.preparedVideos = []
@@ -262,7 +281,8 @@ Item {
             && root.elements.length > 1
         onTriggered: {
             root.chooseRandomElement()
-            if (running)
+            if (root.active && root.playing && root.surfaceUncovered
+                && root.elements.length > 1)
                 restart()
         }
     }
@@ -360,6 +380,7 @@ Item {
     // repeater. AnimatedImage cache=true loads frames once; only the selected
     // item plays, while the rest stay paused and ready for a zero-wait switch.
     Repeater {
+        id: videoCacheRepeater
         model: root.preparedVideos
 
         delegate: AnimatedImage {
@@ -417,15 +438,11 @@ Item {
             || (!root.imageElement && !root.videoElement)
             || (root.imageElement && elementImage.status !== AnimatedImage.Ready)
             || (root.videoElement
-                && ((root.preparedCurrentVideo
-                    && !root.preparedVideos.some(entry =>
-                        entry.source === root.elementSource
-                        && entry.prepared.length > 0))
-                    ? true
-                    : (!root.preparedCurrentVideo
-                        && (!root.cachePrepared
-                            || nativeVideoFallback.status !== Loader.Ready
-                            || !nativeVideoFallback.item
-                            || !nativeVideoFallback.item.videoReady))))
+                && (root.preparedCurrentVideo
+                    ? !root.preparedCurrentVideoReady
+                    : (!root.cachePrepared
+                        || nativeVideoFallback.status !== Loader.Ready
+                        || !nativeVideoFallback.item
+                        || !nativeVideoFallback.item.videoReady)))
     }
 }
