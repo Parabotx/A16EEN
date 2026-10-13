@@ -159,7 +159,8 @@ PanelWindow {
                 root.completedPlayback = null
             }
 
-            const reachedEnd = previous.running
+            const reachedEnd = !root.completedPlayback
+                && previous.running
                 && String(previous.path || "").length > 0
                 && !previous.paused
                 && Number(previous.duration) > 0
