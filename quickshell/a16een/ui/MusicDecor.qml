@@ -78,7 +78,7 @@ Item {
         id: elementImage
         anchors.fill: parent
         anchors.margins: 1
-        source: root.elementSource
+        source: root.active ? root.elementSource : ""
         visible: root.active && root.playing && status === AnimatedImage.Ready
         playing: root.active && root.playing
         paused: !root.active || !root.playing
