@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Focused regression tests for personal WebP discovery and MPV startup locking."""
+"""Regression tests for WebP/WebM artwork discovery and MPV startup locking."""
 
 import importlib.util
 import json
@@ -29,7 +29,7 @@ def load_music_module():
     return module
 
 
-def test_webp_elements_include_bundled_and_personal_files():
+def test_webp_and_webm_elements_include_bundled_and_personal_files():
     with tempfile.TemporaryDirectory() as temp:
         home = Path(temp)
         personal = home / "Pictures" / "a16een" / "music-elements"
@@ -42,9 +42,11 @@ def test_webp_elements_include_bundled_and_personal_files():
 
         (bundled / "bundled-first.webp").write_bytes(b"webp")
         (bundled_nested / "bundled-nested.WEBP").write_bytes(b"webp")
+        (bundled_nested / "file_3831964.webm").write_bytes(b"webm")
         (personal / "z-last.WEBP").write_bytes(b"webp")
         (personal / "a-first.webp").write_bytes(b"webp")
         (personal_nested / "middle.webp").write_bytes(b"webp")
+        (personal_nested / "telegram-sticker.WEBM").write_bytes(b"webm")
         (personal / "not-art.png").write_bytes(b"png")
         (personal / "folder.webp").mkdir()
 
@@ -63,13 +65,13 @@ def test_webp_elements_include_bundled_and_personal_files():
         expected_bundled = sorted(
             (path.resolve().as_uri()
              for path in bundled.rglob("*")
-             if path.is_file() and path.suffix.casefold() == ".webp"),
+             if path.is_file() and path.suffix.casefold() in {".webp", ".webm"}),
             key=str.casefold,
         )
         expected_personal = sorted(
             (path.resolve().as_uri()
              for path in personal.rglob("*")
-             if path.is_file() and path.suffix.casefold() == ".webp"),
+             if path.is_file() and path.suffix.casefold() in {".webp", ".webm"}),
             key=str.casefold,
         )
         assert payload["directory"] == str(personal)
@@ -135,6 +137,6 @@ def test_concurrent_play_requests_start_only_one_mpv_process():
 
 
 if __name__ == "__main__":
-    test_webp_elements_include_bundled_and_personal_files()
+    test_webp_and_webm_elements_include_bundled_and_personal_files()
     test_concurrent_play_requests_start_only_one_mpv_process()
-    print("Music WebP discovery and startup-lock tests passed.")
+    print("Music WebP/WebM discovery and startup-lock tests passed.")

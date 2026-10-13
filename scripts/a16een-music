@@ -20,8 +20,8 @@ RUNTIME_DIR = Path(os.environ.get("XDG_RUNTIME_DIR") or (Path.home() / ".local/s
 SOCKET_PATH = RUNTIME_DIR / "a16een-music.sock"
 START_LOCK_PATH = RUNTIME_DIR / "a16een-music-start.lock"
 PLAYER_PID_PATH = RUNTIME_DIR / "a16een-music.pid"
-# Bundled WebP artwork is shipped with A16EEN; personal files remain in Pictures
-# and are never removed by the installer.
+# Bundled WebP images and WebM loops are shipped with A16EEN; personal files
+# remain in Pictures and are never removed by the installer.
 BUILTIN_ELEMENTS_DIR = (
     Path.home() / ".config" / "a16een" / "quickshell" / "a16een" / "assets" / "music-elements"
 )
@@ -136,12 +136,12 @@ def scan_library():
             continue
     return tracks
 
-def webp_files(directory):
-    """Find WebP files recursively; tolerate a missing or unreadable folder."""
+def artwork_files(directory):
+    """Find supported animated WebP and WebM artwork recursively."""
     try:
         return sorted(
             (path.resolve() for path in directory.rglob("*")
-             if path.is_file() and path.suffix.casefold() == ".webp"),
+             if path.is_file() and path.suffix.casefold() in {".webp", ".webm"}),
             key=lambda path: str(path).casefold()
         )
     except OSError:
@@ -149,12 +149,13 @@ def webp_files(directory):
 
 
 def scan_music_elements():
-    """Return built-in and personal WebP artwork as local file URLs.
+    """Return built-in and personal WebP/WebM artwork as local file URLs.
 
-    Bundled assets are managed by the A16EEN installer. Personal assets live in
-    Pictures and are never changed by updates. Both folders accept subfolders.
+    WebP is rendered by Qt Quick's AnimatedImage; WebM is rendered by Qt
+    Multimedia. Bundled assets are managed by the A16EEN installer. Personal
+    assets live in Pictures and are never changed by updates. Subfolders work.
     """
-    paths = webp_files(BUILTIN_ELEMENTS_DIR) + webp_files(USER_ELEMENTS_DIR)
+    paths = artwork_files(BUILTIN_ELEMENTS_DIR) + artwork_files(USER_ELEMENTS_DIR)
     # Preserve source priority while removing duplicates (e.g. symlink aliases).
     unique_paths = list(dict.fromkeys(paths))
 

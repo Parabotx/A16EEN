@@ -70,6 +70,7 @@ jobs:
           grep -Fq 'a16een-app-stash' scripts/install.sh
           grep -Fq 'music-elements' scripts/install.sh
           grep -Fq 'BUILTIN_MUSIC_ELEMENTS_SOURCE_DIR' scripts/install.sh
+          grep -Fq -- "-iname '*.webm'" scripts/install.sh
           grep -Fq 'BUILTIN_ELEMENTS_DIR' scripts/a16een-music
           grep -Fq 'USER_ELEMENTS_DIR' scripts/a16een-music
           grep -Fq 'START_LOCK_PATH' scripts/a16een-music
@@ -77,7 +78,8 @@ jobs:
           grep -Fq 'a16 music diagnose' scripts/a16een
           grep -Fq 'Qt WebP plugin' scripts/a16een-music-diagnose
           grep -Fq 'command: ["a16een-music", "elements"]' quickshell/a16een/ui/MusicDecor.qml
-          grep -Fq 'A16EEN music artwork: image load failed:' quickshell/a16een/ui/MusicDecor.qml
+          grep -Fq 'A16EEN music artwork: WebP image load failed:' quickshell/a16een/ui/MusicDecor.qml
+          grep -Fq 'A16EEN music artwork: WebM video load failed:' quickshell/a16een/ui/MusicDecor.qml
           grep -Fq 'a16 music diagnose' README.md
           grep -Fq 'quickshell/a16een/assets/music-elements/' README.md
           grep -Fq 'workspace "app-stash"' niri/config.kdl
@@ -331,10 +333,16 @@ jobs:
           grep -Fq 'onSelectionKeyChanged:' quickshell/a16een/ui/MusicDecor.qml
           grep -Fq 'command: ["a16een-music", "elements"]' quickshell/a16een/ui/MusicDecor.qml
           grep -Fq 'AnimatedImage {' quickshell/a16een/ui/MusicDecor.qml
-          grep -Fq 'playing: root.active && root.playing' quickshell/a16een/ui/MusicDecor.qml
-          grep -Fq 'paused: !root.active || !root.playing' quickshell/a16een/ui/MusicDecor.qml
+          grep -Fq 'playing: root.active && root.playing && root.imageElement' quickshell/a16een/ui/MusicDecor.qml
+          grep -Fq 'paused: !root.active || !root.playing || !root.imageElement' quickshell/a16een/ui/MusicDecor.qml
           grep -Fq 'cache: false' quickshell/a16een/ui/MusicDecor.qml
-          grep -Fq 'visible: !root.playing || elementImage.status !== AnimatedImage.Ready' quickshell/a16een/ui/MusicDecor.qml
+          grep -Fq 'visible: !root.active || !root.playing' quickshell/a16een/ui/MusicDecor.qml
+          grep -Fq 'import QtMultimedia' quickshell/a16een/ui/MusicDecor.qml
+          grep -Fq 'MediaPlayer {' quickshell/a16een/ui/MusicDecor.qml
+          grep -Fq 'VideoOutput {' quickshell/a16een/ui/MusicDecor.qml
+          grep -Fq 'loops: MediaPlayer.Infinite' quickshell/a16een/ui/MusicDecor.qml
+          grep -Fq 'muted: true' quickshell/a16een/ui/MusicDecor.qml
+          grep -Fq 'WebM video load failed' quickshell/a16een/ui/MusicDecor.qml
           grep -Fq 'fillMode: Image.PreserveAspectFit' quickshell/a16een/ui/MusicDecor.qml
           grep -Fq 'asynchronous: true' quickshell/a16een/ui/MusicDecor.qml
           grep -Fq 'sourceSize.width: 192' quickshell/a16een/ui/MusicDecor.qml
