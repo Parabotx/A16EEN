@@ -206,7 +206,7 @@ def stored_player_pid():
             return None
         command_line = Path(f"/proc/{pid}/cmdline").read_bytes()
         expected_socket = ("--input-ipc-server=" + str(SOCKET_PATH)).encode("utf-8")
-        executable = command_line.split(b"\\0", 1)[0].lower()
+        executable = command_line.partition(bytes((0,)))[0].lower()
         if b"mpv" in executable and expected_socket in command_line:
             return pid
     except (OSError, ValueError):
