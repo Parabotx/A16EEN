@@ -404,6 +404,7 @@ sudo install -Dm755 "$ROOT_DIR/scripts/a16een-app-stash" /usr/local/bin/a16een-a
 sudo install -Dm755 "$ROOT_DIR/scripts/a16een-system-monitor" /usr/local/bin/a16een-system-monitor
 sudo install -Dm755 "$ROOT_DIR/scripts/a16een-data-meter" /usr/local/bin/a16een-data-meter
 sudo install -Dm755 "$ROOT_DIR/scripts/a16een-music" /usr/local/bin/a16een-music
+sudo install -Dm755 "$ROOT_DIR/scripts/a16een-music-diagnose" /usr/local/bin/a16een-music-diagnose
 sudo install -Dm755 "$ROOT_DIR/scripts/a16een-widget-settings" /usr/local/bin/a16een-widget-settings
 sudo install -Dm755 "$ROOT_DIR/scripts/a16een-icon-theme" /usr/local/bin/a16een-icon-theme
 sudo install -Dm755 "$ROOT_DIR/scripts/a16een-navbar" /usr/local/bin/a16een-navbar
