@@ -248,7 +248,7 @@ else
         )
     fi
 
-    # Ship repository-managed music artwork; only WebP files are runtime assets.
+    # Ship repository-managed WebP and WebM music artwork.
     # User artwork remains in ~/Pictures/a16een/music-elements and is not touched.
     BUILTIN_MUSIC_ELEMENTS_SOURCE_DIR="$ROOT_DIR/quickshell/a16een/assets/music-elements"
     if [ -d "$BUILTIN_MUSIC_ELEMENTS_SOURCE_DIR" ]; then
@@ -258,7 +258,7 @@ else
             mkdir -p "$(dirname "$destination")"
             cp "$music_element" "$destination"
         done < <(
-            find "$BUILTIN_MUSIC_ELEMENTS_SOURCE_DIR" -type f -iname '*.webp' -print0 | LC_ALL=C sort -z -f
+            find "$BUILTIN_MUSIC_ELEMENTS_SOURCE_DIR" -type f \( -iname '*.webp' -o -iname '*.webm' \) -print0 | LC_ALL=C sort -z -f
         )
     fi
 
