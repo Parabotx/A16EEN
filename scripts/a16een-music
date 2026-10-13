@@ -20,7 +20,12 @@ RUNTIME_DIR = Path(os.environ.get("XDG_RUNTIME_DIR") or (Path.home() / ".local/s
 SOCKET_PATH = RUNTIME_DIR / "a16een-music.sock"
 START_LOCK_PATH = RUNTIME_DIR / "a16een-music-start.lock"
 PLAYER_PID_PATH = RUNTIME_DIR / "a16een-music.pid"
-ELEMENTS_DIR = Path.home() / "Pictures" / "a16een" / "music-elements"
+# Bundled WebP artwork is shipped with A16EEN; personal files remain in Pictures
+# and are never removed by the installer.
+BUILTIN_ELEMENTS_DIR = (
+    Path.home() / ".config" / "a16een" / "quickshell" / "a16een" / "assets" / "music-elements"
+)
+USER_ELEMENTS_DIR = Path.home() / "Pictures" / "a16een" / "music-elements"
 COVER_CACHE_DIR = Path(os.environ.get("XDG_CACHE_HOME") or (Path.home() / ".cache")) / "a16een/music-covers"
 COVER_NAMES = ("cover", "folder", "front", "album", "albumart", "albumartsmall", "artwork", ".folder", "thumb")
 
@@ -131,24 +136,32 @@ def scan_library():
             continue
     return tracks
 
-def scan_music_elements():
-    """Return small file URLs for personal transparent WebP artwork.
-
-    The folder is user-owned and deliberately outside the deployed config so
-    A16EEN updates never delete or overwrite personal elements.
-    """
+def webp_files(directory):
+    """Find WebP files recursively; tolerate a missing or unreadable folder."""
     try:
-        paths = sorted(
-            (path for path in ELEMENTS_DIR.rglob("*")
+        return sorted(
+            (path.resolve() for path in directory.rglob("*")
              if path.is_file() and path.suffix.casefold() == ".webp"),
             key=lambda path: str(path).casefold()
         )
     except OSError:
-        paths = []
+        return []
+
+
+def scan_music_elements():
+    """Return built-in and personal WebP artwork as local file URLs.
+
+    Bundled assets are managed by the A16EEN installer. Personal assets live in
+    Pictures and are never changed by updates. Both folders accept subfolders.
+    """
+    paths = webp_files(BUILTIN_ELEMENTS_DIR) + webp_files(USER_ELEMENTS_DIR)
+    # Preserve source priority while removing duplicates (e.g. symlink aliases).
+    unique_paths = list(dict.fromkeys(paths))
 
     return {
-        "directory": str(ELEMENTS_DIR),
-        "elements": [path.resolve().as_uri() for path in paths]
+        "directory": str(USER_ELEMENTS_DIR),
+        "builtInDirectory": str(BUILTIN_ELEMENTS_DIR),
+        "elements": [path.as_uri() for path in unique_paths]
     }
 
 

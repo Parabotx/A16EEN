@@ -69,8 +69,12 @@ jobs:
           grep -Fq 'a16een-clipboard' scripts/install.sh
           grep -Fq 'a16een-app-stash' scripts/install.sh
           grep -Fq 'music-elements' scripts/install.sh
+          grep -Fq 'BUILTIN_MUSIC_ELEMENTS_SOURCE_DIR' scripts/install.sh
+          grep -Fq 'BUILTIN_ELEMENTS_DIR' scripts/a16een-music
+          grep -Fq 'USER_ELEMENTS_DIR' scripts/a16een-music
           grep -Fq 'START_LOCK_PATH' scripts/a16een-music
           grep -Fq 'command: ["a16een-music", "elements"]' quickshell/a16een/ui/MusicDecor.qml
+          grep -Fq 'quickshell/a16een/assets/music-elements/' README.md
           grep -Fq 'workspace "app-stash"' niri/config.kdl
           grep -Fq 'Super+H repeat=false hotkey-overlay-title="A16EEN Hide Window to Nest"' niri/config.kdl
           grep -Fq 'Super+Ctrl+H repeat=false hotkey-overlay-title="A16EEN Nest"' niri/config.kdl

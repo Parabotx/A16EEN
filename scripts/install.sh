@@ -167,7 +167,7 @@ if command -v git >/dev/null 2>&1 && git -C "$ROOT_DIR" rev-parse HEAD >/dev/nul
     SOURCE_COMMIT=$(git -C "$ROOT_DIR" rev-parse HEAD)
 fi
 
-mkdir -p "$NIRI_DIR" "$QS_DIR/ui" "$QS_DIR/assets/wallpapers" "$QS_DIR/assets/animated" "$BACKUP_ROOT" "$USER_WALLPAPER_DIR" "$USER_WALLPAPER_DIR/animated" "$USER_WALLPAPER_DIR/music-elements"
+mkdir -p "$NIRI_DIR" "$QS_DIR/ui" "$QS_DIR/assets/wallpapers" "$QS_DIR/assets/animated" "$QS_DIR/assets/music-elements" "$BACKUP_ROOT" "$USER_WALLPAPER_DIR" "$USER_WALLPAPER_DIR/animated" "$USER_WALLPAPER_DIR/music-elements"
 # Event file used by the lightweight volume/brightness OSD watcher.
 # It is intentionally separate from Quickshell's private state directory.
 printf '%s\n' "" > "$STATE_DIR/control-indicator"
@@ -212,7 +212,7 @@ else
     }
     trap cleanup_deploy EXIT INT TERM
 
-    mkdir -p "$TMP_DEPLOY/ui" "$TMP_DEPLOY/assets/wallpapers" "$TMP_DEPLOY/assets/animated" "$TMP_DEPLOY/assets/icons"
+    mkdir -p "$TMP_DEPLOY/ui" "$TMP_DEPLOY/assets/wallpapers" "$TMP_DEPLOY/assets/animated" "$TMP_DEPLOY/assets/music-elements" "$TMP_DEPLOY/assets/icons"
     cp "$ROOT_DIR/niri/config.kdl" "$TMP_DEPLOY/config.kdl"
     cp "$ROOT_DIR/quickshell/a16een/shell.qml" "$TMP_DEPLOY/shell.qml"
     cp "$ROOT_DIR/quickshell/a16een/ui/"*.qml "$TMP_DEPLOY/ui/"
@@ -245,6 +245,20 @@ else
             cp "$wallpaper" "$destination"
         done < <(
             find "$BUILTIN_ANIMATED_SOURCE_DIR" -maxdepth 1 -type f                 \( -iname '*.gif' -o -iname '*.mp4' -o -iname '*.webm' -o -iname '*.mov' -o -iname '*.m4v' -o -iname '*.mkv' \)                 -print0 | LC_ALL=C sort -z -f
+        )
+    fi
+
+    # Ship repository-managed music artwork; only WebP files are runtime assets.
+    # User artwork remains in ~/Pictures/a16een/music-elements and is not touched.
+    BUILTIN_MUSIC_ELEMENTS_SOURCE_DIR="$ROOT_DIR/quickshell/a16een/assets/music-elements"
+    if [ -d "$BUILTIN_MUSIC_ELEMENTS_SOURCE_DIR" ]; then
+        while IFS= read -r -d '' music_element; do
+            relative="${music_element#"$BUILTIN_MUSIC_ELEMENTS_SOURCE_DIR"/}"
+            destination="$TMP_DEPLOY/assets/music-elements/$relative"
+            mkdir -p "$(dirname "$destination")"
+            cp "$music_element" "$destination"
+        done < <(
+            find "$BUILTIN_MUSIC_ELEMENTS_SOURCE_DIR" -type f -iname '*.webp' -print0 | LC_ALL=C sort -z -f
         )
     fi
 
@@ -286,6 +300,11 @@ else
 
     find "$QS_DIR/assets/animated" -type f -delete
     cp -a "$TMP_DEPLOY/assets/animated/." "$QS_DIR/assets/animated/"
+
+    # Replace the bundled music-art library only. Personal files are in Pictures.
+    mkdir -p "$QS_DIR/assets/music-elements"
+    find "$QS_DIR/assets/music-elements" -type f -delete
+    cp -a "$TMP_DEPLOY/assets/music-elements/." "$QS_DIR/assets/music-elements/"
 
     mkdir -p "$QS_DIR/assets/icons" "$QS_DIR/assets"
     cp "$TMP_DEPLOY/assets/icons/"*.svg "$QS_DIR/assets/icons/"
@@ -590,3 +609,5 @@ echo "Update A16 with 'a16 -u' or 'a16-update'."
 echo "Built-in wallpapers: $QS_DIR/assets/wallpapers"
 echo "Personal wallpapers: $USER_WALLPAPER_DIR"
 echo "Personal animated wallpapers: $USER_WALLPAPER_DIR/animated"
+echo "Built-in music elements: $QS_DIR/assets/music-elements"
+echo "Personal music elements: $USER_WALLPAPER_DIR/music-elements"
