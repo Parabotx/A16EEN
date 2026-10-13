@@ -26,7 +26,16 @@ PanelWindow {
     property int screenTimeTodaySeconds: 0
     property int screenTimeWeekSeconds: 0
     property int screenTimeMonthSeconds: 0
+    property string screenTimePeriod: "today"
     property var screenTimeTopApps: []
+    property var screenTimeWeekApps: []
+    property var screenTimeMonthApps: []
+    readonly property int screenTimeSelectedSeconds: root.screenTimePeriod === "week"
+        ? root.screenTimeWeekSeconds
+        : (root.screenTimePeriod === "month" ? root.screenTimeMonthSeconds : root.screenTimeTodaySeconds)
+    readonly property var screenTimeSelectedApps: root.screenTimePeriod === "week"
+        ? root.screenTimeWeekApps
+        : (root.screenTimePeriod === "month" ? root.screenTimeMonthApps : root.screenTimeTopApps)
     property bool screenTimeTrackingActive: false
     property string screenTimeStatus: "Waiting for an active window"
     property string screenTimeCurrentApp: "No active application"
@@ -766,57 +775,56 @@ PanelWindow {
                     width: parent.width
                     height: Math.max(250, parent.height - 56)
 
-                    Row {
-                        id: screenTimePeriodCards
+                    // One compact switcher: these are actions, not statistic cards.
+                    Rectangle {
+                        id: screenTimePeriodSwitch
                         anchors.left: parent.left
                         anchors.right: parent.right
                         anchors.top: parent.top
-                        height: 68
-                        spacing: 7
+                        height: 34
+                        radius: 10
+                        color: popupCardStyle.subtleSurfaceColor
+                        border.width: 1
+                        border.color: popupCardStyle.fieldBorderColor
 
-                        Repeater {
-                            model: [
-                                { id: "today", label: "TODAY" },
-                                { id: "week", label: "WEEK" },
-                                { id: "month", label: "MONTH" }
-                            ]
+                        Row {
+                            id: screenTimePeriodChoices
+                            anchors.fill: parent
+                            anchors.margins: 3
+                            spacing: 3
 
-                            delegate: Rectangle {
-                                id: screenTimePeriodCard
-                                required property var modelData
-                                width: (screenTimePeriodCards.width - screenTimePeriodCards.spacing * 2) / 3
-                                height: screenTimePeriodCards.height
-                                radius: 10
-                                color: screenTimePeriodCard.modelData.label === "TODAY"
-                                    ? popupCardStyle.subtleSurfaceColor : popupCardStyle.fieldColor
-                                border.width: 1
-                                border.color: popupCardStyle.fieldBorderColor
+                            Repeater {
+                                model: [
+                                    { id: "today", label: "Today" },
+                                    { id: "week", label: "Week" },
+                                    { id: "month", label: "Month" }
+                                ]
 
-                                Column {
-                                    anchors.fill: parent
-                                    anchors.margins: 9
-                                    spacing: 8
+                                delegate: Rectangle {
+                                    id: screenTimePeriodChoice
+                                    required property var modelData
+                                    width: (screenTimePeriodChoices.width - screenTimePeriodChoices.spacing * 2) / 3
+                                    height: screenTimePeriodChoices.height
+                                    radius: 7
+                                    readonly property bool selected: root.screenTimePeriod === modelData.id
+                                    color: selected ? popupCardStyle.selectedSurfaceColor : "transparent"
+                                    border.width: selected ? 1 : 0
+                                    border.color: popupCardStyle.fieldBorderColor
 
                                     Text {
-                                        width: parent.width
-                                        text: screenTimePeriodCard.modelData.label
-                                        color: popupCardStyle.mutedTextColor
-                                        font.pixelSize: 7
-                                        font.weight: Font.DemiBold
-                                        font.letterSpacing: 0.7
-                                        elide: Text.ElideRight
+                                        anchors.centerIn: parent
+                                        text: screenTimePeriodChoice.modelData.label
+                                        color: screenTimePeriodChoice.selected
+                                            ? popupCardStyle.textColor : popupCardStyle.mutedTextColor
+                                        font.pixelSize: 9
+                                        font.weight: screenTimePeriodChoice.selected ? Font.DemiBold : Font.Medium
                                     }
 
-                                    Text {
-                                        width: parent.width
-                                        text: root.formatDuration(screenTimePeriodCard.modelData.id === "today"
-                                            ? root.screenTimeTodaySeconds
-                                            : (screenTimePeriodCard.modelData.id === "week"
-                                                ? root.screenTimeWeekSeconds : root.screenTimeMonthSeconds))
-                                        color: popupCardStyle.textColor
-                                        font.pixelSize: 13
-                                        font.weight: Font.DemiBold
-                                        elide: Text.ElideRight
+                                    MouseArea {
+                                        anchors.fill: parent
+                                        hoverEnabled: true
+                                        cursorShape: Qt.PointingHandCursor
+                                        onClicked: root.screenTimePeriod = screenTimePeriodChoice.modelData.id
                                     }
                                 }
                             }
@@ -824,12 +832,52 @@ PanelWindow {
                     }
 
                     Row {
+                        id: screenTimeTotalRow
+                        anchors.left: parent.left
+                        anchors.right: parent.right
+                        anchors.top: screenTimePeriodSwitch.bottom
+                        anchors.topMargin: 10
+                        height: 44
+
+                        Column {
+                            anchors.left: parent.left
+                            anchors.verticalCenter: parent.verticalCenter
+                            spacing: 3
+
+                            Text {
+                                text: root.screenTimePeriod === "today" ? "TODAY'S ACTIVE TIME"
+                                    : (root.screenTimePeriod === "week" ? "LAST 7 DAYS" : "THIS MONTH")
+                                color: popupCardStyle.mutedTextColor
+                                font.pixelSize: 7
+                                font.weight: Font.DemiBold
+                                font.letterSpacing: 0.7
+                            }
+
+                            Text {
+                                text: root.formatDuration(root.screenTimeSelectedSeconds)
+                                color: popupCardStyle.textColor
+                                font.pixelSize: 23
+                                font.weight: Font.DemiBold
+                            }
+                        }
+
+                        Text {
+                            anchors.right: parent.right
+                            anchors.verticalCenter: parent.verticalCenter
+                            text: root.screenTimeSelectedApps.length + " APPS"
+                            color: popupCardStyle.mutedTextColor
+                            font.pixelSize: 8
+                            font.weight: Font.DemiBold
+                        }
+                    }
+
+                    Row {
                         id: screenTimeStatusRow
                         anchors.left: parent.left
                         anchors.right: parent.right
-                        anchors.top: screenTimePeriodCards.bottom
-                        anchors.topMargin: 9
-                        height: 20
+                        anchors.top: screenTimeTotalRow.bottom
+                        anchors.topMargin: 6
+                        height: 17
                         spacing: 6
 
                         Rectangle {
@@ -866,77 +914,88 @@ PanelWindow {
                         anchors.left: parent.left
                         anchors.right: parent.right
                         anchors.top: screenTimeStatusRow.bottom
-                        anchors.topMargin: 10
+                        anchors.topMargin: 9
                         height: 12
-                        text: "MOST USED TODAY"
+                        text: "APP USAGE · " + root.screenTimePeriod.toUpperCase()
                         color: popupCardStyle.mutedTextColor
                         font.pixelSize: 8
                         font.weight: Font.DemiBold
                         font.letterSpacing: 0.65
                     }
 
-                    Column {
-                        id: screenTimeAppsList
+                    Flickable {
+                        id: screenTimeAppsFlick
                         anchors.left: parent.left
                         anchors.right: parent.right
                         anchors.top: screenTimeAppsHeading.bottom
-                        anchors.topMargin: 6
-                        spacing: 5
+                        anchors.topMargin: 7
+                        anchors.bottom: parent.bottom
+                        clip: true
+                        contentWidth: width
+                        contentHeight: screenTimeAppsList.implicitHeight
+                        boundsBehavior: Flickable.StopAtBounds
+                        visible: root.screenTimeSelectedApps.length > 0
 
-                        Repeater {
-                            model: root.screenTimeTopApps
+                        Column {
+                            id: screenTimeAppsList
+                            width: screenTimeAppsFlick.width
+                            spacing: 7
 
-                            delegate: Item {
-                                id: screenTimeAppRow
-                                required property var modelData
-                                width: screenTimeAppsList.width
-                                height: 27
+                            Repeater {
+                                model: root.screenTimeSelectedApps
 
-                                Row {
-                                    anchors.left: parent.left
-                                    anchors.right: parent.right
-                                    anchors.top: parent.top
-                                    height: 17
-                                    spacing: 6
+                                delegate: Item {
+                                    id: screenTimeAppRow
+                                    required property var modelData
+                                    width: screenTimeAppsList.width
+                                    height: 29
 
-                                    Text {
-                                        width: parent.width - 58
-                                        anchors.verticalCenter: parent.verticalCenter
-                                        text: screenTimeAppRow.modelData.name
-                                        color: "#29313B"
-                                        font.pixelSize: 9
-                                        font.weight: Font.Medium
-                                        elide: Text.ElideRight
+                                    Row {
+                                        anchors.left: parent.left
+                                        anchors.right: parent.right
+                                        anchors.top: parent.top
+                                        height: 18
+                                        spacing: 6
+
+                                        Text {
+                                            width: parent.width - 62
+                                            anchors.verticalCenter: parent.verticalCenter
+                                            text: screenTimeAppRow.modelData.name
+                                            color: popupCardStyle.textColor
+                                            font.pixelSize: 9
+                                            font.weight: Font.Medium
+                                            elide: Text.ElideRight
+                                        }
+
+                                        Text {
+                                            width: 56
+                                            anchors.verticalCenter: parent.verticalCenter
+                                            text: root.formatDuration(screenTimeAppRow.modelData.seconds)
+                                            color: popupCardStyle.secondaryTextColor
+                                            font.pixelSize: 8
+                                            horizontalAlignment: Text.AlignRight
+                                            elide: Text.ElideLeft
+                                        }
                                     }
-
-                                    Text {
-                                        width: 52
-                                        anchors.verticalCenter: parent.verticalCenter
-                                        text: root.formatDuration(screenTimeAppRow.modelData.seconds)
-                                        color: popupCardStyle.secondaryTextColor
-                                        font.pixelSize: 8
-                                        horizontalAlignment: Text.AlignRight
-                                        elide: Text.ElideLeft
-                                    }
-                                }
-
-                                Rectangle {
-                                    anchors.left: parent.left
-                                    anchors.right: parent.right
-                                    anchors.bottom: parent.bottom
-                                    height: 3
-                                    radius: 2
-                                    color: popupCardStyle.selectedSurfaceColor
-                                    clip: true
 
                                     Rectangle {
-                                        width: parent.width * Math.max(0, Math.min(1,
-                                            Number(screenTimeAppRow.modelData.seconds)
-                                            / Math.max(1, Number(root.screenTimeTopApps.length
-                                                ? root.screenTimeTopApps[0].seconds : 1))))
-                                        height: parent.height
+                                        anchors.left: parent.left
+                                        anchors.right: parent.right
+                                        anchors.bottom: parent.bottom
+                                        height: 3
                                         radius: 2
-                                        color: "#596676"
+                                        color: popupCardStyle.selectedSurfaceColor
+                                        clip: true
+
+                                        Rectangle {
+                                            width: parent.width * Math.max(0, Math.min(1,
+                                                Number(screenTimeAppRow.modelData.seconds)
+                                                / Math.max(1, Number(root.screenTimeSelectedApps.length
+                                                    ? root.screenTimeSelectedApps[0].seconds : 1))))
+                                            height: parent.height
+                                            radius: 2
+                                            color: popupCardStyle.iconColor
+                                        }
                                     }
                                 }
                             }
@@ -946,15 +1005,13 @@ PanelWindow {
                     Text {
                         anchors.left: parent.left
                         anchors.right: parent.right
-                        anchors.top: screenTimeAppsHeading.bottom
-                        anchors.topMargin: 12
-                        visible: root.screenTimeTopApps.length === 0
-                        text: "Your app breakdown will appear as you use A16EEN."
+                        anchors.verticalCenter: screenTimeAppsFlick.verticalCenter
+                        visible: root.screenTimeSelectedApps.length === 0
+                        text: "App usage for this period will appear here."
                         color: popupCardStyle.mutedTextColor
                         font.pixelSize: 9
                         horizontalAlignment: Text.AlignHCenter
                     }
-
                 }
 
                 Item {
