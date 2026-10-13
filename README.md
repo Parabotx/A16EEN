@@ -167,7 +167,9 @@ Personal artwork, which is preserved across updates:
 ~/Pictures/a16een/music-elements/
 ```
 
-Put your own `.webp` images or `.webm` video stickers in the personal folder or its subfolders. WebP files use Qt Quick's `AnimatedImage`; WebM files use Qt Multimedia's `MediaPlayer` + `VideoOutput` and have their audio muted. Artwork plays only while music is playing; while paused, the music glyph is shown. WebP frame caching is disabled and both formats render in the widget's small display area to limit resource use.
+Put your own `.webm` transparent stickers or `.webp` animated images in the personal folder or its subfolders. WebM remains the source format: A16EEN prepares a small RGBA animated-WebP rendering cache with FFmpeg so alpha is preserved on Linux Qt multimedia backends that flatten transparent WebM frames. The conversion is only a runtime cache; your original WebM files are never changed. If FFmpeg/libwebp preparation is unavailable, the widget falls back to the native WebM renderer.
+
+The artwork switches both when the song changes and at unpredictable intervals between 10 and 75 seconds. It holds a maximum of **four prepared WebM animations** under `~/.cache/a16een/music-elements/`; as the queue rotates, the previous used entry is dropped when another source is available. Each prepared animation is capped at 192×192 pixels and 12 fps, only the selected animation plays, and the rest remain paused and ready. Playback and rotation pause when the music stops or a normal window overlaps the artwork area, and resume when the area is uncovered. The widget does not draw a background behind the video, so transparent pixels show through to the existing widget surface.
 
 If the widget shows only the ♫ glyph, run:
 
