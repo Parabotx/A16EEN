@@ -80,6 +80,89 @@ def test_webp_and_webm_elements_include_bundled_and_personal_files():
         assert all(source.startswith("file://") for source in payload["elements"])
 
 
+def test_webm_preparation_keeps_alpha_and_caps_cache_at_four():
+    with tempfile.TemporaryDirectory() as temp:
+        home = Path(temp)
+        bundled = home / ".config" / "a16een" / "quickshell" / "a16een" / "assets" / "music-elements"
+        personal = home / "Pictures" / "a16een" / "music-elements"
+        cache = home / ".cache" / "a16een" / "music-elements"
+        bundled.mkdir(parents=True)
+        personal.mkdir(parents=True)
+        sources = []
+        for index in range(6):
+            path = bundled / f"sticker-{index}.webm"
+            path.write_bytes(b"webm-source-" + bytes([index]))
+            sources.append(path)
+
+        module = load_music_module()
+        module.BUILTIN_ELEMENTS_DIR = bundled
+        module.USER_ELEMENTS_DIR = personal
+        module.MUSIC_ELEMENTS_CACHE_DIR = cache
+        commands = []
+
+        def fake_ffmpeg(command, **kwargs):
+            commands.append(command)
+            vf_index = command.index("-vf")
+            assert "format=rgba" in command[vf_index + 1]
+            assert "fps=12" in command[vf_index + 1]
+            assert command[command.index("-c:v") + 1] == "libwebp_anim"
+            assert command[command.index("-loop") + 1] == "0"
+            target = Path(command[-1])
+            target.write_bytes(b"transparent-animated-webp")
+            return SimpleNamespace(returncode=0, stderr="")
+
+        urls = [path.as_uri() for path in sources]
+        with (
+            patch.object(module, "shutil_which", return_value="/usr/bin/ffmpeg"),
+            patch.object(module.subprocess, "run", side_effect=fake_ffmpeg),
+        ):
+            first = module.prepare_music_elements(urls)
+            assert len(first["items"]) == 4
+            assert first["cacheLimit"] == 4
+            assert len(list(cache.glob("*.webp"))) == 4
+            assert {item["source"] for item in first["items"]} == set(urls[:4])
+            assert all(Path(urllib_parse(item["prepared"])).is_file() for item in first["items"])
+
+            # A new rolling window replaces old entries instead of growing the cache.
+            second = module.prepare_music_elements(urls[2:])
+            assert len(second["items"]) == 4
+            assert len(list(cache.glob("*.webp"))) == 4
+            assert {item["source"] for item in second["items"]} == set(urls[2:])
+
+        assert len(commands) == 6
+
+
+def urllib_parse(url):
+    from urllib.parse import unquote, urlparse
+
+    return unquote(urlparse(url).path)
+
+
+def test_music_artwork_occlusion_only_matches_current_workspace():
+    module = load_music_module()
+    windows = [
+        {
+            "workspace_id": 7,
+            "is_focused": False,
+            "layout": {
+                "tile_pos_in_workspace_view": [70, 80],
+                "tile_size": [180, 120],
+            },
+        },
+        {
+            "workspace_id": 8,
+            "is_focused": True,
+            "layout": {
+                "tile_pos_in_workspace_view": [0, 0],
+                "tile_size": [1920, 1080],
+            },
+        },
+    ]
+    assert module.active_window_covers_region(windows, 7, (100, 100, 50, 40))
+    assert not module.active_window_covers_region(windows, 7, (400, 300, 50, 40))
+    assert not module.active_window_covers_region(windows, 7, (190, 190, 20, 20))
+
+
 def test_concurrent_play_requests_start_only_one_mpv_process():
     with tempfile.TemporaryDirectory() as temp:
         home = Path(temp)
