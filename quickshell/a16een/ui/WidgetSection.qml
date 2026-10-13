@@ -8,6 +8,9 @@ Item {
 
     property bool editorialTimeEnabled: true
     property bool musicEnabled: false
+    property string musicBackgroundColor: "#EAF2F8"
+    property int musicBackgroundOpacity: 72
+    property bool musicPaletteOpen: false
     property bool quotesEnabled: false
     property bool appShelfEnabled: false
     property string appShelfShape: "capsule"
@@ -31,6 +34,8 @@ Item {
     signal backRequested()
     signal editorialTimeWidgetEnabledRequested(bool enabled)
     signal musicWidgetEnabledRequested(bool enabled)
+    signal musicBackgroundColorRequested(string color)
+    signal musicBackgroundOpacityRequested(int opacity)
     signal quotesWidgetEnabledRequested(bool enabled)
     signal appShelfWidgetEnabledRequested(bool enabled)
     signal appShelfShapeRequested(string shape)
@@ -114,6 +119,11 @@ Item {
     function removeAppShelfApplication(desktopId) {
         root.appShelfAppsRequested(root.appShelfApps.filter(app =>
             String(app.desktopId || "") !== String(desktopId || "")))
+    }
+
+    function setMusicOpacityAt(x, totalWidth) {
+        const ratio = Math.max(0, Math.min(1, Number(x) / Math.max(1, Number(totalWidth))))
+        root.musicBackgroundOpacityRequested(Math.round(ratio * 100))
     }
 
     ColumnLayout {
@@ -545,6 +555,201 @@ Item {
                         text: root.editorialTimeEnabled
                             ? "These options apply to the Editorial Time desktop widget."
                             : "Enable this widget above to show the clock options on your desktop."
+                        color: root.textMuted
+                        font.pixelSize: 7
+                        wrapMode: Text.WordWrap
+                    }
+                }
+
+                // Music Player appearance controls stay compact; the color grid only
+                // appears after the user presses CHANGE BG.
+                ColumnLayout {
+                    id: musicSettings
+                    visible: root.selectedWidgetId === "music"
+                    Layout.fillWidth: true
+                    spacing: 8
+
+                    Rectangle {
+                        Layout.fillWidth: true
+                        height: 1
+                        color: root.dividerColor
+                    }
+
+                    Text {
+                        text: "PLAYER APPEARANCE"
+                        color: root.textMuted
+                        font.pixelSize: 8
+                        font.weight: Font.DemiBold
+                        font.letterSpacing: 1.0
+                    }
+
+                    RowLayout {
+                        Layout.fillWidth: true
+                        spacing: 8
+
+                        Rectangle {
+                            Layout.preferredWidth: 108
+                            Layout.preferredHeight: 31
+                            radius: 7
+                            color: root.musicPaletteOpen ? root.activeBackground : root.controlBackground
+                            border.width: 1
+                            border.color: root.musicPaletteOpen ? root.activeBackground : root.controlBorder
+
+                            Text {
+                                anchors.centerIn: parent
+                                text: root.musicPaletteOpen ? "CLOSE COLORS" : "CHANGE BG"
+                                color: root.musicPaletteOpen ? "#FFFFFF" : root.textPrimary
+                                font.pixelSize: 8
+                                font.weight: Font.DemiBold
+                            }
+
+                            MouseArea {
+                                anchors.fill: parent
+                                cursorShape: Qt.PointingHandCursor
+                                onClicked: root.musicPaletteOpen = !root.musicPaletteOpen
+                            }
+                        }
+
+                        Rectangle {
+                            Layout.preferredWidth: 23
+                            Layout.preferredHeight: 23
+                            radius: 6
+                            color: root.musicBackgroundColor
+                            border.width: 1
+                            border.color: "#CBD2DA"
+                        }
+
+                        Text {
+                            Layout.fillWidth: true
+                            text: root.musicBackgroundColor.toUpperCase()
+                            color: root.textSecondary
+                            font.pixelSize: 8
+                            font.family: "monospace"
+                            elide: Text.ElideRight
+                        }
+                    }
+
+                    GridLayout {
+                        visible: root.musicPaletteOpen
+                        Layout.fillWidth: true
+                        Layout.topMargin: 1
+                        columns: 8
+                        rowSpacing: 6
+                        columnSpacing: 7
+
+                        Repeater {
+                            model: [
+                                "#090B10", "#15171A", "#222831", "#343B46",
+                                "#101B2D", "#17324D", "#244A73", "#3979A8",
+                                "#291A45", "#49306E", "#704C9B", "#A57BCE",
+                                "#401B2B", "#762C3F", "#B54253", "#E76F51",
+                                "#4B2C17", "#8A4D24", "#C47A22", "#E8AD45",
+                                "#27351B", "#48652B", "#648D3B", "#91B85C",
+                                "#123B38", "#176E68", "#299A91", "#62C7BD",
+                                "#7892AC", "#B6C8D8", "#EAF2F8", "#FFFFFF"
+                            ]
+
+                            delegate: Rectangle {
+                                required property string modelData
+                                Layout.preferredWidth: 19
+                                Layout.preferredHeight: 19
+                                radius: 6
+                                color: modelData
+                                border.width: root.musicBackgroundColor.toLowerCase() === modelData.toLowerCase() ? 2 : 1
+                                border.color: root.musicBackgroundColor.toLowerCase() === modelData.toLowerCase()
+                                    ? root.textPrimary : "#CBD2DA"
+
+                                MouseArea {
+                                    anchors.fill: parent
+                                    cursorShape: Qt.PointingHandCursor
+                                    onClicked: {
+                                        root.musicBackgroundColorRequested(modelData)
+                                        root.musicPaletteOpen = false
+                                    }
+                                }
+                            }
+                        }
+                    }
+
+                    RowLayout {
+                        Layout.fillWidth: true
+                        Layout.topMargin: 2
+                        spacing: 8
+
+                        ColumnLayout {
+                            Layout.preferredWidth: 104
+                            spacing: 2
+
+                            Text {
+                                text: "BACKGROUND OPACITY"
+                                color: root.textPrimary
+                                font.pixelSize: 8
+                                font.weight: Font.DemiBold
+                            }
+
+                            Text {
+                                text: root.musicBackgroundOpacity + "%  ·  "
+                                    + (root.musicBackgroundOpacity === 0 ? "invisible"
+                                        : root.musicBackgroundOpacity === 100 ? "solid" : "translucent")
+                                color: root.textSecondary
+                                font.pixelSize: 7
+                            }
+                        }
+
+                        Item {
+                            Layout.fillWidth: true
+                            Layout.preferredHeight: 22
+                            implicitWidth: 150
+
+                            Rectangle {
+                                anchors.left: parent.left
+                                anchors.right: parent.right
+                                anchors.verticalCenter: parent.verticalCenter
+                                height: 4
+                                radius: 2
+                                color: root.controlBorder
+                            }
+
+                            Rectangle {
+                                anchors.left: parent.left
+                                anchors.verticalCenter: parent.verticalCenter
+                                width: parent.width * root.musicBackgroundOpacity / 100
+                                height: 4
+                                radius: 2
+                                color: root.activeBackground
+                            }
+
+                            Rectangle {
+                                width: 12
+                                height: 12
+                                radius: 6
+                                y: (parent.height - height) / 2
+                                x: Math.max(0, Math.min(parent.width - width,
+                                    (parent.width - width) * root.musicBackgroundOpacity / 100))
+                                color: "#FFFFFF"
+                                border.width: 1
+                                border.color: "#AAB3BD"
+                            }
+
+                            MouseArea {
+                                anchors.fill: parent
+                                cursorShape: Qt.PointingHandCursor
+                                onPressed: function(mouse) {
+                                    root.setMusicOpacityAt(mouse.x, width)
+                                }
+                                onPositionChanged: function(mouse) {
+                                    if (pressed)
+                                        root.setMusicOpacityAt(mouse.x, width)
+                                }
+                            }
+                        }
+                    }
+
+                    Text {
+                        Layout.fillWidth: true
+                        text: root.musicEnabled
+                            ? "Opacity affects the player and library surfaces only. Text, controls and artwork remain visible."
+                            : "Enable the Music Player above to see it on the desktop."
                         color: root.textMuted
                         font.pixelSize: 7
                         wrapMode: Text.WordWrap

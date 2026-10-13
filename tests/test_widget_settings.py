@@ -29,11 +29,15 @@ with tempfile.TemporaryDirectory() as temp:
     assert initial["appShelfShape"] == "capsule"
     assert initial["appShelfRotationEnabled"] is True
     assert initial["appShelfApps"] == []
+    assert initial["musicWidgetBackgroundColor"] == "#EAF2F8"
+    assert initial["musicWidgetBackgroundOpacity"] == 72
 
     payload = {
         "appShelfWidgetEnabled": True,
         "appShelfShape": "rounded",
         "appShelfRotationEnabled": False,
+        "musicWidgetBackgroundColor": "#17324D",
+        "musicWidgetBackgroundOpacity": 0,
         "appShelfApps": [
             {"desktopId": "firefox.desktop", "name": "Firefox", "icon": "firefox"},
             {"desktopId": "org.gnome.Nautilus.desktop", "name": "Files", "icon": "folder"},
@@ -45,6 +49,8 @@ with tempfile.TemporaryDirectory() as temp:
     assert saved["appShelfWidgetEnabled"] is True
     assert saved["appShelfShape"] == "rounded"
     assert saved["appShelfRotationEnabled"] is False
+    assert saved["musicWidgetBackgroundColor"] == "#17324D"
+    assert saved["musicWidgetBackgroundOpacity"] == 0
     assert [app["desktopId"] for app in saved["appShelfApps"]] == [
         "firefox.desktop", "org.gnome.Nautilus.desktop"
     ]
@@ -57,8 +63,14 @@ with tempfile.TemporaryDirectory() as temp:
     assert len(second["appShelfApps"]) == 2
 
     # Invalid shapes are ignored and cannot erase the saved choice.
-    third = run(env, "save", json.dumps({"appShelfShape": "unknown"}))
+    third = run(env, "save", json.dumps({
+        "appShelfShape": "unknown",
+        "musicWidgetBackgroundColor": "not-a-color",
+        "musicWidgetBackgroundOpacity": 101,
+    }))
     assert third["appShelfShape"] == "rounded"
+    assert third["musicWidgetBackgroundColor"] == "#17324D"
+    assert third["musicWidgetBackgroundOpacity"] == 0
 
     loaded = run(env, "load")
     assert loaded["appShelfApps"] == saved["appShelfApps"]

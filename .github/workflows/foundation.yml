@@ -417,7 +417,7 @@ jobs:
           grep -Fq 'property string libraryQuery: ""' quickshell/a16een/ui/MusicWidget.qml
           grep -Fq 'readonly property var filteredTracks:' quickshell/a16een/ui/MusicWidget.qml
           grep -Fq 'focusable: root.libraryOpen' quickshell/a16een/ui/MusicWidget.qml
-          grep -Fq 'WlrKeyboardFocus.OnDemand' quickshell/a16een/ui/MusicWidget.qml
+          grep -Fq 'WlrKeyboardFocus.Exclusive' quickshell/a16een/ui/MusicWidget.qml
           grep -Fq 'id: libraryKeyboardInput' quickshell/a16een/ui/MusicWidget.qml
           grep -Fq 'root.libraryQuery = ""' quickshell/a16een/ui/MusicWidget.qml
           grep -Fq 'model: root.filteredTracks' quickshell/a16een/ui/MusicWidget.qml
@@ -438,6 +438,11 @@ jobs:
           grep -Fq 'repeatIndicatorMode: root.repeatMode' quickshell/a16een/ui/MusicWidget.qml
           grep -Fq 'root.repeatMode === 0 ? 2' quickshell/a16een/ui/MusicWidget.qml
           grep -Fq 'parent.parent.repeatIndicatorMode === 1 ? "1" : "∞"' quickshell/a16een/ui/MusicWidget.qml
+          grep -Fq 'libvpx-vp9' scripts/a16een-music
+          grep -Fq 'musicWidgetBackgroundOpacity' quickshell/a16een/shell.qml
+          grep -Fq 'musicBackgroundColorRequested' quickshell/a16een/ui/WidgetSection.qml
+          grep -Fq 'backgroundWithOpacity(root.backgroundColor, root.backgroundOpacity)' quickshell/a16een/ui/MusicWidget.qml
+          grep -Fq 'root.runAction(["pause"])' quickshell/a16een/ui/MusicWidget.qml
           grep -Fq 'find_cover' scripts/a16een-music
           ! grep -Fq 'qt6-lottie' scripts/install.sh
           grep -Fq 'text: root.formatTime(root.seekDragging' quickshell/a16een/ui/MusicWidget.qml

@@ -100,8 +100,14 @@ def test_webm_preparation_keeps_alpha_and_caps_cache_at_four():
         module.MUSIC_ELEMENTS_CACHE_DIR = cache
         commands = []
 
+        def fake_ffprobe(command, **kwargs):
+            assert command[0] == "ffprobe"
+            return SimpleNamespace(returncode=0, stdout=json.dumps({"streams": [{"codec_name": "vp9"}]}))
+
         def fake_ffmpeg(command, **kwargs):
             commands.append(command)
+            assert command.index("-c:v") < command.index("-i")
+            assert command[command.index("-c:v") + 1] == "libvpx-vp9"
             vf_index = command.index("-vf")
             assert "format=rgba" in command[vf_index + 1]
             assert "fps=12" in command[vf_index + 1]
@@ -112,9 +118,14 @@ def test_webm_preparation_keeps_alpha_and_caps_cache_at_four():
             return SimpleNamespace(returncode=0, stderr="")
 
         urls = [path.as_uri() for path in sources]
+        def fake_run(command, **kwargs):
+            if command[0] == "ffprobe":
+                return fake_ffprobe(command, **kwargs)
+            return fake_ffmpeg(command, **kwargs)
+
         with (
-            patch.object(module, "shutil_which", return_value="/usr/bin/ffmpeg"),
-            patch.object(module.subprocess, "run", side_effect=fake_ffmpeg),
+            patch.object(module, "shutil_which", side_effect=lambda name: "/usr/bin/" + name),
+            patch.object(module.subprocess, "run", side_effect=fake_run),
         ):
             first = module.prepare_music_elements(urls)
             assert len(first["items"]) == 4
