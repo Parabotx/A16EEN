@@ -19,10 +19,13 @@ SCRIPT = ROOT / "scripts" / "a16een-music"
 
 
 def load_music_module():
-    spec = importlib.util.spec_from_file_location("a16een_music_test_module", SCRIPT)
+    from importlib.machinery import SourceFileLoader
+
+    loader = SourceFileLoader("a16een_music_test_module", str(SCRIPT))
+    spec = importlib.util.spec_from_loader(loader.name, loader)
+    assert spec is not None
     module = importlib.util.module_from_spec(spec)
-    assert spec.loader is not None
-    spec.loader.exec_module(module)
+    loader.exec_module(module)
     return module
 
 
