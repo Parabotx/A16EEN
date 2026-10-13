@@ -1621,6 +1621,8 @@ ShellRoot {
         screenTimeWeekSeconds: screenTimeTracker.weekSeconds
         screenTimeMonthSeconds: screenTimeTracker.monthSeconds
         screenTimeTopApps: screenTimeTracker.topApps
+        screenTimeWeekApps: screenTimeTracker.weekApps
+        screenTimeMonthApps: screenTimeTracker.monthApps
         screenTimeTrackingActive: screenTimeTracker.trackingActive
         screenTimeStatus: screenTimeTracker.statusText
         screenTimeCurrentApp: screenTimeTracker.currentAppName
