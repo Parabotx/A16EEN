@@ -1,15 +1,17 @@
 # Bundled music artwork
 
-Place repository-shipped animated artwork in this folder. A16EEN supports:
+Place repository-shipped animated artwork in this folder. A16EEN accepts:
 
-- `.webp` animated images, decoded with Qt Quick's `AnimatedImage`
-- `.webm` video stickers, played silently with Qt Multimedia
+- `.webm` transparent video stickers (source of truth; audio is ignored)
+- `.webp` animated images
 
 The installer copies both file types, including files in subfolders, to the
-deployed music-artwork library. The music widget randomly selects from the
-combined installed and personal collections and only plays the animation while
-music is playing.
+deployed music-artwork library. Personal files belong in
+`~/Pictures/a16een/music-elements/`; updates never remove or overwrite them.
 
-This folder is for artwork tracked in GitHub and shipped to every user. Personal
-artwork belongs in `~/Pictures/a16een/music-elements/`; updates never remove or
-overwrite files in that personal folder.
+For alpha-capable WebM stickers, A16EEN uses FFmpeg to prepare an RGBA animated
+WebP cache at 192×192 and 12 fps. This is an internal rendering format only:
+the committed and personal sources stay WebM. The cache is limited to four
+prepared animations under `~/.cache/a16een/music-elements/`; unused entries
+are removed as the working set rotates. The animation remains paused unless
+music is playing and its on-screen area is not covered by a normal Niri window.

@@ -334,10 +334,10 @@ jobs:
           grep -Fq 'onSelectionKeyChanged:' quickshell/a16een/ui/MusicDecor.qml
           grep -Fq 'command: ["a16een-music", "elements"]' quickshell/a16een/ui/MusicDecor.qml
           grep -Fq 'AnimatedImage {' quickshell/a16een/ui/MusicDecor.qml
-          grep -Fq 'playing: root.active && root.playing && root.imageElement' quickshell/a16een/ui/MusicDecor.qml
-          grep -Fq 'paused: !root.active || !root.playing || !root.imageElement' quickshell/a16een/ui/MusicDecor.qml
+          grep -Fq 'playing: root.active && root.playing && root.surfaceUncovered && root.imageElement' quickshell/a16een/ui/MusicDecor.qml
+          grep -Fq 'paused: !root.active || !root.playing || !root.surfaceUncovered || !root.imageElement' quickshell/a16een/ui/MusicDecor.qml
           grep -Fq 'cache: false' quickshell/a16een/ui/MusicDecor.qml
-          grep -Fq 'visible: !root.active || !root.playing' quickshell/a16een/ui/MusicDecor.qml
+          grep -Fq 'visible: !root.active || !root.playing || !root.surfaceUncovered' quickshell/a16een/ui/MusicDecor.qml
           ! grep -Fq 'import QtMultimedia' quickshell/a16een/ui/MusicDecor.qml
           ! grep -Fq 'MediaPlayer {' quickshell/a16een/ui/MusicDecor.qml
           grep -Fq 'source: active ? "MusicVideoDecor.qml" : ""' quickshell/a16een/ui/MusicDecor.qml
@@ -352,6 +352,20 @@ jobs:
           grep -Fq 'fillMode: Image.PreserveAspectFit' quickshell/a16een/ui/MusicDecor.qml
           grep -Fq 'asynchronous: true' quickshell/a16een/ui/MusicDecor.qml
           grep -Fq 'sourceSize.width: 192' quickshell/a16een/ui/MusicDecor.qml
+          grep -Fq 'property int nextSwitchDelayMs' quickshell/a16een/ui/MusicDecor.qml
+          grep -Fq '10000 + Math.floor(Math.random() * 65001)' quickshell/a16een/ui/MusicDecor.qml
+          grep -Fq 'source: modelData.prepared' quickshell/a16een/ui/MusicDecor.qml
+          grep -Fq 'cache: true' quickshell/a16een/ui/MusicDecor.qml
+          grep -Fq 'Timer {' quickshell/a16een/ui/MusicDecor.qml
+          grep -Fq 'a16een-music", "prepare-elements"' quickshell/a16een/ui/MusicDecor.qml
+          grep -Fq 'a16een-music", "occlusion"' quickshell/a16een/ui/MusicDecor.qml
+          grep -Fq 'outputName: String(root.modelData.name || "")' quickshell/a16een/ui/MusicWidget.qml
+          grep -Fq 'MAX_PREPARED_MUSIC_VIDEOS = 4' scripts/a16een-music
+          grep -Fq 'format=rgba' scripts/a16een-music
+          grep -Fq 'libwebp_anim' scripts/a16een-music
+          grep -Fq 'def check_music_artwork_occlusion' scripts/a16een-music
+          grep -Fq 'test_webm_preparation_keeps_alpha_and_caps_cache_at_four' tests/test_music_elements.py
+          grep -Fq 'test_music_artwork_occlusion_only_matches_current_workspace' tests/test_music_elements.py
           ! grep -Fq 'RotationAnimation on rotation' quickshell/a16een/ui/MusicDecor.qml
           ! grep -Fq 'MultiEffect' quickshell/a16een/ui/MusicDecor.qml
           grep -Fq 'active: root.widgetEnabled' quickshell/a16een/ui/MusicWidget.qml
