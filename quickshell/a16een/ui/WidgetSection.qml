@@ -690,7 +690,7 @@ Item {
                             Text {
                                 text: root.musicBackgroundOpacity + "%  ·  "
                                     + (root.musicBackgroundOpacity === 0 ? "invisible"
-                                        : root.musicBackgroundOpacity === 100 ? "solid" : "transparent")
+                                        : root.musicBackgroundOpacity === 100 ? "solid" : "translucent")
                                 color: root.textSecondary
                                 font.pixelSize: 7
                             }
