@@ -439,6 +439,8 @@ jobs:
           grep -Fq 'root.repeatMode === 0 ? 2' quickshell/a16een/ui/MusicWidget.qml
           grep -Fq 'parent.parent.repeatIndicatorMode === 1 ? "1" : "∞"' quickshell/a16een/ui/MusicWidget.qml
           grep -Fq 'libvpx-vp9' scripts/a16een-music
+          grep -Fq 'MUSIC_ELEMENTS_CACHE_VERSION' scripts/a16een-music
+          grep -Fq 'legacy_cache_files' tests/test_music_elements.py
           grep -Fq 'musicWidgetBackgroundOpacity' quickshell/a16een/shell.qml
           grep -Fq 'musicBackgroundColorRequested' quickshell/a16een/ui/WidgetSection.qml
           grep -Fq 'backgroundWithOpacity(root.backgroundColor, root.backgroundOpacity)' quickshell/a16een/ui/MusicWidget.qml
