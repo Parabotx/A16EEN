@@ -169,6 +169,14 @@ Personal artwork, which is preserved across updates:
 
 Put your own WebP files in the personal folder or its subfolders. The widget loads artwork asynchronously at a small display size and only animates it while a track is playing; while paused, the music glyph is shown. Animated WebP playback uses Qt's animation-capable image reader, with frame caching disabled and a small render size to limit memory and battery use. Lightweight transparent WebP files around 128–512 px are recommended.
 
+If the widget shows only the ♫ glyph, run:
+
+```sh
+a16 music diagnose
+```
+
+This read-only report checks the Qt WebP plugin and its dependencies, files in both artwork folders, the helper's discovered URLs, animation metadata when `webpmux` is available, and recent Quickshell image-loading messages. The normal A16EEN dependency set includes `qt6-imageformats`; if you skipped dependency installation on Arch Linux, install it with `sudo pacman -Syu --needed qt6-imageformats`.
+
 ## MPV player theme
 
 A16EEN provides a clean white MPV on-screen controller as one centered row of separate rounded containers at the bottom: the media title, a gold play/pause button, a white timeline capsule with black played progress, subtitle/audio selectors, and a lock button. The subtitle and audio selectors open small menus above the bar so users can choose an available track. Lock mode hides every other control and blocks wheel actions until the user clicks Unlock. Controls appear while the pointer moves and auto-hide when inactive. Audio-only MPV sessions used by the A16EEN music widget are left alone.

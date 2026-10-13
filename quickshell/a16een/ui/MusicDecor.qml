@@ -40,9 +40,14 @@ Item {
                 : []
         } catch (error) {
             root.elements = []
+            console.warn("A16EEN music artwork: could not parse artwork list:", String(error))
         }
 
         root.elementsLoaded = true
+        if (root.elements.length > 0)
+            console.info("A16EEN music artwork: discovered", root.elements.length, "WebP file(s)")
+        else
+            console.warn("A16EEN music artwork: no usable WebP files were discovered. Run 'a16 music diagnose'.")
         root.chooseRandomElement()
     }
 
@@ -69,6 +74,14 @@ Item {
         stdout: StdioCollector {
             onStreamFinished: root.applyElementsOutput(this.text)
         }
+
+        stderr: StdioCollector {
+            onStreamFinished: {
+                const message = String(this.text || "").trim()
+                if (message.length)
+                    console.warn("A16EEN music artwork: discovery helper failed:", message)
+            }
+        }
     }
 
     // AnimatedImage uses Qt's animation-capable image reader, including the
@@ -88,6 +101,15 @@ Item {
         smooth: true
         sourceSize.width: 192
         sourceSize.height: 192
+
+        onStatusChanged: {
+            if (status === AnimatedImage.Ready) {
+                console.info("A16EEN music artwork: image loaded:", source)
+            } else if (status === AnimatedImage.Error) {
+                console.warn("A16EEN music artwork: image load failed:", source,
+                    "Check qt6-imageformats and the WebP file with 'a16 music diagnose'.")
+            }
+        }
     }
 
     // While paused, no artwork animation is rendered: the quiet music glyph
