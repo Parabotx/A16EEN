@@ -1,5 +1,4 @@
 import QtQuick
-import QtMultimedia
 import Quickshell.Io
 
 Item {
@@ -117,39 +116,26 @@ Item {
         }
     }
 
-    // WebM stickers are videos, not image files. Keep their audio muted and
-    // loop forever while music plays; pausing music pauses this video too.
-    MediaPlayer {
-        id: elementVideo
-        source: root.active && root.videoElement ? root.elementSource : ""
-        loops: MediaPlayer.Infinite
-        playing: root.active && root.playing && root.videoElement
-        audioOutput: AudioOutput {
-            muted: true
-            volume: 0.0
-        }
-        videoOutput: videoOutput
-
-        onErrorOccurred: (error, errorString) => {
-            if (root.videoElement)
-                console.warn("A16EEN music artwork: WebM video load failed:", source,
-                    "error", error, errorString)
-        }
-
-        onMediaStatusChanged: {
-            if (root.videoElement && mediaStatus === MediaPlayer.InvalidMedia)
-                console.warn("A16EEN music artwork: Qt Multimedia could not decode:", source,
-                    errorString, "Check qt6-multimedia and 'a16 music diagnose'.")
-        }
-    }
-
-    VideoOutput {
-        id: videoOutput
+    // Load the multimedia backend only when a WebM asset is selected.
+    // Keeping QtMultimedia out of this component's imports means a missing or
+    // mismatched optional video module cannot take down the entire A16EEN shell.
+    Loader {
+        id: videoRenderer
         anchors.fill: parent
-        anchors.margins: 1
-        visible: root.active && root.playing && root.videoElement
-            && elementVideo.hasVideo && elementVideo.mediaStatus !== MediaPlayer.InvalidMedia
-        fillMode: VideoOutput.PreserveAspectFit
+        active: root.active && root.videoElement
+        source: active ? "MusicVideoDecor.qml" : ""
+
+        onLoaded: {
+            item.active = Qt.binding(() => root.active)
+            item.playing = Qt.binding(() => root.playing)
+            item.source = Qt.binding(() => root.elementSource)
+        }
+
+        onStatusChanged: {
+            if (status === Loader.Error && root.videoElement)
+                console.warn("A16EEN music artwork: the optional WebM renderer could not load. "
+                    + "Install/update qt6-multimedia with 'sudo pacman -Syu --needed qt6-multimedia'.")
+        }
     }
 
     // During pause the music glyph remains visible; video/image playback is
@@ -165,6 +151,7 @@ Item {
             || (!root.imageElement && !root.videoElement)
             || (root.imageElement && elementImage.status !== AnimatedImage.Ready)
             || (root.videoElement
-                && (!elementVideo.hasVideo || elementVideo.mediaStatus === MediaPlayer.InvalidMedia))
+                && (videoRenderer.status !== Loader.Ready
+                    || !videoRenderer.item || !videoRenderer.item.videoReady))
     }
 }

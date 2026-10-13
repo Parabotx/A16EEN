@@ -267,11 +267,20 @@ def inspect_runtime_and_logs() -> None:
             emit("OK", "Deployed MusicDecor.qml contains the WebP image renderer")
         else:
             emit("FAIL", "Deployed MusicDecor.qml lacks the WebP renderer; update A16EEN with: a16 -u")
-        if "import QtMultimedia" in qml and "MediaPlayer" in qml and "VideoOutput" in qml:
-            emit("OK", "Deployed MusicDecor.qml includes the WebM video renderer")
+        video_qml = RUNTIME_QML.with_name("MusicVideoDecor.qml")
+        try:
+            video_text = video_qml.read_text(encoding="utf-8")
+        except OSError:
+            video_text = ""
+        if 'source: active ? "MusicVideoDecor.qml" : ""' in qml and "import QtMultimedia" not in qml:
+            emit("OK", "Main music component keeps Qt Multimedia optional so it cannot block the whole shell")
         else:
-            emit("FAIL", "Deployed QML lacks WebM video playback; update A16EEN with: a16 -u")
-        if "onStatusChanged" in qml and "image load failed" in qml and "WebM video load failed" in qml:
+            emit("FAIL", "Main MusicDecor.qml still has a static Qt Multimedia dependency; update with a16 -u")
+        if video_text and "import QtMultimedia" in video_text and "MediaPlayer" in video_text and "VideoOutput" in video_text:
+            emit("OK", "Separate WebM video renderer is deployed")
+        else:
+            emit("FAIL", "MusicVideoDecor.qml is missing or incomplete; update A16EEN with: a16 -u")
+        if "onStatusChanged" in qml and "image load failed" in qml and "WebM video load failed" in video_text:
             emit("OK", "Deployed QML records image and video decoder errors")
         else:
             emit("WARN", "Deployed QML lacks current artwork error logging; update A16EEN with: a16 -u")
