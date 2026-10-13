@@ -1,5 +1,4 @@
 import QtQuick
-import QtMultimedia
 import Quickshell
 import Quickshell.Wayland
 
@@ -40,25 +39,6 @@ PanelWindow {
         left: true
     }
 
-    function syncVideoPlayback() {
-        if (!root.isVideo) {
-            if (videoPlayer.playbackState !== MediaPlayer.StoppedState)
-                videoPlayer.stop()
-            return
-        }
-
-        if (root.desktopAnimationAllowed) {
-            if (videoPlayer.playbackState !== MediaPlayer.PlayingState)
-                videoPlayer.play()
-        } else if (videoPlayer.playbackState === MediaPlayer.PlayingState) {
-            videoPlayer.pause()
-        }
-    }
-
-    onActivePathChanged: Qt.callLater(root.syncVideoPlayback)
-    onDesktopAnimationAllowedChanged: Qt.callLater(root.syncVideoPlayback)
-    Component.onCompleted: Qt.callLater(root.syncVideoPlayback)
-
     Rectangle {
         anchors.fill: parent
         color: "#050608"
@@ -88,32 +68,23 @@ PanelWindow {
         visible: root.isAnimatedImage && status === AnimatedImage.Ready
     }
 
-    MediaPlayer {
-        id: videoPlayer
-        source: root.isVideo ? Qt.resolvedUrl(root.activePath) : ""
-        videoOutput: wallpaperVideoOutput
-        audioOutput: null
-        loops: MediaPlayer.Infinite
-
-        onSourceChanged: Qt.callLater(root.syncVideoPlayback)
-        onMediaStatusChanged: {
-            if (root.isVideo && root.desktopAnimationAllowed
-                && (mediaStatus === MediaPlayer.LoadedMedia
-                    || mediaStatus === MediaPlayer.BufferedMedia
-                    || mediaStatus === MediaPlayer.BufferingMedia)) {
-                Qt.callLater(root.syncVideoPlayback)
-            }
-        }
-        onErrorOccurred: function(error, errorString) {
-            console.warn("A16EEN could not play the selected video wallpaper:", errorString)
-        }
-    }
-
-    VideoOutput {
-        id: wallpaperVideoOutput
+    // Keep Qt Multimedia outside the always-loaded wallpaper component.
+    // A missing or ABI-incompatible video plugin must not prevent the static
+    // wallpaper, navbar, and the rest of the A16EEN shell from loading.
+    Loader {
+        id: videoWallpaperLoader
         anchors.fill: parent
-        fillMode: VideoOutput.PreserveAspectCrop
-        visible: root.isVideo && videoPlayer.hasVideo
+        active: root.isVideo
+        source: root.isVideo ? "VideoWallpaper.qml" : ""
+
+        onLoaded: {
+            item.sourcePath = Qt.binding(function() {
+                return root.activePath
+            })
+            item.desktopAnimationAllowed = Qt.binding(function() {
+                return root.desktopAnimationAllowed
+            })
+        }
     }
 
     Rectangle {

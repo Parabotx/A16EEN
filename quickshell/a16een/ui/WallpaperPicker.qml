@@ -1,5 +1,4 @@
 import QtQuick
-import QtMultimedia
 import Quickshell
 import Quickshell.Io
 import Quickshell.Wayland
@@ -560,28 +559,23 @@ PanelWindow {
                                         && status === AnimatedImage.Ready
                                 }
 
-                                // Only the hovered video gets a decoder, avoiding
-                                // unnecessary playback across the entire wallpaper grid.
-                                MediaPlayer {
-                                    id: videoPreviewPlayer
-                                    source: modelData.type === "video" && tileMouseArea.containsMouse
-                                        ? modelData.path
-                                        : ""
-                                    videoOutput: videoPreviewOutput
-                                    audioOutput: null
-                                    loops: MediaPlayer.Infinite
+                                // Load the optional Qt Multimedia preview only while a
+                                // video tile is hovered. A broken plugin must not stop
+                                // the wallpaper picker or the rest of the shell.
+                                Loader {
+                                    id: videoPreviewLoader
+                                    anchors.left: parent.left
+                                    anchors.right: parent.right
+                                    anchors.top: parent.top
+                                    anchors.margins: 5
+                                    height: 104
+                                    active: modelData.type === "video" && tileMouseArea.containsMouse
+                                    source: active ? "VideoWallpaperPreview.qml" : ""
 
-                                    onSourceChanged: {
-                                        if (source.toString().length === 0)
-                                            stop()
-                                    }
-
-                                    onMediaStatusChanged: {
-                                        if (tileMouseArea.containsMouse
-                                            && (mediaStatus === MediaPlayer.LoadedMedia
-                                                || mediaStatus === MediaPlayer.BufferedMedia)) {
-                                            play()
-                                        }
+                                    onLoaded: {
+                                        item.sourcePath = Qt.binding(function() {
+                                            return modelData.path
+                                        })
                                     }
                                 }
 
@@ -594,24 +588,14 @@ PanelWindow {
                                     radius: 8
                                     color: "#F0F0F0"
                                     visible: modelData.type === "video"
-                                        && !videoPreviewPlayer.hasVideo
-                                }
-
-                                VideoOutput {
-                                    id: videoPreviewOutput
-                                    anchors.left: parent.left
-                                    anchors.right: parent.right
-                                    anchors.top: parent.top
-                                    anchors.margins: 5
-                                    height: 104
-                                    fillMode: VideoOutput.PreserveAspectCrop
-                                    visible: modelData.type === "video" && videoPreviewPlayer.hasVideo
+                                        && !(videoPreviewLoader.item && videoPreviewLoader.item.hasVideo)
                                 }
 
                                 Text {
                                     anchors.centerIn: parent
                                     text: modelData.type === "video"
-                                        ? (videoPreviewPlayer.error !== MediaPlayer.NoError
+                                        ? ((videoPreviewLoader.status === Loader.Error
+                                            || (videoPreviewLoader.item && videoPreviewLoader.item.previewError))
                                             ? "Preview unavailable"
                                             : "VIDEO")
                                         : "Preview unavailable"
@@ -619,7 +603,7 @@ PanelWindow {
                                     font.pixelSize: 9
                                     font.weight: Font.Medium
                                     visible: modelData.type === "video"
-                                        ? !videoPreviewPlayer.hasVideo
+                                        ? !(videoPreviewLoader.item && videoPreviewLoader.item.hasVideo)
                                         : (modelData.type === "static"
                                             ? staticPreview.status === Image.Error
                                             : animatedPreview.status === AnimatedImage.Error)
