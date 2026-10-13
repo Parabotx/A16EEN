@@ -79,7 +79,7 @@ jobs:
           grep -Fq 'Qt WebP plugin' scripts/a16een-music-diagnose
           grep -Fq 'command: ["a16een-music", "elements"]' quickshell/a16een/ui/MusicDecor.qml
           grep -Fq 'A16EEN music artwork: WebP image load failed:' quickshell/a16een/ui/MusicDecor.qml
-          grep -Fq 'A16EEN music artwork: WebM video load failed:' quickshell/a16een/ui/MusicDecor.qml
+          grep -Fq 'A16EEN music artwork: WebM video load failed:' quickshell/a16een/ui/MusicVideoDecor.qml
           grep -Fq 'a16 music diagnose' README.md
           grep -Fq 'quickshell/a16een/assets/music-elements/' README.md
           grep -Fq 'workspace "app-stash"' niri/config.kdl
