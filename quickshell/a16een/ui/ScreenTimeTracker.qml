@@ -68,7 +68,56 @@ Item {
             seconds: Math.max(0, Number(apps[id].seconds) || 0)
         })).filter(app => app.seconds > 0)
           .sort((a, b) => b.seconds - a.seconds || a.name.localeCompare(b.name))
-          .slice(0, 4)
+    }
+
+    readonly property var weekApps: {
+        root.clockRevision
+        return root.aggregateApps("week")
+    }
+
+    readonly property var monthApps: {
+        root.clockRevision
+        return root.aggregateApps("month")
+    }
+
+    function aggregateApps(period) {
+        const days = root.usageData && root.usageData.days ? root.usageData.days : ({})
+        const eligibleDates = ({})
+        if (period === "week") {
+            const date = new Date()
+            for (let offset = 0; offset < 7; offset++) {
+                eligibleDates[root.dateKey(date)] = true
+                date.setDate(date.getDate() - 1)
+            }
+        }
+
+        const monthPrefix = root.todayKey.slice(0, 7)
+        const totals = ({})
+        for (const dayKey in days) {
+            const includeDay = period === "month"
+                ? String(dayKey).slice(0, 7) === monthPrefix
+                : eligibleDates[dayKey] === true
+            if (!includeDay)
+                continue
+
+            const apps = days[dayKey].apps || ({})
+            for (const appId in apps) {
+                const app = apps[appId] || ({})
+                const current = totals[appId] || ({ name: String(app.name || appId), seconds: 0 })
+                totals[appId] = {
+                    name: String(app.name || current.name || appId),
+                    seconds: Math.max(0, Number(current.seconds) || 0)
+                        + Math.max(0, Number(app.seconds) || 0)
+                }
+            }
+        }
+
+        return Object.keys(totals).map(id => ({
+            id: id,
+            name: String(totals[id].name || id),
+            seconds: Math.max(0, Number(totals[id].seconds) || 0)
+        })).filter(app => app.seconds > 0)
+          .sort((a, b) => b.seconds - a.seconds || a.name.localeCompare(b.name))
     }
 
     readonly property var focusedWindow: {
