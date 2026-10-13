@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 """Regression tests for WebP/WebM artwork discovery and MPV startup locking."""
 
+import hashlib
 import importlib.util
 import json
 import os
@@ -98,6 +99,19 @@ def test_webm_preparation_keeps_alpha_and_caps_cache_at_four():
         module.BUILTIN_ELEMENTS_DIR = bundled
         module.USER_ELEMENTS_DIR = personal
         module.MUSIC_ELEMENTS_CACHE_DIR = cache
+        # Seed the exact cache names created before alpha-aware decoder support.
+        # Their source files have not changed, so only a conversion-version salt
+        # can force them to be rebuilt instead of rendering stale opaque frames.
+        cache.mkdir(parents=True, exist_ok=True)
+        legacy_cache_files = []
+        for source in sources:
+            stat = source.stat()
+            old_key = hashlib.sha256(
+                f"{source}:{stat.st_size}:{stat.st_mtime_ns}".encode("utf-8")
+            ).hexdigest()[:32]
+            legacy = cache / f"{old_key}.webp"
+            legacy.write_bytes(b"stale-opaque-animated-webp")
+            legacy_cache_files.append(legacy)
         commands = []
 
         def fake_ffprobe(command, **kwargs):
@@ -111,7 +125,8 @@ def test_webm_preparation_keeps_alpha_and_caps_cache_at_four():
             vf_index = command.index("-vf")
             assert "format=rgba" in command[vf_index + 1]
             assert "fps=12" in command[vf_index + 1]
-            assert command[command.index("-c:v") + 1] == "libwebp_anim"
+            encoder_index = command.index("-c:v", command.index("-c:v") + 1)
+            assert command[encoder_index + 1] == "libwebp_anim"
             assert command[command.index("-loop") + 1] == "0"
             target = Path(command[-1])
             target.write_bytes(b"transparent-animated-webp")
@@ -133,6 +148,14 @@ def test_webm_preparation_keeps_alpha_and_caps_cache_at_four():
             assert len(list(cache.glob("*.webp"))) == 4
             assert {item["source"] for item in first["items"]} == set(urls[:4])
             assert all(Path(urllib_parse(item["prepared"])).is_file() for item in first["items"])
+            assert not any(path.exists() for path in legacy_cache_files), (
+                "stale opaque renders must be evicted after the new version is built"
+            )
+            assert all(
+                Path(urllib_parse(item["prepared"])).name
+                != legacy_cache_files[urls.index(item["source"])].name
+                for item in first["items"]
+            )
 
             # A new rolling window replaces old entries instead of growing the cache.
             second = module.prepare_music_elements(urls[2:])
@@ -171,7 +194,8 @@ def test_music_artwork_occlusion_only_matches_current_workspace():
     ]
     assert module.active_window_covers_region(windows, 7, (100, 100, 50, 40))
     assert not module.active_window_covers_region(windows, 7, (400, 300, 50, 40))
-    assert not module.active_window_covers_region(windows, 7, (190, 190, 20, 20))
+    # Edge-touching rectangles do not overlap (right=250, bottom=200).
+    assert not module.active_window_covers_region(windows, 7, (250, 200, 20, 20))
 
 
 def test_concurrent_play_requests_start_only_one_mpv_process():
@@ -232,5 +256,7 @@ def test_concurrent_play_requests_start_only_one_mpv_process():
 
 if __name__ == "__main__":
     test_webp_and_webm_elements_include_bundled_and_personal_files()
+    test_webm_preparation_keeps_alpha_and_caps_cache_at_four()
+    test_music_artwork_occlusion_only_matches_current_workspace()
     test_concurrent_play_requests_start_only_one_mpv_process()
-    print("Music WebP/WebM discovery and startup-lock tests passed.")
+    print("Music WebP/WebM discovery, alpha cache, occlusion, and startup-lock tests passed.")

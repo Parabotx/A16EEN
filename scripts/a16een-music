@@ -30,6 +30,9 @@ USER_ELEMENTS_DIR = Path.home() / "Pictures" / "a16een" / "music-elements"
 COVER_CACHE_DIR = Path(os.environ.get("XDG_CACHE_HOME") or (Path.home() / ".cache")) / "a16een/music-covers"
 MUSIC_ELEMENTS_CACHE_DIR = Path(os.environ.get("XDG_CACHE_HOME") or (Path.home() / ".cache")) / "a16een/music-elements"
 MAX_PREPARED_MUSIC_VIDEOS = 4
+# Bump whenever the WebM alpha decoder/encoding path changes. The previous
+# cache key only used source metadata, so opaque renders survived code fixes.
+MUSIC_ELEMENTS_CACHE_VERSION = 2
 COVER_NAMES = ("cover", "folder", "front", "album", "albumart", "albumartsmall", "artwork", ".folder", "thumb")
 
 
@@ -199,7 +202,7 @@ def music_element_path(raw_source):
 def _prepared_video_path(source):
     stat = source.stat()
     key = hashlib.sha256(
-        f"{source}:{stat.st_size}:{stat.st_mtime_ns}".encode("utf-8")
+        f"v{MUSIC_ELEMENTS_CACHE_VERSION}:{source}:{stat.st_size}:{stat.st_mtime_ns}".encode("utf-8")
     ).hexdigest()[:32]
     return MUSIC_ELEMENTS_CACHE_DIR / f"{key}.webp"
 
