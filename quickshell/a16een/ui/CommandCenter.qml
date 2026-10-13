@@ -30,6 +30,8 @@ PanelWindow {
 
     property bool editorialTimeWidgetEnabled: true
     property bool musicWidgetEnabled: false
+    property string musicWidgetBackgroundColor: "#EAF2F8"
+    property int musicWidgetBackgroundOpacity: 72
     property bool quotesWidgetEnabled: false
     property bool appShelfWidgetEnabled: false
     property string appShelfShape: "capsule"
@@ -60,6 +62,8 @@ PanelWindow {
     signal doNotDisturbRequested(bool enabled)
     signal editorialTimeWidgetEnabledRequested(bool enabled)
     signal musicWidgetEnabledRequested(bool enabled)
+    signal musicWidgetBackgroundColorRequested(string color)
+    signal musicWidgetBackgroundOpacityRequested(int opacity)
     signal quotesWidgetEnabledRequested(bool enabled)
     signal appShelfWidgetEnabledRequested(bool enabled)
     signal appShelfShapeRequested(string shape)
@@ -889,6 +893,8 @@ PanelWindow {
 
             editorialTimeEnabled: root.editorialTimeWidgetEnabled
             musicEnabled: root.musicWidgetEnabled
+            musicBackgroundColor: root.musicWidgetBackgroundColor
+            musicBackgroundOpacity: root.musicWidgetBackgroundOpacity
             quotesEnabled: root.quotesWidgetEnabled
             appShelfEnabled: root.appShelfWidgetEnabled
             appShelfShape: root.appShelfShape
@@ -900,6 +906,8 @@ PanelWindow {
             onBackRequested: root.closeWidgetView()
             onEditorialTimeWidgetEnabledRequested: root.editorialTimeWidgetEnabledRequested(enabled)
             onMusicWidgetEnabledRequested: root.musicWidgetEnabledRequested(enabled)
+            onMusicBackgroundColorRequested: root.musicWidgetBackgroundColorRequested(color)
+            onMusicBackgroundOpacityRequested: root.musicWidgetBackgroundOpacityRequested(opacity)
             onQuotesWidgetEnabledRequested: root.quotesWidgetEnabledRequested(enabled)
             onAppShelfWidgetEnabledRequested: root.appShelfWidgetEnabledRequested(enabled)
             onAppShelfShapeRequested: root.appShelfShapeRequested(shape)
