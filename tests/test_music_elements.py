@@ -194,7 +194,8 @@ def test_music_artwork_occlusion_only_matches_current_workspace():
     ]
     assert module.active_window_covers_region(windows, 7, (100, 100, 50, 40))
     assert not module.active_window_covers_region(windows, 7, (400, 300, 50, 40))
-    assert not module.active_window_covers_region(windows, 7, (190, 190, 20, 20))
+    # Edge-touching rectangles do not overlap (right=250, bottom=200).
+    assert not module.active_window_covers_region(windows, 7, (250, 200, 20, 20))
 
 
 def test_concurrent_play_requests_start_only_one_mpv_process():
