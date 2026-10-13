@@ -1,11 +1,14 @@
 # Bundled music artwork
 
-Place repository-shipped transparent WebP elements in this folder. A16EEN's
-installer copies WebP files (including files in subfolders) into the deployed
-music-artwork library, and the Music widget randomly selects from that library.
+Place repository-shipped animated artwork in this folder. A16EEN supports:
 
-Recommended: use lightweight transparent WebP files around 128–512 px. The
-widget displays artwork in a small area, so very large images offer no benefit.
+- `.webp` animated images, decoded with Qt Quick's `AnimatedImage`
+- `.webm` video stickers, played silently with Qt Multimedia
+
+The installer copies both file types, including files in subfolders, to the
+deployed music-artwork library. The music widget randomly selects from the
+combined installed and personal collections and only plays the animation while
+music is playing.
 
 This folder is for artwork tracked in GitHub and shipped to every user. Personal
 artwork belongs in `~/Pictures/a16een/music-elements/`; updates never remove or
