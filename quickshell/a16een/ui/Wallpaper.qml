@@ -47,13 +47,19 @@ PanelWindow {
     Image {
         id: staticWallpaper
         anchors.fill: parent
-        source: !root.isAnimatedImage && !root.isVideo ? root.activePath : ""
+        source: !root.isAnimatedImage
+            ? (root.isVideo
+                ? (videoWallpaperLoader.status === Loader.Error ? root.fallbackPath : "")
+                : root.activePath)
+            : ""
         fillMode: Image.PreserveAspectFit
         asynchronous: true
         retainWhileLoading: true
         mipmap: true
         cache: true
-        visible: !root.isAnimatedImage && !root.isVideo && status === Image.Ready
+        visible: !root.isAnimatedImage
+            && (!root.isVideo || videoWallpaperLoader.status === Loader.Error)
+            && status === Image.Ready
     }
 
     AnimatedImage {
