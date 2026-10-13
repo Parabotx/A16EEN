@@ -95,6 +95,7 @@ Item {
     readonly property bool visibilityLocked: !root.isAllScope && root.allSetting("visibilityControl", false)
     readonly property bool backgroundLocked: !root.isAllScope && root.allSetting("applyContainerColor", false)
     readonly property bool iconLocked: !root.isAllScope && root.allSetting("applyIconColor", false)
+    readonly property bool popupCardColorLocked: !root.isAllScope && root.allSetting("applyPopupCardColor", false)
 
     function loadSettings(raw) {
         try {
@@ -157,6 +158,10 @@ Item {
             }
             if (key === "iconColor" && root.allSetting("applyIconColor", false)) {
                 root.statusText = "Disable All icon-color override first."
+                return
+            }
+            if (key === "applyPopupCardColor" && root.allSetting("applyPopupCardColor", false)) {
+                root.statusText = "Disable All popup-card override first."
                 return
             }
         }
@@ -373,7 +378,7 @@ Item {
                             visible: root.isAllScope
                             Layout.fillWidth: true
                             title: "Apply container colors to popup cards"
-                            detail: "Let Power, Clock, Utilities, Notes, Tasks, Presets, Notifications and Tools cards follow their container colors."
+                            detail: "Master switch for every popup. Turn it off to configure popup colors separately in each section."
                             checked: root.allSetting("applyPopupCardColor", false)
                             enabledControl: !root.writing
                             onToggleRequested: root.toggleAll("applyPopupCardColor")
@@ -439,6 +444,24 @@ Item {
                             visible: !root.isAllScope && root.backgroundLocked
                             Layout.fillWidth: true
                             text: "Background is locked. Disable All Containers → Override backgrounds first."
+                            color: "#9A6722"
+                            font.pixelSize: 8
+                            wrapMode: Text.WordWrap
+                        }
+                        ToggleRow {
+                            visible: !root.isAllScope
+                            Layout.fillWidth: true
+                            title: "Apply this container color to popup cards"
+                            detail: "Let this section's popup cards follow its background and contrast-aware icon colors."
+                            checked: root.containerSetting(root.selectedScope, "applyPopupCardColor", false)
+                            enabledControl: !root.writing && !root.popupCardColorLocked
+                            onToggleRequested: root.setSetting("container", root.selectedScope, "applyPopupCardColor",
+                                root.containerSetting(root.selectedScope, "applyPopupCardColor", false) ? "off" : "on")
+                        }
+                        Text {
+                            visible: !root.isAllScope && root.popupCardColorLocked
+                            Layout.fillWidth: true
+                            text: "The All Containers popup override is active. Turn it off to customize this section separately."
                             color: "#9A6722"
                             font.pixelSize: 8
                             wrapMode: Text.WordWrap

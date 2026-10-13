@@ -436,11 +436,11 @@ PanelWindow {
                         color: popupCardStyle.subtleSurfaceColor
                         anchors.verticalCenter: parent.verticalCenter
 
-                        Image {
+                        NavbarIcon {
                             anchors.centerIn: parent
                             width: 16
                             height: 16
-                            source: Qt.resolvedUrl(root.page === "stash"
+                            iconPath: Qt.resolvedUrl(root.page === "stash"
                                 ? "../assets/icons/lucide-archive.svg"
                                 : (root.page === "monitor"
                                     ? "../assets/icons/lucide-activity.svg"
@@ -449,9 +449,7 @@ PanelWindow {
                                         : ((root.page === "data-meter" || root.page === "screen-time")
                                             ? "../assets/icons/lucide-activity.svg"
                                             : "../assets/icons/lucide-toolbox.svg"))))
-                            sourceSize.width: 48
-                            sourceSize.height: 48
-                            smooth: true
+                            iconColor: popupCardStyle.iconColor
                         }
                     }
 
@@ -467,7 +465,7 @@ PanelWindow {
                                 : (root.page === "calculator" ? "CALCULATOR"
                                 : (root.page === "screen-time" ? "SCREEN TIME"
                                 : (root.page === "data-meter" ? "DATA METER" : "QUICK TOOLS"))))
-                            color: "#171B21"
+                            color: popupCardStyle.textColor
                             font.pixelSize: 10
                             font.weight: Font.DemiBold
                             font.letterSpacing: 0.8
@@ -496,14 +494,12 @@ PanelWindow {
                         color: backMouse.containsMouse ? popupCardStyle.hoverSurfaceColor : "transparent"
                         anchors.verticalCenter: parent.verticalCenter
 
-                        Image {
+                        NavbarIcon {
                             anchors.centerIn: parent
                             width: 14
                             height: 14
-                            source: Qt.resolvedUrl("../assets/icons/lucide-arrow-left.svg")
-                            sourceSize.width: 48
-                            sourceSize.height: 48
-                            smooth: true
+                            iconName: "lucide-arrow-left.svg"
+                            iconColor: popupCardStyle.iconColor
                         }
 
                         MouseArea {
@@ -535,7 +531,7 @@ PanelWindow {
                             radius: 11
                             color: toolMouse.containsMouse ? popupCardStyle.hoverSurfaceColor : popupCardStyle.fieldColor
                             border.width: 1
-                            border.color: toolMouse.containsMouse ? "#DDE3E9" : popupCardStyle.fieldBorderColor
+                            border.color: toolMouse.containsMouse ? popupCardStyle.focusBorderColor : popupCardStyle.fieldBorderColor
                             Behavior on color { ColorAnimation { duration: 120 } }
 
                             Row {
@@ -551,15 +547,12 @@ PanelWindow {
                                     color: popupCardStyle.subtleSurfaceColor
                                     anchors.verticalCenter: parent.verticalCenter
 
-                                    Image {
+                                    NavbarIcon {
                                         anchors.centerIn: parent
                                         width: 17
                                         height: 17
-                                        source: Qt.resolvedUrl("../assets/icons/" + toolTile.modelData.icon)
-                                        sourceSize.width: 48
-                                        sourceSize.height: 48
-                                        fillMode: Image.PreserveAspectFit
-                                        smooth: true
+                                        iconName: toolTile.modelData.icon
+                                        iconColor: popupCardStyle.iconColor
                                     }
                                 }
 
@@ -571,7 +564,7 @@ PanelWindow {
                                     Text {
                                         width: parent.width
                                         text: toolTile.modelData.label
-                                        color: "#242B34"
+                                        color: popupCardStyle.textColor
                                         font.pixelSize: 9
                                         font.weight: Font.DemiBold
                                         elide: Text.ElideRight
@@ -626,7 +619,7 @@ PanelWindow {
                             width: parent.width
                             height: 11
                             text: root.calculatorError.length ? root.calculatorError : " "
-                            color: "#B93832"
+                            color: popupCardStyle.dangerColor
                             font.pixelSize: 8
                             horizontalAlignment: Text.AlignRight
                             elide: Text.ElideRight
@@ -635,7 +628,7 @@ PanelWindow {
                             width: parent.width
                             height: 35
                             text: root.expression.replace(/\*/g, "×").replace(/\//g, "÷").replace(/-/g, "−")
-                            color: "#161B22"
+                            color: popupCardStyle.textColor
                             font.pixelSize: Math.min(25, 284 / Math.max(1, root.expression.length) * 1.35)
                             font.weight: Font.Medium
                             horizontalAlignment: Text.AlignRight
@@ -672,15 +665,15 @@ PanelWindow {
                             height: 42
                             radius: 10
                             color: calculatorKeyMouse.containsMouse ? popupCardStyle.hoverSurfaceColor
-                                : (calculatorTile.modelData.kind === "equals" ? "#171B21"
-                                : (calculatorTile.modelData.kind === "digit" ? "#FAFBFC" : "#F0F3F6"))
+                                : (calculatorTile.modelData.kind === "equals" ? popupCardStyle.actionColor
+                                : (calculatorTile.modelData.kind === "digit" ? popupCardStyle.fieldColor : popupCardStyle.subtleSurfaceColor))
                             border.width: 1
-                            border.color: calculatorTile.modelData.kind === "equals" ? "#171B21" : popupCardStyle.fieldBorderColor
+                            border.color: calculatorTile.modelData.kind === "equals" ? popupCardStyle.actionColor : popupCardStyle.fieldBorderColor
                             Behavior on color { ColorAnimation { duration: 90 } }
                             Text {
                                 anchors.centerIn: parent
                                 text: calculatorTile.modelData.label
-                                color: calculatorTile.modelData.kind === "equals" ? "#FFFFFF" : "#38414C"
+                                color: calculatorTile.modelData.kind === "equals" ? popupCardStyle.actionTextColor : popupCardStyle.textColor
                                 font.pixelSize: calculatorTile.modelData.kind === "digit" ? 13 : 11
                                 font.weight: calculatorTile.modelData.kind === "equals" ? Font.DemiBold : Font.Medium
                             }
@@ -735,7 +728,7 @@ PanelWindow {
 
                                     Text {
                                         text: metricCard.modelData.value
-                                        color: "#1B2027"
+                                        color: popupCardStyle.textColor
                                         font.pixelSize: 10
                                         font.weight: Font.DemiBold
                                         horizontalAlignment: Text.AlignRight
@@ -753,14 +746,14 @@ PanelWindow {
                                         width: parent.width * Math.max(0, Math.min(1, Number(metricCard.modelData.ratio || 0)))
                                         height: parent.height
                                         radius: 2
-                                        color: "#414B57"
+                                        color: popupCardStyle.iconColor
                                         Behavior on width { NumberAnimation { duration: 220; easing.type: Easing.OutCubic } }
                                     }
                                 }
 
                                 Text {
                                     text: root.monitorError.length ? root.monitorError : metricCard.modelData.detail
-                                    color: root.monitorError.length ? "#B4534B" : "#8A939E"
+                                    color: root.monitorError.length ? popupCardStyle.dangerColor : popupCardStyle.mutedTextColor
                                     font.pixelSize: 7
                                     elide: Text.ElideRight
                                 }
@@ -885,7 +878,7 @@ PanelWindow {
                             height: 6
                             radius: 3
                             anchors.verticalCenter: parent.verticalCenter
-                            color: root.screenTimeTrackingActive ? "#3D9870" : "#9AA2AD"
+                            color: root.screenTimeTrackingActive ? popupCardStyle.successColor : popupCardStyle.mutedTextColor
                         }
 
                         Text {
@@ -902,7 +895,7 @@ PanelWindow {
                             width: 62
                             anchors.verticalCenter: parent.verticalCenter
                             text: root.screenTimeTrackingActive ? "TRACKING" : "PAUSED"
-                            color: root.screenTimeTrackingActive ? "#327858" : popupCardStyle.mutedTextColor
+                            color: root.screenTimeTrackingActive ? popupCardStyle.successColor : popupCardStyle.mutedTextColor
                             font.pixelSize: 7
                             font.weight: Font.DemiBold
                             horizontalAlignment: Text.AlignRight
@@ -1046,14 +1039,14 @@ PanelWindow {
                                     width: (periodChoices.width - periodChoices.spacing) / 2
                                     height: periodChoices.height
                                     radius: 7
-                                    color: root.dataMeterPeriod === modelData.id ? "#FFFFFF" : "transparent"
+                                    color: root.dataMeterPeriod === modelData.id ? popupCardStyle.actionColor : "transparent"
                                     border.width: root.dataMeterPeriod === modelData.id ? 1 : 0
                                     border.color: popupCardStyle.fieldBorderColor
 
                                     Text {
                                         anchors.centerIn: parent
                                         text: periodChoiceTile.modelData.label
-                                        color: root.dataMeterPeriod === periodChoiceTile.modelData.id ? "#20262E" : "#7D8793"
+                                        color: root.dataMeterPeriod === periodChoiceTile.modelData.id ? popupCardStyle.actionTextColor : popupCardStyle.secondaryTextColor
                                         font.pixelSize: 10
                                         font.weight: root.dataMeterPeriod === periodChoiceTile.modelData.id
                                             ? Font.DemiBold : Font.Medium
@@ -1126,7 +1119,7 @@ PanelWindow {
                                     Text {
                                         width: parent.width
                                         text: trafficTile.modelData.value
-                                        color: "#171B21"
+                                        color: popupCardStyle.textColor
                                         font.pixelSize: 18
                                         font.weight: Font.DemiBold
                                         elide: Text.ElideRight
@@ -1188,7 +1181,7 @@ PanelWindow {
                                             anchors.verticalCenter: parent.verticalCenter
                                             text: String(networkRow.modelData.connection || networkRow.modelData.name || "Network")
                                                 + (networkRow.modelData.is_default ? "  •" : "")
-                                            color: networkRow.modelData.is_default ? "#27303A" : "#626D79"
+                                            color: networkRow.modelData.is_default ? popupCardStyle.textColor : popupCardStyle.secondaryTextColor
                                             font.pixelSize: 9
                                             font.weight: networkRow.modelData.is_default ? Font.DemiBold : Font.Normal
                                             elide: Text.ElideRight
@@ -1217,7 +1210,7 @@ PanelWindow {
                             visible: !root.dataMeterSnapshotReady || !root.dataMeterSnapshot.interfaces
                                 || root.dataMeterSnapshot.interfaces.length === 0
                             text: root.dataMeterError.length ? root.dataMeterError : "No network traffic detected yet"
-                            color: root.dataMeterError.length ? "#B4534B" : "#939CA7"
+                            color: root.dataMeterError.length ? popupCardStyle.dangerColor : popupCardStyle.mutedTextColor
                             font.pixelSize: 9
                             horizontalAlignment: Text.AlignHCenter
                             elide: Text.ElideRight
@@ -1231,7 +1224,7 @@ PanelWindow {
                         anchors.bottom: parent.bottom
                         height: 40
                         radius: 10
-                        color: toggleMeterMouse.containsMouse ? popupCardStyle.subtleSurfaceColor : "#FFFFFF"
+                        color: toggleMeterMouse.containsMouse ? popupCardStyle.subtleSurfaceColor : popupCardStyle.fieldColor
                         border.width: 1
                         border.color: popupCardStyle.fieldBorderColor
 
@@ -1242,7 +1235,7 @@ PanelWindow {
                             anchors.rightMargin: 10
                             anchors.verticalCenter: parent.verticalCenter
                             text: "Data speed meter on the navbar"
-                            color: "#252D36"
+                            color: popupCardStyle.textColor
                             font.pixelSize: 9
                             font.weight: Font.Medium
                             elide: Text.ElideRight
@@ -1256,7 +1249,7 @@ PanelWindow {
                             width: 32
                             height: 19
                             radius: 10
-                            color: root.dataMeterEnabled ? "#252B33" : "#E4E8ED"
+                            color: root.dataMeterEnabled ? popupCardStyle.actionColor : popupCardStyle.fieldBorderColor
                             Behavior on color { ColorAnimation { duration: 120 } }
 
                             Rectangle {
@@ -1335,7 +1328,7 @@ PanelWindow {
                             anchors.horizontalCenter: parent.horizontalCenter
                             width: parent.width - 4
                             text: String(stashTile.modelData.title || "Application")
-                            color: "#444D58"
+                            color: popupCardStyle.secondaryTextColor
                             font.pixelSize: 8
                             horizontalAlignment: Text.AlignHCenter
                             elide: Text.ElideRight
@@ -1362,14 +1355,12 @@ PanelWindow {
                             border.width: 1
                             border.color: popupCardStyle.fieldBorderColor
 
-                            Image {
+                            NavbarIcon {
                                 anchors.centerIn: parent
                                 width: 23
                                 height: 23
-                                source: Qt.resolvedUrl("../assets/icons/lucide-archive.svg")
-                                sourceSize.width: 64
-                                sourceSize.height: 64
-                                smooth: true
+                                iconName: "lucide-archive.svg"
+                                iconColor: popupCardStyle.iconColor
                             }
                         }
 

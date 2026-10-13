@@ -2,9 +2,15 @@ import QtQuick
 import QtQuick.Layouts
 import Quickshell
 import Quickshell.Widgets
+import qs.ui
 
 PanelWindow {
     id: root
+
+    PopupCardStyle {
+        id: popupCardStyle
+        containerId: "quick-hub"
+    }
 
     required property var modelData
     property var notification: null
@@ -29,9 +35,9 @@ PanelWindow {
     Rectangle {
         anchors.fill: parent
         radius: 14
-        color: "#FFFFFF"
+        color: popupCardStyle.backgroundColor
         border.width: 1
-        border.color: "#D9DEE5"
+        border.color: popupCardStyle.borderColor
 
         Rectangle {
             anchors.fill: parent
@@ -51,15 +57,23 @@ PanelWindow {
                 Layout.preferredHeight: 28
                 Layout.alignment: Qt.AlignTop
                 radius: 8
-                color: "#F1F3F6"
+                color: popupCardStyle.subtleSurfaceColor
 
                 IconImage {
                     anchors.centerIn: parent
                     implicitWidth: 18
                     implicitHeight: 18
-                    source: root.notification && root.notification.appIcon
-                        ? root.notification.appIcon
-                        : Quickshell.iconPath("dialog-information", "dialog-information")
+                    visible: Boolean(root.notification && root.notification.appIcon)
+                    source: root.notification ? root.notification.appIcon : ""
+                }
+
+                NavbarIcon {
+                    anchors.centerIn: parent
+                    width: 18
+                    height: 18
+                    visible: !root.notification || !root.notification.appIcon
+                    iconName: "lucide-bell.svg"
+                    iconColor: popupCardStyle.iconColor
                 }
             }
 
@@ -69,7 +83,7 @@ PanelWindow {
 
                 Text {
                     text: root.notification ? (root.notification.appName || "Notification") : ""
-                    color: "#7C8794"
+                    color: popupCardStyle.mutedTextColor
                     font.pixelSize: 8
                     font.weight: Font.DemiBold
                     elide: Text.ElideRight
@@ -78,7 +92,7 @@ PanelWindow {
 
                 Text {
                     text: root.notification ? (root.notification.summary || "Notification") : ""
-                    color: "#20262E"
+                    color: popupCardStyle.textColor
                     font.pixelSize: 10
                     font.weight: Font.DemiBold
                     elide: Text.ElideRight
@@ -87,7 +101,7 @@ PanelWindow {
 
                 Text {
                     text: root.notification ? (root.notification.body || "") : ""
-                    color: "#7D8793"
+                    color: popupCardStyle.secondaryTextColor
                     font.pixelSize: 9
                     elide: Text.ElideRight
                     maximumLineCount: 1

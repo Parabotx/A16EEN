@@ -7,7 +7,7 @@ STATE_FILE="$STATE_DIR/navbar-appearance.json"
 NAVBAR_CMD="$(printenv A16EEN_NAVBAR_CMD 2>/dev/null || printf '%s' /usr/local/bin/a16een-navbar)"
 
 default_all='{"visibilityControl":false,"visible":true,"applyContainerColor":false,"containerColor":"#15171A","applyIconColor":false,"iconColor":"auto","applyPopupCardColor":false,"surfaceColor":"#FFFFFF"}'
-default_container='{"visible":true,"containerEnabled":false,"containerColor":"transparent","iconColor":"inherit"}'
+default_container='{"visible":true,"containerEnabled":false,"containerColor":"transparent","iconColor":"inherit","applyPopupCardColor":false}'
 container_ids='["workspaces","battery","time","utilities","power","quick-actions","quick-hub","data-meter"]'
 
 ensure_settings() {
@@ -15,7 +15,7 @@ ensure_settings() {
     if [[ ! -s "$STATE_FILE" ]]; then
         jq -n --argjson allDefaults "$default_all" --argjson containerDefaults "$default_container" \
             --argjson ids "$container_ids" '
-            {all:$allDefaults, containers:{}, schemaVersion:4}
+            {all:$allDefaults, containers:{}, schemaVersion:5}
             | reduce $ids[] as $id (.;
                 .containers[$id] = $containerDefaults
               )
@@ -39,7 +39,7 @@ ensure_settings() {
             .containers[$id] = ($containerDefaults + (.containers[$id] // {}))
           )
         | del(.workspaces)
-        | .schemaVersion = 4
+        | .schemaVersion = 5
     ' "$STATE_FILE" > "$tmp"; then
         rm -f "$tmp"
         return 1
@@ -141,6 +141,18 @@ write_container() {
             if valid_hex "$value"; then value="$(printf '%s' "$value" | tr '[:lower:]' '[:upper:]')"; fi
             tmp="$(mktemp "$STATE_DIR/navbar-appearance.json.XXXXXX")"
             jq --arg id "$id" --arg value "$value" '.containers[$id].iconColor = $value' "$STATE_FILE" > "$tmp"
+            ;;
+        applyPopupCardColor)
+            if jq -e '.all.applyPopupCardColor == true' "$STATE_FILE" >/dev/null 2>&1; then
+                echo "A16EEN appearance: turn off All popup-card override first." >&2
+                return 2
+            fi
+            value="$(normalize_bool "$value")" || {
+                echo "A16EEN appearance: applyPopupCardColor must be on or off." >&2
+                return 2
+            }
+            tmp="$(mktemp "$STATE_DIR/navbar-appearance.json.XXXXXX")"
+            jq --arg id "$id" --argjson value "$value" '.containers[$id].applyPopupCardColor = $value' "$STATE_FILE" > "$tmp"
             ;;
         *)
             echo "A16EEN appearance: unsupported container setting: $key" >&2

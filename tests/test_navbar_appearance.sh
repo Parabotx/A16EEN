@@ -48,6 +48,7 @@ jq -e '.schemaVersion == 4 and (.workspaces == null)
         and has("quick-actions") and has("quick-hub") and has("data-meter"))
     and .containers.workspaces.visible == true
     and .containers.workspaces.iconColor == "inherit"
+    and .containers["quick-hub"].applyPopupCardColor == false
     and .containers["quick-actions"].visible == true
     and .containers["quick-hub"].visible == true' \
     "$XDG_STATE_HOME/a16een/navbar-appearance.json" >/dev/null
@@ -59,6 +60,9 @@ run set all - applyIconColor on
 run set all - iconColor auto
 run set all - applyPopupCardColor on
 jq -e '.all.applyPopupCardColor == true' "$XDG_STATE_HOME/a16een/navbar-appearance.json" >/dev/null
+if run set container quick-hub applyPopupCardColor on 2>/dev/null; then
+    echo "Expected All popup-card override to block an individual popup setting." >&2; exit 1
+fi
 jq -e '.all.applyContainerColor == true and .all.containerColor == "#15171A"
     and .all.applyIconColor == true and .all.iconColor == "auto"' \
     "$XDG_STATE_HOME/a16een/navbar-appearance.json" >/dev/null
@@ -77,6 +81,9 @@ fi
 run set all - visibilityControl off
 run set all - applyContainerColor off
 run set all - applyIconColor off
+run set all - applyPopupCardColor off
+run set container quick-hub applyPopupCardColor on
+run set container utilities applyPopupCardColor on
 run set container workspaces visible off
 run set container battery containerColor '#070B13'
 run set container power iconColor auto
@@ -99,6 +106,8 @@ jq -e '.containers.battery.visible == false' "$XDG_STATE_HOME/a16een/navbar-appe
 jq -e '.containers["quick-actions"].containerEnabled == true
     and .containers["quick-actions"].containerColor == "#E7E8EA"
     and .containers["quick-hub"].iconColor == "#1D4ED8"
+    and .containers["quick-hub"].applyPopupCardColor == true
+    and .containers.utilities.applyPopupCardColor == true
     and .containers["data-meter"].containerEnabled == true
     and .containers["data-meter"].containerColor == "#070B13"
     and .containers["data-meter"].iconColor == "#FFFFFF"

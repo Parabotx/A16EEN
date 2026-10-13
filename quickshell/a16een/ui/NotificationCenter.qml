@@ -147,14 +147,12 @@ PanelWindow {
                     height: 25
                     spacing: 8
 
-                    Image {
+                    NavbarIcon {
                         anchors.verticalCenter: parent.verticalCenter
                         width: 16
                         height: 16
-                        source: Qt.resolvedUrl("../assets/icons/lucide-bell.svg")
-                        sourceSize.width: 32
-                        sourceSize.height: 32
-                        smooth: true
+                        iconName: "lucide-bell.svg"
+                        iconColor: popupCardStyle.iconColor
                     }
 
                     Column {
@@ -163,7 +161,7 @@ PanelWindow {
 
                         Text {
                             text: "NOTIFICATIONS"
-                            color: "#171B21"
+                            color: popupCardStyle.textColor
                             font.pixelSize: 10
                             font.weight: Font.DemiBold
                             font.letterSpacing: 0.8
@@ -180,7 +178,7 @@ PanelWindow {
 
                     Text {
                         text: "CLEAR"
-                        color: clearMouse.containsMouse ? "#111318" : "#7C8692"
+                        color: clearMouse.containsMouse ? popupCardStyle.textColor : popupCardStyle.mutedTextColor
                         font.pixelSize: 8
                         font.weight: Font.DemiBold
                         anchors.verticalCenter: parent.verticalCenter
@@ -203,7 +201,7 @@ PanelWindow {
                     radius: 9
                     color: popupCardStyle.subtleSurfaceColor
                     border.width: 1
-                    border.color: searchInput.activeFocus ? "#BBC4CE" : "#E5E9ED"
+                    border.color: searchInput.activeFocus ? popupCardStyle.focusBorderColor : popupCardStyle.fieldBorderColor
 
                     Row {
                         anchors.fill: parent
@@ -211,14 +209,12 @@ PanelWindow {
                         anchors.rightMargin: 8
                         spacing: 7
 
-                        Image {
+                        NavbarIcon {
                             width: 13
                             height: 13
                             anchors.verticalCenter: parent.verticalCenter
-                            source: Qt.resolvedUrl("../assets/icons/search.svg")
-                            sourceSize.width: 26
-                            sourceSize.height: 26
-                            smooth: true
+                            iconPath: Qt.resolvedUrl("../assets/icons/search.svg")
+                            iconColor: popupCardStyle.iconColor
                         }
 
                         Item {
@@ -241,8 +237,8 @@ PanelWindow {
                                 text: root.searchText
                                 onTextChanged: root.searchText = text
                                 color: popupCardStyle.textColor
-                                selectionColor: "#DDE5EF"
-                                selectedTextColor: "#111318"
+                                selectionColor: popupCardStyle.selectedSurfaceColor
+                                selectedTextColor: popupCardStyle.textColor
                                 font.pixelSize: 10
                                 clip: true
                                 activeFocusOnTab: true
@@ -273,7 +269,7 @@ PanelWindow {
                             radius: 9
                             color: historyRowMouse.containsMouse ? popupCardStyle.hoverSurfaceColor : popupCardStyle.fieldColor
                             border.width: 1
-                            border.color: historyRowMouse.containsMouse ? "#E1E6EB" : "#F0F2F5"
+                            border.color: popupCardStyle.fieldBorderColor
 
                             MouseArea {
                                 id: historyRowMouse
@@ -358,7 +354,7 @@ PanelWindow {
                                     width: 13
                                     height: parent.height
                                     text: "×"
-                                    color: removeMouse.containsMouse ? "#242B34" : "#A0A8B2"
+                                    color: removeMouse.containsMouse ? popupCardStyle.textColor : popupCardStyle.mutedTextColor
                                     font.pixelSize: 14
                                     horizontalAlignment: Text.AlignHCenter
                                     verticalAlignment: Text.AlignVCenter

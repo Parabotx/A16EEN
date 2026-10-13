@@ -23,6 +23,9 @@ Item {
     readonly property var containers: root.appearanceSettings && root.appearanceSettings.containers
         ? root.appearanceSettings.containers : ({})
     readonly property var selectedContainer: root.containers[root.containerId] || ({})
+    readonly property bool popupCardColorEnabled: root.containerId === "data-meter"
+        || root.allSettings.applyPopupCardColor === true
+        || root.selectedContainer.applyPopupCardColor === true
 
     function loadAppearanceSettings(raw) {
         try {
@@ -50,11 +53,30 @@ Item {
     function validHexColor(value) {
         return /^#[0-9A-Fa-f]{6}$/.test(String(value || ""))
     }
+    function relativeLuminance(value) {
+        const match = String(value || "").match(/#(?:[0-9A-Fa-f]{2})?([0-9A-Fa-f]{6})$/)
+        if (!match)
+            return 1
+        const hex = match[1]
+        const channels = [
+            parseInt(hex.slice(0, 2), 16) / 255,
+            parseInt(hex.slice(2, 4), 16) / 255,
+            parseInt(hex.slice(4, 6), 16) / 255
+        ].map(channel => channel <= 0.04045
+            ? channel / 12.92
+            : Math.pow((channel + 0.055) / 1.055, 2.4))
+        return channels[0] * 0.2126 + channels[1] * 0.7152 + channels[2] * 0.0722
+    }
+    function contrastRatio(firstColor, secondColor) {
+        const first = root.relativeLuminance(firstColor)
+        const second = root.relativeLuminance(secondColor)
+        return (Math.max(first, second) + 0.05) / (Math.min(first, second) + 0.05)
+    }
 
-    // The speed capsule shares the per-container palette. Popup cards honour
-    // their separate master switch, so individual navbar colors stay opt-in.
+    // The global switch enables every popup. Otherwise each section can opt in
+    // independently; the speed capsule keeps its existing per-container behavior.
     property color backgroundColor: {
-        if (root.containerId !== "data-meter" && root.allSettings.applyPopupCardColor !== true)
+        if (!root.popupCardColorEnabled)
             return "#FFFFFF"
         if (root.allSettings.applyContainerColor === true && root.validHexColor(root.allSettings.containerColor))
             return String(root.allSettings.containerColor)
@@ -91,11 +113,15 @@ Item {
 
         if (desired === "auto" || desired === "inherit" || !root.validHexColor(desired))
             return root.textColor
-        if (Math.abs(root.luminance(desired) - root.luminance(root.backgroundColor)) < 78)
+        // Keep explicit icon accents only when they remain distinguishable
+        // against this popup's actual background.
+        if (root.contrastRatio(desired, root.backgroundColor) < 3.0)
             return root.textColor
         return desired
     }
 
+    property color dangerColor: root.darkMode ? "#FF827A" : "#B93832"
+    property color successColor: root.darkMode ? "#75D6A3" : "#327858"
     property color borderColor: root.darkMode ? "#3C424C" : "#D9DEE5"
     Behavior on textColor { ColorAnimation { duration: 130; easing.type: Easing.OutCubic } }
     Behavior on secondaryTextColor { ColorAnimation { duration: 130; easing.type: Easing.OutCubic } }
