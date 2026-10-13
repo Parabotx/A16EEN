@@ -1,0 +1,288 @@
+#!/usr/bin/env python3
+"""Read-only diagnostics for A16EEN's animated WebP music artwork."""
+
+from __future__ import annotations
+
+import json
+import os
+import re
+import shutil
+import subprocess
+import sys
+from pathlib import Path
+from urllib.parse import unquote, urlsplit
+
+
+HOME = Path.home()
+CONFIG_HOME = Path(os.environ.get("XDG_CONFIG_HOME", HOME / ".config"))
+STATE_HOME = Path(os.environ.get("XDG_STATE_HOME", HOME / ".local" / "state"))
+PERSONAL_DIR = HOME / "Pictures" / "a16een" / "music-elements"
+BUILTIN_DIR = CONFIG_HOME / "a16een" / "quickshell" / "a16een" / "assets" / "music-elements"
+RUNTIME_QML = CONFIG_HOME / "a16een" / "quickshell" / "a16een" / "ui" / "MusicDecor.qml"
+ERRORS = 0
+WARNINGS = 0
+
+
+def emit(level: str, message: str) -> None:
+    global ERRORS, WARNINGS
+    if level == "FAIL":
+        ERRORS += 1
+    elif level == "WARN":
+        WARNINGS += 1
+    print(f"  [{level:<4}] {message}")
+
+
+def run(args: list[str], timeout: float = 5.0) -> subprocess.CompletedProcess[str] | None:
+    try:
+        return subprocess.run(
+            args,
+            stdin=subprocess.DEVNULL,
+            capture_output=True,
+            text=True,
+            errors="replace",
+            timeout=timeout,
+            check=False,
+        )
+    except (OSError, subprocess.TimeoutExpired):
+        return None
+
+
+def webp_files(directory: Path) -> list[Path]:
+    try:
+        return sorted(
+            (item for item in directory.rglob("*") if item.is_file() and item.suffix.lower() == ".webp"),
+            key=lambda item: str(item).casefold(),
+        )
+    except OSError:
+        return []
+
+
+def webp_header_is_valid(path: Path) -> bool:
+    try:
+        header = path.open("rb").read(12)
+        return len(header) == 12 and header[:4] == b"RIFF" and header[8:12] == b"WEBP"
+    except OSError:
+        return False
+
+
+def qt_plugin_candidates() -> list[Path]:
+    candidates = [
+        Path("/usr/lib/qt6/plugins/imageformats/libqwebp.so"),
+        Path("/usr/lib/qt/plugins/imageformats/libqwebp.so"),
+    ]
+    for tool in ("qtpaths6", "qtpaths"):
+        if shutil.which(tool):
+            result = run([tool, "--query", "QT_INSTALL_PLUGINS"])
+            if result and result.returncode == 0 and result.stdout.strip():
+                candidates.append(Path(result.stdout.strip()) / "imageformats" / "libqwebp.so")
+    # Preserve order while avoiding duplicate paths.
+    return list(dict.fromkeys(candidates))
+
+
+def inspect_packages_and_plugin() -> None:
+    print("\n1. Qt WebP dependency")
+    pacman = shutil.which("pacman")
+    if pacman:
+        for package in ("qt6-imageformats", "libwebp"):
+            result = run([pacman, "-Q", package])
+            if result and result.returncode == 0:
+                emit("OK", result.stdout.strip())
+            else:
+                emit("FAIL" if package == "qt6-imageformats" else "WARN", f"{package} is not installed")
+    else:
+        emit("INFO", "pacman is unavailable; package checks are intended for Arch Linux")
+
+    plugin = next((path for path in qt_plugin_candidates() if path.is_file()), None)
+    if plugin is None:
+        emit("FAIL", "Qt WebP image plugin (libqwebp.so) was not found in the standard Qt 6 plugin paths")
+        emit("INFO", "On Arch Linux, install it with: sudo pacman -Syu --needed qt6-imageformats")
+        return
+
+    emit("OK", f"Qt WebP plugin found: {plugin}")
+    ldd = shutil.which("ldd")
+    if ldd:
+        result = run([ldd, str(plugin)])
+        if result and "not found" in result.stdout:
+            missing = [line.strip() for line in result.stdout.splitlines() if "not found" in line]
+            emit("FAIL", "WebP plugin has missing shared libraries: " + "; ".join(missing))
+        else:
+            emit("OK", "WebP plugin shared-library dependencies resolve")
+
+
+def inspect_artwork_folders() -> list[Path]:
+    print("\n2. Artwork folders")
+    all_files: list[Path] = []
+    for label, directory in (("Personal", PERSONAL_DIR), ("Installed/bundled", BUILTIN_DIR)):
+        files = webp_files(directory)
+        all_files.extend(files)
+        emit("OK" if files else "WARN", f"{label}: {len(files)} .webp file(s) — {directory}")
+        for path in files[:8]:
+            try:
+                size = path.stat().st_size
+            except OSError:
+                size = 0
+            valid = webp_header_is_valid(path)
+            emit("OK" if valid and size > 0 else "FAIL", f"{path} ({size:,} bytes)" + ("" if valid else " — not a valid RIFF/WEBP header"))
+        if len(files) > 8:
+            emit("INFO", f"... and {len(files) - 8} more")
+    if not all_files:
+        emit("FAIL", "No .webp artwork was found. Put at least one WebP file in the personal folder above (subfolders are supported).")
+    return all_files
+
+
+def inspect_animation_metadata(files: list[Path]) -> None:
+    print("\n3. WebP file / animation metadata")
+    webpmux = shutil.which("webpmux")
+    if not files:
+        emit("INFO", "Skipped because no WebP files were found")
+        return
+    if not webpmux:
+        emit("INFO", "webpmux is unavailable; animation frame counts cannot be independently checked")
+        emit("INFO", "If desired, install the WebP utilities with: sudo pacman -Syu --needed libwebp")
+        return
+
+    animated = 0
+    inspected = 0
+    for path in files[:8]:
+        result = run([webpmux, "-info", str(path)], timeout=8.0)
+        inspected += 1
+        output = ((result.stdout if result else "") + "\n" + (result.stderr if result else "")).strip()
+        if not result or result.returncode != 0:
+            emit("FAIL", f"webpmux could not read {path.name}: {output[:220] or 'no details'}")
+            continue
+        frame_match = re.search(r"(?:Number of frames|Frames)\s*:\s*(\d+)", output, re.IGNORECASE)
+        frames = int(frame_match.group(1)) if frame_match else (2 if re.search(r"Features present:.*\banimation\b", output, re.IGNORECASE) else 1)
+        if frames > 1:
+            animated += 1
+        emit("OK", f"{path.name}: {'animated' if frames > 1 else 'readable WebP (animation not detected)'}")
+    if len(files) > 8:
+        emit("INFO", f"Inspected first 8 of {len(files)} files")
+    emit("INFO", f"Animation metadata: {animated} of {inspected} inspected file(s) identified as animated")
+    if animated == 0:
+        emit("WARN", "No inspected asset was identified as animated. Static WebP should still display, but it will not move.")
+
+
+def inspect_helper() -> None:
+    print("\n4. A16EEN music helper output")
+    helper = shutil.which("a16een-music")
+    if not helper:
+        emit("FAIL", "a16een-music is not on PATH; the widget cannot discover artwork")
+        return
+    emit("OK", f"Using {helper}")
+    result = run([helper, "elements"])
+    if not result or result.returncode != 0:
+        detail = (result.stderr if result else "").strip()
+        emit("FAIL", "a16een-music elements failed: " + (detail or "no output"))
+        return
+    try:
+        payload = json.loads(result.stdout)
+    except json.JSONDecodeError as error:
+        emit("FAIL", f"Helper returned invalid JSON: {error}")
+        print("      Output preview: " + result.stdout[:200].replace("\n", " "))
+        return
+
+    elements = payload.get("elements") if isinstance(payload, dict) else None
+    if not isinstance(elements, list):
+        emit("FAIL", "Helper JSON does not contain an elements array")
+        return
+    emit("OK" if elements else "FAIL", f"Helper returned {len(elements)} artwork URL(s)")
+    missing = 0
+    invalid = 0
+    for source in elements[:12]:
+        if not isinstance(source, str):
+            invalid += 1
+            emit("FAIL", f"Invalid artwork entry type: {type(source).__name__}")
+            continue
+        parsed = urlsplit(source)
+        if parsed.scheme != "file":
+            invalid += 1
+            emit("FAIL", f"Artwork entry is not a file URL: {source}")
+            continue
+        path = Path(unquote(parsed.path))
+        if not path.is_file():
+            missing += 1
+            emit("FAIL", f"Helper points to a missing file: {path}")
+        else:
+            emit("OK", f"Discovered: {path}")
+    if len(elements) > 12:
+        emit("INFO", f"... and {len(elements) - 12} more URLs")
+    if missing:
+        emit("FAIL", f"{missing} of the displayed artwork URLs point to missing files")
+    if invalid:
+        emit("FAIL", f"{invalid} invalid artwork URL(s) were returned")
+
+
+def inspect_runtime_and_logs() -> None:
+    print("\n5. Deployed QML and recent shell errors")
+    try:
+        qml = RUNTIME_QML.read_text(encoding="utf-8")
+    except OSError:
+        emit("WARN", f"Could not read deployed MusicDecor.qml: {RUNTIME_QML}")
+    else:
+        if "AnimatedImage" in qml:
+            emit("OK", "Deployed MusicDecor.qml contains AnimatedImage")
+        else:
+            emit("FAIL", "Deployed MusicDecor.qml does not contain AnimatedImage; update/deploy A16EEN with: a16 -u")
+        if "onStatusChanged" in qml and "image load failed" in qml:
+            emit("OK", "Deployed QML records image-loader errors")
+        else:
+            emit("WARN", "Deployed QML lacks the latest artwork error logging; update A16EEN with: a16 -u")
+
+    candidates = [
+        STATE_HOME / "a16een" / "logs" / "shell.log",
+        STATE_HOME / "a16een" / "shell.log",
+        HOME / ".cache" / "quickshell" / "quickshell.log",
+    ]
+    log = next((path for path in candidates if path.is_file()), None)
+    if log is None:
+        emit("WARN", "No known Quickshell log file was found; the file/package checks above still apply")
+        return
+    emit("INFO", f"Searching recent entries in {log}")
+    try:
+        lines = log.read_text(encoding="utf-8", errors="replace").splitlines()
+    except OSError as error:
+        emit("WARN", f"Could not read shell log: {error}")
+        return
+    pattern = re.compile(r"music artwork|AnimatedImage|qwebp|webp|failed to load|unable to open|could not be opened", re.IGNORECASE)
+    matches = [line for line in lines[-4000:] if pattern.search(line)]
+    if matches:
+        for line in matches[-14:]:
+            print("      " + line[:400])
+    else:
+        emit("INFO", "No matching WebP/image errors found in the recent shell-log window")
+
+
+def main() -> int:
+    print("A16EEN MUSIC ARTWORK DIAGNOSTIC")
+    print("==============================")
+    print("Read-only checks; this command does not install packages or modify artwork.")
+    inspect_packages_and_plugin()
+    files = inspect_artwork_folders()
+    inspect_animation_metadata(files)
+    inspect_helper()
+    inspect_runtime_and_logs()
+
+    print("\nSummary")
+    print("-------")
+    if ERRORS:
+        print(f"{ERRORS} issue(s) need attention; {WARNINGS} warning(s).")
+        if not any(path.is_file() for path in qt_plugin_candidates()):
+            print("First action: sudo pacman -Syu --needed qt6-imageformats")
+        if not files:
+            print(f"Artwork action: put at least one .webp file in {PERSONAL_DIR}")
+        print("After fixing a reported issue, restart Quickshell with: a16 -r")
+        print("Then rerun: a16 music diagnose")
+        return 1
+    if WARNINGS:
+        print(f"No blocking issue was confirmed by these checks; {WARNINGS} warning(s).")
+        print("Restart Quickshell with: a16 -r, then rerun: a16 music diagnose")
+        return 0
+    print("Package, artwork, and helper checks passed. If the widget still shows ♫, share this report; the logged QML status should narrow it down.")
+    return 0
+
+
+if __name__ == "__main__":
+    if os.geteuid() == 0:
+        print("Run this diagnostic as your normal desktop user, not root.", file=sys.stderr)
+        raise SystemExit(2)
+    raise SystemExit(main())
