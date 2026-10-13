@@ -526,6 +526,7 @@ PanelWindow {
                     height: 76
                     anchors.verticalCenter: parent.verticalCenter
                     active: root.widgetEnabled
+                    playing: root.isPlaying
                     selectionKey: String(root.playback.path || "")
                 }
             }

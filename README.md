@@ -167,7 +167,7 @@ Personal artwork, which is preserved across updates:
 ~/Pictures/a16een/music-elements/
 ```
 
-Put your own WebP files in the personal folder or its subfolders. The widget loads artwork asynchronously at a small display size and does not continuously animate it. Lightweight transparent WebP files around 128–512 px are recommended.
+Put your own WebP files in the personal folder or its subfolders. The widget loads artwork asynchronously at a small display size and only animates it while a track is playing; while paused, the music glyph is shown. Animated WebP playback uses Qt's animation-capable image reader, with frame caching disabled and a small render size to limit memory and battery use. Lightweight transparent WebP files around 128–512 px are recommended.
 
 ## MPV player theme
 

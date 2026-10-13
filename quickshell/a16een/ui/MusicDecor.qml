@@ -4,9 +4,10 @@ import Quickshell.Io
 Item {
     id: root
 
-    // Personal transparent artwork lives outside the deployed A16EEN files.
-    // Load it only while the music widget is enabled; never poll or animate.
+    // WebP artwork is loaded once per widget enable and track change. Decoding
+    // is scaled down and playback is paused outside active music playback.
     property bool active: false
+    property bool playing: false
     property string selectionKey: ""
     property var elements: []
     property string elementSource: ""
@@ -70,21 +71,27 @@ Item {
         }
     }
 
-    Image {
+    // AnimatedImage uses Qt's animation-capable image reader, including the
+    // WebP handler supplied by qt6-imageformats. cache:false avoids retaining
+    // every decoded frame; sourceSize caps working resolution for this small art.
+    AnimatedImage {
         id: elementImage
         anchors.fill: parent
         anchors.margins: 1
-        source: root.elementSource
-        visible: status === Image.Ready
+        source: root.active ? root.elementSource : ""
+        visible: root.active && root.playing && status === AnimatedImage.Ready
+        playing: root.active && root.playing
+        paused: !root.active || !root.playing
         fillMode: Image.PreserveAspectFit
         asynchronous: true
-        cache: true
+        cache: false
         smooth: true
         sourceSize.width: 192
         sourceSize.height: 192
     }
 
-    // Quiet fallback while assets are missing or their first image is loading.
+    // While paused, no artwork animation is rendered: the quiet music glyph
+    // remains visible. It is also the fallback for a missing/unsupported asset.
     Text {
         anchors.centerIn: parent
         text: "♫"
@@ -92,6 +99,6 @@ Item {
         opacity: 0.35
         font.pixelSize: 34
         font.weight: Font.Light
-        visible: elementImage.status !== Image.Ready
+        visible: !root.playing || elementImage.status !== AnimatedImage.Ready
     }
 }

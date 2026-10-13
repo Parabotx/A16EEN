@@ -325,12 +325,18 @@ jobs:
           grep -Fq 'function chooseRandomElement()' quickshell/a16een/ui/MusicDecor.qml
           grep -Fq 'onSelectionKeyChanged:' quickshell/a16een/ui/MusicDecor.qml
           grep -Fq 'command: ["a16een-music", "elements"]' quickshell/a16een/ui/MusicDecor.qml
+          grep -Fq 'AnimatedImage {' quickshell/a16een/ui/MusicDecor.qml
+          grep -Fq 'playing: root.active && root.playing' quickshell/a16een/ui/MusicDecor.qml
+          grep -Fq 'paused: !root.active || !root.playing' quickshell/a16een/ui/MusicDecor.qml
+          grep -Fq 'cache: false' quickshell/a16een/ui/MusicDecor.qml
+          grep -Fq 'visible: !root.playing || elementImage.status !== AnimatedImage.Ready' quickshell/a16een/ui/MusicDecor.qml
           grep -Fq 'fillMode: Image.PreserveAspectFit' quickshell/a16een/ui/MusicDecor.qml
           grep -Fq 'asynchronous: true' quickshell/a16een/ui/MusicDecor.qml
           grep -Fq 'sourceSize.width: 192' quickshell/a16een/ui/MusicDecor.qml
           ! grep -Fq 'RotationAnimation on rotation' quickshell/a16een/ui/MusicDecor.qml
           ! grep -Fq 'MultiEffect' quickshell/a16een/ui/MusicDecor.qml
           grep -Fq 'active: root.widgetEnabled' quickshell/a16een/ui/MusicWidget.qml
+          grep -Fq 'playing: root.isPlaying' quickshell/a16een/ui/MusicWidget.qml
           grep -Fq 'selectionKey: String(root.playback.path || "")' quickshell/a16een/ui/MusicWidget.qml
           grep -Fq 'readonly property color cream: "#B8EAF2F8"' quickshell/a16een/ui/MusicWidget.qml
           grep -Fq 'mask: Region {' quickshell/a16een/ui/MusicWidget.qml
