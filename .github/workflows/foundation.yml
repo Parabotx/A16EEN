@@ -443,6 +443,7 @@ jobs:
           ! grep -Fq 'import QtMultimedia' quickshell/a16een/ui/Wallpaper.qml
           grep -Fq 'readonly property bool isVideo:' quickshell/a16een/ui/Wallpaper.qml
           grep -Fq 'source: root.isVideo ? "VideoWallpaper.qml" : ""' quickshell/a16een/ui/Wallpaper.qml
+          grep -Fq 'videoWallpaperLoader.status === Loader.Error ? root.fallbackPath' quickshell/a16een/ui/Wallpaper.qml
           grep -Fq 'root.desktopAnimationAllowed' quickshell/a16een/ui/Wallpaper.qml
           grep -Fq 'import QtMultimedia' quickshell/a16een/ui/VideoWallpaper.qml
           grep -Fq 'MediaPlayer.Infinite' quickshell/a16een/ui/VideoWallpaper.qml
