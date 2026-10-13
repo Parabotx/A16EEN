@@ -59,7 +59,7 @@ jobs:
           bash -n scripts/a16een-icon-theme
           luac5.4 -p mpv/a16een-osc.lua
           bash -n scripts/a16een-workspace-preset
-          python3 -m py_compile scripts/a16een-music scripts/a16een-widget-settings
+          python3 -m py_compile scripts/a16een-music scripts/a16een-music-diagnose scripts/a16een-widget-settings
           python3 tests/test_music_elements.py
           python3 tests/test_widget_settings.py
           grep -Fq 'a16een-workspace-preset' scripts/install.sh
@@ -73,7 +73,12 @@ jobs:
           grep -Fq 'BUILTIN_ELEMENTS_DIR' scripts/a16een-music
           grep -Fq 'USER_ELEMENTS_DIR' scripts/a16een-music
           grep -Fq 'START_LOCK_PATH' scripts/a16een-music
+          grep -Fq 'a16een-music-diagnose' scripts/install.sh
+          grep -Fq 'a16 music diagnose' scripts/a16een
+          grep -Fq 'Qt WebP plugin' scripts/a16een-music-diagnose
           grep -Fq 'command: ["a16een-music", "elements"]' quickshell/a16een/ui/MusicDecor.qml
+          grep -Fq 'A16EEN music artwork: image load failed:' quickshell/a16een/ui/MusicDecor.qml
+          grep -Fq 'a16 music diagnose' README.md
           grep -Fq 'quickshell/a16een/assets/music-elements/' README.md
           grep -Fq 'workspace "app-stash"' niri/config.kdl
           grep -Fq 'Super+H repeat=false hotkey-overlay-title="A16EEN Hide Window to Nest"' niri/config.kdl
