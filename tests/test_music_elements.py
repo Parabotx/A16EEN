@@ -29,17 +29,24 @@ def load_music_module():
     return module
 
 
-def test_webp_elements_are_discovered_recursively_and_return_file_urls():
+def test_webp_elements_include_bundled_and_personal_files():
     with tempfile.TemporaryDirectory() as temp:
         home = Path(temp)
-        artwork = home / "Pictures" / "a16een" / "music-elements"
-        nested = artwork / "Telegram" / "stickers"
-        nested.mkdir(parents=True)
-        (artwork / "z-last.WEBP").write_bytes(b"webp")
-        (artwork / "a-first.webp").write_bytes(b"webp")
-        (nested / "middle.webp").write_bytes(b"webp")
-        (artwork / "not-art.png").write_bytes(b"png")
-        (artwork / "folder.webp").mkdir()
+        personal = home / "Pictures" / "a16een" / "music-elements"
+        personal_nested = personal / "Telegram" / "stickers"
+        personal_nested.mkdir(parents=True)
+
+        bundled = home / ".config" / "a16een" / "quickshell" / "a16een" / "assets" / "music-elements"
+        bundled_nested = bundled / "default-pack"
+        bundled_nested.mkdir(parents=True)
+
+        (bundled / "bundled-first.webp").write_bytes(b"webp")
+        (bundled_nested / "bundled-nested.WEBP").write_bytes(b"webp")
+        (personal / "z-last.WEBP").write_bytes(b"webp")
+        (personal / "a-first.webp").write_bytes(b"webp")
+        (personal_nested / "middle.webp").write_bytes(b"webp")
+        (personal / "not-art.png").write_bytes(b"png")
+        (personal / "folder.webp").mkdir()
 
         env = os.environ.copy()
         env["HOME"] = str(home)
@@ -53,14 +60,21 @@ def test_webp_elements_are_discovered_recursively_and_return_file_urls():
             timeout=5,
         )
         payload = json.loads(result.stdout)
-        expected = sorted(
+        expected_bundled = sorted(
             (path.resolve().as_uri()
-             for path in artwork.rglob("*")
+             for path in bundled.rglob("*")
              if path.is_file() and path.suffix.casefold() == ".webp"),
             key=str.casefold,
         )
-        assert payload["directory"] == str(artwork)
-        assert payload["elements"] == expected
+        expected_personal = sorted(
+            (path.resolve().as_uri()
+             for path in personal.rglob("*")
+             if path.is_file() and path.suffix.casefold() == ".webp"),
+            key=str.casefold,
+        )
+        assert payload["directory"] == str(personal)
+        assert payload["builtInDirectory"] == str(bundled)
+        assert payload["elements"] == expected_bundled + expected_personal
         assert all(source.startswith("file://") for source in payload["elements"])
 
 
@@ -121,6 +135,6 @@ def test_concurrent_play_requests_start_only_one_mpv_process():
 
 
 if __name__ == "__main__":
-    test_webp_elements_are_discovered_recursively_and_return_file_urls()
+    test_webp_elements_include_bundled_and_personal_files()
     test_concurrent_play_requests_start_only_one_mpv_process()
     print("Music WebP discovery and startup-lock tests passed.")
