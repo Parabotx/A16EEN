@@ -151,7 +151,7 @@ Supported static image formats include PNG, JPG, JPEG, WEBP, BMP, TIFF, TGA, SVG
 
 ## Music widget artwork
 
-The music widget randomly displays transparent WebP elements from two collections.
+The music widget randomly displays transparent animated WebP images and WebM video stickers from two collections.
 
 Bundled artwork, committed to GitHub and shipped during install/update:
 
@@ -159,7 +159,7 @@ Bundled artwork, committed to GitHub and shipped during install/update:
 quickshell/a16een/assets/music-elements/
 ```
 
-Add repository-owned `.webp` files in this folder. Subfolders are supported and files are deployed to `~/.config/a16een/quickshell/a16een/assets/music-elements/`.
+Add repository-owned `.webp` and `.webm` files in this folder. Subfolders are supported and both formats are deployed to `~/.config/a16een/quickshell/a16een/assets/music-elements/`.
 
 Personal artwork, which is preserved across updates:
 
@@ -167,7 +167,7 @@ Personal artwork, which is preserved across updates:
 ~/Pictures/a16een/music-elements/
 ```
 
-Put your own WebP files in the personal folder or its subfolders. The widget loads artwork asynchronously at a small display size and only animates it while a track is playing; while paused, the music glyph is shown. Animated WebP playback uses Qt's animation-capable image reader, with frame caching disabled and a small render size to limit memory and battery use. Lightweight transparent WebP files around 128–512 px are recommended.
+Put your own `.webp` images or `.webm` video stickers in the personal folder or its subfolders. WebP files use Qt Quick's `AnimatedImage`; WebM files use Qt Multimedia's `MediaPlayer` + `VideoOutput` and have their audio muted. Artwork plays only while music is playing; while paused, the music glyph is shown. WebP frame caching is disabled and both formats render in the widget's small display area to limit resource use.
 
 If the widget shows only the ♫ glyph, run:
 
@@ -175,7 +175,7 @@ If the widget shows only the ♫ glyph, run:
 a16 music diagnose
 ```
 
-This read-only report checks the Qt WebP plugin and its dependencies, files in both artwork folders, the helper's discovered URLs, animation metadata when `webpmux` is available, and recent Quickshell image-loading messages. The normal A16EEN dependency set includes `qt6-imageformats`; if you skipped dependency installation on Arch Linux, install it with `sudo pacman -Syu --needed qt6-imageformats`.
+This read-only report checks the Qt WebP plugin, Qt Multimedia package, Qt library versions, WebP/WebM files in both artwork folders, the helper's discovered URLs, media metadata when `webpmux`/`ffprobe` are available, and recent Quickshell image/video-loading messages. If dependency installation was skipped on Arch Linux, run a full upgrade and install both backends with `sudo pacman -Syu --needed qt6-imageformats qt6-multimedia`.
 
 ## MPV player theme
 
@@ -230,6 +230,7 @@ curl
 xdg-desktop-portal
 xdg-utils
 qt6-imageformats
+qt6-multimedia
 qt6-svg
 ```
 
