@@ -9,6 +9,9 @@ PanelWindow {
     required property var modelData
     property bool widgetEnabled: false
     property string navbarPosition: "right"
+    property string backgroundColor: "#EAF2F8"
+    property int backgroundOpacity: 72
+    property var completedPlayback: null
     property var tracks: []
     property var playback: ({
         running: false,
@@ -95,7 +98,7 @@ PanelWindow {
     WlrLayershell.layer: WlrLayer.Bottom
     WlrLayershell.namespace: "a16een-widget-music"
     WlrLayershell.keyboardFocus: root.libraryOpen
-        ? WlrKeyboardFocus.OnDemand
+        ? WlrKeyboardFocus.Exclusive
         : WlrKeyboardFocus.None
 
     function indexForPath(path) {
@@ -113,6 +116,12 @@ PanelWindow {
         const minutes = Math.floor(safe / 60)
         const remainder = safe % 60
         return minutes + ":" + (remainder < 10 ? "0" : "") + remainder
+    }
+
+    function backgroundWithOpacity(rawColor, percentage) {
+        const base = Qt.color(String(rawColor || "#EAF2F8"))
+        const alpha = Math.max(0, Math.min(100, Number(percentage) || 0)) / 100
+        return Qt.rgba(base.r, base.g, base.b, base.a * alpha)
     }
 
     function applyLibraryOutput(raw) {
@@ -143,21 +152,48 @@ PanelWindow {
         try {
             const result = JSON.parse(String(raw || "{}"))
             const previous = root.playback
-            const reachedEnd = root.repeatMode === 2
-                && previous.running
+            const resultPath = String(result.path || "")
+
+            if (resultPath.length && root.completedPlayback
+                    && resultPath !== String(root.completedPlayback.path || "")) {
+                root.completedPlayback = null
+            }
+
+            const reachedEnd = previous.running
                 && String(previous.path || "").length > 0
                 && !previous.paused
                 && Number(previous.duration) > 0
                 && (result.eofReached === true
-                    || (!String(result.path || "").length
+                    || (!resultPath.length
                         && Number(previous.time) >= Math.max(0, Number(previous.duration) - 2.5)))
 
             root.playback = result
 
-            if (reachedEnd) {
+            if (reachedEnd && root.repeatMode === 2) {
                 const nextIndex = root.nextRepeatPlaylistIndex(previous.path)
                 if (nextIndex >= 0)
                     Qt.callLater(() => root.playTrack(nextIndex))
+            } else if (reachedEnd && root.repeatMode === 0) {
+                // Normal mode retains the finished track and waits for the user.
+                root.completedPlayback = Object.assign({}, previous, {
+                    running: true,
+                    path: previous.path,
+                    title: previous.title,
+                    artist: previous.artist,
+                    album: previous.album,
+                    cover: previous.cover,
+                    duration: previous.duration,
+                    time: previous.duration,
+                    paused: true,
+                    eofReached: true
+                })
+                root.playback = root.completedPlayback
+                root.statusMessage = "Playback finished"
+                Qt.callLater(() => root.runAction(["pause"]))
+            } else if (!resultPath.length && root.completedPlayback
+                    && root.repeatMode === 0) {
+                // MPV can drop its path after EOF. Keep the completed item visible.
+                root.playback = root.completedPlayback
             }
 
             if (result.error)
@@ -220,6 +256,7 @@ PanelWindow {
     function playTrack(index) {
         if (index < 0 || index >= root.tracks.length)
             return
+        root.completedPlayback = null
         root.statusMessage = ""
         root.runAction(["play", root.tracks[index].path])
     }
@@ -260,15 +297,25 @@ PanelWindow {
         }
     }
 
+    onLibraryQueryChanged: {
+        // A TextInput can drop its initial binding after the first keypress.
+        // Keep the displayed query synchronized without repeatedly stealing focus.
+        if (libraryKeyboardInput.text !== root.libraryQuery)
+            libraryKeyboardInput.text = root.libraryQuery
+    }
+
     onLibraryOpenChanged: {
-        // The search input is bound to libraryQuery; resetting the source keeps
-        // the binding intact and clears the filter whenever the panel opens.
         root.libraryQuery = ""
+        libraryKeyboardInput.text = ""
         if (root.libraryOpen) {
             root.refreshLibrary()
             Qt.callLater(function() {
-                if (root.libraryOpen)
-                    libraryKeyboardInput.forceActiveFocus()
+                Qt.callLater(function() {
+                    if (root.libraryOpen) {
+                        libraryKeyboardInput.forceActiveFocus()
+                        libraryKeyboardInput.cursorPosition = libraryKeyboardInput.text.length
+                    }
+                })
             })
         } else {
             libraryKeyboardInput.focus = false
@@ -319,7 +366,7 @@ PanelWindow {
         y: card.y + 5
         radius: card.radius
         color: "#172437"
-        opacity: 0.075
+        opacity: 0.075 * root.backgroundOpacity / 100
         z: 0
     }
 
@@ -330,7 +377,7 @@ PanelWindow {
         y: card.y + 2
         radius: card.radius
         color: "#273A52"
-        opacity: 0.055
+        opacity: 0.055 * root.backgroundOpacity / 100
         z: 0
     }
 
@@ -343,9 +390,9 @@ PanelWindow {
         anchors.leftMargin: root.navbarPosition === "left" ? 88 : 24
         anchors.bottomMargin: root.navbarPosition === "bottom" ? 74 : 72
         radius: 20
-        color: root.cream
+        color: root.backgroundWithOpacity(root.backgroundColor, root.backgroundOpacity)
         border.width: 1
-        border.color: root.border
+        border.color: root.backgroundWithOpacity(root.border, root.backgroundOpacity)
         clip: false
         z: 1
 
@@ -356,6 +403,7 @@ PanelWindow {
             y: 0
             radius: 1
             z: 3
+            opacity: root.backgroundOpacity / 100
             gradient: Gradient {
                 GradientStop { position: 0.0; color: "#8AB8D8" }
                 GradientStop { position: 0.52; color: "#A9A5DF" }
@@ -710,10 +758,14 @@ PanelWindow {
                         primary: true
                         enabledControl: root.tracks.length > 0 || String(root.playback.path || "").length > 0
                         onClicked: {
-                            if (root.playback.running && String(root.playback.path || "").length)
+                            if (root.completedPlayback
+                                    && String(root.playback.path || "") === String(root.completedPlayback.path || "")) {
+                                root.playTrack(root.indexForPath(root.completedPlayback.path))
+                            } else if (root.playback.running && String(root.playback.path || "").length) {
                                 root.runAction(["toggle"])
-                            else if (root.tracks.length)
+                            } else if (root.tracks.length) {
                                 root.playTrack(root.activeIndex >= 0 ? root.activeIndex : 0)
+                            }
                         }
                     }
 
@@ -754,9 +806,9 @@ PanelWindow {
             : Math.min(292, Math.max(220, card.width - 80))
         height: card.height
         radius: 16
-        color: root.cream
+        color: root.backgroundWithOpacity(root.backgroundColor, root.backgroundOpacity)
         border.width: 1
-        border.color: root.border
+        border.color: root.backgroundWithOpacity(root.border, root.backgroundOpacity)
         clip: true
         visible: root.libraryOpen
         z: 5
@@ -957,9 +1009,9 @@ PanelWindow {
             anchors.bottom: parent.bottom
             anchors.rightMargin: 1
             anchors.bottomMargin: 1
-            width: 10
-            height: 10
-            radius: 5
+            width: parent.repeatIndicatorMode === 2 ? 14 : 11
+            height: parent.repeatIndicatorMode === 2 ? 14 : 11
+            radius: width / 2
             color: "#F9FCFF"
             border.width: 1
             border.color: "#D7E2ED"
@@ -969,7 +1021,7 @@ PanelWindow {
                 anchors.centerIn: parent
                 text: parent.parent.repeatIndicatorMode === 1 ? "1" : "∞"
                 color: "#2D3A4D"
-                font.pixelSize: 7
+                font.pixelSize: parent.parent.repeatIndicatorMode === 2 ? 11 : 7
                 font.weight: Font.Bold
             }
         }
