@@ -43,7 +43,7 @@ chmod +x "$A16EEN_NAVBAR_CMD"
 run() { bash "$ROOT/scripts/a16een-navbar-appearance" "$@"; }
 
 run get >/dev/null
-jq -e '.schemaVersion == 4 and (.workspaces == null)
+jq -e '.schemaVersion == 5 and (.workspaces == null)
     and (.containers | has("workspaces") and has("battery") and has("time") and has("utilities") and has("power")
         and has("quick-actions") and has("quick-hub") and has("data-meter"))
     and .containers.workspaces.visible == true
