@@ -149,6 +149,26 @@ a16 wallpaper reset
 
 Supported static image formats include PNG, JPG, JPEG, WEBP, BMP, TIFF, TGA, SVG, PPM, PGM, PBM, XPM, and XBM. Animated GIF and animated WebP files play in the Animated tab; still WebP images remain in the static Wallpaper tab. MP4, WEBM, MOV, M4V, and MKV wallpapers use Qt Multimedia's video renderer, loop silently, and pause or resume with A16EEN's desktop animation policy. Video previews play muted only while their tile is hovered, so opening the picker does not start every video at once. The installed `qt6-imageformats` and `qt6-multimedia` modules provide the image and video loading backends.
 
+## Music widget artwork
+
+The music widget randomly displays transparent WebP elements from two collections.
+
+Bundled artwork, committed to GitHub and shipped during install/update:
+
+```
+quickshell/a16een/assets/music-elements/
+```
+
+Add repository-owned `.webp` files in this folder. Subfolders are supported and files are deployed to `~/.config/a16een/quickshell/a16een/assets/music-elements/`.
+
+Personal artwork, which is preserved across updates:
+
+```
+~/Pictures/a16een/music-elements/
+```
+
+Put your own WebP files in the personal folder or its subfolders. The widget loads artwork asynchronously at a small display size and does not continuously animate it. Lightweight transparent WebP files around 128–512 px are recommended.
+
 ## MPV player theme
 
 A16EEN provides a clean white MPV on-screen controller as one centered row of separate rounded containers at the bottom: the media title, a gold play/pause button, a white timeline capsule with black played progress, subtitle/audio selectors, and a lock button. The subtitle and audio selectors open small menus above the bar so users can choose an available track. Lock mode hides every other control and blocks wheel actions until the user clicks Unlock. Controls appear while the pointer moves and auto-hide when inactive. Audio-only MPV sessions used by the A16EEN music widget are left alone.
