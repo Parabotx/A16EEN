@@ -60,6 +60,7 @@ jobs:
           luac5.4 -p mpv/a16een-osc.lua
           bash -n scripts/a16een-workspace-preset
           python3 -m py_compile scripts/a16een-music scripts/a16een-widget-settings
+          python3 tests/test_music_elements.py
           python3 tests/test_widget_settings.py
           grep -Fq 'a16een-workspace-preset' scripts/install.sh
           grep -Fq 'a16een-mpv-theme' scripts/install.sh
@@ -67,6 +68,9 @@ jobs:
           grep -Fq 'script=~~/../a16een/mpv/a16een-osc.lua' mpv/a16een.conf
           grep -Fq 'a16een-clipboard' scripts/install.sh
           grep -Fq 'a16een-app-stash' scripts/install.sh
+          grep -Fq 'music-elements' scripts/install.sh
+          grep -Fq 'START_LOCK_PATH' scripts/a16een-music
+          grep -Fq 'command: ["a16een-music", "elements"]' quickshell/a16een/ui/MusicDecor.qml
           grep -Fq 'workspace "app-stash"' niri/config.kdl
           grep -Fq 'Super+H repeat=false hotkey-overlay-title="A16EEN Hide Window to Nest"' niri/config.kdl
           grep -Fq 'Super+Ctrl+H repeat=false hotkey-overlay-title="A16EEN Nest"' niri/config.kdl
