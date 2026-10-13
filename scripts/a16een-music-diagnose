@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Read-only diagnostics for A16EEN's animated WebP music artwork."""
+"""Read-only diagnostics for A16EEN's animated WebP and WebM music artwork."""
 
 from __future__ import annotations
 
@@ -47,20 +47,27 @@ def run(args: list[str], timeout: float = 5.0) -> subprocess.CompletedProcess[st
         return None
 
 
-def webp_files(directory: Path) -> list[Path]:
+def artwork_files(directory: Path) -> list[Path]:
     try:
         return sorted(
-            (item for item in directory.rglob("*") if item.is_file() and item.suffix.lower() == ".webp"),
+            (item for item in directory.rglob("*")
+             if item.is_file() and item.suffix.lower() in {".webp", ".webm"}),
             key=lambda item: str(item).casefold(),
         )
     except OSError:
         return []
 
 
-def webp_header_is_valid(path: Path) -> bool:
+def artwork_header_is_valid(path: Path) -> bool:
     try:
-        header = path.open("rb").read(12)
-        return len(header) == 12 and header[:4] == b"RIFF" and header[8:12] == b"WEBP"
+        with path.open("rb") as stream:
+            header = stream.read(12)
+        if path.suffix.casefold() == ".webp":
+            return len(header) == 12 and header[:4] == b"RIFF" and header[8:12] == b"WEBP"
+        if path.suffix.casefold() == ".webm":
+            # WebM is an EBML container and begins with the EBML element ID.
+            return header[:4] == b"\x1a\x45\xdf\xa3"
+        return False
     except OSError:
         return False
 
@@ -80,22 +87,23 @@ def qt_plugin_candidates() -> list[Path]:
 
 
 def inspect_packages_and_plugin() -> None:
-    print("\n1. Qt WebP dependency")
+    print("\n1. Qt image and video dependencies")
     pacman = shutil.which("pacman")
     if pacman:
-        for package in ("qt6-imageformats", "libwebp"):
+        for package in ("qt6-imageformats", "qt6-multimedia", "libwebp"):
             result = run([pacman, "-Q", package])
             if result and result.returncode == 0:
                 emit("OK", result.stdout.strip())
             else:
-                emit("FAIL" if package == "qt6-imageformats" else "WARN", f"{package} is not installed")
+                emit("FAIL" if package in {"qt6-imageformats", "qt6-multimedia"} else "WARN",
+                     f"{package} is not installed")
     else:
         emit("INFO", "pacman is unavailable; package checks are intended for Arch Linux")
 
     plugin = next((path for path in qt_plugin_candidates() if path.is_file()), None)
     if plugin is None:
         emit("FAIL", "Qt WebP image plugin (libqwebp.so) was not found in the standard Qt 6 plugin paths")
-        emit("INFO", "On Arch Linux, install it with: sudo pacman -Syu --needed qt6-imageformats")
+        emit("INFO", "On Arch Linux, run: sudo pacman -Syu --needed qt6-imageformats qt6-multimedia")
         return
 
     emit("OK", f"Qt WebP plugin found: {plugin}")
@@ -104,7 +112,14 @@ def inspect_packages_and_plugin() -> None:
         result = run([ldd, str(plugin)])
         if result and "not found" in result.stdout:
             missing = [line.strip() for line in result.stdout.splitlines() if "not found" in line]
-            emit("FAIL", "WebP plugin has missing shared libraries: " + "; ".join(missing))
+            if any("version" in line and "not found" in line for line in missing):
+                emit("FAIL", "Qt image plugin/Core version mismatch (often caused by a partial upgrade). "
+                     "Complete a full system upgrade with: sudo pacman -Syu. "
+                     + "; ".join(missing))
+            else:
+                emit("FAIL", "WebP plugin has unresolved shared-library dependencies: " + "; ".join(missing))
+        elif result and result.returncode != 0:
+            emit("WARN", "Could not verify the WebP plugin's shared-library dependencies")
         else:
             emit("OK", "WebP plugin shared-library dependencies resolve")
 
@@ -113,53 +128,82 @@ def inspect_artwork_folders() -> list[Path]:
     print("\n2. Artwork folders")
     all_files: list[Path] = []
     for label, directory in (("Personal", PERSONAL_DIR), ("Installed/bundled", BUILTIN_DIR)):
-        files = webp_files(directory)
+        files = artwork_files(directory)
         all_files.extend(files)
-        emit("OK" if files else "WARN", f"{label}: {len(files)} .webp file(s) — {directory}")
+        emit("OK" if files else "WARN",
+             f"{label}: {len(files)} WebP/WebM file(s) — {directory}")
         for path in files[:8]:
             try:
                 size = path.stat().st_size
             except OSError:
                 size = 0
-            valid = webp_header_is_valid(path)
-            emit("OK" if valid and size > 0 else "FAIL", f"{path} ({size:,} bytes)" + ("" if valid else " — not a valid RIFF/WEBP header"))
+            valid = artwork_header_is_valid(path)
+            expected = "RIFF/WEBP" if path.suffix.casefold() == ".webp" else "EBML/WebM"
+            emit("OK" if valid and size > 0 else "FAIL",
+                 f"{path} ({size:,} bytes)" + ("" if valid else f" — invalid {expected} header"))
         if len(files) > 8:
             emit("INFO", f"... and {len(files) - 8} more")
     if not all_files:
-        emit("FAIL", "No .webp artwork was found. Put at least one WebP file in the personal folder above (subfolders are supported).")
+        emit("FAIL", "No .webp or .webm artwork was found. The repository artwork copier previously ignored .webm files; update A16EEN to deploy them, or put files in the personal folder above.")
     return all_files
 
 
 def inspect_animation_metadata(files: list[Path]) -> None:
-    print("\n3. WebP file / animation metadata")
-    webpmux = shutil.which("webpmux")
+    print("\n3. Artwork media metadata")
     if not files:
-        emit("INFO", "Skipped because no WebP files were found")
-        return
-    if not webpmux:
-        emit("INFO", "webpmux is unavailable; animation frame counts cannot be independently checked")
-        emit("INFO", "If desired, install the WebP utilities with: sudo pacman -Syu --needed libwebp")
+        emit("INFO", "Skipped because no WebP/WebM files were found")
         return
 
-    animated = 0
+    webpmux = shutil.which("webpmux")
+    ffprobe = shutil.which("ffprobe")
     inspected = 0
-    for path in files[:8]:
-        result = run([webpmux, "-info", str(path)], timeout=8.0)
+    for path in files[:12]:
         inspected += 1
-        output = ((result.stdout if result else "") + "\n" + (result.stderr if result else "")).strip()
-        if not result or result.returncode != 0:
-            emit("FAIL", f"webpmux could not read {path.name}: {output[:220] or 'no details'}")
+        if path.suffix.casefold() == ".webp":
+            if not webpmux:
+                emit("INFO", f"{path.name}: WebP header is valid; install libwebp for deeper animation checks")
+                continue
+            result = run([webpmux, "-info", str(path)], timeout=8.0)
+            output = ((result.stdout if result else "") + "\n" + (result.stderr if result else "")).strip()
+            if not result or result.returncode != 0:
+                emit("FAIL", f"webpmux could not read {path.name}: {output[:220] or 'no details'}")
+                continue
+            frame_match = re.search(r"(?:Number of frames|Frames)\s*:\s*(\d+)", output, re.IGNORECASE)
+            frames = int(frame_match.group(1)) if frame_match else (
+                2 if re.search(r"Features present:.*\banimation\b", output, re.IGNORECASE) else 1
+            )
+            emit("OK", f"{path.name}: {'animated' if frames > 1 else 'readable WebP (animation not detected)'}")
             continue
-        frame_match = re.search(r"(?:Number of frames|Frames)\s*:\s*(\d+)", output, re.IGNORECASE)
-        frames = int(frame_match.group(1)) if frame_match else (2 if re.search(r"Features present:.*\banimation\b", output, re.IGNORECASE) else 1)
-        if frames > 1:
-            animated += 1
-        emit("OK", f"{path.name}: {'animated' if frames > 1 else 'readable WebP (animation not detected)'}")
-    if len(files) > 8:
-        emit("INFO", f"Inspected first 8 of {len(files)} files")
-    emit("INFO", f"Animation metadata: {animated} of {inspected} inspected file(s) identified as animated")
-    if animated == 0:
-        emit("WARN", "No inspected asset was identified as animated. Static WebP should still display, but it will not move.")
+
+        if path.suffix.casefold() == ".webm":
+            if not ffprobe:
+                emit("WARN", f"{path.name}: ffprobe is unavailable; cannot inspect WebM streams")
+                continue
+            result = run([
+                ffprobe, "-v", "error", "-show_entries",
+                "stream=codec_name,codec_type,width,height:format=duration",
+                "-of", "json", str(path)
+            ], timeout=8.0)
+            output = ((result.stdout if result else "") + "\n" + (result.stderr if result else "")).strip()
+            if not result or result.returncode != 0:
+                emit("FAIL", f"ffprobe could not read {path.name}: {output[:220] or 'no details'}")
+                continue
+            try:
+                metadata = json.loads(result.stdout)
+                video_streams = [
+                    item for item in metadata.get("streams", [])
+                    if item.get("codec_type") == "video"
+                ]
+            except (json.JSONDecodeError, AttributeError):
+                video_streams = []
+            if not video_streams:
+                emit("FAIL", f"{path.name}: no decodable video stream was detected")
+                continue
+            stream = video_streams[0]
+            emit("OK", f"{path.name}: WebM video codec={stream.get('codec_name', 'unknown')}, "
+                 f"size={stream.get('width', '?')}x{stream.get('height', '?')}")
+    if len(files) > 12:
+        emit("INFO", f"Inspected first 12 of {len(files)} files")
 
 
 def inspect_helper() -> None:
@@ -220,13 +264,17 @@ def inspect_runtime_and_logs() -> None:
         emit("WARN", f"Could not read deployed MusicDecor.qml: {RUNTIME_QML}")
     else:
         if "AnimatedImage" in qml:
-            emit("OK", "Deployed MusicDecor.qml contains AnimatedImage")
+            emit("OK", "Deployed MusicDecor.qml contains the WebP image renderer")
         else:
-            emit("FAIL", "Deployed MusicDecor.qml does not contain AnimatedImage; update/deploy A16EEN with: a16 -u")
-        if "onStatusChanged" in qml and "image load failed" in qml:
-            emit("OK", "Deployed QML records image-loader errors")
+            emit("FAIL", "Deployed MusicDecor.qml lacks the WebP renderer; update A16EEN with: a16 -u")
+        if "import QtMultimedia" in qml and "MediaPlayer" in qml and "VideoOutput" in qml:
+            emit("OK", "Deployed MusicDecor.qml includes the WebM video renderer")
         else:
-            emit("WARN", "Deployed QML lacks the latest artwork error logging; update A16EEN with: a16 -u")
+            emit("FAIL", "Deployed QML lacks WebM video playback; update A16EEN with: a16 -u")
+        if "onStatusChanged" in qml and "image load failed" in qml and "WebM video load failed" in qml:
+            emit("OK", "Deployed QML records image and video decoder errors")
+        else:
+            emit("WARN", "Deployed QML lacks current artwork error logging; update A16EEN with: a16 -u")
 
     candidates = [
         STATE_HOME / "a16een" / "logs" / "shell.log",
@@ -243,13 +291,13 @@ def inspect_runtime_and_logs() -> None:
     except OSError as error:
         emit("WARN", f"Could not read shell log: {error}")
         return
-    pattern = re.compile(r"music artwork|AnimatedImage|qwebp|webp|failed to load|unable to open|could not be opened", re.IGNORECASE)
+    pattern = re.compile(r"music artwork|AnimatedImage|MediaPlayer|QtMultimedia|qwebp|webp|webm|failed to load|unable to open|could not be opened", re.IGNORECASE)
     matches = [line for line in lines[-4000:] if pattern.search(line)]
     if matches:
         for line in matches[-14:]:
             print("      " + line[:400])
     else:
-        emit("INFO", "No matching WebP/image errors found in the recent shell-log window")
+        emit("INFO", "No matching image/video errors found in the recent shell-log window")
 
 
 def main() -> int:
@@ -267,9 +315,10 @@ def main() -> int:
     if ERRORS:
         print(f"{ERRORS} issue(s) need attention; {WARNINGS} warning(s).")
         if not any(path.is_file() for path in qt_plugin_candidates()):
-            print("First action: sudo pacman -Syu --needed qt6-imageformats")
+            print("First action: sudo pacman -Syu --needed qt6-imageformats qt6-multimedia")
         if not files:
-            print(f"Artwork action: put at least one .webp file in {PERSONAL_DIR}")
+            print(f"Artwork action: update A16EEN to deploy bundled WebM assets, or put .webp/.webm files in {PERSONAL_DIR}")
+        print("If the Qt plugin reports a version mismatch, complete a full upgrade: sudo pacman -Syu")
         print("After fixing a reported issue, restart Quickshell with: a16 -r")
         print("Then rerun: a16 music diagnose")
         return 1
