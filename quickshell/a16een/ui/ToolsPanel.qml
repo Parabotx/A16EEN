@@ -445,7 +445,7 @@ PanelWindow {
                             width: 16
                             height: 16
                             iconPath: Qt.resolvedUrl(root.page === "ai"
-                                ? "../assets/icons/bot.svg"
+                                ? "../assets/icons/wand-sparkles.svg"
                                 : (root.page === "stash"
                                     ? "../assets/icons/lucide-archive.svg"
                                     : (root.page === "monitor"
@@ -460,7 +460,8 @@ PanelWindow {
                     }
 
                     Column {
-                        width: Math.max(0, parent.width - 28 - 16 - (root.page !== "tools" ? 25 : 0))
+                        visible: root.page !== "ai"
+                        width: root.page === "ai" ? 0 : Math.max(0, parent.width - 28 - 16 - (root.page !== "tools" ? 25 : 0))
                         anchors.verticalCenter: parent.verticalCenter
                         spacing: 2
 
@@ -504,8 +505,34 @@ PanelWindow {
                             anchors.centerIn: parent
                             width: 14
                             height: 14
+                            visible: root.page !== "ai"
                             iconName: "lucide-arrow-left.svg"
                             iconColor: popupCardStyle.iconColor
+                        }
+
+                        Item {
+                            anchors.centerIn: parent
+                            width: 14
+                            height: 14
+                            visible: root.page === "ai"
+
+                            Rectangle {
+                                anchors.centerIn: parent
+                                width: 13
+                                height: 1.5
+                                radius: 1
+                                color: popupCardStyle.iconColor
+                                rotation: 45
+                            }
+
+                            Rectangle {
+                                anchors.centerIn: parent
+                                width: 13
+                                height: 1.5
+                                radius: 1
+                                color: popupCardStyle.iconColor
+                                rotation: -45
+                            }
                         }
 
                         MouseArea {
@@ -513,8 +540,15 @@ PanelWindow {
                             anchors.fill: parent
                             hoverEnabled: true
                             cursorShape: Qt.PointingHandCursor
-                            onClicked: root.backRequested()
+                            onClicked: {
+                                if (root.page === "ai")
+                                    root.closeRequested()
+                                else
+                                    root.backRequested()
+                            }
                         }
+
+                        Accessible.name: root.page === "ai" ? "Close AI assistant" : "Back to tools"
                     }
                 }
 
@@ -611,7 +645,7 @@ PanelWindow {
                     active: true
                     visible: root.page === "ai"
                     width: parent.width
-                    height: root.page === "ai" ? 520 : 0
+                    height: root.page === "ai" ? Math.min(520, Math.max(300, root.screenHeight - 78)) : 0
                     source: Qt.resolvedUrl("AIAssistantPage.qml")
                     onLoaded: {
                         if (item)

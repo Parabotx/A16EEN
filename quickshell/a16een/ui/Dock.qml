@@ -263,7 +263,7 @@ PanelWindow {
 
     // The AI tile shares the existing Wayland navbar surface but remains its own
     // independently styled/visible container in Appearance → Navbar Containers.
-    readonly property int aiContainerHeight: 54
+    readonly property int aiContainerHeight: 40
 
     readonly property int surfaceHeight:
         root.horizontalNavbar
@@ -1548,9 +1548,9 @@ PanelWindow {
         visible: !root.horizontalNavbar && root.dockVisible && root.aiContainerVisible
         x: root.navbarPosition === "right" ? parent.width - width : 0
         y: Math.max(0, Math.round((parent.height - (root.dockHeight + root.aiContainerHeight)) / 2) + 3)
-        width: 44
-        height: 48
-        radius: 15
+        width: 32
+        height: 34
+        radius: 11
         color: root.containerColorFor("ai")
         border.width: 1
         border.color: root.containerBorderColorFor("ai")
@@ -1562,50 +1562,36 @@ PanelWindow {
 
         Rectangle {
             anchors.fill: parent
-            anchors.margins: -4
-            radius: 19
+            anchors.margins: -3
+            radius: 14
             color: root.iconColorFor("ai")
-            opacity: aiNavbarMouse.containsMouse ? 0.10 : 0.035
+            opacity: aiNavbarMouse.containsMouse ? 0.12 : 0.025
             Behavior on opacity { NumberAnimation { duration: 180; easing.type: Easing.OutCubic } }
             z: -1
         }
 
-        Column {
+        Rectangle {
             anchors.centerIn: parent
-            spacing: 1
-
-            Item {
-                width: 25
-                height: 25
-                anchors.horizontalCenter: parent.horizontalCenter
-
-                NavbarImage {
-                    anchors.centerIn: parent
-                    width: 20
-                    height: 20
-                    slot: "ai"
-                    generatedPath: root.generatedIconPath("ai")
-                    fallbackPath: root.fallbackIconPath("sparkles.svg")
-                    refreshRevision: root.navbarRevision
-                    active: aiNavbarMouse.containsMouse
-                    hovered: aiNavbarMouse.containsMouse
-                }
-            }
-
-            Text {
-                width: 34
-                height: 10
-                text: "AI"
-                color: root.iconColorFor("ai")
-                font.pixelSize: 7
-                font.weight: Font.Bold
-                font.letterSpacing: 1.0
-                horizontalAlignment: Text.AlignHCenter
-                verticalAlignment: Text.AlignVCenter
-            }
+            width: 24
+            height: 24
+            radius: 8
+            color: aiNavbarMouse.containsMouse ? root.hoverColorFor("ai") : "transparent"
+            Behavior on color { ColorAnimation { duration: 130; easing.type: Easing.OutCubic } }
         }
 
-        scale: aiNavbarMouse.containsMouse ? 1.035 : 1.0
+        NavbarImage {
+            anchors.centerIn: parent
+            width: 19
+            height: 19
+            slot: "ai"
+            generatedPath: root.generatedIconPath("ai")
+            fallbackPath: root.fallbackIconPath("wand-sparkles.svg")
+            refreshRevision: root.navbarRevision
+            active: aiNavbarMouse.containsMouse
+            hovered: aiNavbarMouse.containsMouse
+        }
+
+        scale: aiNavbarMouse.containsMouse ? 1.07 : 1.0
         Behavior on scale {
             NumberAnimation { duration: 130; easing.type: Easing.OutCubic }
         }

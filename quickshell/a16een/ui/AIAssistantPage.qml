@@ -45,7 +45,7 @@ Item {
     readonly property color successColor: root.palette ? root.palette.successColor : "#2D9466"
 
     width: parent ? parent.width : 400
-    height: 520
+    height: parent ? parent.height : 520
 
     function refreshStatus() {
         if (!statusProcess.running)
@@ -460,84 +460,12 @@ Item {
 
     Column {
         anchors.fill: parent
-        spacing: 7
-
-        Row {
-            width: parent.width
-            height: 28
-            spacing: 7
-
-            Rectangle {
-                width: 28
-                height: 28
-                radius: 9
-                color: root.subtleColor
-                anchors.verticalCenter: parent.verticalCenter
-
-                NavbarIcon {
-                    anchors.centerIn: parent
-                    width: 17
-                    height: 17
-                    iconName: "bot.svg"
-                    iconColor: root.textColor
-                }
-            }
-
-            Column {
-                width: parent.width - 70
-                anchors.verticalCenter: parent.verticalCenter
-                spacing: 2
-
-                Text {
-                    width: parent.width
-                    text: "A16EEN AI"
-                    color: root.textColor
-                    font.pixelSize: 11
-                    font.weight: Font.DemiBold
-                    font.letterSpacing: 0.25
-                }
-
-                Text {
-                    width: parent.width
-                    text: root.connected ? "GEMINI CONNECTED" : (root.hasApiKey ? "GEMINI KEY SAVED" : "CONNECT GEMINI")
-                    color: root.connected ? root.successColor : root.mutedTextColor
-                    font.pixelSize: 7
-                    font.weight: Font.DemiBold
-                    font.letterSpacing: 0.55
-                }
-            }
-
-            Rectangle {
-                width: 29
-                height: 27
-                radius: 8
-                color: keyMouse.containsMouse ? root.subtleColor : "transparent"
-                border.width: 1
-                border.color: root.borderColor
-
-                Text {
-                    anchors.centerIn: parent
-                    text: "KEY"
-                    color: root.secondaryTextColor
-                    font.pixelSize: 7
-                    font.weight: Font.Bold
-                    font.letterSpacing: 0.3
-                }
-
-                MouseArea {
-                    id: keyMouse
-                    anchors.fill: parent
-                    hoverEnabled: true
-                    cursorShape: Qt.PointingHandCursor
-                    onClicked: root.pageMode = "settings"
-                }
-            }
-        }
+        spacing: 0
 
         Column {
             visible: root.pageMode === "settings" || !root.hasApiKey
             width: parent.width
-            height: visible ? parent.height - 35 : 0
+            height: visible ? parent.height : 0
             spacing: 8
 
             Text {
@@ -724,13 +652,13 @@ Item {
             id: chatPanel
             visible: root.pageMode === "chat" && root.hasApiKey
             width: parent.width
-            height: visible ? parent.height - 35 : 0
+            height: visible ? parent.height : 0
             spacing: 7
 
             Row {
                 width: parent.width
-                height: 20
-                spacing: 5
+                height: 22
+                spacing: 6
 
                 Rectangle {
                     width: 6
@@ -748,7 +676,7 @@ Item {
                 }
 
                 Text {
-                    width: parent.width - 80
+                    width: Math.max(72, parent.width - 111)
                     anchors.verticalCenter: parent.verticalCenter
                     text: root.busy ? root.progressPhrases[root.progressIndex] : root.statusLine
                     color: root.busy ? root.textColor : root.mutedTextColor
@@ -765,8 +693,37 @@ Item {
                 }
 
                 Rectangle {
+                    id: assistantSettingsButton
+                    width: 24
+                    height: 22
+                    radius: 7
+                    color: settingsMouse.containsMouse ? root.subtleColor : "transparent"
+                    border.width: 1
+                    border.color: root.borderColor
+
+                    NavbarIcon {
+                        anchors.centerIn: parent
+                        width: 13
+                        height: 13
+                        iconName: "lucide-settings.svg"
+                        iconColor: root.secondaryTextColor
+                    }
+
+                    MouseArea {
+                        id: settingsMouse
+                        anchors.fill: parent
+                        hoverEnabled: true
+                        cursorShape: Qt.PointingHandCursor
+                        enabled: !root.busy && !root.awaitingApproval
+                        onClicked: root.pageMode = "settings"
+                    }
+
+                    Accessible.name: "Gemini API key settings"
+                }
+
+                Rectangle {
                     width: 63
-                    height: 20
+                    height: 22
                     radius: 7
                     color: clearMouse.containsMouse ? root.subtleColor : "transparent"
 
@@ -787,13 +744,15 @@ Item {
                         enabled: !root.busy && !root.awaitingApproval
                         onClicked: root.clearConversation()
                     }
+
+                    Accessible.name: "Start a new conversation"
                 }
             }
 
             ListView {
                 id: messageList
                 width: parent.width
-                height: root.awaitingApproval ? 165 : 235
+                height: Math.max(80, chatPanel.height - 79 - (root.awaitingApproval ? 115 : 0) - (errorMessage.visible ? 29 : 0))
                 clip: true
                 spacing: 7
                 model: messageModel
@@ -821,10 +780,10 @@ Item {
                         Text {
                             id: messageText
                             anchors.fill: parent
-                            anchors.margins: 8
+                            anchors.margins: 9
                             text: messageRow.body
                             color: root.textColor
-                            font.pixelSize: 9
+                            font.pixelSize: 10
                             wrapMode: Text.WordWrap
                             textFormat: Text.PlainText
                         }
@@ -928,14 +887,27 @@ Item {
                 }
             }
 
+            Text {
+                id: errorMessage
+                width: parent.width
+                height: visible ? 22 : 0
+                visible: root.lastError.length > 0 && !root.awaitingApproval
+                text: root.lastError
+                color: root.dangerColor
+                font.pixelSize: 8
+                wrapMode: Text.WordWrap
+                maximumLineCount: 2
+                elide: Text.ElideRight
+            }
+
             Row {
                 width: parent.width
-                height: 39
+                height: 43
                 spacing: 7
 
                 Rectangle {
-                    width: parent.width - 70
-                    height: 39
+                    width: parent.width - 49
+                    height: 43
                     radius: 10
                     color: root.fieldColor
                     border.width: 1
@@ -950,7 +922,7 @@ Item {
                         color: root.textColor
                         selectedTextColor: "#FFFFFF"
                         selectionColor: "#6F7E92"
-                        font.pixelSize: 9
+                        font.pixelSize: 10
                         clip: true
                         selectByMouse: true
                         text: root.inputText
@@ -971,21 +943,28 @@ Item {
                 }
 
                 Rectangle {
-                    width: 63
-                    height: 39
-                    radius: 10
+                    id: composerSendButton
+                    width: 42
+                    height: 43
+                    radius: 12
                     color: root.busy || root.awaitingApproval || !root.inputText.trim().length
                         ? root.subtleColor : root.accentColor
                     border.width: 1
-                    border.color: root.borderColor
+                    border.color: root.busy || root.awaitingApproval || !root.inputText.trim().length
+                        ? root.borderColor : root.accentColor
+                    opacity: root.busy ? 0.72 : 1.0
 
-                    Text {
+                    Behavior on color { ColorAnimation { duration: 120; easing.type: Easing.OutCubic } }
+                    Behavior on opacity { NumberAnimation { duration: 120; easing.type: Easing.OutCubic } }
+
+                    NavbarIcon {
                         anchors.centerIn: parent
-                        text: root.busy ? "WORKING" : "SEND  ↑"
-                        color: root.busy ? root.mutedTextColor : root.accentTextColor
-                        font.pixelSize: 7
-                        font.weight: Font.Bold
-                        font.letterSpacing: 0.25
+                        width: 17
+                        height: 17
+                        rotation: 90
+                        iconName: "lucide-arrow-left.svg"
+                        iconColor: root.busy || root.awaitingApproval || !root.inputText.trim().length
+                            ? root.mutedTextColor : root.accentTextColor
                     }
 
                     MouseArea {
@@ -994,19 +973,12 @@ Item {
                         cursorShape: Qt.PointingHandCursor
                         onClicked: root.sendMessage()
                     }
+
+                    Accessible.name: root.busy ? "Assistant is working" : "Send message"
                 }
             }
 
-            Text {
-                width: parent.width
-                visible: root.lastError.length > 0 && !root.awaitingApproval
-                text: root.lastError
-                color: root.dangerColor
-                font.pixelSize: 8
-                wrapMode: Text.WordWrap
-                maximumLineCount: 2
-                elide: Text.ElideRight
-            }
+
         }
     }
 }
