@@ -483,7 +483,7 @@ jobs:
           ! grep -Fq 'import QtMultimedia' quickshell/a16een/ui/WallpaperPicker.qml
           grep -Fq 'source: active ? "VideoWallpaperPreview.qml" : ""' quickshell/a16een/ui/WallpaperPicker.qml
           grep -Fq 'import QtMultimedia' quickshell/a16een/ui/VideoWallpaperPreview.qml
-          grep -Fq 'tileMouseArea.containsMouse' quickshell/a16een/ui/WallpaperPicker.qml
+          grep -Fq 'thumbnailMouse.containsMouse' quickshell/a16een/ui/WallpaperPicker.qml
           grep -Fq 'is_animated_webp()' scripts/a16een-wallpaper
           grep -Fq "grep -a -F -q 'ANIM'" scripts/a16een-wallpaper
           grep -Fq 'type="$(media_type "$name" "$file")"' scripts/a16een-wallpaper
@@ -694,7 +694,7 @@ jobs:
           grep -Fq 'sourceSize.width: root.thumbnailWidth * 2' quickshell/a16een/ui/WallpaperPicker.qml
           grep -Fq 'root.selectWallpaperByIndex' quickshell/a16een/ui/WallpaperPicker.qml
           grep -Fq 'settingsOpen ? 0.22 : 0' quickshell/a16een/ui/WallpaperPicker.qml
-          grep -Fq 'staticPreview.status !== Image.Ready' quickshell/a16een/ui/WallpaperPicker.qml
+          grep -Fq 'staticPreview.status === Image.Error' quickshell/a16een/ui/WallpaperPicker.qml
           grep -Fq 'function apply(path: string): void' quickshell/a16een/shell.qml
           grep -Fq 'wallpaperPath: ""' quickshell/a16een/shell.qml
           grep -Fq 'currentWallpaperPath: root.wallpaperPath' quickshell/a16een/shell.qml
