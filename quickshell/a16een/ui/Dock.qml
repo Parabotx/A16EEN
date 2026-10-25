@@ -1060,7 +1060,7 @@ PanelWindow {
                     : Math.max(8, navbarPowerMenu.height - height - 38))
                 : 12
             width: 188
-            height: 158
+            height: 196
             z: 1
 
             Rectangle {
@@ -1105,6 +1105,7 @@ PanelWindow {
                     Repeater {
                         model: [
                             { id: "lock", label: "Lock screen", icon: "quick-lock.svg" },
+                            { id: "sleep", label: "Sleep", icon: "lucide-moon-dark.svg" },
                             { id: "logout", label: "Log out", icon: "quick-logout.svg" },
                             { id: "restart", label: "Restart", icon: "quick-restart.svg" },
                             { id: "poweroff", label: "Power off", icon: "quick-power.svg" }
@@ -1206,6 +1207,9 @@ PanelWindow {
             // ShellRoot closes every overlay before starting swaylock.
             // This avoids A16EEN overlay surfaces sitting over the lock UI.
             root.lockRequested()
+            break
+        case "sleep":
+            Quickshell.execDetached(["systemctl", "suspend"])
             break
         case "logout":
             Quickshell.execDetached(["niri", "msg", "action", "quit"])

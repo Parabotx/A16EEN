@@ -541,6 +541,16 @@ ShellRoot {
     property var dataMeterSnapshot: ({})
     property string dataMeterError: ""
     readonly property string dataMeterSettingsPath: Quickshell.stateDir + "/data-meter-settings.json"
+    property int batteryWarningPercent: 20
+    property int batteryCriticalPercent: 10
+    property int batteryEmergencyPercent: 5
+    property bool batteryWarningEnabled: true
+    property bool batteryCriticalEnabled: true
+    property bool batteryEmergencyEnabled: true
+    property bool batteryWarningSettingsReady: false
+    property var batteryAlertedLevels: []
+    property int batteryLastPercent: -1
+    readonly property string batteryWarningSettingsPath: Quickshell.stateDir + "/battery-warning-settings.json"
     property var notificationHistory: []
     property bool notificationHistoryReady: false
     readonly property int unreadNotificationCount:
@@ -598,6 +608,46 @@ ShellRoot {
                 }))
             }
         }
+    }
+
+    FileView {
+        id: batteryWarningSettingsFile
+        path: root.batteryWarningSettingsPath
+        preload: true
+        printErrors: false
+        atomicWrites: true
+        onLoaded: root.loadBatteryWarningSettings(batteryWarningSettingsFile.text())
+        onLoadFailed: {
+            root.batteryWarningSettingsReady = true
+            Qt.callLater(() => root.checkBatteryWarnings())
+        }
+    }
+
+    Timer {
+        id: batteryWarningSettingsSaveTimer
+        interval: 250
+        repeat: false
+        onTriggered: {
+            if (root.batteryWarningSettingsReady) {
+                batteryWarningSettingsFile.setText(JSON.stringify({
+                    version: 1,
+                    warningPercent: root.batteryWarningPercent,
+                    criticalPercent: root.batteryCriticalPercent,
+                    emergencyPercent: root.batteryEmergencyPercent,
+                    warningEnabled: root.batteryWarningEnabled,
+                    criticalEnabled: root.batteryCriticalEnabled,
+                    emergencyEnabled: root.batteryEmergencyEnabled
+                }))
+            }
+        }
+    }
+
+    Timer {
+        id: batteryWarningMonitorTimer
+        interval: 8000
+        repeat: true
+        running: true
+        onTriggered: root.checkBatteryWarnings()
     }
 
     Process {
@@ -1185,6 +1235,160 @@ ShellRoot {
             notificationHistorySaveTimer.restart()
     }
 
+    function loadBatteryWarningSettings(rawText) {
+        try {
+            const saved = JSON.parse(String(rawText || "{}"))
+            const warning = Number(saved.warningPercent)
+            const critical = Number(saved.criticalPercent)
+            const emergency = Number(saved.emergencyPercent)
+
+            if (Number.isInteger(warning) && warning >= 2 && warning <= 95
+                    && Number.isInteger(critical) && critical >= 2 && critical < warning
+                    && Number.isInteger(emergency) && emergency >= 1 && emergency < critical) {
+                root.batteryWarningPercent = warning
+                root.batteryCriticalPercent = critical
+                root.batteryEmergencyPercent = emergency
+            }
+
+            if (typeof saved.warningEnabled === "boolean")
+                root.batteryWarningEnabled = saved.warningEnabled
+            if (typeof saved.criticalEnabled === "boolean")
+                root.batteryCriticalEnabled = saved.criticalEnabled
+            if (typeof saved.emergencyEnabled === "boolean")
+                root.batteryEmergencyEnabled = saved.emergencyEnabled
+        } catch (error) {
+            console.warn("A16EEN battery warning settings could not be read:", error)
+        }
+
+        root.batteryWarningSettingsReady = true
+        Qt.callLater(() => root.checkBatteryWarnings())
+    }
+
+    function updateBatteryWarningSettings(settings) {
+        if (!settings || typeof settings !== "object")
+            return
+
+        const warning = Number(settings.warningPercent)
+        const critical = Number(settings.criticalPercent)
+        const emergency = Number(settings.emergencyPercent)
+        if (!Number.isInteger(warning) || warning < 2 || warning > 95
+                || !Number.isInteger(critical) || critical < 2 || critical >= warning
+                || !Number.isInteger(emergency) || emergency < 1 || emergency >= critical)
+            return
+
+        root.batteryWarningPercent = warning
+        root.batteryCriticalPercent = critical
+        root.batteryEmergencyPercent = emergency
+        root.batteryWarningEnabled = settings.warningEnabled === true
+        root.batteryCriticalEnabled = settings.criticalEnabled === true
+        root.batteryEmergencyEnabled = settings.emergencyEnabled === true
+        root.batteryLastPercent = -1
+        if (root.batteryWarningSettingsReady)
+            batteryWarningSettingsSaveTimer.restart()
+        Qt.callLater(() => root.checkBatteryWarnings())
+    }
+
+    function configuredBatteryWarnings() {
+        return [
+            { id: "warning", percent: root.batteryWarningPercent, enabled: root.batteryWarningEnabled, summary: "Battery low" },
+            { id: "critical", percent: root.batteryCriticalPercent, enabled: root.batteryCriticalEnabled, summary: "Battery very low" },
+            { id: "emergency", percent: root.batteryEmergencyPercent, enabled: root.batteryEmergencyEnabled, summary: "Battery critical" }
+        ]
+    }
+
+    function batteryWarningKey(level) {
+        return level.id + ":" + level.percent
+    }
+
+    function showBatteryWarning(level, percent) {
+        const notification = {
+            appName: "A16EEN Battery",
+            summary: level.summary,
+            body: "Battery is at " + percent + "%. Connect your charger to avoid interruption.",
+            appIcon: "",
+            tracked: true
+        }
+        root.rememberNotification(notification)
+
+        if (root.doNotDisturb)
+            return
+
+        if (root.latestNotification)
+            root.latestNotification.tracked = false
+        root.latestNotification = notification
+        notificationTimer.restart()
+    }
+
+    function checkBatteryWarnings() {
+        if (!root.batteryWarningSettingsReady)
+            return
+
+        const device = UPower.displayDevice
+        if (!device.ready || !device.isPresent) {
+            root.batteryLastPercent = -1
+            return
+        }
+
+        const raw = Number(device.percentage)
+        if (!Number.isFinite(raw))
+            return
+        const normalized = raw > 0 && raw <= 1 ? raw * 100 : raw
+        const percent = Math.max(0, Math.min(100, Math.round(normalized)))
+        const state = device.state
+        const onBattery = UPower.onBattery
+            && state !== UPowerDeviceState.Charging
+            && state !== UPowerDeviceState.PendingCharge
+
+        if (!onBattery) {
+            root.batteryAlertedLevels = []
+            root.batteryLastPercent = -1
+            return
+        }
+
+        const levels = root.configuredBatteryWarnings()
+        if (root.batteryLastPercent < 0) {
+            root.batteryLastPercent = percent
+            const reached = levels.filter(level =>
+                level.enabled
+                && percent <= level.percent
+                && !root.batteryAlertedLevels.includes(root.batteryWarningKey(level))
+            ).sort((a, b) => a.percent - b.percent)
+
+            if (!reached.length)
+                return
+
+            // If the shell starts while already low, show just the most urgent
+            // applicable warning and mark the other reached thresholds as passed.
+            root.batteryAlertedLevels = root.batteryAlertedLevels.concat(
+                reached.map(level => root.batteryWarningKey(level))
+            )
+            root.showBatteryWarning(reached[0], percent)
+            return
+        }
+
+        const previousPercent = root.batteryLastPercent
+        root.batteryLastPercent = percent
+        if (percent >= previousPercent)
+            return
+
+        const crossed = levels.filter(level =>
+            level.enabled
+            && previousPercent > level.percent
+            && percent <= level.percent
+            && !root.batteryAlertedLevels.includes(root.batteryWarningKey(level))
+        )
+        if (!crossed.length)
+            return
+
+        root.batteryAlertedLevels = root.batteryAlertedLevels.concat(
+            crossed.map(level => root.batteryWarningKey(level))
+        )
+        // Avoid stacking multiple toasts if the battery crosses several levels
+        // between samples; present only the most urgent reached threshold.
+        crossed.sort((a, b) => a.percent - b.percent)
+        root.showBatteryWarning(crossed[0], percent)
+    }
+
     function loadDataMeterSettings() {
         try {
             const parsed = JSON.parse(String(dataMeterSettingsFile.text() || "{}"))
@@ -1713,6 +1917,12 @@ ShellRoot {
         timeUse24Hour: root.timeUse24Hour
         timeShowSeconds: root.timeShowSeconds
         doNotDisturb: root.doNotDisturb
+        batteryWarningPercent: root.batteryWarningPercent
+        batteryCriticalPercent: root.batteryCriticalPercent
+        batteryEmergencyPercent: root.batteryEmergencyPercent
+        batteryWarningEnabled: root.batteryWarningEnabled
+        batteryCriticalEnabled: root.batteryCriticalEnabled
+        batteryEmergencyEnabled: root.batteryEmergencyEnabled
 
         onCloseRequested: {
             // Close nested views with the command surface so the next
@@ -1835,6 +2045,7 @@ ShellRoot {
             root.appShelfApps = nextApps
             root.requestWidgetSettingsSave()
         }
+        onBatteryWarningSettingsRequested: settings => root.updateBatteryWarningSettings(settings)
         onTimeUse24HourRequested: {
             root.timeUse24Hour = enabled
             root.requestWidgetSettingsSave()

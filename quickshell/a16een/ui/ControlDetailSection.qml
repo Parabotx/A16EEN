@@ -13,6 +13,7 @@ Item {
 
     signal backRequested()
     signal doNotDisturbRequested(bool enabled)
+    signal batteryWarningSettingsRequested(var settings)
 
     property string statusMessage: "READING SYSTEM"
     property string wifiState: "unavailable"
@@ -45,6 +46,12 @@ Item {
     property string batteryTime: "—"
     property string batteryRate: "—"
     property string batteryCapacity: "—"
+    property int batteryWarningPercent: 20
+    property int batteryCriticalPercent: 10
+    property int batteryEmergencyPercent: 5
+    property bool batteryWarningEnabled: true
+    property bool batteryCriticalEnabled: true
+    property bool batteryEmergencyEnabled: true
 
     property bool dndEnabled: false
 
@@ -286,6 +293,49 @@ Item {
 
     function setBrightness(value) {
         root.run(["brightness", "set", String(Math.round(Math.max(0, Math.min(100, value))))])
+    }
+
+    function batteryWarningSettingsPayload() {
+        return {
+            warningPercent: root.batteryWarningPercent,
+            criticalPercent: root.batteryCriticalPercent,
+            emergencyPercent: root.batteryEmergencyPercent,
+            warningEnabled: root.batteryWarningEnabled,
+            criticalEnabled: root.batteryCriticalEnabled,
+            emergencyEnabled: root.batteryEmergencyEnabled
+        }
+    }
+
+    function changeBatteryWarningThreshold(level, delta) {
+        if (!["warning", "critical", "emergency"].includes(level))
+            return
+
+        const settings = root.batteryWarningSettingsPayload()
+        const key = level + "Percent"
+        let minimum = 1
+        let maximum = 95
+        if (level === "warning") {
+            minimum = settings.criticalPercent + 1
+        } else if (level === "critical") {
+            minimum = settings.emergencyPercent + 1
+            maximum = settings.warningPercent - 1
+        } else {
+            maximum = settings.criticalPercent - 1
+        }
+
+        const previous = settings[key]
+        settings[key] = Math.max(minimum, Math.min(maximum, settings[key] + delta))
+        if (settings[key] !== previous)
+            root.batteryWarningSettingsRequested(settings)
+    }
+
+    function toggleBatteryWarning(level) {
+        if (!["warning", "critical", "emergency"].includes(level))
+            return
+        const settings = root.batteryWarningSettingsPayload()
+        const key = level + "Enabled"
+        settings[key] = !settings[key]
+        root.batteryWarningSettingsRequested(settings)
     }
 
     Timer {
@@ -974,7 +1024,7 @@ Item {
         Item {
             id: simpleView
             anchors.top: header.bottom
-            anchors.topMargin: 12
+            anchors.topMargin: root.mode === "battery" ? 6 : 12
             anchors.left: parent.left
             anchors.right: parent.right
             anchors.bottom: parent.bottom
@@ -982,21 +1032,21 @@ Item {
 
             Column {
                 anchors.fill: parent
-                spacing: 12
+                spacing: root.mode === "battery" ? 8 : 12
 
                 Rectangle {
                     width: parent.width
-                    height: 100
-                    radius: 18
+                    height: root.mode === "battery" ? 78 : 100
+                    radius: root.mode === "battery" ? 14 : 18
                     color: root.tile
                     border.width: 1
                     border.color: root.border
 
                     Image {
-                        x: 20
+                        x: root.mode === "battery" ? 15 : 20
                         anchors.verticalCenter: parent.verticalCenter
-                        width: 23
-                        height: 23
+                        width: root.mode === "battery" ? 20 : 23
+                        height: root.mode === "battery" ? 20 : 23
                         source: {
                             switch (root.mode) {
                             case "audio": return root.iconSource("volume-2")
@@ -1010,9 +1060,10 @@ Item {
                     }
 
                     Column {
-                        x: 58
-                        y: 19
-                        spacing: 4
+                        x: root.mode === "battery" ? 47 : 58
+                        y: root.mode === "battery" ? 10 : 19
+                        width: root.mode === "battery" ? parent.width - 61 : implicitWidth
+                        spacing: root.mode === "battery" ? 2 : 4
 
                         Text {
                             text: {
@@ -1026,11 +1077,13 @@ Item {
                                 }
                             }
                             color: root.textPrimary
-                            font.pixelSize: 15
+                            font.pixelSize: root.mode === "battery" ? 18 : 15
                             font.weight: Font.DemiBold
                         }
 
                         Text {
+                            width: root.mode === "battery" ? parent.width : implicitWidth
+                            elide: Text.ElideRight
                             text: {
                                 switch (root.mode) {
                                 case "audio": return root.audioSink
@@ -1042,8 +1095,25 @@ Item {
                                 }
                             }
                             color: root.textSecondary
-                            font.pixelSize: 9
+                            font.pixelSize: root.mode === "battery" ? 8 : 9
                             font.letterSpacing: 0.4
+                        }
+                    }
+
+                    Rectangle {
+                        visible: root.mode === "battery"
+                        x: 47
+                        y: 60
+                        width: parent.width - 62
+                        height: 4
+                        radius: 2
+                        color: "#E8EBEF"
+
+                        Rectangle {
+                            width: parent.width * Math.max(0, Math.min(100, root.batteryPercent)) / 100
+                            height: parent.height
+                            radius: 2
+                            color: root.batteryPercent <= 10 ? "#D84A4F" : root.accent
                         }
                     }
                 }
@@ -1201,20 +1271,190 @@ Item {
                 Rectangle {
                     visible: root.mode === "battery"
                     width: parent.width
-                    height: 142
-                    radius: 18
+                    height: 82
+                    radius: 14
                     color: root.tile
                     border.width: 1
                     border.color: root.border
 
                     Column {
-                        x: 18
-                        y: 16
-                        spacing: 9
+                        x: 14
+                        y: 9
+                        spacing: 3
                         Text { text: "TIME REMAINING"; color: root.textMuted; font.pixelSize: 7; font.weight: Font.DemiBold; font.letterSpacing: 0.8 }
-                        Text { text: root.batteryTime; color: root.textPrimary; font.pixelSize: 13; font.weight: Font.DemiBold }
+                        Text { text: root.batteryTime; color: root.textPrimary; font.pixelSize: 12; font.weight: Font.DemiBold }
                         Text { text: "ENERGY RATE   " + root.batteryRate; color: root.textSecondary; font.pixelSize: 8 }
                         Text { text: "HEALTH          " + root.batteryCapacity; color: root.textSecondary; font.pixelSize: 8 }
+                    }
+                }
+
+                Rectangle {
+                    id: batteryAlertsCard
+                    visible: root.mode === "battery"
+                    width: parent.width
+                    height: 130
+                    radius: 14
+                    color: root.page
+                    border.width: 1
+                    border.color: root.border
+
+                    Column {
+                        anchors.fill: parent
+                        anchors.margins: 9
+                        spacing: 3
+
+                        Row {
+                            width: parent.width
+                            height: 15
+                            spacing: 4
+
+                            Text {
+                                text: "BATTERY ALERTS"
+                                color: root.textPrimary
+                                font.pixelSize: 8
+                                font.weight: Font.DemiBold
+                                font.letterSpacing: 0.7
+                            }
+
+                            Item { width: Math.max(0, parent.width - 160); height: 1 }
+
+                            Text {
+                                text: "ON BATTERY"
+                                color: root.textMuted
+                                font.pixelSize: 6
+                                font.weight: Font.DemiBold
+                                font.letterSpacing: 0.5
+                            }
+                        }
+
+                        Repeater {
+                            model: [
+                                { id: "warning", label: "LOW", description: "First warning", percent: root.batteryWarningPercent, enabled: root.batteryWarningEnabled },
+                                { id: "critical", label: "VERY LOW", description: "Second warning", percent: root.batteryCriticalPercent, enabled: root.batteryCriticalEnabled },
+                                { id: "emergency", label: "CRITICAL", description: "Urgent warning", percent: root.batteryEmergencyPercent, enabled: root.batteryEmergencyEnabled }
+                            ]
+
+                            delegate: Row {
+                                id: batteryAlertRow
+                                required property var modelData
+                                width: parent.width
+                                height: 23
+                                spacing: 4
+
+                                Column {
+                                    width: 78
+                                    height: parent.height
+                                    spacing: 0
+                                    anchors.verticalCenter: parent.verticalCenter
+
+                                    Text {
+                                        text: batteryAlertRow.modelData.label
+                                        color: root.textPrimary
+                                        font.pixelSize: 7
+                                        font.weight: Font.DemiBold
+                                        verticalAlignment: Text.AlignVCenter
+                                    }
+
+                                    Text {
+                                        text: batteryAlertRow.modelData.description
+                                        color: root.textMuted
+                                        font.pixelSize: 6
+                                        verticalAlignment: Text.AlignVCenter
+                                    }
+                                }
+
+                                Rectangle {
+                                    width: 20
+                                    height: 20
+                                    radius: 6
+                                    anchors.verticalCenter: parent.verticalCenter
+                                    color: root.tile
+                                    border.width: 1
+                                    border.color: root.border
+
+                                    Text {
+                                        anchors.centerIn: parent
+                                        text: "−"
+                                        color: root.textSecondary
+                                        font.pixelSize: 12
+                                    }
+
+                                    MouseArea {
+                                        anchors.fill: parent
+                                        cursorShape: Qt.PointingHandCursor
+                                        onClicked: root.changeBatteryWarningThreshold(batteryAlertRow.modelData.id, -1)
+                                    }
+                                }
+
+                                Text {
+                                    width: 28
+                                    height: parent.height
+                                    text: batteryAlertRow.modelData.percent + "%"
+                                    color: root.textPrimary
+                                    font.pixelSize: 8
+                                    font.weight: Font.DemiBold
+                                    horizontalAlignment: Text.AlignHCenter
+                                    verticalAlignment: Text.AlignVCenter
+                                }
+
+                                Rectangle {
+                                    width: 20
+                                    height: 20
+                                    radius: 6
+                                    anchors.verticalCenter: parent.verticalCenter
+                                    color: root.tile
+                                    border.width: 1
+                                    border.color: root.border
+
+                                    Text {
+                                        anchors.centerIn: parent
+                                        text: "+"
+                                        color: root.textSecondary
+                                        font.pixelSize: 11
+                                    }
+
+                                    MouseArea {
+                                        anchors.fill: parent
+                                        cursorShape: Qt.PointingHandCursor
+                                        onClicked: root.changeBatteryWarningThreshold(batteryAlertRow.modelData.id, 1)
+                                    }
+                                }
+
+                                Item {
+                                    width: Math.max(0, parent.width - 78 - 20 - 28 - 20 - 34 - 20)
+                                    height: 1
+                                }
+
+                                Rectangle {
+                                    width: 34
+                                    height: 18
+                                    radius: 9
+                                    anchors.verticalCenter: parent.verticalCenter
+                                    color: batteryAlertRow.modelData.enabled ? "#242B35" : "#E7EAEE"
+                                    border.width: 1
+                                    border.color: batteryAlertRow.modelData.enabled ? "#242B35" : root.border
+
+                                    Rectangle {
+                                        width: 12
+                                        height: 12
+                                        radius: 6
+                                        y: 2
+                                        x: batteryAlertRow.modelData.enabled ? 18 : 2
+                                        color: "#FFFFFF"
+
+                                        Behavior on x {
+                                            NumberAnimation { duration: 120; easing.type: Easing.OutCubic }
+                                        }
+                                    }
+
+                                    MouseArea {
+                                        anchors.fill: parent
+                                        cursorShape: Qt.PointingHandCursor
+                                        onClicked: root.toggleBatteryWarning(batteryAlertRow.modelData.id)
+                                    }
+                                }
+                            }
+                        }
                     }
                 }
 

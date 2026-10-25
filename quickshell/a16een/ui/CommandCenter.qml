@@ -50,6 +50,12 @@ PanelWindow {
     property string batteryTime: "—"
     property string batteryRate: "—"
     property string batteryCapacity: "—"
+    property int batteryWarningPercent: 20
+    property int batteryCriticalPercent: 10
+    property int batteryEmergencyPercent: 5
+    property bool batteryWarningEnabled: true
+    property bool batteryCriticalEnabled: true
+    property bool batteryEmergencyEnabled: true
 
     signal closeRequested()
     signal launcherRequested()
@@ -76,6 +82,7 @@ PanelWindow {
     signal dataMeterToggleRequested(bool enabled)
     signal lockScreenSettingsChanged(bool idleEnabled, int idleMinutes, bool lockOnSleepEnabled)
     signal lockNowRequested()
+    signal batteryWarningSettingsRequested(var settings)
 
     // The expanded command-center card becomes a light card for navbar mode.
     // The card itself is bounded; this does not create a screen-wide cover.
@@ -867,9 +874,16 @@ PanelWindow {
             active: root.controlViewOpen && root.controlDetail.length > 0
             mode: root.controlDetail
             doNotDisturb: root.doNotDisturb
+            batteryWarningPercent: root.batteryWarningPercent
+            batteryCriticalPercent: root.batteryCriticalPercent
+            batteryEmergencyPercent: root.batteryEmergencyPercent
+            batteryWarningEnabled: root.batteryWarningEnabled
+            batteryCriticalEnabled: root.batteryCriticalEnabled
+            batteryEmergencyEnabled: root.batteryEmergencyEnabled
 
             onBackRequested: root.openControlView()
             onDoNotDisturbRequested: root.doNotDisturbRequested(enabled)
+            onBatteryWarningSettingsRequested: settings => root.batteryWarningSettingsRequested(settings)
         }
 
         LockScreenSection {

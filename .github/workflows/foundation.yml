@@ -298,6 +298,13 @@ jobs:
           grep -Fq 'NumberAnimation {' quickshell/a16een/ui/AppShelfWidget.qml
           grep -Fq 'function orbitAngleFor(index)' quickshell/a16een/ui/AppShelfWidget.qml
           grep -Fq 'root.activeApps.length > 13 ? 280' quickshell/a16een/ui/AppShelfWidget.qml
+          grep -Fq '{ id: "sleep", label: "Sleep", icon: "lucide-moon-dark.svg" }' quickshell/a16een/ui/Dock.qml
+          grep -Fq 'Quickshell.execDetached(["systemctl", "suspend"])' quickshell/a16een/ui/Dock.qml
+          grep -Fq 'batteryWarningMonitorTimer' quickshell/a16een/shell.qml
+          grep -Fq 'battery-warning-settings.json' quickshell/a16een/shell.qml
+          grep -Fq 'batteryWarningSettingsRequested' quickshell/a16een/ui/ControlDetailSection.qml
+          grep -Fq 'BATTERY ALERTS' quickshell/a16een/ui/ControlDetailSection.qml
+          grep -Fq 'height: root.mode === "battery" ? 78 : 100' quickshell/a16een/ui/ControlDetailSection.qml
           grep -Fq 'return 80' quickshell/a16een/ui/AppShelfWidget.qml
           grep -Fq 'return 117' quickshell/a16een/ui/AppShelfWidget.qml
           grep -Fq 'scale: orbitMouse.containsMouse ? 1.055 : 1.0' quickshell/a16een/ui/AppShelfWidget.qml
