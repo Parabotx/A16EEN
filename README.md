@@ -415,3 +415,22 @@ A16EEN is still early software. Keep your existing desktop session available as 
 ## Stage A — Foundation hardening
 
 Stage A is the gate for future feature work. The current repository includes session-environment isolation, staged Niri validation, resilient shell supervision, Niri's XWayland integration, portal setup, foundation diagnostics, configuration backups, and safe update/rollback tooling. The remaining Stage A work is live hardware and compatibility verification; see [docs/STAGE-A.md](docs/STAGE-A.md).
+
+
+## Gemini AI Assistant
+
+A16EEN includes an optional Gemini-powered desktop assistant in **Quick Tools → A16EEN AI**.
+
+1. Open **Quick Tools** from the navbar and select **A16EEN AI**.
+2. Click **Open Google AI Studio**, create or copy a Gemini API key, and paste it into the key field.
+3. Select **Save & Connect**. A16EEN tests the connection before opening the assistant.
+
+Google AI Studio: https://aistudio.google.com/apikeys
+
+The API key is stored locally in `~/.config/a16een/ai/gemini-api-key` with owner-only file permissions. It is sent to Google only in the Gemini API authentication header. User prompts and the system details required for a requested action are sent to Gemini for processing. The assistant does not automatically upload the clipboard, screenshots, or arbitrary file contents.
+
+The assistant can inspect system/network status, run A16EEN diagnostics, list and change wallpapers (including a truly random choice), search and open installed desktop applications, focus workspaces, adjust supported audio/brightness/power settings, open ordinary web pages, lock the screen, and restart the A16EEN shell.
+
+Power actions such as closing the focused window, logging out, suspending, restarting, or powering off are shown in a review card with a specific explanation and require a deliberate confirmation. Routine, reversible actions do not pause for approval. The action executor exposes a fixed allowlist of typed functions; Gemini output is never run as a shell command.
+
+The assistant requires an internet connection and a working Gemini API key. It uses the Gemini 3.8 Flash API by default. You can check the key state with `a16 ai status` or remove the saved key with `a16 ai key remove`. The desktop's normal controls and terminal commands continue to work without AI.
