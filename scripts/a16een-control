@@ -173,8 +173,34 @@ wifi_detail() {
 
 wifi_networks() {
     command -v nmcli >/dev/null 2>&1 || return 1
-    nmcli -t --separator '|' -f IN-USE,SSID,SIGNAL,SECURITY device wifi list --rescan no 2>/dev/null |
-        awk -F'|' 'length($2) > 0 {print $2 "|" $3 "|" $4 "|" $1}' |
+
+    # Quickshell passes --scan when the Wi-Fi panel opens or the user presses
+    # Refresh. --rescan yes waits for NetworkManager's scan to finish instead
+    # of reading an empty cache immediately after an asynchronous rescan.
+    local rescan="no" output
+    [[ "${3:-}" == "--scan" ]] && rescan="yes"
+
+    output=$(nmcli -t --separator '|' -f IN-USE,SSID,SIGNAL,SECURITY \
+        device wifi list --rescan "$rescan" 2>/dev/null) || output=""
+
+    # Some adapters/NetworkManager versions can reject a scan while another
+    # is in progress. Keep any cached results available in that case.
+    if [[ -z "$output" && "$rescan" == "yes" ]]; then
+        output=$(nmcli -t --separator '|' -f IN-USE,SSID,SIGNAL,SECURITY \
+            device wifi list --rescan no 2>/dev/null) || output=""
+    elif [[ -z "$output" ]]; then
+        # A newly opened panel can have an empty scan cache. Initiate a
+        # synchronous scan once so the first network list is not blank.
+        output=$(nmcli -t --separator '|' -f IN-USE,SSID,SIGNAL,SECURITY \
+            device wifi list --rescan yes 2>/dev/null) || output=""
+    fi
+
+    printf '%s\n' "$output" |
+        awk -F'|' 'length($2) > 0 {
+            security = $4
+            if (security == "") security = "--"
+            print $2 "|" $3 "|" security "|" $1
+        }' |
         awk '!seen[$0]++'
 }
 
@@ -382,7 +408,7 @@ case "${1:-snapshot}" in
             name) cmd_wifi_name ;;
             toggle) toggle_wifi ;;
             detail) wifi_detail ;;
-            networks) wifi_networks ;;
+            networks) wifi_networks "$@" ;;
             rescan) wifi_rescan ;;
             saved) wifi_saved ;;
             connect) wifi_connect "$@" ;;
