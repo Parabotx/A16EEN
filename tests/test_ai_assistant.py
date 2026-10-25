@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+import importlib.machinery
 import importlib.util
 import json
 import os
@@ -77,7 +78,8 @@ with tempfile.TemporaryDirectory() as temp:
     assert not key_path.exists()
 
 # Test mode-specific system prompts with a stubbed network boundary.
-spec = importlib.util.spec_from_file_location("a16een_ai_under_test", SCRIPT)
+loader = importlib.machinery.SourceFileLoader("a16een_ai_under_test", str(SCRIPT))
+spec = importlib.util.spec_from_loader("a16een_ai_under_test", loader)
 assert spec is not None and spec.loader is not None
 ai_module = importlib.util.module_from_spec(spec)
 spec.loader.exec_module(ai_module)
