@@ -14,6 +14,14 @@ cat > "$TMP/bin/nmcli" <<'MOCK'
 #!/usr/bin/env bash
 set -euo pipefail
 original_args="$*"
+# Real nmcli has no --separator option. Fail loudly if the production helper
+# regresses to the invalid command that caused the list to stay empty.
+for arg in "$@"; do
+    if [[ "$arg" == "--separator" ]]; then
+        echo "nmcli: unknown option --separator" >&2
+        exit 64
+    fi
+done
 rescan="no"
 while (($#)); do
     if [[ "$1" == "--rescan" && $# -ge 2 ]]; then
@@ -25,8 +33,8 @@ while (($#)); do
 done
 printf '%s\n' "$original_args" >> "$NMCLI_LOG"
 case "$rescan" in
-    yes) printf '%s' "${NMCLI_YES_OUTPUT:-}" ;;
-    no)  printf '%s' "${NMCLI_NO_OUTPUT:-}" ;;
+    yes) printf '%s' "\${NMCLI_YES_OUTPUT:-}" ;;
+    no)  printf '%s' "\${NMCLI_NO_OUTPUT:-}" ;;
     *)   exit 2 ;;
 esac
 MOCK
@@ -41,36 +49,51 @@ assert_equal() {
     fi
 }
 
+# nmcli terse output is colon-delimited; literal colons are escaped.
 export NMCLI_NO_OUTPUT="$(printf '%s\n' \
-    '*|Home Wi-Fi|90|WPA2' \
-    '|Open Guest|62|' \
-    '|Open Guest|62|')"
+    '*:Home Wi-Fi:90:WPA2' \
+    ':Open Guest:62:' \
+    ':Open Guest:62:' \
+    ':Office\:Guest:77:WPA2' \
+    ':Lobby|Guest:47:WPA2' \
+    ':Cafe\\WiFi:55:WPA2')"
 export NMCLI_YES_OUTPUT="$(printf '%s\n' \
-    '*|Home Wi-Fi|93|WPA2' \
-    '|Open Guest|68|' \
-    '|Coffee Shop|54|WPA1 WPA2')"
+    '*:Home Wi-Fi:93:WPA2' \
+    ':Open Guest:68:' \
+    ':Coffee Shop:54:WPA1 WPA2')"
 
-# Cached discovery preserves the connected marker, de-duplicates identical
-# rows, and encodes open networks so the UI won't ask for a password.
+# Cached results, duplicate removal, open networks, and special SSID characters.
 actual="$(bash "$ROOT/scripts/a16een-control" wifi networks)"
-expected="$(printf '%s\n' 'Home Wi-Fi|90|WPA2|*' 'Open Guest|62|--|')"
+expected="$(printf '%s\n' \
+    'Home Wi-Fi|90|WPA2|*' \
+    'Open Guest|62|--|' \
+    'Office:Guest|77|WPA2|' \
+    'Lobby\|Guest|47|WPA2|' \
+    'Cafe\\WiFi|55|WPA2|')"
 assert_equal "cached Wi-Fi network formatting" "$expected" "$actual"
-grep -Fq -- '--rescan no' "$NMCLI_LOG"
+grep -Fq -- '-t -e yes -f IN-USE,SSID,SIGNAL,SECURITY' "$NMCLI_LOG"
+if grep -Fq -- '--separator' "$NMCLI_LOG"; then
+    echo "FAIL: unsupported nmcli --separator option was used" >&2
+    exit 1
+fi
 
-# Explicit Refresh must wait for a real scan rather than display the stale cache.
+# Explicit Refresh requests a fresh scan instead of reading only cached results.
 actual="$(bash "$ROOT/scripts/a16een-control" wifi networks --scan)"
-expected="$(printf '%s\n' 'Home Wi-Fi|93|WPA2|*' 'Open Guest|68|--|' 'Coffee Shop|54|WPA1 WPA2|')"
+expected="$(printf '%s\n' \
+    'Home Wi-Fi|93|WPA2|*' \
+    'Open Guest|68|--|' \
+    'Coffee Shop|54|WPA1 WPA2|')"
 assert_equal "fresh Wi-Fi scan formatting" "$expected" "$actual"
 grep -Fq -- '--rescan yes' "$NMCLI_LOG"
 
-# First launch can have an empty cache; the helper must automatically scan.
+# First launch with an empty cache falls back to a real scan.
 export NMCLI_NO_OUTPUT=""
 actual="$(bash "$ROOT/scripts/a16een-control" wifi networks)"
-expected="$(printf '%s\n' 'Home Wi-Fi|93|WPA2|*' 'Open Guest|68|--|' 'Coffee Shop|54|WPA1 WPA2|')"
 assert_equal "empty cache triggers first scan" "$expected" "$actual"
 
 QML="$ROOT/quickshell/a16een/ui/ControlDetailSection.qml"
 grep -Fq '["a16een-control", "wifi", "networks", "--scan"]' "$QML"
+grep -Fq 'function splitWifiNetworkFields(raw)' "$QML"
 grep -Fq 'root.refreshWifiNetworks(true)' "$QML"
 if grep -Fq 'wifiScanRefresh' "$QML"; then
     echo "FAIL: old timer-based Wi-Fi rescan path is still present" >&2
