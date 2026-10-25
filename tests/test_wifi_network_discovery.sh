@@ -41,7 +41,99 @@ assert_equal() {
     fi
 }
 
-export NMCLI_NO_OUTPUT=$'*:Home Wi-Fi:90:WPA2\n:Open Guest:62:\n:Open Guest:62:'
+export NMCLI_NO_OUTPUT=
+export NMCLI_YES_OUTPUT=
+
+# Cached discovery preserves the connected marker, de-duplicates identical
+# rows, and encodes open networks so the UI won't ask for a password.
+actual="$(bash "$ROOT/scripts/a16een-control" wifi networks)"
+expected=$'Home Wi-Fi|90|WPA2|*\nOpen Guest|62|--|'
+assert_equal "cached Wi-Fi network formatting" "$expected" "$actual"
+grep -Fq -- '--rescan no' "$NMCLI_LOG"
+
+# Explicit Refresh must wait for a real scan rather than display the stale cache.
+actual="$(bash "$ROOT/scripts/a16een-control" wifi networks --scan)"
+expected=$'Home Wi-Fi|93|WPA2|*\nOpen Guest|68|--|\nCoffee Shop|54|WPA1 WPA2|'
+assert_equal "fresh Wi-Fi scan formatting" "$expected" "$actual"
+grep -Fq -- '--rescan yes' "$NMCLI_LOG"
+
+# First launch can have an empty cache; the helper must automatically scan.
+export NMCLI_NO_OUTPUT=""
+actual="$(bash "$ROOT/scripts/a16een-control" wifi networks)"
+expected=$'Home Wi-Fi|93|WPA2|*\nOpen Guest|68|--|\nCoffee Shop|54|WPA1 WPA2|'
+assert_equal "empty cache triggers first scan" "$expected" "$actual"
+
+QML="$ROOT/quickshell/a16een/ui/ControlDetailSection.qml"
+grep -Fq '["a16een-control", "wifi", "networks", "--scan"]' "$QML"
+grep -Fq 'root.refreshWifiNetworks(true)' "$QML"
+if grep -Fq 'wifiScanRefresh' "$QML"; then
+    echo "FAIL: old timer-based Wi-Fi rescan path is still present" >&2
+    exit 1
+fi
+
+echo "Wi-Fi network discovery tests passed."
+*|Home Wi-Fi|90|WPA2\n|Open Guest|62|\n|Open Guest|62|'
+export NMCLI_YES_OUTPUT=$'*:Home Wi-Fi:93:WPA2\n:Open Guest:68:\n:Coffee Shop:54:WPA1 WPA2'
+
+# Cached discovery preserves the connected marker, de-duplicates identical
+# rows, and encodes open networks so the UI won't ask for a password.
+actual="$(bash "$ROOT/scripts/a16een-control" wifi networks)"
+expected=$'Home Wi-Fi|90|WPA2|*\nOpen Guest|62|--|'
+assert_equal "cached Wi-Fi network formatting" "$expected" "$actual"
+grep -Fq -- '--rescan no' "$NMCLI_LOG"
+
+# Explicit Refresh must wait for a real scan rather than display the stale cache.
+actual="$(bash "$ROOT/scripts/a16een-control" wifi networks --scan)"
+expected=$'Home Wi-Fi|93|WPA2|*\nOpen Guest|68|--|\nCoffee Shop|54|WPA1 WPA2|'
+assert_equal "fresh Wi-Fi scan formatting" "$expected" "$actual"
+grep -Fq -- '--rescan yes' "$NMCLI_LOG"
+
+# First launch can have an empty cache; the helper must automatically scan.
+export NMCLI_NO_OUTPUT=""
+actual="$(bash "$ROOT/scripts/a16een-control" wifi networks)"
+expected=$'Home Wi-Fi|93|WPA2|*\nOpen Guest|68|--|\nCoffee Shop|54|WPA1 WPA2|'
+assert_equal "empty cache triggers first scan" "$expected" "$actual"
+
+QML="$ROOT/quickshell/a16een/ui/ControlDetailSection.qml"
+grep -Fq '["a16een-control", "wifi", "networks", "--scan"]' "$QML"
+grep -Fq 'root.refreshWifiNetworks(true)' "$QML"
+if grep -Fq 'wifiScanRefresh' "$QML"; then
+    echo "FAIL: old timer-based Wi-Fi rescan path is still present" >&2
+    exit 1
+fi
+
+echo "Wi-Fi network discovery tests passed."
+*|Home Wi-Fi|93|WPA2\n|Open Guest|68|\n|Coffee Shop|54|WPA1 WPA2'
+
+# Cached discovery preserves the connected marker, de-duplicates identical
+# rows, and encodes open networks so the UI won't ask for a password.
+actual="$(bash "$ROOT/scripts/a16een-control" wifi networks)"
+expected=$'Home Wi-Fi|90|WPA2|*\nOpen Guest|62|--|'
+assert_equal "cached Wi-Fi network formatting" "$expected" "$actual"
+grep -Fq -- '--rescan no' "$NMCLI_LOG"
+
+# Explicit Refresh must wait for a real scan rather than display the stale cache.
+actual="$(bash "$ROOT/scripts/a16een-control" wifi networks --scan)"
+expected=$'Home Wi-Fi|93|WPA2|*\nOpen Guest|68|--|\nCoffee Shop|54|WPA1 WPA2|'
+assert_equal "fresh Wi-Fi scan formatting" "$expected" "$actual"
+grep -Fq -- '--rescan yes' "$NMCLI_LOG"
+
+# First launch can have an empty cache; the helper must automatically scan.
+export NMCLI_NO_OUTPUT=""
+actual="$(bash "$ROOT/scripts/a16een-control" wifi networks)"
+expected=$'Home Wi-Fi|93|WPA2|*\nOpen Guest|68|--|\nCoffee Shop|54|WPA1 WPA2|'
+assert_equal "empty cache triggers first scan" "$expected" "$actual"
+
+QML="$ROOT/quickshell/a16een/ui/ControlDetailSection.qml"
+grep -Fq '["a16een-control", "wifi", "networks", "--scan"]' "$QML"
+grep -Fq 'root.refreshWifiNetworks(true)' "$QML"
+if grep -Fq 'wifiScanRefresh' "$QML"; then
+    echo "FAIL: old timer-based Wi-Fi rescan path is still present" >&2
+    exit 1
+fi
+
+echo "Wi-Fi network discovery tests passed."
+*|Home Wi-Fi|90|WPA2\n|Open Guest|62|\n|Open Guest|62|'
 export NMCLI_YES_OUTPUT=$'*:Home Wi-Fi:93:WPA2\n:Open Guest:68:\n:Coffee Shop:54:WPA1 WPA2'
 
 # Cached discovery preserves the connected marker, de-duplicates identical
