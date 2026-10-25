@@ -196,13 +196,38 @@ Item {
         return "unavailable"
     }
 
+    function splitWifiNetworkFields(raw) {
+        const fields = []
+        let field = ""
+        let escaped = false
+
+        for (const character of String(raw || "")) {
+            if (escaped) {
+                field += character
+                escaped = false
+            } else if (character === "\\") {
+                escaped = true
+            } else if (character === "|") {
+                fields.push(field)
+                field = ""
+            } else {
+                field += character
+            }
+        }
+
+        if (escaped)
+            field += "\\"
+        fields.push(field)
+        return fields
+    }
+
     function parseWifiNetworks(output) {
         const result = []
         const lines = String(output || "").split("\n")
         for (const raw of lines) {
             if (!raw.trim())
                 continue
-            const parts = raw.split("|")
+            const parts = root.splitWifiNetworkFields(raw)
             if (parts.length < 3)
                 continue
             result.push({
