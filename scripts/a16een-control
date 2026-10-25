@@ -208,7 +208,7 @@ wifi_networks() {
                     if (escaped) {
                         fields[count] = fields[count] ch
                         escaped = 0
-                    } else if (ch == "\\\\") {
+                    } else if (ch == "\\") {
                         escaped = 1
                     } else if (ch == ":") {
                         count++
@@ -218,7 +218,7 @@ wifi_networks() {
                     }
                 }
                 if (escaped)
-                    fields[count] = fields[count] "\\\\"
+                    fields[count] = fields[count] "\\"
                 return count
             }
             {
@@ -230,7 +230,7 @@ wifi_networks() {
                     security = "--"
                 # The UI uses "|" between columns; escape it in an SSID so
                 # one unusual network name cannot corrupt the other fields.
-                gsub(/\\|/, "\\\\\\|", fields[2])
+                gsub(/\|/, "\\|", fields[2])
                 print fields[2] "|" fields[3] "|" security "|" fields[1]
             }
         ' |
