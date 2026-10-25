@@ -33,8 +33,8 @@ while (($#)); do
 done
 printf '%s\n' "$original_args" >> "$NMCLI_LOG"
 case "$rescan" in
-    yes) printf '%s' "\${NMCLI_YES_OUTPUT:-}" ;;
-    no)  printf '%s' "\${NMCLI_NO_OUTPUT:-}" ;;
+    yes) printf '%s' "${NMCLI_YES_OUTPUT:-}" ;;
+    no)  printf '%s' "${NMCLI_NO_OUTPUT:-}" ;;
     *)   exit 2 ;;
 esac
 MOCK
