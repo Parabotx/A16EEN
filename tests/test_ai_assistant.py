@@ -7,7 +7,8 @@ import sys
 import tempfile
 from pathlib import Path
 
-SCRIPT = Path(__file__).resolve().parents[1] / "scripts" / "a16een-ai"
+ROOT = Path(__file__).resolve().parents[1]
+SCRIPT = ROOT / "scripts" / "a16een-ai"
 
 def invoke(env, *args, input_text=None, expected=0):
     result = subprocess.run(
@@ -73,4 +74,24 @@ with tempfile.TemporaryDirectory() as temp:
     assert removed["configured"] is False
     assert not key_path.exists()
 
-print("A16EEN AI safety and key-storage tests passed.")
+dock_qml = (ROOT / "quickshell/a16een/ui/Dock.qml").read_text()
+assistant_qml = (ROOT / "quickshell/a16een/ui/AIAssistantPage.qml").read_text()
+tools_panel_qml = (ROOT / "quickshell/a16een/ui/ToolsPanel.qml").read_text()
+navbar_script = (ROOT / "scripts/a16een-navbar").read_text()
+
+# UI regressions: keep the navbar tile compact/icon-only, the composer pinned
+# to the bottom, and the AI popup's top-right control a real close action.
+assert "readonly property int aiContainerHeight: 40" in dock_qml
+assert "width: 32" in dock_qml and "height: 34" in dock_qml
+assert 'text: "AI"' not in dock_qml
+assert 'fallbackPath: root.fallbackIconPath("wand-sparkles.svg")' in dock_qml
+assert 'Math.max(80, chatPanel.height - 79' in assistant_qml
+assert 'text: "A16EEN AI"' not in assistant_qml
+assert 'text: root.busy ? "WORKING" : "SEND  ↑"' not in assistant_qml
+assert 'iconName: "lucide-settings.svg"' in assistant_qml
+assert 'visible: root.page !== "ai"' in tools_panel_qml
+assert 'root.closeRequested()' in tools_panel_qml and 'root.backRequested()' in tools_panel_qml
+assert 'ai) configured_icon="wand-sparkles.svg" ;;' in navbar_script
+assert "migrate_ai_default_icon()" in navbar_script
+
+print("A16EEN AI safety, key-storage, and UI regression tests passed.")
