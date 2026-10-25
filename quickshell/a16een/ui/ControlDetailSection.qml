@@ -24,6 +24,7 @@ Item {
     property string wifiSelectedSsid: ""
     property string wifiSelectedSecurity: ""
     property string wifiPassword: ""
+    property bool wifiPasswordVisible: false
     property bool wifiConnecting: false
 
     property string bluetoothState: "unavailable"
@@ -270,10 +271,23 @@ Item {
         root.run(["wifi", "connect", root.wifiSelectedSsid, password])
     }
 
+    function clearWifiSelection() {
+        root.wifiSelectedSsid = ""
+        root.wifiSelectedSecurity = ""
+        root.wifiPassword = ""
+        root.wifiPasswordVisible = false
+    }
+
     function selectWifiNetwork(network) {
+        if (network.inUse) {
+            root.clearWifiSelection()
+            return
+        }
+
         root.wifiSelectedSsid = network.ssid
         root.wifiSelectedSecurity = network.security
         root.wifiPassword = ""
+        root.wifiPasswordVisible = false
         if (network.security === "--" || network.security === "")
             root.connectWifi()
         else
@@ -722,9 +736,7 @@ Item {
                                     hoverEnabled: true
                                     cursorShape: Qt.PointingHandCursor
                                     onClicked: {
-                                        root.wifiSelectedSsid = ""
-                                        root.wifiSelectedSecurity = ""
-                                        root.wifiPassword = ""
+                                        root.clearWifiSelection()
                                     }
                                 }
                             }
@@ -766,7 +778,7 @@ Item {
                                     selectionColor: "#E6D7BC"
                                     selectedTextColor: root.textPrimary
                                     font.pixelSize: 10
-                                    echoMode: TextInput.Password
+                                    echoMode: root.wifiPasswordVisible ? TextInput.Normal : TextInput.Password
                                     clip: true
                                     text: root.wifiPassword
                                     onTextChanged: root.wifiPassword = text
