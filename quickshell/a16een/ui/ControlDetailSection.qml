@@ -264,7 +264,8 @@ Item {
     }
 
     function connectWifi() {
-        if (!root.wifiSelectedSsid.length || (wifiPasswordInput.visible && !root.wifiPassword.length && root.wifiSelectedSecurity !== "--"))
+        const requiresPassword = root.wifiSelectedSecurity !== "--" && root.wifiSelectedSecurity !== ""
+        if (!root.wifiSelectedSsid.length || (requiresPassword && !root.wifiPassword.length))
             return
         root.wifiConnecting = true
         const password = root.wifiSelectedSecurity === "--" || root.wifiSelectedSecurity === "" ? "" : root.wifiPassword
@@ -682,12 +683,26 @@ Item {
                         && root.wifiSelectedSecurity !== "--"
                         && root.wifiSelectedSecurity !== ""
                         ? (root.embedded ? 94 : 108) : 0
-                    visible: height > 0
+                    visible: true
+                    opacity: height > 0 ? 1 : 0
                     radius: 13
                     color: "#FFFFFF"
                     border.width: 1
                     border.color: "#DED3C0"
                     clip: true
+
+                    Behavior on height {
+                        NumberAnimation {
+                            duration: 180
+                            easing.type: Easing.OutCubic
+                        }
+                    }
+                    Behavior on opacity {
+                        NumberAnimation {
+                            duration: 140
+                            easing.type: Easing.OutCubic
+                        }
+                    }
 
                     Rectangle {
                         width: 3
@@ -760,7 +775,7 @@ Item {
                                     anchors.left: parent.left
                                     anchors.leftMargin: 9
                                     anchors.right: parent.right
-                                    anchors.rightMargin: 8
+                                    anchors.rightMargin: 42
                                     anchors.verticalCenter: parent.verticalCenter
                                     text: "Wi-Fi password"
                                     color: root.textMuted
@@ -787,9 +802,7 @@ Item {
                                     Keys.onReturnPressed: root.connectWifi()
                                     Keys.onEnterPressed: root.connectWifi()
                                 }
-                            }
 
-                                
                                 Text {
                                     anchors.right: parent.right
                                     anchors.rightMargin: 7
@@ -808,7 +821,9 @@ Item {
                                         onClicked: root.wifiPasswordVisible = !root.wifiPasswordVisible
                                     }
                                 }
+                            }
 
+                                
                             Rectangle {
                                 id: wifiConnectButton
                                 width: root.embedded ? 76 : 86
