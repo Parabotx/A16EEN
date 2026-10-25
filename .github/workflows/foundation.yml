@@ -706,9 +706,14 @@ jobs:
           ! grep -Fq 'fillMode: Image.PreserveAspectCrop' quickshell/a16een/ui/WallpaperPicker.qml
           ! grep -Fq 'previousMouse' quickshell/a16een/ui/WallpaperPicker.qml
           ! grep -Fq 'nextMouse' quickshell/a16een/ui/WallpaperPicker.qml
-          ! grep -Fq 'onClicked: root.selectWallpaperByIndex' quickshell/a16een/ui/WallpaperPicker.qml
-          grep -Fq 'Keys.onLeftPressed' quickshell/a16een/ui/WallpaperPicker.qml
-          grep -Fq 'Keys.onRightPressed' quickshell/a16een/ui/WallpaperPicker.qml
+          grep -Fq 'onClicked: root.selectWallpaperByIndex' quickshell/a16een/ui/WallpaperPicker.qml
+          grep -Fq 'Keys.onPressed: function(event)' quickshell/a16een/ui/WallpaperPicker.qml
+          grep -Fq 'Qt.Key_Left' quickshell/a16een/ui/WallpaperPicker.qml
+          grep -Fq 'Qt.Key_Right' quickshell/a16een/ui/WallpaperPicker.qml
+          grep -Fq 'WlrKeyboardFocus.Exclusive' quickshell/a16een/ui/WallpaperPicker.qml
+          grep -Fq 'keyboardReceiver.forceActiveFocus()' quickshell/a16een/ui/WallpaperPicker.qml
+          grep -Fq 'width: Math.min(root.pickerContentWidth, root.width - 16)' quickshell/a16een/ui/WallpaperPicker.qml
+          ! grep -Fq 'text: "SET"' quickshell/a16een/ui/WallpaperPicker.qml
           grep -Fq 'Behavior on contentX' quickshell/a16een/ui/WallpaperPicker.qml
           grep -Fq 'VideoOutput.PreserveAspectFit' quickshell/a16een/ui/VideoWallpaperPreview.qml
           ! grep -Fq 'VideoOutput.PreserveAspectCrop' quickshell/a16een/ui/VideoWallpaperPreview.qml
