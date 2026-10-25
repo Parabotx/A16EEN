@@ -263,7 +263,7 @@ PanelWindow {
 
     // The AI tile shares the existing Wayland navbar surface but remains its own
     // independently styled/visible container in Appearance → Navbar Containers.
-    readonly property int aiContainerHeight: 40
+    readonly property int aiContainerHeight: 52
 
     readonly property int surfaceHeight:
         root.horizontalNavbar
@@ -1546,11 +1546,13 @@ PanelWindow {
     Rectangle {
         id: aiNavbarContainer
         visible: !root.horizontalNavbar && root.dockVisible && root.aiContainerVisible
-        x: root.navbarPosition === "right" ? parent.width - width : 0
-        y: Math.max(0, Math.round((parent.height - (root.dockHeight + root.aiContainerHeight)) / 2) + 3)
-        width: 32
-        height: 34
-        radius: 11
+        // Center this tiny sigil with the workspace rail, inset from the edge.
+        // The added rail height creates breathing room above the workspace list.
+        x: root.navbarPosition === "right" ? parent.width - width - 8 : 8
+        y: Math.max(0, Math.round((parent.height - (root.dockHeight + root.aiContainerHeight)) / 2) + 2)
+        width: 24
+        height: 26
+        radius: 9
         color: root.containerColorFor("ai")
         border.width: 1
         border.color: root.containerBorderColorFor("ai")
@@ -1562,30 +1564,30 @@ PanelWindow {
 
         Rectangle {
             anchors.fill: parent
-            anchors.margins: -3
-            radius: 14
+            anchors.margins: -2
+            radius: 12
             color: root.iconColorFor("ai")
-            opacity: aiNavbarMouse.containsMouse ? 0.12 : 0.025
+            opacity: aiNavbarMouse.containsMouse ? 0.14 : 0.025
             Behavior on opacity { NumberAnimation { duration: 180; easing.type: Easing.OutCubic } }
             z: -1
         }
 
         Rectangle {
             anchors.centerIn: parent
-            width: 24
-            height: 24
-            radius: 8
+            width: 20
+            height: 20
+            radius: 7
             color: aiNavbarMouse.containsMouse ? root.hoverColorFor("ai") : "transparent"
             Behavior on color { ColorAnimation { duration: 130; easing.type: Easing.OutCubic } }
         }
 
         NavbarImage {
             anchors.centerIn: parent
-            width: 19
-            height: 19
+            width: 16
+            height: 16
             slot: "ai"
             generatedPath: root.generatedIconPath("ai")
-            fallbackPath: root.fallbackIconPath("wand-sparkles.svg")
+            fallbackPath: root.fallbackIconPath("a16een-ai-sigil.svg")
             refreshRevision: root.navbarRevision
             active: aiNavbarMouse.containsMouse
             hovered: aiNavbarMouse.containsMouse
