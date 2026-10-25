@@ -112,8 +112,7 @@ TOOLS = [{"functionDeclarations": FUNCTIONS}]
 
 def emit(value: dict[str, Any], code: int = 0) -> None:
     print(json.dumps(value, ensure_ascii=False, separators=(",", ":")))
-    if code:
-        raise SystemExit(code)
+    raise SystemExit(code)
 
 def read_json_stdin() -> dict[str, Any]:
     line = sys.stdin.readline(MAX_PROMPT_CHARS * 4 + 1)
