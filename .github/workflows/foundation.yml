@@ -104,6 +104,9 @@ jobs:
           test "$(grep -c 'sourceSize.width: 64' quickshell/a16een/ui/QuickHubTray.qml)" -eq 2
           grep -Fq 'signal toolRequested(string toolId)' quickshell/a16een/ui/ToolsPanel.qml
           grep -Fq 'label: "System Monitor"' quickshell/a16een/ui/ToolsPanel.qml
+          grep -Fq 'id: aiNavbarContainer' quickshell/a16een/ui/Dock.qml
+          grep -Fq 'onAiRequested: root.openToolsPage("ai")' quickshell/a16een/shell.qml
+          grep -Fq '{ id: "ai", name: "A16EEN AI"' quickshell/a16een/ui/NavbarAppearancePage.qml
           grep -Fq 'label: "Data Meter"' quickshell/a16een/ui/ToolsPanel.qml
           grep -Fq 'DataMeterIndicator {' quickshell/a16een/shell.qml
           grep -Fq 'popupCardStyle.fieldColor' quickshell/a16een/ui/QuickNotes.qml

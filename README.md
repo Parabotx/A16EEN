@@ -434,3 +434,6 @@ The assistant can inspect system/network status, run A16EEN diagnostics, list an
 Power actions such as closing the focused window, logging out, suspending, restarting, or powering off are shown in a review card with a specific explanation and require a deliberate confirmation. Routine, reversible actions do not pause for approval. The action executor exposes a fixed allowlist of typed functions; Gemini output is never run as a shell command.
 
 The assistant requires an internet connection and a working Gemini API key. It uses the Gemini 3.8 Flash API by default. You can check the key state with `a16 ai status` or remove the saved key with `a16 ai key remove`. The desktop's normal controls and terminal commands continue to work without AI.
+
+
+The navbar also has a dedicated **A16EEN AI** container above the workspace rail on vertical layouts. Open `/navbar` → **Appearance** → **A16EEN AI** to show/hide it and adjust its background and icon color. The tile opens the same Gemini assistant in Quick Tools.

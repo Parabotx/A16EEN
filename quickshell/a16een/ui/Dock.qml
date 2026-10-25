@@ -22,6 +22,7 @@ PanelWindow {
     signal lockRequested()
     signal dockVisibilityChanged(bool visible)
     signal utilitiesRequested(string mode)
+    signal aiRequested()
 
     property bool lockInProgress: false
     property bool powerMenuOpen: false
@@ -258,10 +259,18 @@ PanelWindow {
             ? (root.dockVisible ? root.dockWidth : root.modelData.width)
             : (root.dockVisible ? 66 : 8)
 
+    readonly property bool aiContainerVisible: root.containerIsVisible("ai")
+
+    // The AI tile shares the existing Wayland navbar surface but remains its own
+    // independently styled/visible container in Appearance → Navbar Containers.
+    readonly property int aiContainerHeight: 54
+
     readonly property int surfaceHeight:
         root.horizontalNavbar
             ? (root.dockVisible ? root.dockHeight : 8)
-            : (root.dockVisible ? root.dockHeight : 240)
+            : (root.dockVisible
+                ? root.dockHeight + (root.aiContainerVisible ? root.aiContainerHeight : 0)
+                : 240)
 
     readonly property int horizontalCenterMargin:
         Math.max(0, Math.round((root.modelData.width - root.surfaceWidth) / 2))
@@ -1427,6 +1436,7 @@ PanelWindow {
                 ? 0
                 : (root.navbarPosition === "bottom" ? parent.height + 2 : -height - 2))
             : Math.round((parent.height - height) / 2)
+                + (root.dockVisible && root.aiContainerVisible ? root.aiContainerHeight / 2 : 0)
 
         visible: root.containerIsVisible("workspaces")
         width: root.horizontalNavbar ? root.dockWidth : 44
@@ -1531,6 +1541,86 @@ PanelWindow {
                 }
             }
         }
+    }
+
+    Rectangle {
+        id: aiNavbarContainer
+        visible: !root.horizontalNavbar && root.dockVisible && root.aiContainerVisible
+        x: root.navbarPosition === "right" ? parent.width - width : 0
+        y: Math.max(0, Math.round((parent.height - (root.dockHeight + root.aiContainerHeight)) / 2) + 3)
+        width: 44
+        height: 48
+        radius: 15
+        color: root.containerColorFor("ai")
+        border.width: 1
+        border.color: root.containerBorderColorFor("ai")
+        z: 10
+
+        Behavior on color { ColorAnimation { duration: 140; easing.type: Easing.OutCubic } }
+        Behavior on border.color { ColorAnimation { duration: 140; easing.type: Easing.OutCubic } }
+        Behavior on y { NumberAnimation { duration: 160; easing.type: Easing.OutCubic } }
+
+        Rectangle {
+            anchors.fill: parent
+            anchors.margins: -4
+            radius: 19
+            color: root.iconColorFor("ai")
+            opacity: aiNavbarMouse.containsMouse ? 0.10 : 0.035
+            Behavior on opacity { NumberAnimation { duration: 180; easing.type: Easing.OutCubic } }
+            z: -1
+        }
+
+        Column {
+            anchors.centerIn: parent
+            spacing: 1
+
+            Item {
+                width: 25
+                height: 25
+                anchors.horizontalCenter: parent.horizontalCenter
+
+                NavbarImage {
+                    anchors.centerIn: parent
+                    width: 20
+                    height: 20
+                    slot: "ai"
+                    generatedPath: root.generatedIconPath("ai")
+                    fallbackPath: root.fallbackIconPath("sparkles.svg")
+                    refreshRevision: root.navbarRevision
+                    active: aiNavbarMouse.containsMouse
+                    hovered: aiNavbarMouse.containsMouse
+                }
+            }
+
+            Text {
+                width: 34
+                height: 10
+                text: "AI"
+                color: root.iconColorFor("ai")
+                font.pixelSize: 7
+                font.weight: Font.Bold
+                font.letterSpacing: 1.0
+                horizontalAlignment: Text.AlignHCenter
+                verticalAlignment: Text.AlignVCenter
+            }
+        }
+
+        scale: aiNavbarMouse.containsMouse ? 1.035 : 1.0
+        Behavior on scale {
+            NumberAnimation { duration: 130; easing.type: Easing.OutCubic }
+        }
+
+        MouseArea {
+            id: aiNavbarMouse
+            anchors.fill: parent
+            hoverEnabled: true
+            cursorShape: Qt.PointingHandCursor
+            onEntered: root.revealDock()
+            onExited: root.scheduleHide()
+            onClicked: root.aiRequested()
+        }
+
+        Accessible.name: "A16EEN AI desktop assistant"
     }
 
     component BatteryGlyph: Item {

@@ -41,6 +41,8 @@ Help the user accomplish computer tasks using only the typed tools provided to y
 Never invent tools, run shell commands, or ask the user to paste terminal commands as if you executed them.
 When the user asks for an action, use the relevant tool. You may call more than one tool when needed,
 but prefer the smallest useful sequence. Inspect state before making a repair when possible.
+For questions about the current desktop or moving windows, use get_desktop_context first.
+For compound requests, check preconditions, carry out the steps in order, and verify outcomes where possible.
 Use random_wallpaper for a random change and set_wallpaper only with a filename from list_wallpapers.
 Use list_applications when the installed app matching a request is unclear.
 Only claim something changed if a tool response says it succeeded. If a tool fails, explain the failure
@@ -65,6 +67,7 @@ def prop(kind: str, description: str, **extra: Any) -> dict[str, Any]:
 
 FUNCTIONS: list[dict[str, Any]] = [
     {"name": "get_system_status", "description": "Read current CPU, memory, disk, power profile, network connectivity, volume and battery information available from A16EEN. Use only when relevant to the request.", "parameters": schema()},
+    {"name": "get_desktop_context", "description": "Read the focused window, active workspace, available workspaces, and a limited list of open windows. Use this before window-management requests so you know what is actually focused.", "parameters": schema()},
     {"name": "diagnose_network", "description": "Read NetworkManager connectivity, device states and Wi-Fi radio state. Does not reveal saved Wi-Fi passwords.", "parameters": schema()},
     {"name": "run_system_diagnostics", "description": "Run A16EEN's read-only system doctor and return its diagnostic report.", "parameters": schema()},
     {"name": "get_current_wallpaper", "description": "Get the current A16EEN wallpaper's collection and filename.", "parameters": schema()},
@@ -84,6 +87,13 @@ FUNCTIONS: list[dict[str, Any]] = [
     {"name": "focus_workspace", "description": "Focus a workspace in Niri. Use a workspace number or a configured workspace name such as home, code, web, comms, studio, or music.", "parameters": schema({
         "workspace": prop("STRING", "Workspace number or workspace name.")
     }, ["workspace"])},
+    {"name": "move_focused_column_to_workspace", "description": "Move the currently focused Niri column into an existing workspace. Use get_desktop_context first when you need to identify the target workspace.", "parameters": schema({
+        "workspace": prop("STRING", "An existing workspace name or index from get_desktop_context.")
+    }, ["workspace"])},
+    {"name": "toggle_fullscreen", "description": "Toggle fullscreen for the currently focused application window.", "parameters": schema()},
+    {"name": "toggle_floating", "description": "Toggle whether the focused window floats above the tiling layout.", "parameters": schema()},
+    {"name": "maximize_focused_column", "description": "Maximize the focused Niri column.", "parameters": schema()},
+    {"name": "center_focused_column", "description": "Center the focused Niri column.", "parameters": schema()},
     {"name": "set_volume", "description": "Set the system output volume between 0 and 100 percent.", "parameters": schema({
         "percent": prop("NUMBER", "Target volume from 0 through 100.")
     }, ["percent"])},
@@ -296,6 +306,50 @@ def call_tool(name: str, args: dict[str, Any], approved: bool = False) -> dict[s
                 snapshot[label] = "unavailable: " + str(error)
         return {"ok": True, "result": snapshot}
 
+    if name == "get_desktop_context":
+        exact_args(set())
+        raw_windows = json.loads(run(["niri", "msg", "--json", "windows"], timeout=8))
+        raw_workspaces = json.loads(run(["niri", "msg", "--json", "workspaces"], timeout=8))
+        windows = raw_windows.get("windows", []) if isinstance(raw_windows, dict) else raw_windows
+        workspaces = raw_workspaces.get("workspaces", []) if isinstance(raw_workspaces, dict) else raw_workspaces
+        if not isinstance(windows, list):
+            windows = []
+        if not isinstance(workspaces, list):
+            workspaces = []
+        safe_workspaces = []
+        for workspace in workspaces[:30]:
+            if not isinstance(workspace, dict):
+                continue
+            safe_workspaces.append({
+                "id": workspace.get("id"),
+                "index": workspace.get("idx", workspace.get("index")),
+                "name": str(workspace.get("name") or workspace.get("idx") or workspace.get("index") or "")[:80],
+                "focused": bool(workspace.get("is_focused", workspace.get("is_active", False))),
+                "output": str(workspace.get("output") or "")[:80],
+            })
+        safe_windows = []
+        for window in windows[:30]:
+            if not isinstance(window, dict):
+                continue
+            safe_windows.append({
+                "id": window.get("id"),
+                "title": str(window.get("title") or "")[:180],
+                "app_id": str(window.get("app_id") or "")[:120],
+                "workspace_id": window.get("workspace_id"),
+                "focused": bool(window.get("is_focused", False)),
+                "floating": bool(window.get("is_floating", False)),
+                "fullscreen": bool(window.get("is_fullscreen", False)),
+            })
+        focused = next((item for item in safe_windows if item["focused"]), None)
+        focused_workspace = next((item for item in safe_workspaces if item["focused"]), None)
+        return {"ok": True, "result": {
+            "focused_window": focused,
+            "active_workspace": focused_workspace,
+            "workspaces": safe_workspaces,
+            "open_windows": safe_windows,
+            "open_window_count": len(windows),
+        }}
+
     if name == "diagnose_network":
         exact_args(set())
         data: dict[str, Any] = {}
@@ -408,6 +462,35 @@ def call_tool(name: str, args: dict[str, Any], approved: bool = False) -> dict[s
         if not re.fullmatch(r"(?:[1-9][0-9]?|[A-Za-z][A-Za-z0-9 _-]{0,39})", workspace):
             raise ValueError("Use a workspace number from 1–99 or a simple workspace name.")
         return {"ok": True, "result": run(["niri", "msg", "action", "focus-workspace", workspace]) or "Workspace focus requested."}
+
+    if name == "move_focused_column_to_workspace":
+        exact_args({"workspace"}, {"workspace"})
+        target = str(args["workspace"]).strip()
+        if not re.fullmatch(r"(?:[1-9][0-9]?|[A-Za-z][A-Za-z0-9 _-]{0,39})", target):
+            raise ValueError("Use a simple workspace name or index from get_desktop_context.")
+        context = call_tool("get_desktop_context", {})
+        available = context.get("result", {}).get("workspaces", [])
+        match = next((item for item in available
+                      if target in (str(item.get("name", "")), str(item.get("index", "")), str(item.get("id", "")))), None)
+        if not match:
+            raise ValueError("That workspace isn't currently available. Call get_desktop_context to see existing workspaces.")
+        return {"ok": True, "result": run(["niri", "msg", "action", "move-column-to-workspace", target]) or ("Moved the focused column to " + str(match.get("name") or target) + ".")}
+
+    if name in ("toggle_fullscreen", "toggle_floating", "maximize_focused_column", "center_focused_column"):
+        exact_args(set())
+        commands = {
+            "toggle_fullscreen": ["a16", "fullscreen"],
+            "toggle_floating": ["a16", "float"],
+            "maximize_focused_column": ["a16", "maximize"],
+            "center_focused_column": ["a16", "center"],
+        }
+        result = run(commands[name])
+        return {"ok": True, "result": result or {
+            "toggle_fullscreen": "Fullscreen toggled.",
+            "toggle_floating": "Floating state toggled.",
+            "maximize_focused_column": "Focused column maximized.",
+            "center_focused_column": "Focused column centered.",
+        }[name]}
 
     if name == "set_volume":
         exact_args({"percent"}, {"percent"})

@@ -1700,6 +1700,7 @@ ShellRoot {
 
             onLockRequested: root.requestLockScreen()
             onUtilitiesRequested: root.handleUtilitiesRequest(mode)
+            onAiRequested: root.openToolsPage("ai")
         }
     }
 

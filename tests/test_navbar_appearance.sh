@@ -43,11 +43,13 @@ chmod +x "$A16EEN_NAVBAR_CMD"
 run() { bash "$ROOT/scripts/a16een-navbar-appearance" "$@"; }
 
 run get >/dev/null
-jq -e '.schemaVersion == 5 and (.workspaces == null)
-    and (.containers | has("workspaces") and has("battery") and has("time") and has("utilities") and has("power")
+jq -e '.schemaVersion == 6 and (.workspaces == null)
+    and (.containers | has("workspaces") and has("ai") and has("battery") and has("time") and has("utilities") and has("power")
         and has("quick-actions") and has("quick-hub") and has("data-meter"))
     and .containers.workspaces.visible == true
     and .containers.workspaces.iconColor == "inherit"
+    and .containers.ai.visible == true
+    and .containers.ai.iconColor == "inherit"
     and .containers["quick-hub"].applyPopupCardColor == false
     and .containers["quick-actions"].visible == true
     and .containers["quick-hub"].visible == true' \
@@ -88,6 +90,10 @@ run set container workspaces visible off
 run set container battery containerColor '#070B13'
 run set container power iconColor auto
 run set container quick-actions containerColor '#E7E8EA'
+run set container ai visible off
+run set container ai visible on
+run set container ai containerColor '#F4F5F7'
+run set container ai iconColor '#9C6B15'
 run set container quick-hub iconColor '#1D4ED8'
 run set container data-meter containerColor '#070B13'
 run set container data-meter iconColor '#FFFFFF'
@@ -111,6 +117,10 @@ jq -e '.containers["quick-actions"].containerEnabled == true
     and .containers["data-meter"].containerEnabled == true
     and .containers["data-meter"].containerColor == "#070B13"
     and .containers["data-meter"].iconColor == "#FFFFFF"
+    and .containers.ai.visible == true
+    and .containers.ai.containerEnabled == true
+    and .containers.ai.containerColor == "#F4F5F7"
+    and .containers.ai.iconColor == "#9C6B15"
     and .containers.workspaces.visible == false
     and .containers.battery.containerEnabled == true
     and .containers.battery.containerColor == "#070B13"
@@ -127,4 +137,5 @@ grep -q "^apply$" "$APPLY_LOG"
 grep -q "^apply-appearance power$" "$APPLY_LOG"
 grep -q "^apply-appearance quick-actions$" "$APPLY_LOG"
 grep -q "^apply-appearance quick-hub$" "$APPLY_LOG"
+grep -q "^apply-appearance ai$" "$APPLY_LOG"
 echo "Navbar container appearance tests passed."

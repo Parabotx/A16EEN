@@ -33,6 +33,10 @@ with tempfile.TemporaryDirectory() as temp:
     tools = invoke(env, "tools")
     assert tools["ok"] is True
     names = {item["name"]: item["requires_confirmation"] for item in tools["actions"]}
+    assert names["get_desktop_context"] is False
+    assert names["move_focused_column_to_workspace"] is False
+    assert names["toggle_fullscreen"] is False
+    assert names["toggle_floating"] is False
     assert names["random_wallpaper"] is False
     assert names["set_wallpaper"] is False
     assert names["reboot_system"] is True
