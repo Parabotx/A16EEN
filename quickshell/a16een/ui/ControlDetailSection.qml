@@ -397,6 +397,16 @@ Item {
             }
         }
 
+        onExited: (exitCode, exitStatus) => {
+            if (root.actionArgs.length >= 2
+                && root.actionArgs[0] === "wifi"
+                && root.actionArgs[1] === "connect") {
+                root.wifiConnecting = false
+                if (exitCode === 0)
+                    root.clearWifiSelection()
+            }
+        }
+
         onRunningChanged: {
             if (!running)
                 actionRefreshTimer.restart()
@@ -683,7 +693,7 @@ Item {
                         && root.wifiSelectedSecurity !== "--"
                         && root.wifiSelectedSecurity !== ""
                         ? (root.embedded ? 94 : 108) : 0
-                    visible: true
+                    visible: height > 0
                     opacity: height > 0 ? 1 : 0
                     radius: 13
                     color: "#FFFFFF"
