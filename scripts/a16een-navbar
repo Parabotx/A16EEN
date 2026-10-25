@@ -256,18 +256,18 @@ ensure_settings() {
 }
 
 migrate_ai_default_icon() {
-    local marker="$STATE_DIR/ai-navbar-wand-icon-v1"
+    local marker="$STATE_DIR/ai-navbar-sigil-v1"
     [[ -e "$marker" ]] && return 0
 
     local configured_icon registry_icon tmp
     configured_icon="$(jq -r '.ai.icon // empty' "$SETTINGS_FILE" 2>/dev/null || true)"
     registry_icon="$(jq -r '[.[]? | select(.id == "ai") | .icon][0] // empty' "$REGISTRY_FILE" 2>/dev/null || true)"
 
-    # Only replace the old stock sparkles icon once. Any other user-selected icon
-    # is retained, and the marker prevents later manual choices being overwritten.
-    if [[ "$configured_icon" == "sparkles.svg" || ( -z "$configured_icon" && "$registry_icon" == "sparkles.svg" ) ]]; then
+    # Upgrade only previous stock icons. Never overwrite a custom user choice.
+    if [[ "$configured_icon" == "sparkles.svg" || "$configured_icon" == "wand-sparkles.svg" \
+        || ( -z "$configured_icon" && ( "$registry_icon" == "sparkles.svg" || "$registry_icon" == "wand-sparkles.svg" ) ) ]]; then
         tmp="$(mktemp "$STATE_DIR/navbar.json.XXXXXX")"
-        if jq '.ai.icon = "wand-sparkles.svg"' "$SETTINGS_FILE" > "$tmp"; then
+        if jq '.ai.icon = "a16een-ai-sigil.svg"' "$SETTINGS_FILE" > "$tmp"; then
             mv -f "$tmp" "$SETTINGS_FILE"
         else
             rm -f "$tmp"
@@ -319,7 +319,7 @@ generate_icon() {
             quick-actions-presets) configured_icon="quick-presets.svg" ;;
             quick-hub-notifications) configured_icon="lucide-bell.svg" ;;
             quick-hub-tools) configured_icon="lucide-toolbox.svg" ;;
-            ai) configured_icon="wand-sparkles.svg" ;;
+            ai) configured_icon="a16een-ai-sigil.svg" ;;
             *) configured_icon="house.svg" ;;
         esac
     fi

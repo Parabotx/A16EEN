@@ -53,6 +53,33 @@ Do not claim that you can access arbitrary files, view the screen, read clipboar
 commands: those powers are not provided. Keep responses concise, direct, and friendly.
 """
 
+MODE_INSTRUCTIONS: dict[str, str] = {
+    "normal": (
+        "NORMAL MODE: Be a capable general-purpose assistant. Answer everyday questions "
+        "naturally and help with desktop actions when the user asks. Use local tools when "
+        "current desktop facts or an action need verification. Keep the answer practical "
+        "and distinguish explanations from actions you actually performed."
+    ),
+    "explain": (
+        "EXPLAIN MODE: Prioritize explaining what something means, how it works, and why it "
+        "happens. Use clear steps, examples, and plain language rather than jumping directly "
+        "to fixes. For questions about this computer, use relevant read-only tools when useful. "
+        "Do not change settings or perform system actions unless the user explicitly asks you "
+        "to make that change. Keep all existing confirmation requirements."
+    ),
+    "diagnose": (
+        "DIAGNOSE MODE: Treat problem reports as an investigation, not a generic Q&A. Before "
+        "suggesting a cause, gather evidence with the most relevant read-only tools: use "
+        "run_system_diagnostics and get_system_status for broad system issues; diagnose_network "
+        "for Wi-Fi/connectivity; get_desktop_context for workspace/window problems. Use more "
+        "than one relevant tool when useful. Report confirmed observations separately from "
+        "hypotheses, explain the most likely cause, and propose the smallest safe fix in order. "
+        "Do not change anything unless the user explicitly asks for a repair. Never invent "
+        "logs, facts, diagnoses, or tool results, and preserve confirmation gates for sensitive actions."
+    ),
+}
+
+
 def schema(properties: dict[str, Any] | None = None, required: list[str] | None = None) -> dict[str, Any]:
     return {
         "type": "OBJECT",
@@ -215,6 +242,13 @@ def request_gemini(body: dict[str, Any]) -> dict[str, Any]:
     return candidates[0]["content"]
 
 def ask_gemini(payload: dict[str, Any]) -> dict[str, Any]:
+    raw_mode = payload.get("mode", "normal")
+    if not isinstance(raw_mode, str):
+        raise ValueError("Choose normal, explain, or diagnose mode.")
+    mode = raw_mode.strip().lower()
+    if mode not in MODE_INSTRUCTIONS:
+        raise ValueError("Choose normal, explain, or diagnose mode.")
+
     history = payload.get("history", [])
     if not isinstance(history, list) or not history or len(history) > MAX_HISTORY_ITEMS:
         raise ValueError("Conversation history is missing or too long. Start a new chat.")
@@ -227,7 +261,9 @@ def ask_gemini(payload: dict[str, Any]) -> dict[str, Any]:
             raise ValueError("Conversation message contains invalid parts.")
         cleaned.append(item)
     body = {
-        "systemInstruction": {"parts": [{"text": SYSTEM_INSTRUCTION}]},
+        "systemInstruction": {
+            "parts": [{"text": SYSTEM_INSTRUCTION + "\n\n" + MODE_INSTRUCTIONS[mode]}]
+        },
         "contents": cleaned,
         "tools": TOOLS,
         "toolConfig": {"functionCallingConfig": {"mode": "AUTO"}},
@@ -250,6 +286,7 @@ def ask_gemini(payload: dict[str, Any]) -> dict[str, Any]:
     return {
         "ok": True,
         "model": MODEL,
+        "mode": mode,
         "content": content,
         "calls": calls,
         "text": "\n".join(text_parts).strip(),

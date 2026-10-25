@@ -14,6 +14,12 @@ Item {
     property string pageMode: "chat"
     property string keyDraft: ""
     property string inputText: ""
+    property string assistantMode: "normal"
+    readonly property var assistantModes: [
+        { id: "normal", label: "Normal", icon: "sparkles.svg" },
+        { id: "explain", label: "Explain", icon: "book-open.svg" },
+        { id: "diagnose", label: "Diagnose", icon: "bug.svg" }
+    ]
     property string statusLine: "Ready when you are"
     property int progressIndex: 0
     property var progressPhrases: [
@@ -74,6 +80,21 @@ Item {
         root.progressIndex = 0
         root.statusLine = "Understanding your request"
         root.requestGemini()
+    }
+
+    function selectAssistantMode(mode) {
+        if (root.busy || root.awaitingApproval)
+            return
+        const normalized = String(mode || "").toLowerCase()
+        if (!root.assistantModes.some(item => item.id === normalized))
+            return
+        root.assistantMode = normalized
+        const status = {
+            normal: "Ready when you are",
+            explain: "Explain mode · focus on how and why",
+            diagnose: "Diagnose mode · gather evidence first"
+        }
+        root.statusLine = status[normalized]
     }
 
     function requestGemini() {
@@ -423,7 +444,7 @@ Item {
         command: ["a16een-ai", "ask"]
         stdinEnabled: true
         running: false
-        onStarted: write(JSON.stringify({ history: root.history }) + "\n")
+        onStarted: write(JSON.stringify({ history: root.history, mode: root.assistantMode }) + "\n")
         stdout: StdioCollector {
             onStreamFinished: root.handleGeminiResponse(String(text || "{}"))
         }
@@ -656,6 +677,7 @@ Item {
             spacing: 7
 
             Row {
+                id: chatStatusRow
                 width: parent.width
                 height: 22
                 spacing: 6
@@ -749,10 +771,67 @@ Item {
                 }
             }
 
+            Row {
+                id: modeSelector
+                width: parent.width
+                height: 29
+                spacing: 6
+
+                Repeater {
+                    model: root.assistantModes
+
+                    delegate: Rectangle {
+                        id: modeChip
+                        required property var modelData
+                        width: Math.floor((modeSelector.width - 12) / 3)
+                        height: 29
+                        radius: 9
+                        color: root.assistantMode === modelData.id ? root.subtleColor : "transparent"
+                        border.width: 1
+                        border.color: root.assistantMode === modelData.id ? root.accentColor : root.borderColor
+
+                        Behavior on color { ColorAnimation { duration: 120; easing.type: Easing.OutCubic } }
+                        Behavior on border.color { ColorAnimation { duration: 120; easing.type: Easing.OutCubic } }
+
+                        Row {
+                            anchors.centerIn: parent
+                            spacing: 5
+
+                            NavbarIcon {
+                                anchors.verticalCenter: parent.verticalCenter
+                                width: 12
+                                height: 12
+                                iconName: modeChip.modelData.icon
+                                iconColor: root.assistantMode === modeChip.modelData.id ? root.textColor : root.mutedTextColor
+                            }
+
+                            Text {
+                                anchors.verticalCenter: parent.verticalCenter
+                                text: modeChip.modelData.label
+                                color: root.assistantMode === modeChip.modelData.id ? root.textColor : root.mutedTextColor
+                                font.pixelSize: 8
+                                font.weight: root.assistantMode === modeChip.modelData.id ? Font.DemiBold : Font.Medium
+                            }
+                        }
+
+                        MouseArea {
+                            anchors.fill: parent
+                            hoverEnabled: true
+                            cursorShape: Qt.PointingHandCursor
+                            enabled: !root.busy && !root.awaitingApproval
+                            onClicked: root.selectAssistantMode(modeChip.modelData.id)
+                        }
+
+                        Accessible.name: modeChip.modelData.label + " response mode"
+                    }
+                }
+            }
+
             ListView {
                 id: messageList
                 width: parent.width
-                height: Math.max(80, chatPanel.height - 79 - (root.awaitingApproval ? 115 : 0) - (errorMessage.visible ? 29 : 0))
+                height: Math.max(80, chatPanel.height - chatStatusRow.height - modeSelector.height
+                    - chatComposerRow.height - approvalCard.height - errorMessage.height - chatPanel.spacing * 5)
                 clip: true
                 spacing: 7
                 model: messageModel
@@ -792,6 +871,7 @@ Item {
             }
 
             Rectangle {
+                id: approvalCard
                 visible: root.awaitingApproval
                 width: parent.width
                 height: root.awaitingApproval ? 108 : 0
@@ -901,6 +981,7 @@ Item {
             }
 
             Row {
+                id: chatComposerRow
                 width: parent.width
                 height: 43
                 spacing: 7

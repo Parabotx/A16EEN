@@ -1,4 +1,6 @@
 #!/usr/bin/env python3
+import importlib.machinery
+import importlib.util
 import json
 import os
 import stat
@@ -6,6 +8,7 @@ import subprocess
 import sys
 import tempfile
 from pathlib import Path
+from unittest import mock
 
 ROOT = Path(__file__).resolve().parents[1]
 SCRIPT = ROOT / "scripts" / "a16een-ai"
@@ -74,25 +77,71 @@ with tempfile.TemporaryDirectory() as temp:
     assert removed["configured"] is False
     assert not key_path.exists()
 
+# Test mode-specific system prompts with a stubbed network boundary.
+loader = importlib.machinery.SourceFileLoader("a16een_ai_under_test", str(SCRIPT))
+spec = importlib.util.spec_from_loader("a16een_ai_under_test", loader)
+assert spec is not None and spec.loader is not None
+ai_module = importlib.util.module_from_spec(spec)
+spec.loader.exec_module(ai_module)
+
+
+def test_mode(mode: str) -> str:
+    captured = {}
+
+    def fake_request(body):
+        captured["body"] = body
+        return {"parts": [{"text": "mode test response"}]}
+
+    with mock.patch.object(ai_module, "request_gemini", side_effect=fake_request):
+        result = ai_module.ask_gemini({
+            "mode": mode,
+            "history": [{"role": "user", "parts": [{"text": "Why is this happening?"}]}],
+        })
+    assert result["ok"] and result["mode"] == mode and result["text"] == "mode test response"
+    return captured["body"]["systemInstruction"]["parts"][0]["text"]
+
+
+normal_prompt = test_mode("normal")
+explain_prompt = test_mode("explain")
+diagnose_prompt = test_mode("diagnose")
+assert "general-purpose assistant" in normal_prompt
+assert "Prioritize explaining" in explain_prompt and "Do not change settings" in explain_prompt
+assert "Treat problem reports as an investigation" in diagnose_prompt
+assert "run_system_diagnostics" in diagnose_prompt and "diagnose_network" in diagnose_prompt
+try:
+    test_mode("surprise")
+    raise AssertionError("Unknown assistant modes must be rejected.")
+except ValueError:
+    pass
+
+
 dock_qml = (ROOT / "quickshell/a16een/ui/Dock.qml").read_text()
 assistant_qml = (ROOT / "quickshell/a16een/ui/AIAssistantPage.qml").read_text()
+ai_icon = (ROOT / "quickshell/a16een/assets/icons/a16een-ai-sigil.svg").read_text()
 tools_panel_qml = (ROOT / "quickshell/a16een/ui/ToolsPanel.qml").read_text()
 navbar_script = (ROOT / "scripts/a16een-navbar").read_text()
 
 # UI regressions: keep the navbar tile compact/icon-only, the composer pinned
 # to the bottom, and the AI popup's top-right control a real close action.
-assert "readonly property int aiContainerHeight: 40" in dock_qml
-assert "width: 32" in dock_qml and "height: 34" in dock_qml
+assert "readonly property int aiContainerHeight: 52" in dock_qml
+assert "width: 24" in dock_qml and "height: 26" in dock_qml
+assert 'x: root.navbarPosition === "right" ? parent.width - width - 8 : 8' in dock_qml
 assert 'text: "AI"' not in dock_qml
-assert 'fallbackPath: root.fallbackIconPath("wand-sparkles.svg")' in dock_qml
-assert 'Math.max(80, chatPanel.height - 79' in assistant_qml
+assert 'fallbackPath: root.fallbackIconPath("a16een-ai-sigil.svg")' in dock_qml
+assert 'property string assistantMode: "normal"' in assistant_qml
+assert 'model: root.assistantModes' in assistant_qml
+assert 'mode: root.assistantMode' in assistant_qml
+assert 'Math.max(80, chatPanel.height - chatStatusRow.height - modeSelector.height' in assistant_qml
+assert 'MODE_INSTRUCTIONS[mode]' in (ROOT / "scripts/a16een-ai").read_text()
+assert 'viewBox="0 0 24 24"' in ai_icon and ai_icon.count("<path") >= 2
 assert assistant_qml.index("id: errorMessage") < assistant_qml.index("id: composerSendButton")
 assert 'text: "A16EEN AI"' not in assistant_qml
 assert 'text: root.busy ? "WORKING" : "SEND  ↑"' not in assistant_qml
 assert 'iconName: "lucide-settings.svg"' in assistant_qml
 assert 'visible: root.page !== "ai"' in tools_panel_qml
 assert 'root.closeRequested()' in tools_panel_qml and 'root.backRequested()' in tools_panel_qml
-assert 'ai) configured_icon="wand-sparkles.svg" ;;' in navbar_script
+assert 'ai) configured_icon="a16een-ai-sigil.svg" ;;' in navbar_script
 assert "migrate_ai_default_icon()" in navbar_script
+assert "ai-navbar-sigil-v1" in navbar_script
 
-print("A16EEN AI safety, key-storage, and UI regression tests passed.")
+print("A16EEN AI safety, key-storage, UI, and mode tests passed.")
