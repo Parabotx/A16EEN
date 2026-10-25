@@ -772,7 +772,7 @@ Item {
                                     id: wifiPasswordInput
                                     anchors.fill: parent
                                     anchors.leftMargin: 9
-                                    anchors.rightMargin: 8
+                                    anchors.rightMargin: 42
                                     verticalAlignment: TextInput.AlignVCenter
                                     color: root.textPrimary
                                     selectionColor: "#E6D7BC"
@@ -788,6 +788,26 @@ Item {
                                     Keys.onEnterPressed: root.connectWifi()
                                 }
                             }
+
+                                
+                                Text {
+                                    anchors.right: parent.right
+                                    anchors.rightMargin: 7
+                                    anchors.verticalCenter: parent.verticalCenter
+                                    width: 31
+                                    text: root.wifiPasswordVisible ? "HIDE" : "SHOW"
+                                    color: root.accent
+                                    font.pixelSize: 7
+                                    font.weight: Font.DemiBold
+                                    horizontalAlignment: Text.AlignHCenter
+
+                                    MouseArea {
+                                        anchors.fill: parent
+                                        anchors.margins: -5
+                                        cursorShape: Qt.PointingHandCursor
+                                        onClicked: root.wifiPasswordVisible = !root.wifiPasswordVisible
+                                    }
+                                }
 
                             Rectangle {
                                 id: wifiConnectButton
