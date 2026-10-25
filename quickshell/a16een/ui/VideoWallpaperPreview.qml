@@ -31,7 +31,7 @@ Item {
     VideoOutput {
         id: previewOutput
         anchors.fill: parent
-        fillMode: VideoOutput.PreserveAspectCrop
+        fillMode: VideoOutput.PreserveAspectFit
         visible: previewPlayer.hasVideo
     }
 }
