@@ -47,6 +47,8 @@ jobs:
           bash -n tests/test_navbar_appearance.sh
           bash -n tests/test_mpv_theme.sh
           bash -n scripts/a16een-control
+          bash -n tests/test_wifi_network_discovery.sh
+          bash tests/test_wifi_network_discovery.sh
           bash -n scripts/a16een-lockscreen
           python3 -m py_compile scripts/a16een-clipboard scripts/a16een-app-stash scripts/a16een-system-monitor scripts/a16een-data-meter
           python3 tests/test_app_stash.py
