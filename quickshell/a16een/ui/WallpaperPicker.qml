@@ -41,6 +41,7 @@ PanelWindow {
     readonly property int pickerWidth: Math.max(0, Math.min(820, root.width - 24))
     readonly property int thumbnailWidth: Math.max(28, Math.min(80, Math.floor((root.pickerWidth - 140) / 8)))
     readonly property int railWidth: Math.max(0, Math.min(root.thumbnailWidth * 8 + 42, root.pickerWidth - 54))
+    readonly property int pickerContentWidth: root.railWidth + 69
     readonly property int pickerBarHeight: 76
     property bool animateRail: true
 
@@ -238,7 +239,7 @@ PanelWindow {
     WlrLayershell.layer: WlrLayer.Overlay
     WlrLayershell.namespace: "a16een-wallpaper-picker"
     WlrLayershell.keyboardFocus: root.opened
-        ? WlrKeyboardFocus.OnDemand
+        ? WlrKeyboardFocus.Exclusive
         : WlrKeyboardFocus.None
 
     Process {
@@ -369,15 +370,15 @@ PanelWindow {
     Rectangle {
         id: switcherCard
         z: 3
-        width: root.pickerWidth
+        width: Math.min(root.pickerContentWidth, root.width - 16)
         height: root.pickerBarHeight
         anchors.horizontalCenter: parent.horizontalCenter
         anchors.bottom: parent.bottom
         anchors.bottomMargin: 16
         radius: 16
-        color: "#E8F7F8FA"
+        color: "#62F7F8FA"
         border.width: 1
-        border.color: "#BFFFFFFF"
+        border.color: "#50FFFFFF"
         opacity: root.opened ? 1 : 0
         scale: root.opened ? 1 : 0.97
         Behavior on opacity {
@@ -391,7 +392,7 @@ PanelWindow {
             anchors.fill: parent
             anchors.margins: -5
             radius: 23
-            color: "#28000000"
+            color: "#18000000"
             z: -1
         }
 
@@ -401,8 +402,8 @@ PanelWindow {
 
             Rectangle {
                 id: settingsTile
-                width: 36
-                height: 56
+                width: 40
+                height: 40
                 radius: 12
                 color: settingsMouse.containsMouse ? "#E6EAF0" : "#ECEFF3"
                 border.width: 1
@@ -412,24 +413,12 @@ PanelWindow {
 
                 Image {
                     anchors.horizontalCenter: parent.horizontalCenter
-                    anchors.top: parent.top
-                    anchors.topMargin: 10
-                    width: 17
-                    height: 17
+                    anchors.centerIn: parent
+                    width: 19
+                    height: 19
                     source: Qt.resolvedUrl("../assets/icons/lucide-settings.svg")
                     fillMode: Image.PreserveAspectFit
                     smooth: true
-                }
-
-                Text {
-                    anchors.horizontalCenter: parent.horizontalCenter
-                    anchors.bottom: parent.bottom
-                    anchors.bottomMargin: 8
-                    text: "SET"
-                    color: "#414A57"
-                    font.pixelSize: 7
-                    font.weight: Font.DemiBold
-                    font.letterSpacing: 0.5
                 }
 
                 MouseArea {
@@ -624,7 +613,11 @@ PanelWindow {
                             id: thumbnailMouse
                             anchors.fill: parent
                             hoverEnabled: true
-                            cursorShape: Qt.ArrowCursor
+                            cursorShape: Qt.PointingHandCursor
+                            onClicked: root.selectWallpaperByIndex(
+                                thumbnailDelegate.modelData.wallpaperIndex,
+                                thumbnailDelegate.modelData.loopIndex
+                            )
                         }
                     }
                 }
@@ -1050,20 +1043,37 @@ PanelWindow {
         }
     }
 
-    Keys.onEscapePressed: {
-        if (root.settingsOpen)
-            root.settingsOpen = false
-        else
-            root.closeRequested()
+    // A dedicated focus target ensures layer-shell keyboard events reach the picker.
+    Item {
+        id: keyboardReceiver
+        anchors.fill: parent
+        z: 100
+        focus: root.opened
+        enabled: root.opened
+        Keys.priority: Keys.BeforeItem
+
+        Keys.onPressed: function(event) {
+            if (!root.opened)
+                return
+
+            if (event.key === Qt.Key_Left) {
+                if (!root.settingsOpen)
+                    root.stepWallpaper(-1)
+                event.accepted = true
+            } else if (event.key === Qt.Key_Right) {
+                if (!root.settingsOpen)
+                    root.stepWallpaper(1)
+                event.accepted = true
+            } else if (event.key === Qt.Key_Escape) {
+                if (root.settingsOpen)
+                    root.settingsOpen = false
+                else
+                    root.closeRequested()
+                event.accepted = true
+            }
+        }
     }
-    Keys.onLeftPressed: {
-        if (root.opened && !root.settingsOpen)
-            root.stepWallpaper(-1)
-    }
-    Keys.onRightPressed: {
-        if (root.opened && !root.settingsOpen)
-            root.stepWallpaper(1)
-    }
+
 
     onOpenedChanged: {
         if (!opened)
@@ -1071,6 +1081,10 @@ PanelWindow {
 
         root.settingsOpen = root.showSettingsAfterPicker
         root.showSettingsAfterPicker = false
+        Qt.callLater(function() {
+            if (root.opened)
+                keyboardReceiver.forceActiveFocus()
+        })
         root.wallpaperCatalogReady = false
         root.wallpapers = []
         root.selectedIndex = -1
