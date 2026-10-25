@@ -146,7 +146,7 @@ PanelWindow {
 
         const nextIndex = root.wrappedIndex(root.selectedIndex + direction, count)
         let nextLoopIndex = root.railCurrentIndex + direction
-        if (nextLoopIndex < count || nextLoopIndex >= count * 2)
+        if (nextLoopIndex < 0 || nextLoopIndex >= root.loopWallpapers.length)
             nextLoopIndex = count + nextIndex
 
         root.selectWallpaperByIndex(nextIndex, nextLoopIndex)
@@ -395,8 +395,7 @@ PanelWindow {
         }
 
         Row {
-            anchors.fill: parent
-            anchors.margins: 10
+            anchors.centerIn: parent
             spacing: 6
 
             Rectangle {
