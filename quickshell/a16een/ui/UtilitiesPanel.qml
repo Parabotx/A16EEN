@@ -25,8 +25,9 @@ PanelWindow {
         root.navbarPosition === "top" || root.navbarPosition === "bottom"
     readonly property real screenWidth: root.modelData ? root.modelData.width : 1920
     readonly property real screenHeight: root.modelData ? root.modelData.height : 1080
-    readonly property int popupWidth: 360
-    readonly property int popupHeight: root.selectedMode === "clipboard" ? 410 : 340
+    readonly property int popupWidth: 390
+    readonly property int popupHeight: root.selectedMode === "wifi" ? 450
+        : (root.selectedMode === "clipboard" ? 410 : 340)
     readonly property real popupX: root.horizontalNavbar
         ? 100
         : (root.navbarPosition === "left"
