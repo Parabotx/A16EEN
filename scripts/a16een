@@ -71,6 +71,8 @@ Maintenance
   update                      Check for and apply A16EEN updates
   rollback                    Restore the latest known-good A16EEN revision
   doctor                      Run A16EEN diagnostics
+  ai status                   Show Gemini AI connection status
+  ai key remove               Remove the locally saved Gemini API key
   status                      Show A16EEN source/installation status
 
 Other
@@ -548,6 +550,22 @@ case "$command" in
         require_no_args "$@"
         require_cmd niri
         exec niri msg action screenshot-window
+        ;;
+
+    ai)
+        case "${1:-}" in
+            status)
+                [[ $# -eq 1 ]] || die "usage: a16 ai status"
+                exec /usr/local/bin/a16een-ai status
+                ;;
+            key)
+                [[ "${2:-}" == "remove" && $# -eq 2 ]] || die "usage: a16 ai key remove"
+                exec /usr/local/bin/a16een-ai key remove
+                ;;
+            *)
+                die "usage: a16 ai status|key remove"
+                ;;
+        esac
         ;;
 
     wallpaper)

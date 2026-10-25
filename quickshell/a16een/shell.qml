@@ -1486,7 +1486,7 @@ ShellRoot {
 
     function activateHubTool(toolId) {
         const id = String(toolId || "")
-        if (["calculator", "monitor", "stash", "data-meter", "screen-time"].includes(id)) {
+        if (["calculator", "monitor", "stash", "data-meter", "screen-time", "ai"].includes(id)) {
             root.openToolsPage(id)
             return
         }
@@ -1700,6 +1700,7 @@ ShellRoot {
 
             onLockRequested: root.requestLockScreen()
             onUtilitiesRequested: root.handleUtilitiesRequest(mode)
+            onAiRequested: root.openToolsPage("ai")
         }
     }
 

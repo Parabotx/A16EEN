@@ -53,12 +53,15 @@ PanelWindow {
     readonly property bool horizontalNavbar: root.navbarPosition === "top" || root.navbarPosition === "bottom"
     readonly property real screenWidth: root.modelData ? root.modelData.width : 1920
     readonly property real screenHeight: root.modelData ? root.modelData.height : 1080
-    readonly property int popupWidth: (root.page === "data-meter" || root.page === "screen-time") ? 360 : 322
-    readonly property int popupHeight: root.page === "stash" ? 388
+    readonly property int popupWidth: root.page === "ai" ? Math.min(430, root.screenWidth - 16)
+        : ((root.page === "data-meter" || root.page === "screen-time") ? 360 : 322)
+    readonly property int popupHeight: root.page === "ai" ? 590
+        : (root.page === "tools" ? 390
+        : (root.page === "stash" ? 388
         : (root.page === "monitor" ? 310
         : (root.page === "calculator" ? 420
         : (root.page === "screen-time" ? 420
-        : (root.page === "data-meter" ? 390 : 316))))
+        : (root.page === "data-meter" ? 390 : 316))))))
     property var monitorStats: null
     property string monitorError: ""
     readonly property var monitorMetrics: [
@@ -97,7 +100,8 @@ PanelWindow {
         { id: "monitor", label: "System Monitor", detail: "CPU, memory & disk", icon: "lucide-activity.svg" },
         { id: "stash", label: "Nest", detail: "Keep windows out of the way", icon: "lucide-archive.svg" },
         { id: "screen-time", label: "Screen Time", detail: "Daily active time by app", icon: "lucide-activity.svg" },
-        { id: "data-meter", label: "Data Meter", detail: "Daily internet usage and speed", icon: "lucide-activity.svg" }
+        { id: "data-meter", label: "Data Meter", detail: "Daily internet usage and speed", icon: "lucide-activity.svg" },
+        { id: "ai", label: "A16EEN AI", detail: "Tell your desktop what to do", icon: "bot.svg" }
     ]
 
     readonly property real popupX: root.horizontalNavbar
@@ -440,15 +444,17 @@ PanelWindow {
                             anchors.centerIn: parent
                             width: 16
                             height: 16
-                            iconPath: Qt.resolvedUrl(root.page === "stash"
-                                ? "../assets/icons/lucide-archive.svg"
-                                : (root.page === "monitor"
-                                    ? "../assets/icons/lucide-activity.svg"
-                                    : (root.page === "calculator"
-                                        ? "../assets/icons/lucide-calculator.svg"
-                                        : ((root.page === "data-meter" || root.page === "screen-time")
-                                            ? "../assets/icons/lucide-activity.svg"
-                                            : "../assets/icons/lucide-toolbox.svg"))))
+                            iconPath: Qt.resolvedUrl(root.page === "ai"
+                                ? "../assets/icons/bot.svg"
+                                : (root.page === "stash"
+                                    ? "../assets/icons/lucide-archive.svg"
+                                    : (root.page === "monitor"
+                                        ? "../assets/icons/lucide-activity.svg"
+                                        : (root.page === "calculator"
+                                            ? "../assets/icons/lucide-calculator.svg"
+                                            : ((root.page === "data-meter" || root.page === "screen-time")
+                                                ? "../assets/icons/lucide-activity.svg"
+                                                : "../assets/icons/lucide-toolbox.svg")))))
                             iconColor: popupCardStyle.iconColor
                         }
                     }
@@ -464,7 +470,7 @@ PanelWindow {
                                 : (root.page === "monitor" ? "SYSTEM MONITOR"
                                 : (root.page === "calculator" ? "CALCULATOR"
                                 : (root.page === "screen-time" ? "SCREEN TIME"
-                                : (root.page === "data-meter" ? "DATA METER" : "QUICK TOOLS"))))
+                                : (root.page === "ai" ? "A16EEN AI" : (root.page === "data-meter" ? "DATA METER" : "QUICK TOOLS")))))
                             color: popupCardStyle.textColor
                             font.pixelSize: 10
                             font.weight: Font.DemiBold
@@ -479,7 +485,7 @@ PanelWindow {
                                 : (root.page === "monitor" ? "Live usage while this card is open"
                                 : (root.page === "calculator" ? "Quick calculations, no waiting"
                                 : (root.page === "screen-time" ? "Today, week and month · active window time"
-                                : "Useful actions, one click away")))
+                                : (root.page === "ai" ? "Gemini-powered desktop operator" : "Useful actions, one click away"))))
                             color: popupCardStyle.mutedTextColor
                             font.pixelSize: 8
                             elide: Text.ElideRight
@@ -518,7 +524,7 @@ PanelWindow {
                     width: parent.width
                     flow: Flow.LeftToRight
                     spacing: 8
-                    height: 3 * 70 + 2 * spacing
+                    height: Math.ceil(root.tools.length / 2) * 70 + (Math.ceil(root.tools.length / 2) - 1) * spacing
 
                     Repeater {
                         model: root.tools
@@ -597,6 +603,19 @@ PanelWindow {
                                 }
                             }
                         }
+                    }
+                }
+
+                Loader {
+                    id: aiAssistantLoader
+                    active: true
+                    visible: root.page === "ai"
+                    width: parent.width
+                    height: root.page === "ai" ? 520 : 0
+                    source: Qt.resolvedUrl("AIAssistantPage.qml")
+                    onLoaded: {
+                        if (item)
+                            item.palette = popupCardStyle
                     }
                 }
 

@@ -296,6 +296,7 @@ generate_icon() {
             quick-actions-presets) configured_icon="quick-presets.svg" ;;
             quick-hub-notifications) configured_icon="lucide-bell.svg" ;;
             quick-hub-tools) configured_icon="lucide-toolbox.svg" ;;
+            ai) configured_icon="sparkles.svg" ;;
             *) configured_icon="house.svg" ;;
         esac
     fi
@@ -476,6 +477,7 @@ generate_auxiliary_icons() {
     generate_icon "quick-actions-presets"
     generate_icon "quick-hub-notifications"
     generate_icon "quick-hub-tools"
+    generate_icon "ai"
 }
 
 main() {
@@ -520,6 +522,9 @@ apply_appearance_target() {
             generate_icon "quick-hub-notifications"
             generate_icon "quick-hub-tools"
             ;;
+        ai)
+            generate_icon "ai"
+            ;;
         *)
             echo "A16EEN navbar: unknown appearance target: $target" >&2
             return 2
@@ -533,5 +538,5 @@ case "${1:-apply}" in
     apply) main ;;
     apply-appearance) shift; apply_appearance_target "${1:-all}" ;;
     set) shift; set_setting "$@" ;;
-    *) echo "Usage: a16een-navbar {apply|apply-appearance <all|workspaces|utilities|power|quick-actions|quick-hub>|set <slot> <icon.svg> <color>}" >&2; exit 2 ;;
+    *) echo "Usage: a16een-navbar {apply|apply-appearance <all|workspaces|utilities|power|quick-actions|quick-hub|ai>|set <slot> <icon.svg> <color>}" >&2; exit 2 ;;
 esac

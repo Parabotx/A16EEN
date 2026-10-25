@@ -61,14 +61,18 @@ jobs:
           bash -n scripts/a16een-icon-theme
           luac5.4 -p mpv/a16een-osc.lua
           bash -n scripts/a16een-workspace-preset
-          python3 -m py_compile scripts/a16een-music scripts/a16een-music-diagnose scripts/a16een-widget-settings
+          python3 -m py_compile scripts/a16een-music scripts/a16een-music-diagnose scripts/a16een-widget-settings scripts/a16een-ai
           python3 tests/test_music_elements.py
           python3 tests/test_widget_settings.py
+          python3 tests/test_ai_assistant.py
           grep -Fq 'a16een-workspace-preset' scripts/install.sh
           grep -Fq 'a16een-mpv-theme' scripts/install.sh
           grep -Fq 'mpv theme status' scripts/a16een
           grep -Fq 'script=~~/../a16een/mpv/a16een-osc.lua' mpv/a16een.conf
           grep -Fq 'a16een-clipboard' scripts/install.sh
+          grep -Fq 'a16een-ai' scripts/install.sh
+          grep -Fq 'A16EEN AI' quickshell/a16een/ui/ToolsPanel.qml
+          grep -Fq 'AIAssistantPage.qml' quickshell/a16een/ui/ToolsPanel.qml
           grep -Fq 'a16een-app-stash' scripts/install.sh
           grep -Fq 'music-elements' scripts/install.sh
           grep -Fq 'BUILTIN_MUSIC_ELEMENTS_SOURCE_DIR' scripts/install.sh
@@ -100,6 +104,9 @@ jobs:
           test "$(grep -c 'sourceSize.width: 64' quickshell/a16een/ui/QuickHubTray.qml)" -eq 2
           grep -Fq 'signal toolRequested(string toolId)' quickshell/a16een/ui/ToolsPanel.qml
           grep -Fq 'label: "System Monitor"' quickshell/a16een/ui/ToolsPanel.qml
+          grep -Fq 'id: aiNavbarContainer' quickshell/a16een/ui/Dock.qml
+          grep -Fq 'onAiRequested: root.openToolsPage("ai")' quickshell/a16een/shell.qml
+          grep -Fq '{ id: "ai", name: "A16EEN AI"' quickshell/a16een/ui/NavbarAppearancePage.qml
           grep -Fq 'label: "Data Meter"' quickshell/a16een/ui/ToolsPanel.qml
           grep -Fq 'DataMeterIndicator {' quickshell/a16een/shell.qml
           grep -Fq 'popupCardStyle.fieldColor' quickshell/a16een/ui/QuickNotes.qml

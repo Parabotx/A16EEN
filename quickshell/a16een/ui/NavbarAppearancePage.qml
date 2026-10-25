@@ -28,6 +28,7 @@ Item {
     readonly property var containerChoices: [
         { id: "all", name: "All Containers", detail: "Shared settings" },
         { id: "workspaces", name: "Workspaces", detail: "Workspace icon rail" },
+        { id: "ai", name: "A16EEN AI", detail: "AI assistant shortcut above workspaces" },
         { id: "battery", name: "Battery", detail: "Battery capsule" },
         { id: "time", name: "Clock / Time", detail: "Clock display" },
         { id: "utilities", name: "Utilities", detail: "Wi-Fi and Bluetooth" },

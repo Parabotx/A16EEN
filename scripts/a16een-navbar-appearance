@@ -8,14 +8,14 @@ NAVBAR_CMD="$(printenv A16EEN_NAVBAR_CMD 2>/dev/null || printf '%s' /usr/local/b
 
 default_all='{"visibilityControl":false,"visible":true,"applyContainerColor":false,"containerColor":"#15171A","applyIconColor":false,"iconColor":"auto","applyPopupCardColor":false,"surfaceColor":"#FFFFFF"}'
 default_container='{"visible":true,"containerEnabled":false,"containerColor":"transparent","iconColor":"inherit","applyPopupCardColor":false}'
-container_ids='["workspaces","battery","time","utilities","power","quick-actions","quick-hub","data-meter"]'
+container_ids='["workspaces","ai","battery","time","utilities","power","quick-actions","quick-hub","data-meter"]'
 
 ensure_settings() {
     mkdir -p "$STATE_DIR"
     if [[ ! -s "$STATE_FILE" ]]; then
         jq -n --argjson allDefaults "$default_all" --argjson containerDefaults "$default_container" \
             --argjson ids "$container_ids" '
-            {all:$allDefaults, containers:{}, schemaVersion:5}
+            {all:$allDefaults, containers:{}, schemaVersion:6}
             | reduce $ids[] as $id (.;
                 .containers[$id] = $containerDefaults
               )
@@ -39,7 +39,7 @@ ensure_settings() {
             .containers[$id] = ($containerDefaults + (.containers[$id] // {}))
           )
         | del(.workspaces)
-        | .schemaVersion = 5
+        | .schemaVersion = 6
     ' "$STATE_FILE" > "$tmp"; then
         rm -f "$tmp"
         return 1
@@ -98,7 +98,7 @@ write_all() {
 write_container() {
     local id="$1" key="$2" value="$3" tmp
     case "$id" in
-        workspaces|battery|time|utilities|power|quick-actions|quick-hub|data-meter) ;;
+        workspaces|ai|battery|time|utilities|power|quick-actions|quick-hub|data-meter) ;;
         *) echo "A16EEN appearance: unknown navbar container: $id" >&2; return 2 ;;
     esac
     case "$key" in
@@ -208,7 +208,7 @@ main() {
                         appearance_target="all"
                     else
                         case "$id" in
-                            workspaces|utilities|power|quick-actions|quick-hub)
+                            workspaces|ai|utilities|power|quick-actions|quick-hub)
                                 appearance_target="$id"
                                 ;;
                             battery|time|data-meter)
