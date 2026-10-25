@@ -100,23 +100,27 @@ Item {
         if (!root.active || detailReader.running)
             return
         detailReader.running = true
-        if (root.mode === "wifi") {
-            if (!wifiReader.running)
-                wifiReader.running = true
-            if (!wifiNetworksReader.running)
-                wifiNetworksReader.running = true
-        }
+        if (root.mode === "wifi" && !wifiReader.running)
+            wifiReader.running = true
         if (root.mode === "bluetooth" && !bluetoothReader.running)
             bluetoothReader.running = true
     }
 
     function refreshVisibleMode() {
         root.loadDetails()
-        if (root.mode === "wifi") {
-            root.wifiRefreshing = true
-            root.run(["wifi", "rescan"])
-            wifiScanRefresh.restart()
-        }
+        if (root.mode === "wifi")
+            root.refreshWifiNetworks(true)
+    }
+
+    function refreshWifiNetworks(forceScan) {
+        if (!root.active || root.mode !== "wifi" || wifiNetworksReader.running)
+            return
+
+        root.wifiRefreshing = true
+        wifiNetworksReader.command = forceScan
+            ? ["a16een-control", "wifi", "networks", "--scan"]
+            : ["a16een-control", "wifi", "networks"]
+        wifiNetworksReader.running = true
     }
 
     onActiveChanged: {
@@ -204,7 +208,7 @@ Item {
             result.push({
                 ssid: parts[0],
                 signal: Number(parts[1]) || 0,
-                security: parts[2] || "Open",
+                security: parts[2] || "--",
                 inUse: parts.length > 3 && parts[3] === "*"
             })
         }
@@ -275,17 +279,10 @@ Item {
             root.wifiConnecting = false
             root.loadDetails()
             if (root.mode === "wifi")
-                wifiNetworksReader.running = true
+                root.refreshWifiNetworks(true)
             if (root.mode === "bluetooth")
                 bluetoothReader.running = true
         }
-    }
-
-    Timer {
-        id: wifiScanRefresh
-        interval: 1400
-        repeat: false
-        onTriggered: wifiNetworksReader.running = true
     }
 
     Timer {
@@ -330,8 +327,10 @@ Item {
             onStreamFinished: root.parseWifiNetworks(text)
         }
         onRunningChanged: {
-            if (!running)
+            if (!running) {
                 root.wifiRefreshing = false
+                command = ["a16een-control", "wifi", "networks"]
+            }
         }
     }
 
@@ -572,9 +571,7 @@ Item {
                         hoverEnabled: true
                         cursorShape: Qt.PointingHandCursor
                         onClicked: {
-                            root.wifiRefreshing = true
-                            root.run(["wifi", "rescan"])
-                            wifiScanRefresh.restart()
+                            root.refreshWifiNetworks(true)
                         }
                     }
                 }
