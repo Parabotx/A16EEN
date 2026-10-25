@@ -684,17 +684,24 @@ jobs:
           grep -Fq 'onWallpaperRequested: {' quickshell/a16een/shell.qml
           grep -Fq 'root.wallpaperPickerOpen = true' quickshell/a16een/shell.qml
           grep -Fq 'a16een-wallpaper", "catalog' quickshell/a16een/ui/WallpaperPicker.qml
-          grep -Fq 'modelData.path' quickshell/a16een/ui/WallpaperPicker.qml
+          grep -Fq 'readonly property var loopWallpapers' quickshell/a16een/ui/WallpaperPicker.qml
+          grep -Fq 'root.shuffleWallpapers(entries)' quickshell/a16een/ui/WallpaperPicker.qml
+          grep -Fq 'readonly property int thumbnailWidth' quickshell/a16een/ui/WallpaperPicker.qml
+          grep -Fq 'root.stepWallpaper(-1)' quickshell/a16een/ui/WallpaperPicker.qml
+          grep -Fq 'root.stepWallpaper(1)' quickshell/a16een/ui/WallpaperPicker.qml
+          grep -Fq 'modelData.wallpaper.type === "animated"' quickshell/a16een/ui/WallpaperPicker.qml
+          grep -Fq 'modelData.wallpaper.type === "video"' quickshell/a16een/ui/WallpaperPicker.qml
+          grep -Fq 'sourceSize.width: root.thumbnailWidth * 2' quickshell/a16een/ui/WallpaperPicker.qml
+          grep -Fq 'root.selectWallpaperByIndex' quickshell/a16een/ui/WallpaperPicker.qml
+          grep -Fq 'settingsOpen ? 0.22 : 0' quickshell/a16een/ui/WallpaperPicker.qml
           grep -Fq 'staticPreview.status !== Image.Ready' quickshell/a16een/ui/WallpaperPicker.qml
-          grep -Fq 'staticPreview.status !== Image.Ready' quickshell/a16een/ui/WallpaperPicker.qml
-          grep -Fq 'sourceSize.width: root.tileWidth * 2' quickshell/a16een/ui/WallpaperPicker.qml
-          grep -Fq 'SequentialAnimation on opacity' quickshell/a16een/ui/WallpaperPicker.qml
           grep -Fq 'function apply(path: string): void' quickshell/a16een/shell.qml
           grep -Fq 'wallpaperPath: ""' quickshell/a16een/shell.qml
           grep -Fq 'currentWallpaperPath: root.wallpaperPath' quickshell/a16een/shell.qml
           ! grep -Fq 'wallpaperPathProcess' quickshell/a16een/ui/Wallpaper.qml
           grep -Fq 'retainWhileLoading: true' quickshell/a16een/ui/Wallpaper.qml
-          grep -Fq 'modelData.displayName' quickshell/a16een/ui/WallpaperPicker.qml
+          grep -Fq 'WallpaperTransitionLayer.qml' quickshell/a16een/ui/Wallpaper.qml
+          test -f quickshell/a16een/ui/WallpaperTransitionLayer.qml
           grep -Fq 'find "$dir" -maxdepth 1 -type f -print0' scripts/a16een-wallpaper
           grep -Fq 'notify_shell()' scripts/a16een-wallpaper
           grep -Fq 'ipc call wallpaper apply' scripts/a16een-wallpaper

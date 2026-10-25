@@ -93,10 +93,85 @@ PanelWindow {
         }
     }
 
+    // Keep the outgoing wallpaper above the newly loaded one, then fade
+    // it away. Rapid changes remain smooth without restarting the shell.
+    property string lastActivePath: ""
+    property string previousWallpaperPath: ""
+    property bool transitionLayerEnabled: false
+
+    onActivePathChanged: {
+        if (!root.lastActivePath.length) {
+            root.lastActivePath = root.activePath
+            return
+        }
+        if (root.activePath === root.lastActivePath)
+            return
+
+        root.previousWallpaperPath = root.lastActivePath
+        root.lastActivePath = root.activePath
+        if (!root.previousWallpaperPath.length)
+            return
+
+        transitionFade.stop()
+        root.transitionLayerEnabled = true
+        transitionLayer.opacity = 0
+    }
+
+    Loader {
+        id: transitionLayer
+        anchors.fill: parent
+        active: root.transitionLayerEnabled
+        source: active ? "WallpaperTransitionLayer.qml" : ""
+        opacity: 0
+        z: 2
+
+        onLoaded: {
+            item.sourcePath = Qt.binding(function() {
+                return root.previousWallpaperPath
+            })
+            item.desktopAnimationAllowed = false
+            if (item.contentReady)
+                root.beginWallpaperTransition()
+        }
+    }
+
+    Connections {
+        target: transitionLayer.item
+        ignoreUnknownSignals: true
+        function onContentReadyChanged() {
+            if (transitionLayer.item && transitionLayer.item.contentReady)
+                root.beginWallpaperTransition()
+        }
+    }
+
+    function beginWallpaperTransition() {
+        if (!root.transitionLayerEnabled
+                || !transitionLayer.item
+                || !transitionLayer.item.contentReady)
+            return
+        transitionFade.stop()
+        transitionLayer.opacity = 1
+        transitionFade.start()
+    }
+
+    NumberAnimation {
+        id: transitionFade
+        target: transitionLayer
+        property: "opacity"
+        from: 1
+        to: 0
+        duration: 240
+        easing.type: Easing.OutCubic
+        onFinished: root.transitionLayerEnabled = false
+    }
+
+    Component.onCompleted: root.lastActivePath = root.activePath
+
     Rectangle {
         anchors.fill: parent
         color: "#050608"
         opacity: 0.22
+        z: 3
     }
 
     EditorialTimeWidget {
