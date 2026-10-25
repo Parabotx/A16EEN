@@ -1807,8 +1807,32 @@ ShellRoot {
                 root.requestWidgetSettingsSave()
             }
         }
-        onAppShelfAppsRequested: {
-            root.appShelfApps = Array.isArray(apps) ? apps.slice(0, 16) : []
+        onAppShelfAppsRequested: function(apps) {
+            // QML may expose a signal's list payload as an array-like sequence
+            // after it crosses component boundaries. Do not discard valid apps
+            // solely because Array.isArray() rejects that converted value.
+            if (!apps || typeof apps.length !== "number") {
+                console.warn("A16EEN App Shelf ignored an invalid application selection payload.")
+                return
+            }
+
+            const nextApps = []
+            const count = Math.min(16, Math.max(0, Math.floor(apps.length)))
+            for (let i = 0; i < count; i++) {
+                const app = apps[i]
+                if (!app || typeof app.desktopId !== "string" || !app.desktopId.length)
+                    continue
+                if (nextApps.some(saved => saved.desktopId === app.desktopId))
+                    continue
+
+                nextApps.push({
+                    desktopId: app.desktopId,
+                    name: String(app.name || "Application"),
+                    icon: String(app.icon || "")
+                })
+            }
+
+            root.appShelfApps = nextApps
             root.requestWidgetSettingsSave()
         }
         onTimeUse24HourRequested: {

@@ -1060,6 +1060,7 @@ Item {
                                 model: root.filteredAppShelfApplications.slice(0, 16)
 
                                 delegate: Rectangle {
+                                    id: appShelfSearchResultDelegate
                                     required property var modelData
                                     width: appSearchResultsColumn.width
                                     height: 28
@@ -1104,7 +1105,12 @@ Item {
                                         anchors.fill: parent
                                         hoverEnabled: true
                                         cursorShape: Qt.PointingHandCursor
-                                        onClicked: root.addAppShelfApplication(modelData)
+                                        onClicked: {
+                                            // Use the delegate's explicit model reference across the
+                                            // nested MouseArea scope.
+                                            const selectedEntry = appShelfSearchResultDelegate.modelData
+                                            root.addAppShelfApplication(selectedEntry)
+                                        }
                                     }
                                 }
                             }

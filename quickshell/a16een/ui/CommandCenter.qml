@@ -912,7 +912,9 @@ PanelWindow {
             onAppShelfWidgetEnabledRequested: root.appShelfWidgetEnabledRequested(enabled)
             onAppShelfShapeRequested: root.appShelfShapeRequested(shape)
             onAppShelfRotationEnabledRequested: root.appShelfRotationEnabledRequested(enabled)
-            onAppShelfAppsRequested: root.appShelfAppsRequested(apps)
+            onAppShelfAppsRequested: function(apps) {
+                root.appShelfAppsRequested(apps)
+            }
             onTimeUse24HourRequested: root.timeUse24HourRequested(enabled)
             onTimeShowSecondsRequested: root.timeShowSecondsRequested(enabled)
         }
