@@ -887,6 +887,19 @@ Item {
                 }
             }
 
+            Text {
+                id: errorMessage
+                width: parent.width
+                height: visible ? 22 : 0
+                visible: root.lastError.length > 0 && !root.awaitingApproval
+                text: root.lastError
+                color: root.dangerColor
+                font.pixelSize: 8
+                wrapMode: Text.WordWrap
+                maximumLineCount: 2
+                elide: Text.ElideRight
+            }
+
             Row {
                 width: parent.width
                 height: 43
@@ -965,18 +978,7 @@ Item {
                 }
             }
 
-            Text {
-                id: errorMessage
-                width: parent.width
-                height: visible ? 22 : 0
-                visible: root.lastError.length > 0 && !root.awaitingApproval
-                text: root.lastError
-                color: root.dangerColor
-                font.pixelSize: 8
-                wrapMode: Text.WordWrap
-                maximumLineCount: 2
-                elide: Text.ElideRight
-            }
+
         }
     }
 }

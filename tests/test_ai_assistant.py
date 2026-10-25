@@ -86,6 +86,7 @@ assert "width: 32" in dock_qml and "height: 34" in dock_qml
 assert 'text: "AI"' not in dock_qml
 assert 'fallbackPath: root.fallbackIconPath("wand-sparkles.svg")' in dock_qml
 assert 'Math.max(80, chatPanel.height - 79' in assistant_qml
+assert assistant_qml.index("id: errorMessage") < assistant_qml.index("id: composerSendButton")
 assert 'text: "A16EEN AI"' not in assistant_qml
 assert 'text: root.busy ? "WORKING" : "SEND  ↑"' not in assistant_qml
 assert 'iconName: "lucide-settings.svg"' in assistant_qml
