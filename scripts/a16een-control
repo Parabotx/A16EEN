@@ -230,6 +230,7 @@ wifi_networks() {
                     security = "--"
                 # The UI uses "|" between columns; escape it in an SSID so
                 # one unusual network name cannot corrupt the other fields.
+                gsub(/\\/, "\\\\", fields[2])
                 gsub(/\|/, "\\|", fields[2])
                 print fields[2] "|" fields[3] "|" security "|" fields[1]
             }
