@@ -38,10 +38,11 @@ PanelWindow {
     signal closeRequested()
     signal openRequested()
 
-    readonly property int pickerWidth: Math.max(0, Math.min(780, root.width - 24))
-    readonly property int thumbnailWidth: Math.max(28, Math.min(72, Math.floor((root.pickerWidth - 190) / 8)))
-    readonly property int railWidth: Math.max(0, Math.min(root.thumbnailWidth * 8 + 42, root.pickerWidth - 135))
-    readonly property int pickerBarHeight: 84
+    readonly property int pickerWidth: Math.max(0, Math.min(820, root.width - 24))
+    readonly property int thumbnailWidth: Math.max(28, Math.min(80, Math.floor((root.pickerWidth - 140) / 8)))
+    readonly property int railWidth: Math.max(0, Math.min(root.thumbnailWidth * 8 + 42, root.pickerWidth - 54))
+    readonly property int pickerBarHeight: 76
+    property bool animateRail: true
 
     // The catalog is repeated three times so the thumbnail rail can cycle
     // through the end and start of the randomized list without a hard stop.
@@ -108,7 +109,7 @@ PanelWindow {
 
         Qt.callLater(function() {
             if (root.railCurrentIndex >= 0)
-                wallpaperRail.positionViewAtIndex(root.railCurrentIndex, ListView.Center)
+                wallpaperRail.positionViewAtIndex(Math.max(0, root.railCurrentIndex - 3), ListView.Beginning)
         })
     }
 
@@ -372,11 +373,11 @@ PanelWindow {
         height: root.pickerBarHeight
         anchors.horizontalCenter: parent.horizontalCenter
         anchors.bottom: parent.bottom
-        anchors.bottomMargin: 20
-        radius: 18
-        color: "#F7F8FA"
+        anchors.bottomMargin: 16
+        radius: 16
+        color: "#E8F7F8FA"
         border.width: 1
-        border.color: "#FFFFFF"
+        border.color: "#BFFFFFFF"
         opacity: root.opened ? 1 : 0
         scale: root.opened ? 1 : 0.97
         Behavior on opacity {
@@ -400,8 +401,8 @@ PanelWindow {
 
             Rectangle {
                 id: settingsTile
-                width: 40
-                height: 58
+                width: 36
+                height: 56
                 radius: 12
                 color: settingsMouse.containsMouse ? "#E6EAF0" : "#ECEFF3"
                 border.width: 1
@@ -452,32 +453,10 @@ PanelWindow {
                 anchors.verticalCenter: parent.verticalCenter
             }
 
-            Rectangle {
-                width: 24
-                height: 48
-                radius: 10
-                color: previousMouse.containsMouse ? "#E8ECF1" : "transparent"
-                anchors.verticalCenter: parent.verticalCenter
-                Text {
-                    anchors.centerIn: parent
-                    text: "‹"
-                    color: root.wallpapers.length ? "#394352" : "#B7BEC8"
-                    font.pixelSize: 27
-                    font.weight: Font.Light
-                }
-                MouseArea {
-                    id: previousMouse
-                    anchors.fill: parent
-                    hoverEnabled: true
-                    cursorShape: root.wallpapers.length ? Qt.PointingHandCursor : Qt.ArrowCursor
-                    onClicked: root.stepWallpaper(-1)
-                }
-            }
-
             ListView {
                 id: wallpaperRail
                 width: root.railWidth
-                height: 60
+                height: 66
                 anchors.verticalCenter: parent.verticalCenter
                 orientation: ListView.Horizontal
                 spacing: 6
@@ -486,17 +465,24 @@ PanelWindow {
                 model: root.loopWallpapers
                 currentIndex: root.railCurrentIndex
                 highlightRangeMode: ListView.StrictlyEnforceRange
-                preferredHighlightBegin: Math.max(0, (width - root.thumbnailWidth) / 2)
+                preferredHighlightBegin: (root.thumbnailWidth + spacing) * 3
                 preferredHighlightEnd: preferredHighlightBegin + root.thumbnailWidth
                 boundsBehavior: Flickable.StopAtBounds
                 highlightFollowsCurrentItem: true
+
+                Behavior on contentX {
+                    enabled: root.animateRail
+                    NumberAnimation { duration: 280; easing.type: Easing.OutCubic }
+                }
 
                 onMovementEnded: {
                     const count = root.wallpapers.length
                     if (count > 0 && (root.railCurrentIndex < count || root.railCurrentIndex >= count * 2)) {
                         const canonicalIndex = count + root.selectedIndex
+                        root.animateRail = false
                         root.railCurrentIndex = canonicalIndex
-                        positionViewAtIndex(canonicalIndex, ListView.Center)
+                        positionViewAtIndex(Math.max(0, canonicalIndex - 3), ListView.Beginning)
+                        Qt.callLater(function() { root.animateRail = true })
                     }
                 }
 
@@ -506,7 +492,7 @@ PanelWindow {
                     property bool isCurrentItem: modelData.loopIndex === root.railCurrentIndex
 
                     width: root.thumbnailWidth
-                    height: 58
+                    height: 64
                     radius: 10
                     color: "#111820"
                     border.width: isCurrentItem ? 2 : 1
@@ -532,7 +518,7 @@ PanelWindow {
                                 ? thumbnailDelegate.modelData.wallpaper.path : ""
                             sourceSize.width: root.thumbnailWidth * 2
                             sourceSize.height: 0
-                            fillMode: Image.PreserveAspectCrop
+                            fillMode: Image.PreserveAspectFit
                             asynchronous: true
                             cache: true
                             smooth: true
@@ -547,7 +533,7 @@ PanelWindow {
                             source: thumbnailDelegate.modelData.wallpaper.type === "animated"
                                 ? thumbnailDelegate.modelData.wallpaper.path : ""
                             sourceSize.width: root.thumbnailWidth * 2
-                            fillMode: Image.PreserveAspectCrop
+                            fillMode: Image.PreserveAspectFit
                             asynchronous: true
                             cache: false
                             playing: root.opened
@@ -638,37 +624,12 @@ PanelWindow {
                             id: thumbnailMouse
                             anchors.fill: parent
                             hoverEnabled: true
-                            cursorShape: Qt.PointingHandCursor
-                            onClicked: root.selectWallpaperByIndex(
-                                thumbnailDelegate.modelData.wallpaperIndex,
-                                thumbnailDelegate.modelData.loopIndex
-                            )
+                            cursorShape: Qt.ArrowCursor
                         }
                     }
                 }
             }
 
-            Rectangle {
-                width: 24
-                height: 48
-                radius: 10
-                color: nextMouse.containsMouse ? "#E8ECF1" : "transparent"
-                anchors.verticalCenter: parent.verticalCenter
-                Text {
-                    anchors.centerIn: parent
-                    text: "›"
-                    color: root.wallpapers.length ? "#394352" : "#B7BEC8"
-                    font.pixelSize: 27
-                    font.weight: Font.Light
-                }
-                MouseArea {
-                    id: nextMouse
-                    anchors.fill: parent
-                    hoverEnabled: true
-                    cursorShape: root.wallpapers.length ? Qt.PointingHandCursor : Qt.ArrowCursor
-                    onClicked: root.stepWallpaper(1)
-                }
-            }
         }
     }
 
