@@ -456,289 +456,526 @@ Item {
             anchors.right: parent.right
             anchors.bottom: parent.bottom
             visible: root.mode === "wifi"
+            clip: true
 
-            Rectangle {
-                id: wifiStatusCard
-                width: parent.width
-                height: root.embedded ? 60 : 100
-                radius: root.embedded ? 12 : 18
-                color: root.tile
-                border.width: 1
-                border.color: root.border
-
-                Image {
-                    visible: !root.embedded
-                    x: 20
-                    y: 21
-                    width: 22
-                    height: 22
-                    source: Qt.resolvedUrl("../assets/icons/lucide-wifi-dark.svg")
-                    opacity: 0.84
-                }
-
-                Column {
-                    x: root.embedded ? 10 : 58
-                    y: root.embedded ? 10 : 17
-                    width: parent.width - (root.embedded ? 88 : 120)
-                    spacing: root.embedded ? 3 : 4
-
-                    Text {
-                        width: parent.width
-                        text: root.wifiName
-                        color: root.textPrimary
-                        font.pixelSize: root.embedded ? 10 : 15
-                        font.weight: Font.DemiBold
-                        elide: Text.ElideRight
-                    }
-
-                    Text {
-                        text: root.embedded
-                            ? (root.wifiName !== "Not connected" ? "Connected" : (root.wifiRadioState === "off" ? "Wi-Fi off" : "Not connected"))
-                            : ((root.wifiState === "on" ? "CONNECTED" : "NOT CONNECTED") + "  •  " + root.wifiDevice)
-                        color: root.textSecondary
-                        font.pixelSize: root.embedded ? 7 : 9
-                        font.letterSpacing: 0.8
-                    }
-                }
+            Column {
+                id: wifiLayout
+                anchors.fill: parent
+                spacing: root.embedded ? 8 : 12
 
                 Rectangle {
-                    anchors.right: parent.right
-                    anchors.rightMargin: root.embedded ? 8 : 16
-                    anchors.verticalCenter: parent.verticalCenter
-                    width: root.embedded ? 62 : (root.wifiState === "on" ? 92 : 84)
-                    height: root.embedded ? 26 : 34
-                    radius: root.embedded ? 8 : 10
-                    color: "#FFFFFF"
-                    border.width: 1
-                    border.color: root.borderStrong
-
-                    Text {
-                        anchors.centerIn: parent
-                        text: root.wifiState === "on"
-                            ? "DISCONNECT"
-                            : (root.wifiRadioState === "on" ? "TURN OFF" : "TURN ON")
-                        color: root.textPrimary
-                        font.pixelSize: root.embedded ? 6 : 8
-                        font.weight: Font.DemiBold
-                        font.letterSpacing: 0.4
-                    }
-
-                    MouseArea {
-                        anchors.fill: parent
-                        cursorShape: Qt.PointingHandCursor
-                        onClicked: {
-                            if (root.wifiState === "on")
-                                root.run(["wifi", "disconnect"])
-                            else
-                                root.run(["wifi", "toggle"])
-                        }
-                    }
-                }
-            }
-
-            Row {
-                anchors.top: wifiStatusCard.bottom
-                anchors.topMargin: root.embedded ? 6 : 12
-                width: parent.width
-                height: root.embedded ? 26 : 34
-
-                Text {
-                    anchors.verticalCenter: parent.verticalCenter
-                    width: parent.width - (root.embedded ? 66 : 84)
-                    text: root.embedded ? "NETWORKS" : "AVAILABLE NETWORKS"
-                    color: root.textPrimary
-                    font.pixelSize: root.embedded ? 7 : 9
-                    font.weight: Font.DemiBold
-                    font.letterSpacing: 1.0
-                }
-
-                Item { width: 1; height: 1; visible: false }
-
-                Rectangle {
-                    width: root.embedded ? 58 : 74
-                    height: root.embedded ? 24 : 30
-                    radius: root.embedded ? 8 : 9
-                    color: refreshWifiMouse.containsMouse ? root.tileHover : root.tile
-                    border.width: 1
-                    border.color: root.border
-                    Image {
-                        id: wifiRefreshIcon
-                        visible: root.embedded
-                        anchors.centerIn: parent
-                        width: 14
-                        height: 14
-                        source: Qt.resolvedUrl("../assets/icons/lucide-refresh-cw-refined-dark.svg")
-                        sourceSize.width: 28
-                        sourceSize.height: 28
-                        smooth: true
-
-                        RotationAnimation on rotation {
-                            from: 0
-                            to: 360
-                            duration: 700
-                            loops: Animation.Infinite
-                            running: root.embedded && root.wifiRefreshing
-                        }
-                    }
-
-                    Text {
-                        visible: !root.embedded
-                        anchors.centerIn: parent
-                        text: "REFRESH"
-                        color: root.textSecondary
-                        font.pixelSize: 7
-                        font.weight: Font.DemiBold
-                        font.letterSpacing: 0.8
-                    }
-                    MouseArea {
-                        id: refreshWifiMouse
-                        anchors.fill: parent
-                        hoverEnabled: true
-                        cursorShape: Qt.PointingHandCursor
-                        onClicked: {
-                            root.refreshWifiNetworks(true)
-                        }
-                    }
-                }
-            }
-
-            Flickable {
-                anchors.top: wifiStatusCard.bottom
-                anchors.topMargin: root.embedded ? 36 : 52
-                anchors.left: parent.left
-                anchors.right: parent.right
-                anchors.bottom: parent.bottom
-                clip: true
-                contentHeight: wifiColumn.height
-
-                Column {
-                    id: wifiColumn
+                    id: wifiStatusCard
                     width: parent.width
-                    spacing: 7
+                    height: root.embedded ? 68 : 88
+                    radius: 15
+                    color: "#F8F7F3"
+                    border.width: 1
+                    border.color: "#E9E2D4"
 
-                    Text {
-                        width: parent.width
-                        height: root.wifiNetworks.length === 0 ? 42 : 0
-                        visible: root.wifiNetworks.length === 0
-                        text: root.statusMessage === "READING SYSTEM"
-                            ? "Finding nearby networks…"
-                            : "No networks found. Refresh to scan again."
-                        color: root.textMuted
-                        font.pixelSize: 9
-                        horizontalAlignment: Text.AlignHCenter
-                        verticalAlignment: Text.AlignVCenter
+                    Rectangle {
+                        x: 10
+                        anchors.verticalCenter: parent.verticalCenter
+                        width: root.embedded ? 39 : 48
+                        height: width
+                        radius: 12
+                        color: "#EFE7D8"
+
+                        Image {
+                            anchors.centerIn: parent
+                            width: root.embedded ? 19 : 23
+                            height: width
+                            source: Qt.resolvedUrl("../assets/icons/lucide-wifi-refined.svg")
+                            sourceSize.width: 48
+                            sourceSize.height: 48
+                            fillMode: Image.PreserveAspectFit
+                            smooth: true
+                        }
                     }
 
-                    Repeater {
-                        model: root.wifiNetworks
+                    Column {
+                        anchors.left: parent.left
+                        anchors.leftMargin: root.embedded ? 59 : 72
+                        anchors.right: wifiPowerButton.left
+                        anchors.rightMargin: 8
+                        anchors.verticalCenter: parent.verticalCenter
+                        spacing: 4
 
-                        delegate: Rectangle {
-                            width: wifiColumn.width
-                            height: root.embedded ? 40 : 52
-                            radius: root.embedded ? 10 : 13
-                            color: networkMouse.containsMouse || modelData.ssid === root.wifiSelectedSsid ? root.tileHover : root.tile
-                            border.width: 1
-                            border.color: modelData.inUse ? root.borderStrong : root.border
+                        Text {
+                            width: parent.width
+                            text: root.wifiName !== "Not connected"
+                                ? root.wifiName
+                                : (root.wifiRadioState === "off" ? "Wi-Fi is off" : "Not connected")
+                            color: root.textPrimary
+                            font.pixelSize: root.embedded ? 10 : 13
+                            font.weight: Font.DemiBold
+                            elide: Text.ElideRight
+                        }
+
+                        Row {
+                            width: parent.width
+                            spacing: 5
+
+                            Rectangle {
+                                anchors.verticalCenter: parent.verticalCenter
+                                width: 6
+                                height: 6
+                                radius: 3
+                                color: root.wifiName !== "Not connected"
+                                    ? "#438562"
+                                    : (root.wifiRadioState === "off" ? "#C27B42" : "#A0A7B0")
+                            }
 
                             Text {
-                                x: root.embedded ? 10 : 15
-                                y: root.embedded ? 6 : 9
-                                width: parent.width - (root.embedded ? 80 : 150)
-                                text: modelData.ssid
-                                color: root.textPrimary
-                                font.pixelSize: root.embedded ? 9 : 10
-                                font.weight: Font.DemiBold
+                                width: parent.width - 11
+                                text: root.wifiName !== "Not connected"
+                                    ? "Connected · " + root.wifiDevice
+                                    : (root.wifiRadioState === "off"
+                                        ? "Switch Wi-Fi on to scan"
+                                        : "Ready to find a network")
+                                color: root.textSecondary
+                                font.pixelSize: root.embedded ? 7 : 9
                                 elide: Text.ElideRight
                             }
+                        }
+                    }
 
-                            Text {
-                                x: root.embedded ? 10 : 15
-                                y: root.embedded ? 22 : 28
-                                text: (modelData.security === "--" ? "OPEN" : modelData.security) + (modelData.inUse ? "  •  CONNECTED" : "")
-                                color: root.textMuted
-                                font.pixelSize: root.embedded ? 6 : 7
-                                font.letterSpacing: 0.7
-                            }
+                    Rectangle {
+                        id: wifiPowerButton
+                        anchors.right: parent.right
+                        anchors.rightMargin: 9
+                        anchors.verticalCenter: parent.verticalCenter
+                        width: root.wifiState === "on"
+                            ? (root.embedded ? 76 : 88)
+                            : (root.embedded ? 63 : 76)
+                        height: root.embedded ? 30 : 34
+                        radius: 9
+                        color: wifiPowerMouse.containsMouse ? "#E8DCC6" : "#F0E6D5"
+                        border.width: 1
+                        border.color: "#E1D3BB"
 
-                            Text {
-                                anchors.right: parent.right
-                                anchors.rightMargin: root.embedded ? 10 : 15
-                                anchors.verticalCenter: parent.verticalCenter
-                                text: modelData.signal + "%"
-                                color: root.textSecondary
-                                font.pixelSize: root.embedded ? 8 : 9
-                            }
+                        Text {
+                            anchors.centerIn: parent
+                            text: root.wifiState === "on"
+                                ? "Disconnect"
+                                : (root.wifiRadioState === "on" ? "Turn off" : "Turn on")
+                            color: "#624A25"
+                            font.pixelSize: root.embedded ? 8 : 9
+                            font.weight: Font.DemiBold
+                        }
 
-                            MouseArea {
-                                id: networkMouse
-                                anchors.fill: parent
-                                hoverEnabled: true
-                                cursorShape: Qt.PointingHandCursor
-                                onClicked: root.selectWifiNetwork(modelData)
+                        MouseArea {
+                            id: wifiPowerMouse
+                            anchors.fill: parent
+                            hoverEnabled: true
+                            cursorShape: Qt.PointingHandCursor
+                            onClicked: {
+                                if (root.wifiState === "on")
+                                    root.run(["wifi", "disconnect"])
+                                else
+                                    root.run(["wifi", "toggle"])
                             }
                         }
                     }
                 }
-            }
 
-            Rectangle {
-                visible: root.wifiSelectedSsid.length > 0 && root.wifiSelectedSecurity !== "--" && root.wifiSelectedSecurity !== ""
-                anchors.horizontalCenter: parent.horizontalCenter
-                anchors.bottom: parent.bottom
-                width: Math.min(parent.width - 30, 430)
-                height: root.embedded ? 66 : 80
-                radius: root.embedded ? 12 : 15
-                color: "#FFFFFF"
-                border.width: 1
-                border.color: root.borderStrong
+                Row {
+                    id: wifiHeading
+                    width: parent.width
+                    height: root.embedded ? 32 : 38
+                    spacing: 8
 
-                Text {
-                    x: 13
-                    y: 10
-                    text: "PASSWORD FOR " + root.wifiSelectedSsid
-                    color: root.textMuted
-                    font.pixelSize: 7
-                    font.weight: Font.DemiBold
-                    font.letterSpacing: 0.8
-                }
+                    Column {
+                        anchors.verticalCenter: parent.verticalCenter
+                        width: parent.width - wifiRefreshButton.width - parent.spacing
+                        spacing: 3
 
-                TextInput {
-                    id: wifiPasswordInput
-                    x: 13
-                    y: 30
-                    width: parent.width - 105
-                    height: 34
-                    color: root.textPrimary
-                    font.pixelSize: 11
-                    echoMode: TextInput.Password
-                    clip: true
-                    text: root.wifiPassword
-                    onTextChanged: root.wifiPassword = text
-                    activeFocusOnPress: true
-                    selectByMouse: true
+                        Text {
+                            width: parent.width
+                            text: "Nearby networks"
+                            color: root.textPrimary
+                            font.pixelSize: root.embedded ? 10 : 12
+                            font.weight: Font.DemiBold
+                        }
+
+                        Text {
+                            width: parent.width
+                            text: root.wifiRefreshing
+                                ? "Scanning for networks…"
+                                : root.wifiNetworks.length + (root.wifiNetworks.length === 1 ? " network found" : " networks found")
+                            color: root.textMuted
+                            font.pixelSize: root.embedded ? 7 : 8
+                            elide: Text.ElideRight
+                        }
+                    }
+
+                    Rectangle {
+                        id: wifiRefreshButton
+                        width: root.embedded ? 82 : 92
+                        height: root.embedded ? 29 : 32
+                        radius: 9
+                        anchors.verticalCenter: parent.verticalCenter
+                        color: refreshWifiMouse.containsMouse ? "#EEE8DE" : "#F7F5F0"
+                        border.width: 1
+                        border.color: "#E8E0D3"
+
+                        Row {
+                            anchors.centerIn: parent
+                            spacing: 5
+
+                            Image {
+                                id: wifiRefreshIcon
+                                anchors.verticalCenter: parent.verticalCenter
+                                width: 13
+                                height: 13
+                                source: Qt.resolvedUrl("../assets/icons/lucide-refresh-cw-refined-dark.svg")
+                                sourceSize.width: 28
+                                sourceSize.height: 28
+                                smooth: true
+
+                                RotationAnimation on rotation {
+                                    from: 0
+                                    to: 360
+                                    duration: 700
+                                    loops: Animation.Infinite
+                                    running: root.wifiRefreshing
+                                }
+                            }
+
+                            Text {
+                                anchors.verticalCenter: parent.verticalCenter
+                                text: root.wifiRefreshing ? "Scanning" : "Refresh"
+                                color: "#6B5736"
+                                font.pixelSize: root.embedded ? 8 : 9
+                                font.weight: Font.DemiBold
+                            }
+                        }
+
+                        MouseArea {
+                            id: refreshWifiMouse
+                            anchors.fill: parent
+                            hoverEnabled: true
+                            cursorShape: Qt.PointingHandCursor
+                            enabled: !root.wifiRefreshing
+                            onClicked: root.refreshWifiNetworks(true)
+                        }
+                    }
                 }
 
                 Rectangle {
-                    anchors.right: parent.right
-                    anchors.rightMargin: 8
-                    anchors.verticalCenter: parent.verticalCenter
-                    width: 76
-                    height: 34
-                    radius: 10
-                    color: "#111318"
+                    id: wifiConnectionCard
+                    width: parent.width
+                    height: root.wifiSelectedSsid.length > 0
+                        && root.wifiSelectedSecurity !== "--"
+                        && root.wifiSelectedSecurity !== ""
+                        ? (root.embedded ? 94 : 108) : 0
+                    visible: height > 0
+                    radius: 13
+                    color: "#FFFFFF"
+                    border.width: 1
+                    border.color: "#DED3C0"
+                    clip: true
 
-                    Text {
-                        anchors.centerIn: parent
-                        text: root.wifiConnecting ? "..." : "CONNECT"
-                        color: "#FFFFFF"
-                        font.pixelSize: 8
-                        font.weight: Font.DemiBold
+                    Rectangle {
+                        width: 3
+                        anchors.left: parent.left
+                        anchors.top: parent.top
+                        anchors.bottom: parent.bottom
+                        radius: 2
+                        color: root.accent
                     }
 
-                    MouseArea {
+                    Column {
                         anchors.fill: parent
-                        cursorShape: Qt.PointingHandCursor
-                        onClicked: root.connectWifi()
+                        anchors.leftMargin: 12
+                        anchors.rightMargin: 10
+                        anchors.topMargin: 8
+                        anchors.bottomMargin: 7
+                        spacing: 6
+
+                        Row {
+                            width: parent.width
+                            height: 14
+                            spacing: 8
+
+                            Text {
+                                width: parent.width - wifiCancelLabel.width - parent.spacing
+                                text: "JOIN  ·  " + root.wifiSelectedSsid
+                                color: root.textPrimary
+                                font.pixelSize: root.embedded ? 8 : 9
+                                font.weight: Font.DemiBold
+                                elide: Text.ElideRight
+                                anchors.verticalCenter: parent.verticalCenter
+                            }
+
+                            Text {
+                                id: wifiCancelLabel
+                                text: "CANCEL"
+                                color: wifiCancelMouse.containsMouse ? root.textPrimary : root.textMuted
+                                font.pixelSize: 7
+                                font.weight: Font.DemiBold
+                                anchors.verticalCenter: parent.verticalCenter
+
+                                MouseArea {
+                                    id: wifiCancelMouse
+                                    anchors.fill: parent
+                                    anchors.margins: -5
+                                    hoverEnabled: true
+                                    cursorShape: Qt.PointingHandCursor
+                                    onClicked: {
+                                        root.wifiSelectedSsid = ""
+                                        root.wifiSelectedSecurity = ""
+                                        root.wifiPassword = ""
+                                    }
+                                }
+                            }
+                        }
+
+                        Row {
+                            width: parent.width
+                            height: root.embedded ? 32 : 36
+                            spacing: 7
+
+                            Rectangle {
+                                id: wifiPasswordField
+                                width: parent.width - wifiConnectButton.width - parent.spacing
+                                height: parent.height
+                                radius: 9
+                                color: "#F8F9FB"
+                                border.width: 1
+                                border.color: wifiPasswordInput.activeFocus ? root.accent : "#E3E6EA"
+
+                                Text {
+                                    anchors.left: parent.left
+                                    anchors.leftMargin: 9
+                                    anchors.right: parent.right
+                                    anchors.rightMargin: 8
+                                    anchors.verticalCenter: parent.verticalCenter
+                                    text: "Wi-Fi password"
+                                    color: root.textMuted
+                                    font.pixelSize: 9
+                                    visible: root.wifiPassword.length === 0
+                                }
+
+                                TextInput {
+                                    id: wifiPasswordInput
+                                    anchors.fill: parent
+                                    anchors.leftMargin: 9
+                                    anchors.rightMargin: 8
+                                    verticalAlignment: TextInput.AlignVCenter
+                                    color: root.textPrimary
+                                    selectionColor: "#E6D7BC"
+                                    selectedTextColor: root.textPrimary
+                                    font.pixelSize: 10
+                                    echoMode: TextInput.Password
+                                    clip: true
+                                    text: root.wifiPassword
+                                    onTextChanged: root.wifiPassword = text
+                                    activeFocusOnPress: true
+                                    selectByMouse: true
+                                    Keys.onReturnPressed: root.connectWifi()
+                                    Keys.onEnterPressed: root.connectWifi()
+                                }
+                            }
+
+                            Rectangle {
+                                id: wifiConnectButton
+                                width: root.embedded ? 76 : 86
+                                height: parent.height
+                                radius: 9
+                                color: root.wifiConnecting ? "#8B9097" : "#242A32"
+
+                                Text {
+                                    anchors.centerIn: parent
+                                    text: root.wifiConnecting ? "Joining…" : "Connect"
+                                    color: "#FFFFFF"
+                                    font.pixelSize: root.embedded ? 8 : 9
+                                    font.weight: Font.DemiBold
+                                }
+
+                                MouseArea {
+                                    anchors.fill: parent
+                                    enabled: !root.wifiConnecting
+                                    cursorShape: Qt.PointingHandCursor
+                                    onClicked: root.connectWifi()
+                                }
+                            }
+                        }
+
+                        Text {
+                            width: parent.width
+                            text: "Your password is used to join this network."
+                            color: root.textMuted
+                            font.pixelSize: root.embedded ? 7 : 8
+                            elide: Text.ElideRight
+                        }
+                    }
+                }
+
+                Flickable {
+                    id: wifiNetworkList
+                    width: parent.width
+                    height: Math.max(0, wifiView.height - wifiStatusCard.height
+                        - wifiHeading.height - wifiConnectionCard.height
+                        - wifiLayout.spacing * 3)
+                    clip: true
+                    contentHeight: wifiColumn.height
+                    boundsBehavior: Flickable.StopAtBounds
+                    flickableDirection: Flickable.VerticalFlick
+
+                    Column {
+                        id: wifiColumn
+                        width: wifiNetworkList.width
+                        spacing: 6
+
+                        Item {
+                            width: wifiColumn.width
+                            height: root.wifiNetworks.length === 0 ? Math.min(112, wifiNetworkList.height) : 0
+                            visible: root.wifiNetworks.length === 0
+
+                            Column {
+                                anchors.centerIn: parent
+                                spacing: 7
+
+                                Rectangle {
+                                    anchors.horizontalCenter: parent.horizontalCenter
+                                    width: 32
+                                    height: 32
+                                    radius: 10
+                                    color: "#F4F0E8"
+                                    border.width: 1
+                                    border.color: "#E9E0D1"
+
+                                    Image {
+                                        anchors.centerIn: parent
+                                        width: 16
+                                        height: 16
+                                        source: Qt.resolvedUrl("../assets/icons/lucide-wifi-refined.svg")
+                                        sourceSize.width: 32
+                                        sourceSize.height: 32
+                                        opacity: 0.65
+                                    }
+                                }
+
+                                Text {
+                                    anchors.horizontalCenter: parent.horizontalCenter
+                                    text: root.wifiRefreshing ? "Looking for nearby networks" : "No networks found"
+                                    color: root.textSecondary
+                                    font.pixelSize: 9
+                                    font.weight: Font.DemiBold
+                                }
+
+                                Text {
+                                    anchors.horizontalCenter: parent.horizontalCenter
+                                    text: root.wifiRefreshing ? "This can take a moment." : "Try refreshing the scan."
+                                    color: root.textMuted
+                                    font.pixelSize: 8
+                                }
+                            }
+                        }
+
+                        Repeater {
+                            model: root.wifiNetworks
+
+                            delegate: Rectangle {
+                                id: wifiNetworkTile
+                                required property var modelData
+                                width: wifiColumn.width
+                                height: root.embedded ? 54 : 62
+                                radius: 12
+                                color: modelData.inUse
+                                    ? "#F7F3EA"
+                                    : (networkMouse.containsMouse || modelData.ssid === root.wifiSelectedSsid
+                                        ? "#F3F5F7" : "#FAFBFC")
+                                border.width: modelData.inUse || modelData.ssid === root.wifiSelectedSsid ? 1.3 : 1
+                                border.color: modelData.inUse || modelData.ssid === root.wifiSelectedSsid
+                                    ? "#D8C7A8" : "#E7EAEE"
+
+                                Rectangle {
+                                    x: 8
+                                    anchors.verticalCenter: parent.verticalCenter
+                                    width: 3
+                                    height: parent.height - 18
+                                    radius: 2
+                                    color: wifiNetworkTile.modelData.inUse ? root.accent : "transparent"
+                                }
+
+                                Column {
+                                    anchors.left: parent.left
+                                    anchors.leftMargin: 17
+                                    anchors.right: wifiSignalInfo.left
+                                    anchors.rightMargin: 8
+                                    anchors.verticalCenter: parent.verticalCenter
+                                    spacing: 4
+
+                                    Text {
+                                        width: parent.width
+                                        text: wifiNetworkTile.modelData.ssid
+                                        color: root.textPrimary
+                                        font.pixelSize: root.embedded ? 9 : 10
+                                        font.weight: Font.DemiBold
+                                        elide: Text.ElideRight
+                                    }
+
+                                    Text {
+                                        width: parent.width
+                                        text: wifiNetworkTile.modelData.inUse
+                                            ? "CONNECTED"
+                                            : (wifiNetworkTile.modelData.security === "--" ? "OPEN NETWORK" : "SECURED NETWORK")
+                                        color: wifiNetworkTile.modelData.inUse ? "#8A6835" : root.textMuted
+                                        font.pixelSize: 7
+                                        font.weight: Font.DemiBold
+                                        font.letterSpacing: 0.55
+                                    }
+                                }
+
+                                Column {
+                                    id: wifiSignalInfo
+                                    anchors.right: parent.right
+                                    anchors.rightMargin: 11
+                                    anchors.verticalCenter: parent.verticalCenter
+                                    width: 38
+                                    spacing: 3
+
+                                    Text {
+                                        width: parent.width
+                                        text: wifiNetworkTile.modelData.signal + "%"
+                                        color: root.textSecondary
+                                        font.pixelSize: 8
+                                        horizontalAlignment: Text.AlignRight
+                                    }
+
+                                    Row {
+                                        width: parent.width
+                                        height: 11
+                                        spacing: 3
+
+                                        Repeater {
+                                            model: [3, 5, 8, 11]
+
+                                            delegate: Rectangle {
+                                                required property int modelData
+                                                required property int index
+                                                width: 6
+                                                height: modelData
+                                                anchors.bottom: parent.bottom
+                                                radius: 2
+                                                color: wifiNetworkTile.modelData.signal >= (index + 1) * 25
+                                                    ? (wifiNetworkTile.modelData.inUse ? root.accent : "#7D8997")
+                                                    : "#DFE3E8"
+                                            }
+                                        }
+                                    }
+                                }
+
+                                MouseArea {
+                                    id: networkMouse
+                                    anchors.fill: parent
+                                    hoverEnabled: true
+                                    cursorShape: Qt.PointingHandCursor
+                                    onClicked: root.selectWifiNetwork(wifiNetworkTile.modelData)
+                                }
+                            }
+                        }
                     }
                 }
             }
