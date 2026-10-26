@@ -273,7 +273,7 @@ bluetooth_valid_address() {
 }
 
 bluetooth_pair() {
-    local mac="$3"
+    local mac="${3:-}"
     bluetooth_valid_address "$mac" || return 2
     bluetoothctl --timeout 30 --agent NoInputNoOutput pair "$mac" >/dev/null 2>&1
 }
@@ -288,7 +288,8 @@ bluetooth_scan_pid() {
     local pid
     if [ -f "$BLUETOOTH_SCAN_PID" ]; then
         pid=$(cat "$BLUETOOTH_SCAN_PID" 2>/dev/null || true)
-        if [[ "$pid" =~ ^[0-9]+$ ]] && kill -0 "$pid" 2>/dev/null; then
+        if [[ "$pid" =~ ^[0-9]+$ ]] && kill -0 "$pid" 2>/dev/null \
+            && ps -p "$pid" -o comm= 2>/dev/null | grep -qx 'bluetoothctl'; then
             printf '%s\n' "$pid"
             return 0
         fi
@@ -342,13 +343,13 @@ bluetooth_toggle() {
 }
 
 bluetooth_connect() {
-    local mac="$3"
+    local mac="${3:-}"
     bluetooth_valid_address "$mac" || return 2
     bluetoothctl --timeout 20 connect "$mac" >/dev/null 2>&1
 }
 
 bluetooth_disconnect() {
-    local mac="$3"
+    local mac="${3:-}"
     bluetooth_valid_address "$mac" || return 2
     bluetoothctl --timeout 12 disconnect "$mac" >/dev/null 2>&1
 }
