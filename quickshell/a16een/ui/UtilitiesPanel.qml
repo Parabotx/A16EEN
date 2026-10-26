@@ -27,7 +27,8 @@ PanelWindow {
     readonly property real screenHeight: root.modelData ? root.modelData.height : 1080
     readonly property int popupWidth: 390
     readonly property int popupHeight: root.selectedMode === "wifi" ? 450
-        : (root.selectedMode === "clipboard" ? 410 : 340)
+        : (root.selectedMode === "bluetooth" ? 420
+            : (root.selectedMode === "clipboard" ? 410 : 340))
     readonly property real popupX: root.horizontalNavbar
         ? 100
         : (root.navbarPosition === "left"
