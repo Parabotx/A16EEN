@@ -13,6 +13,7 @@ PanelWindow {
     required property int selectedDay
     required property int selectedMonth
     required property int selectedYear
+    required property var selectedEvent
 
     signal closeRequested()
     signal hoveringChanged(bool hovering)
@@ -33,7 +34,7 @@ PanelWindow {
         "ጥር", "የካቲት", "መጋቢት", "ሚያዝያ",
         "ግንቦት", "ሰኔ", "ሐምሌ", "ነሐሴ", "ጳጉሜ"
     ]
-    readonly property var dayInfo: calendarData.forDay(root.selectedDay)
+    readonly property var dayInfo: root.selectedEvent || calendarData.forDate(root.selectedMonth, root.selectedDay)
     property bool surfaceVisible: false
 
     screen: root.modelData
