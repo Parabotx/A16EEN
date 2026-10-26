@@ -583,6 +583,13 @@ Item {
                 root.bluetoothScanning = false
                 bluetoothScanRefresh.stop()
             }
+
+            if (root.actionArgs.length >= 2
+                && root.actionArgs[0] === "bluetooth"
+                && ["toggle", "scan-stop"].includes(root.actionArgs[1])) {
+                root.bluetoothScanning = false
+                bluetoothScanRefresh.stop()
+            }
         }
 
         onRunningChanged: {
