@@ -20,7 +20,7 @@ active_nightlight_pid() {
     if [ -f "$NIGHTLIGHT_PID" ]; then
         local pid
         pid=$(cat "$NIGHTLIGHT_PID" 2>/dev/null || true)
-        if [[ "$pid" =~ ^[0-9]+$ ]] && kill -0 "$pid" 2>/dev/null; then
+        if [[ "$pid" =~ ^[0-9]+$ ]] && kill -0 "$pid" 2>/dev/null && ps -p "$pid" -o comm= 2>/dev/null | grep -qx "bluetoothctl"; then
             printf '%s\n' "$pid"
             return 0
         fi
