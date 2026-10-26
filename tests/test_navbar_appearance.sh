@@ -44,12 +44,14 @@ run() { bash "$ROOT/scripts/a16een-navbar-appearance" "$@"; }
 
 run get >/dev/null
 jq -e '.schemaVersion == 7 and (.workspaces == null)
-    and (.containers | has("workspaces") and has("ai") and has("ai-assistant") and has("battery") and has("time") and has("utilities") and has("power")
+    and (.containers | has("workspaces") and has("gaming") and has("ai") and has("ai-assistant") and has("battery") and has("time") and has("utilities") and has("power")
         and has("quick-actions") and has("quick-hub") and has("data-meter"))
     and .containers.workspaces.visible == true
     and .containers.workspaces.iconColor == "inherit"
     and .containers.ai.visible == true
     and .containers.ai.iconColor == "inherit"
+    and .containers.gaming.visible == true
+    and .containers.gaming.iconColor == "inherit"
     and .containers["ai-assistant"].applyPopupCardColor == false
     and .containers["ai-assistant"].containerEnabled == false
     and .containers["quick-hub"].applyPopupCardColor == false
@@ -107,6 +109,10 @@ run set container ai iconColor '#9C6B15'
 run set container quick-hub iconColor '#1D4ED8'
 run set container data-meter containerColor '#070B13'
 run set container data-meter iconColor '#FFFFFF'
+run set container gaming visible off
+run set container gaming visible on
+run set container gaming containerColor '#20242B'
+run set container gaming iconColor '#FFFFFF'
 # Visibility writes must notify the shell without triggering the expensive icon generator.
 apply_count_before="$(wc -l < "$APPLY_LOG")"
 icon_marker_before="$(cat "$XDG_STATE_HOME/a16een/navbar-icons/ready")"
@@ -134,6 +140,10 @@ jq -e '.containers["quick-actions"].containerEnabled == true
     and .containers.ai.containerEnabled == true
     and .containers.ai.containerColor == "#F4F5F7"
     and .containers.ai.iconColor == "#9C6B15"
+    and .containers.gaming.visible == true
+    and .containers.gaming.containerEnabled == true
+    and .containers.gaming.containerColor == "#20242B"
+    and .containers.gaming.iconColor == "#FFFFFF"
     and .containers.workspaces.visible == false
     and .containers.battery.containerEnabled == true
     and .containers.battery.containerColor == "#070B13"
