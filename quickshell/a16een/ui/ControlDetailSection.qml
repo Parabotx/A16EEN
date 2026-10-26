@@ -476,11 +476,23 @@ Item {
 
     Timer {
         id: bluetoothScanRefresh
-        interval: 7200
+        interval: 12500
         repeat: false
         onTriggered: {
             root.bluetoothScanning = false
-            bluetoothReader.running = true
+            if (!bluetoothReader.running)
+                bluetoothReader.running = true
+        }
+    }
+
+    Timer {
+        id: bluetoothDiscoveryPoll
+        interval: 1100
+        repeat: true
+        running: root.active && root.mode === "bluetooth" && root.bluetoothScanning
+        onTriggered: {
+            if (!bluetoothReader.running)
+                bluetoothReader.running = true
         }
     }
 
@@ -553,6 +565,23 @@ Item {
                 root.wifiConnecting = false
                 if (exitCode === 0)
                     root.clearWifiSelection()
+            }
+
+            if (root.actionArgs.length >= 3
+                && root.actionArgs[0] === "bluetooth"
+                && ["pair", "connect", "disconnect"].includes(root.actionArgs[1])) {
+                root.bluetoothActionMac = ""
+                root.bluetoothActionVerb = ""
+                if (exitCode !== 0)
+                    root.statusMessage = "BLUETOOTH ACTION FAILED"
+            }
+
+            if (root.actionArgs.length >= 2
+                && root.actionArgs[0] === "bluetooth"
+                && root.actionArgs[1] === "scan"
+                && exitCode !== 0) {
+                root.bluetoothScanning = false
+                bluetoothScanRefresh.stop()
             }
         }
 
