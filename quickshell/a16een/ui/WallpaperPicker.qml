@@ -34,14 +34,15 @@ PanelWindow {
     property string failedWallpaperKey: ""
     property string runningWallpaperKey: ""
     property var pendingWallpaper: null
+    property bool closeAfterApply: false
 
     signal closeRequested()
     signal openRequested()
 
-    readonly property int pickerWidth: Math.max(0, Math.min(820, root.width - 24))
-    readonly property int thumbnailWidth: Math.max(28, Math.min(80, Math.floor((root.pickerWidth - 140) / 8)))
-    readonly property int railWidth: Math.max(0, Math.min(root.thumbnailWidth * 8 + 42, root.pickerWidth - 54))
-    readonly property int pickerContentWidth: root.railWidth + 69
+    readonly property int pickerWidth: Math.max(0, Math.min(1480, root.width - 32))
+    readonly property int thumbnailWidth: Math.max(48, Math.min(110, Math.floor((root.pickerWidth - 74) / 13)))
+    readonly property int railWidth: Math.max(0, Math.min(root.thumbnailWidth * 13, root.pickerWidth - 58))
+    readonly property int pickerContentWidth: root.railWidth + 55
     readonly property int pickerBarHeight: 76
     property bool animateRail: true
 
@@ -154,6 +155,25 @@ PanelWindow {
         root.selectWallpaperByIndex(nextIndex, nextLoopIndex)
     }
 
+    function confirmCurrentWallpaper() {
+        if (root.selectedIndex < 0 || root.selectedIndex >= root.wallpapers.length) {
+            root.closeRequested()
+            return
+        }
+
+        root.closeAfterApply = true
+        root.pendingWallpaper = root.wallpapers[root.selectedIndex]
+        const selectedKey = root.wallpaperKey(root.pendingWallpaper)
+        if (selectedKey === root.appliedWallpaperKey && !wallpaperApplyProcess.running) {
+            root.closeAfterApply = false
+            root.closeRequested()
+            return
+        }
+
+        root.failedWallpaperKey = ""
+        Qt.callLater(() => root.startPendingWallpaperApply())
+    }
+
     function startPendingWallpaperApply() {
         if (!root.pendingWallpaper || wallpaperApplyProcess.running)
             return
@@ -179,6 +199,13 @@ PanelWindow {
             console.warn("A16EEN wallpaper switch failed for", finishedKey)
         }
         root.runningWallpaperKey = ""
+
+        if (exitCode === 0 && root.closeAfterApply
+                && finishedKey === root.selectedWallpaperKey) {
+            root.closeAfterApply = false
+            root.closeRequested()
+            return
+        }
 
         if (root.pendingWallpaper) {
             const pendingKey = root.wallpaperKey(root.pendingWallpaper)
@@ -374,11 +401,11 @@ PanelWindow {
         height: root.pickerBarHeight
         anchors.horizontalCenter: parent.horizontalCenter
         anchors.bottom: parent.bottom
-        anchors.bottomMargin: 16
-        radius: 16
-        color: "#62F7F8FA"
+        anchors.bottomMargin: 78
+        radius: 14
+        color: "#56F7F8FA"
         border.width: 1
-        border.color: "#50FFFFFF"
+        border.color: "#40FFFFFF"
         opacity: root.opened ? 1 : 0
         scale: root.opened ? 1 : 0.97
         Behavior on opacity {
@@ -390,33 +417,32 @@ PanelWindow {
 
         Rectangle {
             anchors.fill: parent
-            anchors.margins: -5
-            radius: 23
-            color: "#18000000"
+            anchors.margins: -4
+            radius: 18
+            color: "#14000000"
             z: -1
         }
 
         Row {
             anchors.centerIn: parent
-            spacing: 6
+            spacing: 4
 
             Rectangle {
                 id: settingsTile
-                width: 40
-                height: 40
+                width: 42
+                height: 42
                 radius: 12
-                color: settingsMouse.containsMouse ? "#E6EAF0" : "#ECEFF3"
+                color: settingsMouse.containsMouse ? "#3B4452" : "#252C37"
                 border.width: 1
-                border.color: "#DCE1E8"
+                border.color: "#475160"
                 anchors.verticalCenter: parent.verticalCenter
-                Behavior on color { ColorAnimation { duration: 120 } }
+                Behavior on color { ColorAnimation { duration: 110 } }
 
                 Image {
-                    anchors.horizontalCenter: parent.horizontalCenter
                     anchors.centerIn: parent
-                    width: 19
-                    height: 19
-                    source: Qt.resolvedUrl("../assets/icons/lucide-settings.svg")
+                    width: 20
+                    height: 20
+                    source: Qt.resolvedUrl("../assets/icons/lucide-sliders-horizontal.svg")
                     fillMode: Image.PreserveAspectFit
                     smooth: true
                 }
@@ -436,7 +462,7 @@ PanelWindow {
 
             Rectangle {
                 width: 1
-                height: 44
+                height: 40
                 radius: 1
                 color: "#DDE1E7"
                 anchors.verticalCenter: parent.verticalCenter
@@ -448,7 +474,7 @@ PanelWindow {
                 height: 66
                 anchors.verticalCenter: parent.verticalCenter
                 orientation: ListView.Horizontal
-                spacing: 6
+                spacing: 0
                 clip: true
                 interactive: false
                 model: root.loopWallpapers
@@ -461,7 +487,7 @@ PanelWindow {
 
                 Behavior on contentX {
                     enabled: root.animateRail
-                    NumberAnimation { duration: 280; easing.type: Easing.OutCubic }
+                    NumberAnimation { duration: 165; easing.type: Easing.OutCubic }
                 }
 
                 onMovementEnded: {
@@ -482,34 +508,28 @@ PanelWindow {
 
                     width: root.thumbnailWidth
                     height: 64
-                    radius: 10
+                    radius: 5
                     color: "#111820"
-                    border.width: isCurrentItem ? 2 : 1
-                    border.color: isCurrentItem ? "#D3A64A" : "#D7DDE5"
-                    scale: isCurrentItem ? 1 : 0.96
-                    Behavior on scale {
-                        NumberAnimation { duration: 150; easing.type: Easing.OutCubic }
-                    }
-                    Behavior on border.color { ColorAnimation { duration: 140 } }
+                    clip: true
+                    border.width: isCurrentItem ? 2 : 0
+                    border.color: "#D3A64A"
 
                     Rectangle {
                         anchors.fill: parent
-                        anchors.margins: 1
-                        radius: 8
+                        radius: thumbnailDelegate.isCurrentItem ? 3 : 5
                         color: "#111820"
                         clip: true
 
                         Image {
                             id: staticPreview
                             anchors.fill: parent
-                            anchors.margins: 1
-                            source: thumbnailDelegate.modelData.wallpaper.type === "static"
+                            source: root.opened && thumbnailDelegate.modelData.wallpaper.type === "static"
                                 ? thumbnailDelegate.modelData.wallpaper.path : ""
                             sourceSize.width: root.thumbnailWidth * 2
                             sourceSize.height: 0
                             fillMode: Image.PreserveAspectFit
                             asynchronous: true
-                            cache: true
+                            cache: false
                             smooth: true
                             visible: thumbnailDelegate.modelData.wallpaper.type === "static"
                                 && status === Image.Ready
@@ -518,8 +538,7 @@ PanelWindow {
                         AnimatedImage {
                             id: animatedPreview
                             anchors.fill: parent
-                            anchors.margins: 1
-                            source: thumbnailDelegate.modelData.wallpaper.type === "animated"
+                            source: root.opened && thumbnailDelegate.modelData.wallpaper.type === "animated"
                                 ? thumbnailDelegate.modelData.wallpaper.path : ""
                             sourceSize.width: root.thumbnailWidth * 2
                             fillMode: Image.PreserveAspectFit
@@ -535,7 +554,7 @@ PanelWindow {
                         Loader {
                             id: videoPreviewLoader
                             anchors.fill: parent
-                            active: thumbnailDelegate.modelData.wallpaper.type === "video"
+                            active: root.opened && thumbnailDelegate.modelData.wallpaper.type === "video"
                                 && (thumbnailMouse.containsMouse || thumbnailDelegate.isCurrentItem)
                             source: active ? "VideoWallpaperPreview.qml" : ""
                             onLoaded: {
@@ -550,44 +569,6 @@ PanelWindow {
                             color: "#111820"
                             visible: thumbnailDelegate.modelData.wallpaper.type === "video"
                                 && !(videoPreviewLoader.item && videoPreviewLoader.item.hasVideo)
-                        }
-
-                        Text {
-                            anchors.centerIn: parent
-                            text: thumbnailDelegate.modelData.wallpaper.type === "video"
-                                ? "VIDEO"
-                                : (thumbnailDelegate.modelData.wallpaper.type === "animated" ? "LIVE" : "IMAGE")
-                            color: "#F7F8FA"
-                            font.pixelSize: 7
-                            font.weight: Font.DemiBold
-                            font.letterSpacing: 0.5
-                            visible: thumbnailDelegate.modelData.wallpaper.type !== "static"
-                                || staticPreview.status === Image.Error
-                        }
-
-                        Rectangle {
-                            anchors.left: parent.left
-                            anchors.right: parent.right
-                            anchors.bottom: parent.bottom
-                            height: 17
-                            color: "#B9000000"
-                        }
-
-                        Text {
-                            anchors.left: parent.left
-                            anchors.right: parent.right
-                            anchors.bottom: parent.bottom
-                            anchors.leftMargin: 4
-                            anchors.rightMargin: 4
-                            anchors.bottomMargin: 2
-                            text: thumbnailDelegate.modelData.wallpaper.displayName
-                                || thumbnailDelegate.modelData.wallpaper.name
-                            color: "#FFFFFF"
-                            font.pixelSize: 7
-                            font.weight: Font.Medium
-                            elide: Text.ElideMiddle
-                            horizontalAlignment: Text.AlignHCenter
-                            verticalAlignment: Text.AlignVCenter
                         }
 
                         Rectangle {
@@ -1064,6 +1045,10 @@ PanelWindow {
                 if (!root.settingsOpen)
                     root.stepWallpaper(1)
                 event.accepted = true
+            } else if (event.key === Qt.Key_Return || event.key === Qt.Key_Enter) {
+                if (!root.settingsOpen)
+                    root.confirmCurrentWallpaper()
+                event.accepted = true
             } else if (event.key === Qt.Key_Escape) {
                 if (root.settingsOpen)
                     root.settingsOpen = false
@@ -1075,10 +1060,31 @@ PanelWindow {
     }
 
 
-    onOpenedChanged: {
-        if (!opened)
-            return
+    Timer {
+        id: releasePreviewTimer
+        interval: 260
+        repeat: false
+        onTriggered: {
+            if (root.opened)
+                return
+            root.wallpapers = []
+            root.wallpaperCatalogReady = false
+            root.selectedIndex = -1
+            root.railCurrentIndex = -1
+            root.selectedWallpaperKey = ""
+        }
+    }
 
+    onOpenedChanged: {
+        if (!opened) {
+            root.settingsOpen = false
+            root.closeAfterApply = false
+            root.pendingWallpaper = null
+            releasePreviewTimer.restart()
+            return
+        }
+
+        releasePreviewTimer.stop()
         root.settingsOpen = root.showSettingsAfterPicker
         root.showSettingsAfterPicker = false
         Qt.callLater(function() {
