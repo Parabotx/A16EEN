@@ -187,7 +187,8 @@ assert 'isolateAppearance: root.page === "ai"' in tools_panel_qml
 assert 'id: aiHeaderSpacer' in tools_panel_qml
 assert 'width: visible ? Math.max(0, parent.width - 28 - 25 - 25 - 25 - parent.spacing * 4) : 0' in tools_panel_qml
 assert 'property bool isolateAppearance: false' in popup_style
-assert 'root.isolateAppearance ? root.selectedContainer.applyPopupCardColor === true' in popup_style
+assert 'root.isolateAppearance' in popup_style
+assert 'root.selectedContainer.applyPopupCardColor === true' in popup_style
 assert 'if (!root.isolateAppearance && root.allSettings.applyIconColor === true)' in popup_style
 assert 'ai-assistant' in appearance_ui
 assert 'text: bubble.fromUser ? "YOU" : "A16EEN AI"' in assistant_qml
