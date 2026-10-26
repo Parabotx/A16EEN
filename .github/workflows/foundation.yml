@@ -488,6 +488,7 @@ jobs:
           grep -Fq 'function preview(path: string): void' quickshell/a16een/shell.qml
           grep -Fq 'outgoing.sourcePath = ""' quickshell/a16een/ui/Wallpaper.qml
           grep -Fq 'cache: false' quickshell/a16een/ui/WallpaperTransitionLayer.qml
+          grep -Fq 'root.videoPreviewFailed' quickshell/a16een/ui/WallpaperTransitionLayer.qml
           grep -Fq 'property bool desktopAnimationAllowed: true' quickshell/a16een/ui/VideoWallpaperPreview.qml
           grep -Fq 'import QtMultimedia' quickshell/a16een/ui/VideoWallpaper.qml
           grep -Fq 'MediaPlayer.Infinite' quickshell/a16een/ui/VideoWallpaper.qml
@@ -717,7 +718,9 @@ jobs:
           ! grep -Fq 'wallpaper.name' quickshell/a16een/ui/WallpaperPicker.qml
           grep -Fq 'thumbnailWidth * 13' quickshell/a16een/ui/WallpaperPicker.qml
           grep -Fq 'spacing: 0' quickshell/a16een/ui/WallpaperPicker.qml
-          grep -Fq 'anchors.bottomMargin: 78' quickshell/a16een/ui/WallpaperPicker.qml
+          grep -Fq 'readonly property int pickerBottomMargin: 78' quickshell/a16een/ui/WallpaperPicker.qml
+          grep -Fq 'anchors.bottomMargin: root.pickerBottomMargin' quickshell/a16een/ui/WallpaperPicker.qml
+          grep -Fq 'root.pickerBarHeight + root.pickerBottomMargin + 34' quickshell/a16een/ui/WallpaperPicker.qml
           grep -Fq 'Qt.Key_Return || event.key === Qt.Key_Enter' quickshell/a16een/ui/WallpaperPicker.qml
           grep -Fq 'root.confirmCurrentWallpaper()' quickshell/a16een/ui/WallpaperPicker.qml
           grep -Fq 'function startPendingWallpaperPreview()' quickshell/a16een/ui/WallpaperPicker.qml
