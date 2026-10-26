@@ -269,6 +269,7 @@ QtObject {
         {
             id: "eid-al-fitr", calendar: "islamic", month: 10, day: 1,
             title: "ዒድ አል-ፊጥር", category: "የእስልምና በዓል · ግምታዊ ቀን",
+            showScripture: false,
             description: "የረመዳን ጾም መጨረሻ በዓል። ታቡላር የእስልምና ቀን መቁጠሪያ የተገመተ ቀን ነው፤ የጨረቃ እይታ የአካባቢውን ቀን ሊያስቀይር ይችላል።",
             verse: "ለሌሎች ርኅራኄን አድርጉ።",
             reference: "መንፈሳዊ ማሰላሰያ",
@@ -277,6 +278,7 @@ QtObject {
         {
             id: "eid-al-adha", calendar: "islamic", month: 12, day: 10,
             title: "ዒድ አል-አድሓ", category: "የእስልምና በዓል · ግምታዊ ቀን",
+            showScripture: false,
             description: "የመስዋዕት በዓል። ይህ በታቡላር የእስልምና ቀን መቁጠሪያ የተገመተ ቀን ሲሆን በአካባቢያዊ የጨረቃ እይታ ሊለይ ይችላል።",
             verse: "ለሰዎች መልካም ነገር አድርጉ።",
             reference: "መንፈሳዊ ማሰላሰያ",
@@ -285,6 +287,7 @@ QtObject {
         {
             id: "mawlid", calendar: "islamic", month: 3, day: 12,
             title: "መውሊድ", category: "የእስልምና መታሰቢያ · ግምታዊ ቀን",
+            showScripture: false,
             description: "የነቢዩ ሙሐመድ ልደት መታሰቢያ። ቀኑ በታቡላር የእስልምና ቀን መቁጠሪያ የተገመተ ነው።",
             verse: "ሰላምን እና መልካም ሥራን ፈልጉ።",
             reference: "መንፈሳዊ ማሰላሰያ",
