@@ -73,7 +73,7 @@ const panel = fs.readFileSync(path.join(root, "quickshell/a16een/ui/GamingPanel.
 assert.ok(panel.includes('import "TicTacToe.js" as TicTacToe'));
 assert.ok(panel.includes('TicTacToe.bestMove(root.board, "O", "X")'));
 assert.ok(panel.includes('text: "X & O"'));
-assert.ok(panel.includes('text: "GAMES"'));
+assert.ok(panel.includes('root.currentView === "xo" ? "X & O" : "GAMES"'));
 assert.ok(!panel.includes("description:"));
 
 console.log("Tic-Tac-Toe minimax and Gaming panel tests passed.");
