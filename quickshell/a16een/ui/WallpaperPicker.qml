@@ -46,6 +46,7 @@ PanelWindow {
     readonly property int railWidth: Math.max(0, Math.min(root.thumbnailWidth * 13, root.pickerWidth - 58))
     readonly property int pickerContentWidth: root.railWidth + 55
     readonly property int pickerBarHeight: 76
+    readonly property int pickerBottomMargin: 78
     property bool animateRail: true
 
     // The catalog is repeated three times so the thumbnail rail can cycle
@@ -471,7 +472,7 @@ PanelWindow {
         height: root.pickerBarHeight
         anchors.horizontalCenter: parent.horizontalCenter
         anchors.bottom: parent.bottom
-        anchors.bottomMargin: 78
+        anchors.bottomMargin: root.pickerBottomMargin
         radius: 14
         color: "#56F7F8FA"
         border.width: 1
@@ -684,7 +685,7 @@ PanelWindow {
         height: Math.min(500, Math.max(220, parent.height - 136))
         anchors.horizontalCenter: parent.horizontalCenter
         anchors.bottom: parent.bottom
-        anchors.bottomMargin: root.pickerBarHeight + 34
+        anchors.bottomMargin: root.pickerBarHeight + root.pickerBottomMargin + 34
         radius: 20
         color: "#FBFCFD"
         border.width: 1
