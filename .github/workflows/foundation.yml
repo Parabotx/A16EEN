@@ -480,9 +480,13 @@ jobs:
           grep -Fq 'mpv' scripts/install.sh
           ! grep -Fq 'import QtMultimedia' quickshell/a16een/ui/Wallpaper.qml
           grep -Fq 'readonly property bool isVideo:' quickshell/a16een/ui/Wallpaper.qml
-          grep -Fq 'source: root.isVideo ? "VideoWallpaper.qml" : ""' quickshell/a16een/ui/Wallpaper.qml
-          grep -Fq 'videoWallpaperLoader.status === Loader.Error ? root.fallbackPath' quickshell/a16een/ui/Wallpaper.qml
+          grep -Fq 'WallpaperTransitionLayer {' quickshell/a16een/ui/Wallpaper.qml
+          grep -Fq 'function requestWallpaperTransition(path)' quickshell/a16een/ui/Wallpaper.qml
+          grep -Fq 'if (!incoming.contentReady)' quickshell/a16een/ui/Wallpaper.qml
           grep -Fq 'root.desktopAnimationAllowed' quickshell/a16een/ui/Wallpaper.qml
+          grep -Fq 'outgoing.sourcePath = ""' quickshell/a16een/ui/Wallpaper.qml
+          grep -Fq 'cache: false' quickshell/a16een/ui/WallpaperTransitionLayer.qml
+          grep -Fq 'property bool desktopAnimationAllowed: true' quickshell/a16een/ui/VideoWallpaperPreview.qml
           grep -Fq 'import QtMultimedia' quickshell/a16een/ui/VideoWallpaper.qml
           grep -Fq 'MediaPlayer.Infinite' quickshell/a16een/ui/VideoWallpaper.qml
           grep -Fq 'VideoOutput.PreserveAspectCrop' quickshell/a16een/ui/VideoWallpaper.qml
@@ -707,6 +711,14 @@ jobs:
           grep -Fq 'root.selectWallpaperByIndex' quickshell/a16een/ui/WallpaperPicker.qml
           grep -Fq 'settingsOpen ? 0.22 : 0' quickshell/a16een/ui/WallpaperPicker.qml
           grep -Fq 'staticPreview.status === Image.Error' quickshell/a16een/ui/WallpaperPicker.qml
+          grep -Fq 'thumbnailWidth * 13' quickshell/a16een/ui/WallpaperPicker.qml
+          grep -Fq 'spacing: 0' quickshell/a16een/ui/WallpaperPicker.qml
+          grep -Fq 'anchors.bottomMargin: 78' quickshell/a16een/ui/WallpaperPicker.qml
+          grep -Fq 'Qt.Key_Return || event.key === Qt.Key_Enter' quickshell/a16een/ui/WallpaperPicker.qml
+          grep -Fq 'root.confirmCurrentWallpaper()' quickshell/a16een/ui/WallpaperPicker.qml
+          grep -Fq 'releasePreviewTimer.restart()' quickshell/a16een/ui/WallpaperPicker.qml
+          ! grep -Fq 'wallpaper.displayName' quickshell/a16een/ui/WallpaperPicker.qml
+          ! grep -Fq 'wallpaper.name' quickshell/a16een/ui/WallpaperPicker.qml
           grep -Fq 'fillMode: Image.PreserveAspectFit' quickshell/a16een/ui/WallpaperPicker.qml
           ! grep -Fq 'fillMode: Image.PreserveAspectCrop' quickshell/a16een/ui/WallpaperPicker.qml
           ! grep -Fq 'previousMouse' quickshell/a16een/ui/WallpaperPicker.qml
@@ -726,8 +738,8 @@ jobs:
           grep -Fq 'wallpaperPath: ""' quickshell/a16een/shell.qml
           grep -Fq 'currentWallpaperPath: root.wallpaperPath' quickshell/a16een/shell.qml
           ! grep -Fq 'wallpaperPathProcess' quickshell/a16een/ui/Wallpaper.qml
-          grep -Fq 'retainWhileLoading: true' quickshell/a16een/ui/Wallpaper.qml
-          grep -Fq 'WallpaperTransitionLayer.qml' quickshell/a16een/ui/Wallpaper.qml
+          grep -Fq 'function finishWallpaperTransition()' quickshell/a16een/ui/Wallpaper.qml
+          grep -Fq 'WallpaperTransitionLayer {' quickshell/a16een/ui/Wallpaper.qml
           test -f quickshell/a16een/ui/WallpaperTransitionLayer.qml
           grep -Fq 'find "$dir" -maxdepth 1 -type f -print0' scripts/a16een-wallpaper
           grep -Fq 'notify_shell()' scripts/a16een-wallpaper
