@@ -55,13 +55,13 @@ MOCK
 chmod +x "$TMP_DIR/bin/bluetoothctl"
 
 output=$(PATH="$TMP_DIR/bin:$PATH" XDG_STATE_HOME="$TMP_DIR/state" \
-    "$ROOT_DIR/scripts/a16een-control" bluetooth detail)
+    bash "$ROOT_DIR/scripts/a16een-control" bluetooth detail)
 grep -Fq 'state=on' <<< "$output"
 grep -Fq 'AA:BB:CC:DD:EE:01|Existing Headphones|yes|yes|yes' <<< "$output"
 grep -Fq 'AA:BB:CC:DD:EE:02|Newly Found Speaker|no|no|no' <<< "$output"
 
 PATH="$TMP_DIR/bin:$PATH" XDG_STATE_HOME="$TMP_DIR/state" \
-    "$ROOT_DIR/scripts/a16een-control" bluetooth scan
+    bash "$ROOT_DIR/scripts/a16een-control" bluetooth scan
 PID_FILE="$TMP_DIR/state/a16een/bluetooth-scan.pid"
 [[ -s "$PID_FILE" ]]
 SCAN_PID=$(cat "$PID_FILE")
