@@ -41,9 +41,10 @@ PanelWindow {
     signal closeRequested()
     signal openRequested()
 
-    readonly property int pickerWidth: Math.max(0, Math.min(1480, root.width - 32))
-    readonly property int thumbnailWidth: Math.max(48, Math.min(110, Math.floor((root.pickerWidth - 74) / 13)))
-    readonly property int railWidth: Math.max(0, Math.min(root.thumbnailWidth * 13, root.pickerWidth - 58))
+    readonly property int pickerWidth: Math.max(0, root.width - 32)
+    readonly property int visibleThumbnailCount: Math.max(8, Math.min(24, Math.floor((root.pickerWidth - 58) / 110)))
+    readonly property int thumbnailWidth: Math.max(48, Math.min(110, Math.floor((root.pickerWidth - 74) / root.visibleThumbnailCount)))
+    readonly property int railWidth: Math.max(0, Math.min(root.thumbnailWidth * root.visibleThumbnailCount, root.pickerWidth - 58))
     readonly property int pickerContentWidth: root.railWidth + 55
     readonly property int pickerBarHeight: 76
     readonly property int pickerBottomMargin: 78
