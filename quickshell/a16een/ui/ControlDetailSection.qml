@@ -639,9 +639,10 @@ Item {
                         id: wifiPowerButton
                         anchors.right: parent.right
                         anchors.rightMargin: 9
-                        anchors.verticalCenter: parent.verticalCenter
+                        anchors.top: parent.top
+                        anchors.topMargin: root.embedded ? 6 : 10
                         width: root.embedded ? 74 : 82
-                        height: root.embedded ? 30 : 34
+                        height: root.embedded ? 26 : 30
                         radius: 9
                         color: wifiPowerMouse.containsMouse ? Qt.darker(root.themeAction, 1.08) : root.themeAction
                         border.width: 1
@@ -663,6 +664,37 @@ Item {
                             onClicked: {
                                 root.run(["wifi", "toggle"])
                             }
+                        }
+                    }
+
+                    Rectangle {
+                        id: wifiDisconnectButton
+                        anchors.right: parent.right
+                        anchors.rightMargin: 9
+                        anchors.bottom: parent.bottom
+                        anchors.bottomMargin: root.embedded ? 6 : 10
+                        width: root.embedded ? 74 : 82
+                        height: root.embedded ? 20 : 24
+                        radius: 8
+                        visible: root.wifiState === "on" && root.wifiRadioState === "on"
+                        color: disconnectWifiMouse.containsMouse ? root.themeHover : root.themeSurface
+                        border.width: 1
+                        border.color: root.themeBorder
+
+                        Text {
+                            anchors.centerIn: parent
+                            text: "Disconnect"
+                            color: root.themeText
+                            font.pixelSize: root.embedded ? 7 : 8
+                            font.weight: Font.DemiBold
+                        }
+
+                        MouseArea {
+                            id: disconnectWifiMouse
+                            anchors.fill: parent
+                            hoverEnabled: true
+                            cursorShape: Qt.PointingHandCursor
+                            onClicked: root.run(["wifi", "disconnect"])
                         }
                     }
                 }
