@@ -19,6 +19,7 @@ QtObject {
         "12": ({
             title: "ቅዱስ ሚካኤል",
             category: "የሊቀ መላእክት መታሰቢያ",
+            image: "saint-michael.webp",
             description: "በወሩ 12ኛው ቀን ቅዱስ ሚካኤል ይታሰባል፤ የሰማያዊ ሰራዊት መሪነቱም ይዘከራል።",
             verse: "በሰማይም ሰልፍ ሆነ፤ ሚካኤልና መላእክቱ ዘንዶውን ተዋጉ።",
             reference: "ራእይ 12፥7",
@@ -27,6 +28,7 @@ QtObject {
         "16": ({
             title: "ኪዳነ ምሕረት",
             category: "ቅድስት ማርያም · የምሕረት ቃል ኪዳን",
+            image: "kidane-mehret.webp",
             description: "ይህ ዕለት ቅድስት ማርያምን ከምሕረት እና ከምልጃ ጋር በተያያዘ የሚያስታውስ ወርሃዊ መታሰቢያ ነው።",
             verse: "ምሕረቱም ለሚፈሩት ከትውልድ እስከ ትውልድ ይኖራል።",
             reference: "ሉቃስ 1፥50",
@@ -43,6 +45,7 @@ QtObject {
         "21": ({
             title: "ቅድስት ማርያም",
             category: "የእመቤታችን ወርሃዊ መታሰቢያ",
+            image: "saint-mary.webp",
             description: "የወሩ 21ኛው ቀን በኢትዮጵያ ኦርቶዶክስ ትውፊት ለቅድስት ማርያም የተለየ ወርሃዊ መታሰቢያ ነው።",
             verse: "ከዛሬ ጀምሮ ትውልድ ሁሉ ምስጉን ይሉኛል።",
             reference: "ሉቃስ 1፥48",
@@ -111,12 +114,12 @@ QtObject {
             reflection: "የቅዱስ ሚካኤል ዓመታዊ መታሰቢያ በሕዳር 12 ይከበራል።"
         },
         {
-            id: "lideta-tahsas", calendar: "ethiopian", month: 4, day: 1,
-            title: "ልደታ ለማርያም", category: "የቅድስት ማርያም ዓመታዊ በዓል",
-            description: "በታኅሣሥ 1 የቅድስት ማርያም ልደት የሚታሰብበት የልደታ መታሰቢያ ነው።",
-            verse: "ከዛሬ ጀምሮ ትውልድ ሁሉ ምስጉን ይሉኛል።",
-            reference: "ሉቃስ 1፥48",
-            reflection: "ይህ ጥቅስ በማርያም የምስጋና መዝሙር ውስጥ ይገኛል።"
+            id: "elias-tahsas", calendar: "ethiopian", month: 4, day: 1,
+            title: "ቅዱስ ኤልያስ", category: "የነቢዩ ኤልያስ መታሰቢያ",
+            description: "ታኅሣሥ 1 በወርሃዊ መታሰቢያ ዝርዝሮች ከነቢዩ ኤልያስ ጋር ይያያዛል።",
+            verse: "ከዚያ በኋላ ገር ያለ ድምፅ ሰማ።",
+            reference: "1 ነገሥት 19፥12",
+            reflection: "ይህ የኤልያስ ታሪክ ጥቅስ እግዚአብሔር በጸጥታ የሚገለጥበትን አፍታ ያስታውሳል።"
         },
         {
             id: "genna", calendar: "ethiopian", month: 4, day: 29,
@@ -190,6 +193,103 @@ QtObject {
             reference: "ሉቃስ 1፥48",
             reflection: "ይህ በዓል በቅድስት ማርያም ሕይወትና በእምነት ትውፊት ላይ ለማሰላሰል ይጋብዛል።"
         }
+
+        {
+            id: "beata-mariam", calendar: "ethiopian", month: 4, day: 3,
+            title: "በዓታ ለማርያም", category: "የቅድስት ማርያም ቤተ መቅደስ መግቢያ መታሰቢያ",
+            description: "ታኅሣሥ 3 በኢትዮጵያ ኦርቶዶክስ ወርሃዊ እና ዓመታዊ የመታሰቢያ ዝርዝሮች ውስጥ ከበዓታ ለማርያም ጋር ይያያዛል።",
+            verse: "ልጄ ሆይ፥ የአባትህን ትእዛዝ ጠብቅ፥ የእናትህንም ሕግ አትተው።",
+            reference: "ምሳሌ 6፥20",
+            reflection: "ይህ ጥቅስ በእምነት ትውፊት የቤተሰብን ምክር እና ትምህርት ለማስታወስ ይጠቅማል።"
+        },
+        {
+            id: "holy-trinity-tirr", calendar: "ethiopian", month: 5, day: 7,
+            title: "ጥር ሥላሴ", category: "የቅድስት ሥላሴ ዓመታዊ መታሰቢያ",
+            description: "የኢትዮጵያ ኦርቶዶክስ መታሰቢያ ዝርዝሮች ጥር 7ን ለሥላሴ የዓመታዊ መታሰቢያ ቀን እንደሚመድቡ ይጠቁማሉ።",
+            verse: "በአብ፥ በወልድ፥ በመንፈስ ቅዱስም ስም አጥምቁአቸው።",
+            reference: "ማቴዎስ 28፥19",
+            reflection: "ይህ ጥቅስ የክርስቲያናዊ ጥምቀትን በሥላሴ ስም እንዲፈጸም ያዛል።"
+        },
+        {
+            id: "mikael-tirr", calendar: "ethiopian", month: 5, day: 12,
+            title: "ጥር ሚካኤል", category: "የቅዱስ ሚካኤል ዓመታዊ መታሰቢያ",
+            description: "ቅዱስ ሚካኤል በየወሩ 12ኛው ቀን ይታሰባል፤ አንዳንድ የመታሰቢያ ዝርዝሮች ጥር 12ንም እንደ ዓመታዊ በዓል ይጠቅሳሉ።",
+            verse: "በሰማይም ሰልፍ ሆነ፤ ሚካኤልና መላእክቱ ዘንዶውን ተዋጉ።",
+            reference: "ራእይ 12፥7",
+            reflection: "የሚካኤል ዓመታዊ በዓላት የሚጠቀሱባቸው ቀናት እንደ አካባቢያዊ ሴንክሳር ዝርዝሮች ሊለያዩ ይችላሉ።"
+        },
+        {
+            id: "gebre-menfes-kidus", calendar: "ethiopian", month: 7, day: 5,
+            title: "አቡነ ገብረ መንፈስ ቅዱስ", category: "ዓመታዊ የቅዱሱ መታሰቢያ",
+            description: "መጋቢት 5 በአንዳንድ የኢትዮጵያ ኦርቶዶክስ መታሰቢያ ዝርዝሮች ከአቡነ ገብረ መንፈስ ቅዱስ ጋር ይያያዛል።",
+            verse: "በፍቅር ተመላለሱ፥ ክርስቶስም ወደደን።",
+            reference: "ኤፌሶን 5፥2",
+            reflection: "ይህ ጥቅስ በፍቅርና በርኅራኄ ለመኖር ያበረታታል።"
+        },
+        {
+            id: "medhanialem-megabit", calendar: "ethiopian", month: 7, day: 27,
+            title: "መድኃኔዓለም", category: "የዓለም መድኃኒት መታሰቢያ",
+            description: "መጋቢት 27 ከመድኃኔዓለም ዓመታዊ መታሰቢያዎች አንዱ ነው።",
+            verse: "እርሱ ራሱ የኃጢአታችን ማስተስረያ ነው።",
+            reference: "1 ዮሐንስ 2፥2",
+            reflection: "ይህ ጥቅስ ክርስቶስን የመዳን ተስፋ እንደሆነ ያሳያል።"
+        },
+        {
+            id: "tekle-haymanot-nehase", calendar: "ethiopian", month: 12, day: 24,
+            title: "አቡነ ተክለ ሃይማኖት", category: "ዓመታዊ የቅዱሱ መታሰቢያ",
+            description: "ነሐሴ 24 በብዙ የኢትዮጵያ ኦርቶዶክስ የመታሰቢያ ዝርዝሮች የአቡነ ተክለ ሃይማኖት ዓመታዊ በዓል ነው።",
+            verse: "በፊታችን የተደረገውን ሩጫ በትዕግሥት እንሩጥ።",
+            reference: "ዕብራውያን 12፥1",
+            reflection: "ይህ ጥቅስ በእምነት ጉዞ ውስጥ ጽናትን እና ትዕግሥትን ያስታውሳል።"
+        },
+        {
+            id: "ethiopian-martyrs-day", calendar: "gregorian", month: 2, day: 20,
+            title: "የኢትዮጵያ ሰማዕታት ቀን", category: "ሀገራዊ የመታሰቢያ ቀን",
+            description: "የኢትዮጵያ ሰማዕታትን ለማስታወስ በየዓመቱ የሚከበር ብሔራዊ የመታሰቢያ ቀን።",
+            verse: "ለእውነት ታገሉ፥ ጽኑም።",
+            reference: "ኤፌሶን 6፥13",
+            reflection: "ይህ ቀን በታሪክ ውስጥ ለሕዝብ እና ለነፃነት የተሠዉትን ያስታውሳል።"
+        },
+        {
+            id: "derg-downfall", calendar: "gregorian", month: 5, day: 28,
+            title: "የደርግ ውድቀት መታሰቢያ", category: "የታሪክ መታሰቢያ · የመዝጊያ በዓል አይደለም",
+            description: "ግንቦት 28 የደርግ መንግሥት መውደቅን በታሪክ ለማስታወስ በብዙ የበዓላት ዝርዝሮች ይጠቀሳል፤ በ2024 የሕዝብ በዓላት አዋጅ እንደ መዝጊያ በዓል አልተዘረዘረም።",
+            verse: "ፍትሕን እንድትፈጽሙ እና ምሕረትን እንድትወዱ ተነግሮሃል።",
+            reference: "ሚክያስ 6፥8",
+            reflection: "ይህ የታሪክ መታሰቢያ ያለፈውን ለማስታወስ እና ሰላምን ለመጠበቅ ይጋብዛል።"
+        },
+        {
+            id: "ethiopian-national-unity", calendar: "gregorian", month: 12, day: 9,
+            title: "የብሔር ብሔረሰቦች ቀን", category: "ሀገራዊ የመታሰቢያ ቀን",
+            description: "ታኅሣሥ 9 የኢትዮጵያ ብሔር ብሔረሰቦች እኩልነትን፣ ብዝሃነትን እና አንድነትን ለማስታወስ የሚከበር ቀን ነው።",
+            verse: "በሰላም የሚያደርገውን እንከተል።",
+            reference: "ሮሜ 14፥19",
+            reflection: "ቀኑ የተለያዩ ማንነቶችን በእኩልነትና በመከባበር ማስተናገድን ያስታውሳል።"
+        },
+        {
+            id: "eid-al-fitr", calendar: "islamic", month: 10, day: 1,
+            title: "ዒድ አል-ፊጥር", category: "የእስልምና በዓል · ግምታዊ ቀን",
+            description: "የረመዳን ጾም መጨረሻ በዓል። ታቡላር የእስልምና ቀን መቁጠሪያ የተገመተ ቀን ነው፤ የጨረቃ እይታ የአካባቢውን ቀን ሊያስቀይር ይችላል።",
+            verse: "ለሌሎች ርኅራኄን አድርጉ።",
+            reference: "መንፈሳዊ ማሰላሰያ",
+            reflection: "የታቡላር ሂሳብ ቀን ከኦፊሴላዊ የጨረቃ እይታ ማረጋገጫ አንድ ቀን ሊለይ ይችላል።"
+        },
+        {
+            id: "eid-al-adha", calendar: "islamic", month: 12, day: 10,
+            title: "ዒድ አል-አድሓ", category: "የእስልምና በዓል · ግምታዊ ቀን",
+            description: "የመስዋዕት በዓል። ይህ በታቡላር የእስልምና ቀን መቁጠሪያ የተገመተ ቀን ሲሆን በአካባቢያዊ የጨረቃ እይታ ሊለይ ይችላል።",
+            verse: "ለሰዎች መልካም ነገር አድርጉ።",
+            reference: "መንፈሳዊ ማሰላሰያ",
+            reflection: "የግምት ቀን ነው፤ ከተከበረበት አካባቢ ኦፊሴላዊ ማረጋገጫ ጋር ያረጋግጡ።"
+        },
+        {
+            id: "mawlid", calendar: "islamic", month: 3, day: 12,
+            title: "መውሊድ", category: "የእስልምና መታሰቢያ · ግምታዊ ቀን",
+            description: "የነቢዩ ሙሐመድ ልደት መታሰቢያ። ቀኑ በታቡላር የእስልምና ቀን መቁጠሪያ የተገመተ ነው።",
+            verse: "ሰላምን እና መልካም ሥራን ፈልጉ።",
+            reference: "መንፈሳዊ ማሰላሰያ",
+            reflection: "የእስልምና መታሰቢያው ቀን በጨረቃ እይታ ሊለይ ይችላል።"
+        }
     ]
 
     readonly property var fallbackCommemoration: ({
@@ -207,12 +307,27 @@ QtObject {
         "ግንቦት", "ሰኔ", "ሐምሌ", "ነሐሴ", "ጳጉሜ"
     ]
 
+    function imageForDay(day) {
+        if (day === 12)
+            return "saint-michael.webp"
+        if (day === 16)
+            return "kidane-mehret.webp"
+        if (day === 21)
+            return "saint-mary.webp"
+        return ""
+    }
+
+    function forDay(day) {
+        const commemoration = root.monthlyCommemorations[String(day)] || root.fallbackCommemoration
+        return Object.assign({}, commemoration, { image: commemoration.image || root.imageForDay(day) })
+    }
+
     function forDate(month, day) {
         const annual = root.annualFeasts.find(event =>
             event.calendar === "ethiopian" && event.month === month && event.day === day)
         if (annual)
-            return annual
-        return root.monthlyCommemorations[String(day)] || root.fallbackCommemoration
+            return Object.assign({}, annual, { image: annual.image || root.imageForDay(day) })
+        return root.forDay(day)
     }
 
     function gregorianToJdn(date) {
@@ -246,8 +361,7 @@ QtObject {
         }
     }
 
-    function ethiopianDateToGregorian(year, month, day) {
-        const jdn = root.ethiopianYearStartJdn(year) + 30 * (month - 1) + day - 1
+    function julianDayToGregorian(jdn) {
         const a = jdn + 32044
         const b = Math.floor((4 * a + 3) / 146097)
         const c = a - Math.floor(146097 * b / 4)
@@ -258,6 +372,19 @@ QtObject {
         const gregorianMonth = m + 3 - 12 * Math.floor(m / 10)
         const gregorianYear = 100 * b + d - 4800 + Math.floor(m / 10)
         return new Date(gregorianYear, gregorianMonth - 1, gregorianDay, 12, 0, 0, 0)
+    }
+
+    function ethiopianDateToGregorian(year, month, day) {
+        const jdn = root.ethiopianYearStartJdn(year) + 30 * (month - 1) + day - 1
+        return root.julianDayToGregorian(jdn)
+    }
+
+    function islamicDateToGregorian(year, month, day) {
+        // Arithmetic/tabular Hijri conversion is an estimate only. Official
+        // local observance may move by one day depending on crescent sightings.
+        const jdn = day + Math.ceil(29.5 * (month - 1))
+            + (year - 1) * 354 + Math.floor((3 + 11 * year) / 30) + 1948439
+        return root.julianDayToGregorian(jdn)
     }
 
     function orthodoxEaster(year) {
@@ -301,7 +428,7 @@ QtObject {
             }
         }
 
-        // Civil public holidays recur on fixed Gregorian month/day.
+        // Fixed Gregorian national and memorial days.
         for (let year = now.getFullYear(); year <= now.getFullYear() + 2; year++) {
             for (const event of root.annualFeasts) {
                 if (event.calendar !== "gregorian")
@@ -311,25 +438,65 @@ QtObject {
             }
 
             const easter = root.orthodoxEaster(year)
-            const siklet = new Date(easter.getFullYear(), easter.getMonth(), easter.getDate() - 2, 12, 0, 0, 0)
-            candidates.push(root.decorateEvent({
-                id: "siklet",
-                title: "ስቅለት",
-                category: "የታላቁ ሳምንት በዓል",
-                description: "የኢየሱስ ክርስቶስን ስቅለት የሚያስታውስ ቀን።",
-                verse: "ተፈጸመ።",
-                reference: "ዮሐንስ 19፥30",
-                reflection: "ስቅለት የክርስቶስን መስዋዕትነት ለማሰብ የሚለይ ቀን ነው።"
-            }, siklet, todayMidnight))
-            candidates.push(root.decorateEvent({
-                id: "fasika",
-                title: "ፋሲካ",
-                category: "የትንሣኤ በዓል · ሀገራዊ በዓል",
-                description: "የኢየሱስ ክርስቶስን ትንሣኤ የሚያከብር በዓል።",
-                verse: "ከሞት ተነሥቷል፤ እንዳለ አይደለምን?",
-                reference: "ማቴዎስ 28፥6",
-                reflection: "ፋሲካ የትንሣኤን፣ የድልን እና የአዲስ ሕይወትን ተስፋ ያከብራል።"
-            }, easter, todayMidnight))
+            const calculatedFeasts = [
+                {
+                    id: "palm-sunday", offset: -7,
+                    title: "ሆሣዕና", category: "የመዳን ሳምንት በዓል",
+                    description: "ኢየሱስ ክርስቶስ ወደ ኢየሩሳሌም በድል መግባቱን የሚያስታውስ ቀን።",
+                    verse: "ሆሣዕና፤ በጌታ ስም የሚመጣ የተባረከ ነው።",
+                    reference: "ዮሐንስ 12፥13",
+                    reflection: "ሆሣዕና የቅዱሱን ሳምንት መጀመሪያ ያመለክታል።"
+                },
+                {
+                    id: "siklet", offset: -2,
+                    title: "ስቅለት", category: "የታላቁ ሳምንት በዓል",
+                    description: "የኢየሱስ ክርስቶስን ስቅለት የሚያስታውስ ቀን።",
+                    verse: "ተፈጸመ።",
+                    reference: "ዮሐንስ 19፥30",
+                    reflection: "ስቅለት የክርስቶስን መስዋዕትነት ለማሰብ የሚለይ ቀን ነው።"
+                },
+                {
+                    id: "fasika", offset: 0,
+                    title: "ፋሲካ", category: "የትንሣኤ በዓል · ሀገራዊ በዓል",
+                    description: "የኢየሱስ ክርስቶስን ትንሣኤ የሚያከብር በዓል።",
+                    verse: "ከሞት ተነሥቷል፤ እንዳለ አይደለምን?",
+                    reference: "ማቴዎስ 28፥6",
+                    reflection: "ፋሲካ የትንሣኤን፣ የድልን እና የአዲስ ሕይወትን ተስፋ ያከብራል።"
+                },
+                {
+                    id: "ascension", offset: 39,
+                    title: "ዕርገት", category: "የጌታችን ዕርገት",
+                    description: "ከትንሣኤ በኋላ ክርስቶስ ወደ ሰማይ መውጣቱን የሚያስታውስ በዓል።",
+                    verse: "እነርሱም እያዩት ወደ ሰማይ አረገ።",
+                    reference: "ሐዋርያት ሥራ 1፥9",
+                    reflection: "ዕርገት በትንሣኤ በኋላ በአርባኛው ቀን ይታሰባል።"
+                },
+                {
+                    id: "pentecost", offset: 49,
+                    title: "ጰራቅሊጦስ", category: "የመንፈስ ቅዱስ መውረድ",
+                    description: "መንፈስ ቅዱስ በሐዋርያት ላይ መውረዱን የሚያስታውስ በዓል።",
+                    verse: "ሁሉም በመንፈስ ቅዱስ ተሞሉ።",
+                    reference: "ሐዋርያት ሥራ 2፥4",
+                    reflection: "ጰራቅሊጦስ ከትንሣኤ ከሃምሳኛው ቀን ጋር ይያያዛል።"
+                }
+            ]
+            for (const feast of calculatedFeasts) {
+                const date = new Date(easter.getFullYear(), easter.getMonth(),
+                    easter.getDate() + feast.offset, 12, 0, 0, 0)
+                candidates.push(root.decorateEvent(feast, date, todayMidnight))
+            }
+        }
+
+        // Lunar Islamic holidays use the arithmetic Hijri calendar as a preview.
+        // Their final local dates can differ by one day after official moon sighting.
+        const currentIslamicYear = Math.floor((now.getFullYear() - 622) * 33 / 32)
+        for (let year = currentIslamicYear; year <= currentIslamicYear + 3; year++) {
+            for (const event of root.annualFeasts) {
+                if (event.calendar !== "islamic")
+                    continue
+                const date = root.islamicDateToGregorian(year, event.month, event.day)
+                candidates.push(root.decorateEvent(event, date, todayMidnight))
+            }
         }
 
         return candidates
