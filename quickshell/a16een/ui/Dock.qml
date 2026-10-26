@@ -1430,9 +1430,6 @@ PanelWindow {
                             }
                         }
 
-                        // Named id keeps the click target bound to this day's cell.
-                        // This delegate is repeated for all 42 grid slots.
-                        // Empty slots remain non-interactive.
                     }
                 }
             }
@@ -1463,7 +1460,7 @@ PanelWindow {
             navbarClockPanel.calendarDetailsOpen = false
             navbarClockPanel.calendarDetailsHovering = false
         }
-        onHoveringChanged: hovering => navbarClockPanel.calendarDetailsHovering = hovering
+        onHoveringChanged: navbarClockPanel.calendarDetailsHovering = hovering
     }
 
     Rectangle {
