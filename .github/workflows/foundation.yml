@@ -45,6 +45,7 @@ jobs:
           bash -n scripts/a16een-navbar-appearance
           bash -n tests/test_screenshot_capture.sh
           bash -n tests/test_navbar_appearance.sh
+          bash -n tests/test_calendar_day_details.sh
           bash -n tests/test_mpv_theme.sh
           bash -n scripts/a16een-control
           bash -n tests/test_wifi_network_discovery.sh
@@ -59,6 +60,7 @@ jobs:
           node tests/test_window_geometry.js
           bash tests/test_screenshot_capture.sh
           bash tests/test_navbar_appearance.sh
+          bash tests/test_calendar_day_details.sh
           bash tests/test_mpv_theme.sh
           bash -n scripts/a16een-icon-theme
           luac5.4 -p mpv/a16een-osc.lua
