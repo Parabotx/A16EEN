@@ -484,6 +484,8 @@ jobs:
           grep -Fq 'function requestWallpaperTransition(path)' quickshell/a16een/ui/Wallpaper.qml
           grep -Fq 'if (!incoming.contentReady)' quickshell/a16een/ui/Wallpaper.qml
           grep -Fq 'root.desktopAnimationAllowed' quickshell/a16een/ui/Wallpaper.qml
+          grep -Fq 'previewWallpaperPath: root.wallpaperPreviewPath' quickshell/a16een/shell.qml
+          grep -Fq 'function preview(path: string): void' quickshell/a16een/shell.qml
           grep -Fq 'outgoing.sourcePath = ""' quickshell/a16een/ui/Wallpaper.qml
           grep -Fq 'cache: false' quickshell/a16een/ui/WallpaperTransitionLayer.qml
           grep -Fq 'property bool desktopAnimationAllowed: true' quickshell/a16een/ui/VideoWallpaperPreview.qml
@@ -718,7 +720,13 @@ jobs:
           grep -Fq 'anchors.bottomMargin: 78' quickshell/a16een/ui/WallpaperPicker.qml
           grep -Fq 'Qt.Key_Return || event.key === Qt.Key_Enter' quickshell/a16een/ui/WallpaperPicker.qml
           grep -Fq 'root.confirmCurrentWallpaper()' quickshell/a16een/ui/WallpaperPicker.qml
+          grep -Fq 'function startPendingWallpaperPreview()' quickshell/a16een/ui/WallpaperPicker.qml
+          grep -Fq 'function finishWallpaperPreview(exitCode)' quickshell/a16een/ui/WallpaperPicker.qml
+          grep -Fq 'function commitConfirmedWallpaper()' quickshell/a16een/ui/WallpaperPicker.qml
           grep -Fq 'releasePreviewTimer.restart()' quickshell/a16een/ui/WallpaperPicker.qml
+          grep -Fq 'preview-path)' scripts/a16een-wallpaper
+          grep -Fq 'clear-preview)' scripts/a16een-wallpaper
+          grep -Fq 'ipc call wallpaper preview "$1"' scripts/a16een-wallpaper
           ! grep -Fq 'wallpaper.displayName' quickshell/a16een/ui/WallpaperPicker.qml
           ! grep -Fq 'wallpaper.name' quickshell/a16een/ui/WallpaperPicker.qml
           grep -Fq 'fillMode: Image.PreserveAspectFit' quickshell/a16een/ui/WallpaperPicker.qml
