@@ -9,6 +9,7 @@ Item {
     height: 0
 
     property string containerId: "utilities"
+    property bool isolateAppearance: false
     property var appearanceSettings: ({})
 
     readonly property string stateDir: {
@@ -24,8 +25,10 @@ Item {
         ? root.appearanceSettings.containers : ({})
     readonly property var selectedContainer: root.containers[root.containerId] || ({})
     readonly property bool popupCardColorEnabled: root.containerId === "data-meter"
-        || root.allSettings.applyPopupCardColor === true
-        || root.selectedContainer.applyPopupCardColor === true
+        || (root.isolateAppearance
+            ? root.selectedContainer.applyPopupCardColor === true
+            : root.allSettings.applyPopupCardColor === true
+                || root.selectedContainer.applyPopupCardColor === true)
 
     function loadAppearanceSettings(raw) {
         try {
@@ -78,7 +81,11 @@ Item {
     property color backgroundColor: {
         if (!root.popupCardColorEnabled)
             return "#FFFFFF"
-        if (root.allSettings.applyContainerColor === true && root.validHexColor(root.allSettings.containerColor))
+        // The AI chat is deliberately independent from legacy/global navbar
+        // colors; it only uses a color explicitly configured for its own card.
+        if (!root.isolateAppearance
+            && root.allSettings.applyContainerColor === true
+            && root.validHexColor(root.allSettings.containerColor))
             return String(root.allSettings.containerColor)
         if (root.selectedContainer.containerEnabled === true
             && root.validHexColor(root.selectedContainer.containerColor))
@@ -108,7 +115,7 @@ Item {
 
     property color iconColor: {
         let desired = "inherit"
-        if (root.allSettings.applyIconColor === true)
+        if (!root.isolateAppearance && root.allSettings.applyIconColor === true)
             desired = String(root.allSettings.iconColor || "auto")
         else if (root.selectedContainer.iconColor)
             desired = String(root.selectedContainer.iconColor)

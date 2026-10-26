@@ -959,24 +959,80 @@ Item {
 
                     Rectangle {
                         id: bubble
-                        width: messageRow.speaker === "user" ? messageRow.width * 0.88 : messageRow.width
-                        height: Math.max(28, messageText.implicitHeight + 16)
-                        anchors.left: messageRow.speaker === "user" ? undefined : parent.left
-                        anchors.right: messageRow.speaker === "user" ? parent.right : undefined
-                        radius: 10
-                        color: messageRow.speaker === "user" ? root.subtleColor : root.fieldColor
+                        readonly property bool fromUser: messageRow.speaker === "user"
+                        width: fromUser ? messageRow.width * 0.84 : messageRow.width - 6
+                        height: Math.max(fromUser ? 43 : 49,
+                            messageBody.implicitHeight + messageMetaRow.height + 22)
+                        anchors.left: fromUser ? undefined : parent.left
+                        anchors.right: fromUser ? parent.right : undefined
+                        radius: 14
                         border.width: 1
-                        border.color: root.borderColor
+                        border.color: fromUser ? "#3B4A63" : root.borderColor
 
-                        Text {
-                            id: messageText
+                        gradient: Gradient {
+                            GradientStop {
+                                position: 0.0
+                                color: bubble.fromUser ? "#2A3951" : Qt.lighter(root.fieldColor, 1.015)
+                            }
+                            GradientStop {
+                                position: 1.0
+                                color: bubble.fromUser ? "#172131" : root.fieldColor
+                            }
+                        }
+
+                        Rectangle {
+                            visible: !bubble.fromUser
+                            anchors.left: parent.left
+                            anchors.leftMargin: 0
+                            anchors.verticalCenter: parent.verticalCenter
+                            width: 3
+                            height: Math.max(18, parent.height - 24)
+                            radius: 2
+                            color: "#D6AD60"
+                        }
+
+                        Column {
+                            id: messageContent
                             anchors.fill: parent
-                            anchors.margins: 9
-                            text: messageRow.body
-                            color: root.textColor
-                            font.pixelSize: 10
-                            wrapMode: Text.WordWrap
-                            textFormat: Text.PlainText
+                            anchors.leftMargin: bubble.fromUser ? 11 : 14
+                            anchors.rightMargin: 11
+                            anchors.topMargin: 8
+                            anchors.bottomMargin: 9
+                            spacing: 5
+
+                            Row {
+                                id: messageMetaRow
+                                width: parent.width
+                                height: 10
+                                spacing: 5
+
+                                Rectangle {
+                                    width: 5
+                                    height: 5
+                                    radius: 2.5
+                                    anchors.verticalCenter: parent.verticalCenter
+                                    color: bubble.fromUser ? "#A5B4FC" : "#D6AD60"
+                                }
+
+                                Text {
+                                    anchors.verticalCenter: parent.verticalCenter
+                                    text: bubble.fromUser ? "YOU" : "A16EEN AI"
+                                    color: bubble.fromUser ? "#D4DCE8" : root.mutedTextColor
+                                    font.pixelSize: 7
+                                    font.weight: Font.DemiBold
+                                    font.letterSpacing: 0.65
+                                }
+                            }
+
+                            Text {
+                                id: messageBody
+                                width: parent.width
+                                text: messageRow.body
+                                color: bubble.fromUser ? "#F8FAFC" : root.textColor
+                                font.pixelSize: 10
+                                wrapMode: Text.WordWrap
+                                textFormat: Text.PlainText
+                            }
                         }
                     }
                 }

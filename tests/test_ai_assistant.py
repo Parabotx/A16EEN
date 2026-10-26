@@ -149,6 +149,8 @@ assistant_qml = (ROOT / "quickshell/a16een/ui/AIAssistantPage.qml").read_text()
 ai_icon = (ROOT / "quickshell/a16een/assets/icons/a16een-ai-sigil.svg").read_text()
 tools_panel_qml = (ROOT / "quickshell/a16een/ui/ToolsPanel.qml").read_text()
 navbar_script = (ROOT / "scripts/a16een-navbar").read_text()
+popup_style = (ROOT / "quickshell/a16een/ui/PopupCardStyle.qml").read_text()
+appearance_ui = (ROOT / "quickshell/a16een/ui/NavbarAppearancePage.qml").read_text()
 
 # UI regressions: keep the navbar tile compact/icon-only, the composer pinned
 # to the bottom, and the AI popup's top-right control a real close action.
@@ -180,6 +182,17 @@ assert 'text: "A16EEN AI"' not in assistant_qml
 assert 'text: root.busy ? "WORKING" : "SEND  ↑"' not in assistant_qml
 assert 'iconName: "lucide-settings.svg"' not in assistant_qml
 assert 'Open chat history' in tools_panel_qml
+assert 'containerId: root.page === "ai" ? "ai-assistant" : "quick-hub"' in tools_panel_qml
+assert 'isolateAppearance: root.page === "ai"' in tools_panel_qml
+assert 'id: aiHeaderSpacer' in tools_panel_qml
+assert 'width: visible ? Math.max(0, parent.width - 28 - 25 - 25 - 25 - parent.spacing * 4) : 0' in tools_panel_qml
+assert 'property bool isolateAppearance: false' in popup_style
+assert 'root.isolateAppearance ? root.selectedContainer.applyPopupCardColor === true' in popup_style
+assert 'if (!root.isolateAppearance && root.allSettings.applyIconColor === true)' in popup_style
+assert 'ai-assistant' in appearance_ui
+assert 'text: bubble.fromUser ? "YOU" : "A16EEN AI"' in assistant_qml
+assert 'color: bubble.fromUser ? "#F8FAFC" : root.textColor' in assistant_qml
+assert 'color: "#D6AD60"' in assistant_qml
 assert 'startNewConversation(true)' in tools_panel_qml
 assert 'AI settings' in tools_panel_qml
 assert 'width: 1.5' in tools_panel_qml and 'height: 12' in tools_panel_qml

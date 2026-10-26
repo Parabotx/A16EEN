@@ -8,14 +8,14 @@ NAVBAR_CMD="$(printenv A16EEN_NAVBAR_CMD 2>/dev/null || printf '%s' /usr/local/b
 
 default_all='{"visibilityControl":false,"visible":true,"applyContainerColor":false,"containerColor":"#15171A","applyIconColor":false,"iconColor":"auto","applyPopupCardColor":false,"surfaceColor":"#FFFFFF"}'
 default_container='{"visible":true,"containerEnabled":false,"containerColor":"transparent","iconColor":"inherit","applyPopupCardColor":false}'
-container_ids='["workspaces","ai","battery","time","utilities","power","quick-actions","quick-hub","data-meter"]'
+container_ids='["workspaces","ai","ai-assistant","battery","time","utilities","power","quick-actions","quick-hub","data-meter"]'
 
 ensure_settings() {
     mkdir -p "$STATE_DIR"
     if [[ ! -s "$STATE_FILE" ]]; then
         jq -n --argjson allDefaults "$default_all" --argjson containerDefaults "$default_container" \
             --argjson ids "$container_ids" '
-            {all:$allDefaults, containers:{}, schemaVersion:6}
+            {all:$allDefaults, containers:{}, schemaVersion:7}
             | reduce $ids[] as $id (.;
                 .containers[$id] = $containerDefaults
               )
@@ -39,7 +39,7 @@ ensure_settings() {
             .containers[$id] = ($containerDefaults + (.containers[$id] // {}))
           )
         | del(.workspaces)
-        | .schemaVersion = 6
+        | .schemaVersion = 7
     ' "$STATE_FILE" > "$tmp"; then
         rm -f "$tmp"
         return 1
@@ -98,7 +98,7 @@ write_all() {
 write_container() {
     local id="$1" key="$2" value="$3" tmp
     case "$id" in
-        workspaces|ai|battery|time|utilities|power|quick-actions|quick-hub|data-meter) ;;
+        workspaces|ai|ai-assistant|battery|time|utilities|power|quick-actions|quick-hub|data-meter) ;;
         *) echo "A16EEN appearance: unknown navbar container: $id" >&2; return 2 ;;
     esac
     case "$key" in
@@ -115,7 +115,7 @@ write_container() {
             jq --arg id "$id" --argjson value "$value" '.containers[$id].visible = $value' "$STATE_FILE" > "$tmp"
             ;;
         containerColor)
-            if jq -e '.all.applyContainerColor == true' "$STATE_FILE" >/dev/null 2>&1; then
+            if [[ "$id" != "ai-assistant" ]] && jq -e '.all.applyContainerColor == true' "$STATE_FILE" >/dev/null 2>&1; then
                 echo "A16EEN appearance: turn off All background override first." >&2
                 return 2
             fi
@@ -130,7 +130,7 @@ write_container() {
                  | .containers[$id].containerEnabled = ($value != "transparent")' "$STATE_FILE" > "$tmp"
             ;;
         iconColor)
-            if jq -e '.all.applyIconColor == true' "$STATE_FILE" >/dev/null 2>&1; then
+            if [[ "$id" != "ai-assistant" ]] && jq -e '.all.applyIconColor == true' "$STATE_FILE" >/dev/null 2>&1; then
                 echo "A16EEN appearance: turn off All icon-color override first." >&2
                 return 2
             fi
@@ -143,7 +143,7 @@ write_container() {
             jq --arg id "$id" --arg value "$value" '.containers[$id].iconColor = $value' "$STATE_FILE" > "$tmp"
             ;;
         applyPopupCardColor)
-            if jq -e '.all.applyPopupCardColor == true' "$STATE_FILE" >/dev/null 2>&1; then
+            if [[ "$id" != "ai-assistant" ]] && jq -e '.all.applyPopupCardColor == true' "$STATE_FILE" >/dev/null 2>&1; then
                 echo "A16EEN appearance: turn off All popup-card override first." >&2
                 return 2
             fi

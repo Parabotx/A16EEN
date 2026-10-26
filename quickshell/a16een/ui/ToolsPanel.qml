@@ -10,7 +10,8 @@ PanelWindow {
 
     PopupCardStyle {
         id: popupCardStyle
-        containerId: "quick-hub"
+        containerId: root.page === "ai" ? "ai-assistant" : "quick-hub"
+        isolateAppearance: root.page === "ai"
     }
 
     required property var modelData
@@ -524,6 +525,13 @@ PanelWindow {
                             font.pixelSize: 8
                             elide: Text.ElideRight
                         }
+                    }
+
+                    Item {
+                        id: aiHeaderSpacer
+                        visible: root.page === "ai"
+                        width: visible ? Math.max(0, parent.width - 28 - 25 - 25 - 25 - parent.spacing * 4) : 0
+                        height: 1
                     }
 
                     Rectangle {
