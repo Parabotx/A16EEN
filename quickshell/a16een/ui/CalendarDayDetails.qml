@@ -160,7 +160,7 @@ PanelWindow {
                     }
                 }
 
-                Item { width: Math.max(0, parent.width - 202 - 24 - 7); height: 1 }
+                Item { width: Math.max(0, parent.width - 202 - 24 - 14); height: 1 }
 
                 Rectangle {
                     width: 24
@@ -223,7 +223,6 @@ PanelWindow {
                 color: popupCardStyle.secondaryTextColor
                 font.family: "Noto Sans Ethiopic"
                 font.pixelSize: 10
-                lineHeight: 1.15
                 wrapMode: Text.WordWrap
                 maximumLineCount: 3
                 elide: Text.ElideRight
@@ -304,23 +303,15 @@ PanelWindow {
                 color: popupCardStyle.mutedTextColor
                 font.family: "Noto Sans Ethiopic"
                 font.pixelSize: 9
-                lineHeight: 1.1
                 wrapMode: Text.WordWrap
                 maximumLineCount: 2
                 elide: Text.ElideRight
             }
         }
 
-        // Hover must be tracked independently from the calendar so moving
-        // between the two cards never closes the selection before it can open.
-        MouseArea {
-            anchors.fill: parent
-            hoverEnabled: true
-            acceptedButtons: Qt.NoButton
-            cursorShape: Qt.ArrowCursor
-            z: 20
-            onEntered: root.hoveringChanged(true)
-            onExited: root.hoveringChanged(false)
+        // A HoverHandler tracks the card without intercepting the close button.
+        HoverHandler {
+            onHoveredChanged: root.hoveringChanged(hovered)
         }
     }
 }
