@@ -1463,8 +1463,91 @@ PanelWindow {
                         border.width: modelData.selected || modelData.today ? 1 : 0
                         border.color: clockPopupStyle.actionColor
 
+                        // Subtle breathing halo around today's date.
+                        Rectangle {
+                            id: todayGlow
+                            anchors.fill: parent
+                            anchors.margins: -2
+                            radius: 11
+                            color: "transparent"
+                            border.width: 1
+                            border.color: clockPopupStyle.actionColor
+                            opacity: 0.38
+                            visible: dateCellModel.modelData.today
+                            z: 1
+
+                            SequentialAnimation {
+                                running: dateCellModel.modelData.today && navbarClockPanel.calendarOpen
+                                loops: Animation.Infinite
+                                ParallelAnimation {
+                                    NumberAnimation {
+                                        target: todayGlow
+                                        property: "opacity"
+                                        from: 0.28
+                                        to: 0.78
+                                        duration: 950
+                                        easing.type: Easing.InOutSine
+                                    }
+                                    NumberAnimation {
+                                        target: todayGlow
+                                        property: "scale"
+                                        from: 0.96
+                                        to: 1.07
+                                        duration: 950
+                                        easing.type: Easing.InOutSine
+                                    }
+                                }
+                                ParallelAnimation {
+                                    NumberAnimation {
+                                        target: todayGlow
+                                        property: "opacity"
+                                        from: 0.78
+                                        to: 0.28
+                                        duration: 950
+                                        easing.type: Easing.InOutSine
+                                    }
+                                    NumberAnimation {
+                                        target: todayGlow
+                                        property: "scale"
+                                        from: 1.07
+                                        to: 0.96
+                                        duration: 950
+                                        easing.type: Easing.InOutSine
+                                    }
+                                }
+                            }
+                        }
+
+                        // A tiny orbiting glint gives today's date a rotating accent.
+                        Item {
+                            id: todayOrbit
+                            anchors.fill: parent
+                            visible: dateCellModel.modelData.today
+                            z: 2
+
+                            RotationAnimation on rotation {
+                                from: 0
+                                to: 360
+                                duration: 3200
+                                loops: Animation.Infinite
+                                running: dateCellModel.modelData.today && navbarClockPanel.calendarOpen
+                            }
+
+                            Rectangle {
+                                width: 4
+                                height: 4
+                                radius: 2
+                                x: Math.round((parent.width - width) / 2)
+                                y: -1
+                                color: clockPopupStyle.actionTextColor
+                                border.width: 1
+                                border.color: clockPopupStyle.actionColor
+                            }
+                        }
+
                         Text {
                             anchors.fill: parent
+                            z: 3
                             text: modelData.day > 0 ? String(modelData.day) : ""
                             color: modelData.selected || modelData.today
                                 ? clockPopupStyle.actionTextColor : clockPopupStyle.textColor
