@@ -642,7 +642,7 @@ Item {
                         width: root.embedded ? 74 : 82
                         height: root.embedded ? 30 : 34
                         radius: 9
-                        color: wifiPowerMouse.containsMouse ? root.themeHover : root.themeAction
+                        color: wifiPowerMouse.containsMouse ? Qt.darker(root.themeAction, 1.08) : root.themeAction
                         border.width: 1
                         border.color: root.themeAction
 
@@ -702,7 +702,7 @@ Item {
                         height: root.embedded ? 30 : 34
                         radius: 10
                         anchors.verticalCenter: parent.verticalCenter
-                        color: refreshWifiMouse.containsMouse ? root.themeHover : root.themeAction
+                        color: refreshWifiMouse.containsMouse ? Qt.darker(root.themeAction, 1.08) : root.themeAction
                         border.width: 1
                         border.color: root.themeAction
 
@@ -711,7 +711,7 @@ Item {
                             anchors.centerIn: parent
                             width: root.embedded ? 15 : 17
                             height: width
-                            source: Qt.resolvedUrl("../assets/icons/lucide-refresh-cw-refined-dark.svg")
+                            source: Qt.resolvedUrl("../assets/icons/lucide-rotate-cw-clean.svg")
                             sourceSize.width: 36
                             sourceSize.height: 36
                             smooth: true
