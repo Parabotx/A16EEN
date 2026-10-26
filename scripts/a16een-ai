@@ -374,7 +374,13 @@ def groq_messages(history: list[dict[str, Any]], mode: str) -> list[dict[str, An
                 name, args = str(call.get("name", "")), call.get("args", {})
                 if not name or not isinstance(args, dict):
                     continue
-                call_id = str(call.get("id", "") or ("a16een-call-" + str(index)))
+                call_id = str(call.get("id", "") or "").strip()
+                if not call_id:
+                    # Older Gemini history sometimes omitted function-call IDs.
+                    # Keep that context readable instead of sending an invalid
+                    # Groq tool_calls entry with no matching tool response.
+                    text_parts.append("Previous desktop action request: " + name + " with arguments " + json.dumps(args, ensure_ascii=False) + ".")
+                    continue
                 tool_calls.append({"id": call_id, "type": "function", "function": {"name": name, "arguments": json.dumps(args, ensure_ascii=False)}})
             if text_parts or tool_calls:
                 messages.append({"role": "assistant", "content": "\n".join(text_parts).strip() or None, **({"tool_calls": tool_calls} if tool_calls else {})})

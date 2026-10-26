@@ -179,6 +179,21 @@ groq_history = ai_module.groq_messages(mixed_history, "normal")
 assert groq_history[1] == {"role": "user", "content": "Turn the volume down"}
 assert groq_history[2]["role"] == "assistant" and groq_history[2]["tool_calls"][0]["id"] == "call_test_01"
 assert groq_history[3]["role"] == "tool" and groq_history[3]["tool_call_id"] == "call_test_01"
+# Old Gemini history can contain function calls without IDs. Do not synthesize
+# an unmatched Groq tool call; keep the historic action in plain assistant context.
+legacy_history = [
+    {"role": "user", "parts": [{"text": "Turn the volume down"}]},
+    {"role": "model", "parts": [{"functionCall": {
+        "name": "set_volume", "args": {"percent": 25}
+    }}]},
+    {"role": "user", "parts": [{"functionResponse": {
+        "name": "set_volume", "response": {"ok": True, "result": "Volume set"}
+    }}]},
+]
+legacy_groq = ai_module.groq_messages(legacy_history, "normal")
+assert "tool_calls" not in legacy_groq[2]
+assert "Previous desktop action request" in legacy_groq[2]["content"]
+assert legacy_groq[3]["role"] == "user"
 groq_response = {"content": "I'll check that.", "tool_calls": [{
     "id": "call_groq_01", "type": "function",
     "function": {"name": "get_system_status", "arguments": "{}"},
