@@ -327,7 +327,7 @@ def request_groq_completion(messages: list[dict[str, Any]], include_tools: bool 
     key = read_key("groq")
     if not key:
         raise RuntimeError("Add your Groq API key in A16EEN AI settings first.")
-    body: dict[str, Any] = {"model": GROQ_MODEL, "messages": messages, "max_tokens": 1800}
+    body: dict[str, Any] = {"model": GROQ_MODEL, "messages": messages, "max_completion_tokens": 1800}
     if include_tools:
         body["tools"] = groq_tool_definitions()
         body["tool_choice"] = "auto"
@@ -439,7 +439,7 @@ def ask_gemini(payload: dict[str, Any]) -> dict[str, Any]:
         "contents": cleaned,
         "tools": TOOLS,
         "toolConfig": {"functionCallingConfig": {"mode": "AUTO"}},
-        "generationConfig": {"temperature": 0.2, "maxOutputTokens": 1800},
+        "generationConfig": {"temperature": 0.2, "maxOutputTokens": 1800, "thinkingConfig": {"thinkingLevel": "LOW"}},
     }
     content = request_gemini(body)
     parts = content.get("parts") or []

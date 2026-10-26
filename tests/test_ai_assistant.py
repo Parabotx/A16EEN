@@ -39,6 +39,8 @@ with tempfile.TemporaryDirectory() as temp:
     assert status["gemini_configured"] is False and status["groq_configured"] is False
     selected = invoke(env, "provider", "set", "groq")
     assert selected["ok"] is True and selected["provider"] == "groq"
+    provider_path = config / "a16een" / "ai" / "provider.json"
+    assert stat.S_IMODE(provider_path.stat().st_mode) == 0o600
     assert invoke(env, "status")["provider"] == "groq"
     invoke(env, "provider", "set", "gemini")
 
@@ -162,7 +164,8 @@ except ValueError:
 openai_tools = ai_module.groq_tool_definitions()
 assert openai_tools[0]["type"] == "function"
 assert openai_tools[0]["function"]["parameters"]["type"] == "object"
-assert openai_tools[0]["function"]["parameters"]["properties"]["query"]["type"] == "string"
+query_tool = next(item["function"] for item in openai_tools if item["function"]["name"] == "list_applications")
+assert query_tool["parameters"]["properties"]["query"]["type"] == "string"
 mixed_history = [
     {"role": "user", "parts": [{"text": "Turn the volume down"}]},
     {"role": "model", "parts": [{"text": "I'll adjust it."}, {"functionCall": {

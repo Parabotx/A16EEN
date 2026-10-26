@@ -1184,7 +1184,7 @@ Item {
 
                             Text {
                                 anchors.verticalCenter: parent.verticalCenter
-                                text: root.providerLabel + " is thinking"
+                                text: root.providerShortLabel + " is thinking"
                                 color: root.secondaryTextColor
                                 font.pixelSize: 8
                             }
