@@ -32,6 +32,8 @@ Item {
     property string bluetoothState: "unavailable"
     property var bluetoothDevices: []
     property bool bluetoothScanning: false
+    property string bluetoothActionMac: ""
+    property string bluetoothActionVerb: ""
 
     property int audioPercent: 0
     property bool audioMuted: false
@@ -264,26 +266,107 @@ Item {
         root.wifiNetworks = result
     }
 
+    function splitBluetoothDeviceFields(raw) {
+        const fields = []
+        let field = ""
+        let escaped = false
+
+        for (const character of String(raw || "")) {
+            if (escaped) {
+                field += character
+                escaped = false
+            } else if (character === "\\") {
+                escaped = true
+            } else if (character === "|") {
+                fields.push(field)
+                field = ""
+            } else {
+                field += character
+            }
+        }
+
+        if (escaped)
+            field += "\\"
+        fields.push(field)
+        return fields
+    }
+
     function parseBluetoothDevices(output) {
         const result = []
         const state = root.parseKeyValue(output, "state")
         if (state.length)
             root.bluetoothState = root.normalizeState(state)
+
         const lines = String(output || "").split("\n")
         for (const raw of lines) {
-            if (!raw.trim())
+            if (!raw.trim() || raw.indexOf("|") < 0)
                 continue
-            const parts = raw.split("|")
-            if (parts.length < 2)
+            const parts = root.splitBluetoothDeviceFields(raw)
+            if (parts.length < 2 || !/^[0-9a-f]{2}(:[0-9a-f]{2}){5}$/i.test(parts[0].trim()))
                 continue
+
             result.push({
-                mac: parts[0],
+                mac: parts[0].trim(),
                 name: parts[1] || "Unknown device",
                 connected: parts[2] === "yes",
-                trusted: parts[3] === "yes"
+                trusted: parts[3] === "yes",
+                paired: parts[4] === "yes"
             })
         }
+
+        // Keep devices discovered during this panel session visible after the
+        // short BlueZ discovery cache expires. Starting a fresh scan clears
+        // stale unpaired entries while preserving known paired connections.
+        const seen = {}
+        for (const device of result)
+            seen[device.mac.toLowerCase()] = true
+        for (const previous of root.bluetoothDevices) {
+            const key = String(previous.mac || "").toLowerCase()
+            if (key && !seen[key]) {
+                result.push(previous)
+                seen[key] = true
+            }
+        }
+
+        result.sort((a, b) =>
+            Number(b.connected) - Number(a.connected)
+            || Number(b.paired) - Number(a.paired)
+            || a.name.localeCompare(b.name))
         root.bluetoothDevices = result
+    }
+
+    function startBluetoothScan() {
+        if (!root.active || root.mode !== "bluetooth"
+            || root.bluetoothState !== "on" || root.bluetoothScanning
+            || actionProcess.running)
+            return
+
+        root.bluetoothDevices = root.bluetoothDevices.filter(
+            device => device.paired || device.connected || device.trusted)
+        root.bluetoothScanning = true
+        root.run(["bluetooth", "scan"])
+        bluetoothScanRefresh.restart()
+    }
+
+    function stopBluetoothScan() {
+        if (!root.bluetoothScanning)
+            return
+
+        root.bluetoothScanning = false
+        bluetoothScanRefresh.stop()
+        root.run(["bluetooth", "scan-stop"])
+        if (!bluetoothReader.running)
+            bluetoothReader.running = true
+    }
+
+    function runBluetoothDeviceAction(action, mac) {
+        if (actionProcess.running || !mac
+            || !["pair", "connect", "disconnect"].includes(action))
+            return
+
+        root.bluetoothActionMac = mac
+        root.bluetoothActionVerb = action
+        root.run(["bluetooth", action, mac])
     }
 
     function connectWifi() {
@@ -1120,217 +1203,438 @@ Item {
             anchors.right: parent.right
             anchors.bottom: parent.bottom
             visible: root.mode === "bluetooth"
+            clip: true
 
-            Rectangle {
-                width: parent.width
-                height: root.embedded ? 48 : 76
-                radius: root.embedded ? 12 : 17
-                color: root.tile
-                border.width: 1
-                border.color: root.border
-
-                Text {
-                    x: root.embedded ? 10 : 18
-                    anchors.verticalCenter: parent.verticalCenter
-                    text: root.embedded
-                        ? (root.bluetoothState === "on" ? "Bluetooth on" : root.bluetoothState === "off" ? "Bluetooth off" : "Unavailable")
-                        : (root.bluetoothState === "on" ? "BLUETOOTH ON" : root.bluetoothState === "off" ? "BLUETOOTH OFF" : "UNAVAILABLE")
-                    color: root.textPrimary
-                    font.pixelSize: root.embedded ? 10 : 12
-                    font.weight: Font.DemiBold
-                }
+            Column {
+                id: bluetoothLayout
+                anchors.fill: parent
+                spacing: root.embedded ? 8 : 12
 
                 Rectangle {
-                    anchors.right: parent.right
-                    anchors.rightMargin: root.embedded ? 8 : 14
-                    anchors.verticalCenter: parent.verticalCenter
-                    width: root.embedded ? 58 : 86
-                    height: root.embedded ? 26 : 34
-                    radius: root.embedded ? 8 : 10
-                    color: "#FFFFFF"
-                    border.width: 1
-                    border.color: root.borderStrong
-
-                    Text {
-                        anchors.centerIn: parent
-                        text: root.bluetoothState === "on" ? "POWER OFF" : "POWER ON"
-                        color: root.textPrimary
-                        font.pixelSize: root.embedded ? 6 : 7
-                        font.weight: Font.DemiBold
-                        font.letterSpacing: 0.3
-                    }
-
-                    MouseArea {
-                        anchors.fill: parent
-                        cursorShape: Qt.PointingHandCursor
-                        onClicked: root.run(["bluetooth", "toggle"])
-                    }
-                }
-            }
-
-            Row {
-                anchors.top: parent.top
-                anchors.topMargin: root.embedded ? 54 : 88
-                width: parent.width
-                height: root.embedded ? 26 : 32
-
-                Text {
-                    anchors.verticalCenter: parent.verticalCenter
-                    width: parent.width - (root.embedded ? 66 : 84)
-                    text: root.embedded ? "DEVICES" : "KNOWN DEVICES"
-                    color: root.textPrimary
-                    font.pixelSize: root.embedded ? 7 : 9
-                    font.weight: Font.DemiBold
-                    font.letterSpacing: 1.0
-                }
-
-                Item { width: 1; height: 1; visible: false }
-
-                Rectangle {
-                    width: root.embedded ? 58 : 75
-                    height: root.embedded ? 24 : 30
-                    radius: root.embedded ? 8 : 9
-                    color: scanMouse.containsMouse ? root.tileHover : root.tile
-                    border.width: 1
-                    border.color: root.border
-                    Image {
-                        id: bluetoothRefreshIcon
-                        visible: root.embedded
-                        anchors.centerIn: parent
-                        width: 14
-                        height: 14
-                        source: Qt.resolvedUrl("../assets/icons/lucide-refresh-cw-refined-dark.svg")
-                        sourceSize.width: 28
-                        sourceSize.height: 28
-                        smooth: true
-
-                        RotationAnimation on rotation {
-                            from: 0
-                            to: 360
-                            duration: 700
-                            loops: Animation.Infinite
-                            running: root.embedded && root.bluetoothScanning
-                        }
-                    }
-
-                    Text {
-                        visible: !root.embedded
-                        anchors.centerIn: parent
-                        text: root.bluetoothScanning ? "SCANNING" : "SCAN"
-                        color: root.textSecondary
-                        font.pixelSize: 7
-                        font.weight: Font.DemiBold
-                    }
-                    MouseArea {
-                        id: scanMouse
-                        anchors.fill: parent
-                        hoverEnabled: true
-                        cursorShape: Qt.PointingHandCursor
-                        onClicked: {
-                            root.bluetoothScanning = true
-                            root.run(["bluetooth", "scan"])
-                            bluetoothScanRefresh.restart()
-                        }
-                    }
-                }
-            }
-
-            Flickable {
-                anchors.top: parent.top
-                anchors.topMargin: root.embedded ? 84 : 130
-                anchors.left: parent.left
-                anchors.right: parent.right
-                anchors.bottom: parent.bottom
-                clip: true
-                contentHeight: bluetoothColumn.height
-
-                Column {
-                    id: bluetoothColumn
+                    id: bluetoothStatusCard
                     width: parent.width
-                    spacing: 7
+                    height: root.embedded ? 68 : 88
+                    radius: 15
+                    color: root.themeSubtle
+                    border.width: 1
+                    border.color: root.themeBorder
 
-                    Repeater {
-                        model: root.bluetoothDevices
-                        delegate: Rectangle {
-                            width: bluetoothColumn.width
-                            height: root.embedded ? 48 : 58
-                            radius: root.embedded ? 10 : 13
-                            color: btMouse.containsMouse ? root.tileHover : root.tile
-                            border.width: 1
-                            border.color: root.border
+                    Rectangle {
+                        x: 10
+                        anchors.verticalCenter: parent.verticalCenter
+                        width: root.embedded ? 39 : 48
+                        height: width
+                        radius: 12
+                        color: root.themeSurface
 
-                            Text {
-                                x: root.embedded ? 10 : 15
-                                y: root.embedded ? 7 : 10
-                                width: parent.width - (root.embedded ? 120 : 190)
-                                text: modelData.name
-                                color: root.textPrimary
-                                font.pixelSize: root.embedded ? 9 : 10
-                                font.weight: Font.DemiBold
-                                elide: Text.ElideRight
+                        Image {
+                            anchors.centerIn: parent
+                            width: root.embedded ? 20 : 24
+                            height: width
+                            source: Qt.resolvedUrl("../assets/icons/lucide-bluetooth-refined-dark.svg")
+                            sourceSize.width: 48
+                            sourceSize.height: 48
+                            fillMode: Image.PreserveAspectFit
+                            smooth: true
+                            layer.enabled: true
+                            layer.effect: MultiEffect {
+                                colorization: 1
+                                colorizationColor: root.themeIcon
                             }
+                        }
+                    }
 
-                            Text {
-                                x: root.embedded ? 10 : 15
-                                y: root.embedded ? 25 : 31
-                                width: parent.width - (root.embedded ? 105 : 120)
-                                text: modelData.mac + (modelData.trusted ? "  •  TRUSTED" : "")
-                                color: root.textMuted
-                                font.pixelSize: root.embedded ? 6 : 7
-                                elide: Text.ElideRight
-                                font.letterSpacing: 0.4
-                            }
+                    Column {
+                        anchors.left: parent.left
+                        anchors.leftMargin: root.embedded ? 59 : 72
+                        anchors.right: bluetoothPowerButton.left
+                        anchors.rightMargin: 8
+                        anchors.verticalCenter: parent.verticalCenter
+                        spacing: 4
+
+                        Text {
+                            width: parent.width
+                            text: root.bluetoothState === "on"
+                                ? "Bluetooth is ready"
+                                : root.bluetoothState === "off" ? "Bluetooth is off" : "Bluetooth unavailable"
+                            color: root.themeText
+                            font.pixelSize: root.embedded ? 10 : 13
+                            font.weight: Font.DemiBold
+                            elide: Text.ElideRight
+                        }
+
+                        Row {
+                            width: parent.width
+                            spacing: 5
 
                             Rectangle {
-                                anchors.right: parent.right
-                                anchors.rightMargin: modelData.connected ? (root.embedded ? 10 : 15) : (root.embedded ? 57 : 82)
                                 anchors.verticalCenter: parent.verticalCenter
-                                width: modelData.connected ? (root.embedded ? 62 : 84) : (root.embedded ? 48 : 66)
-                                height: root.embedded ? 24 : 30
-                                radius: root.embedded ? 8 : 9
-                                color: modelData.connected ? "#111318" : "#FFFFFF"
-                                border.width: modelData.connected ? 0 : 1
-                                border.color: root.borderStrong
+                                width: 6
+                                height: 6
+                                radius: 3
+                                color: root.bluetoothState === "on"
+                                    ? root.themeSuccess : root.themeMutedText
+                            }
+
+                            Text {
+                                width: parent.width - 11
+                                text: root.bluetoothState !== "on"
+                                    ? "Turn Bluetooth on to discover devices"
+                                    : (root.bluetoothScanning
+                                        ? "Searching nearby devices…"
+                                        : root.bluetoothDevices.length
+                                            + (root.bluetoothDevices.length === 1
+                                                ? " device available" : " devices available"))
+                                color: root.themeSecondaryText
+                                font.pixelSize: root.embedded ? 7 : 9
+                                elide: Text.ElideRight
+                            }
+                        }
+                    }
+
+                    Rectangle {
+                        id: bluetoothPowerButton
+                        anchors.right: parent.right
+                        anchors.rightMargin: 9
+                        anchors.top: parent.top
+                        anchors.topMargin: root.embedded ? 6 : 10
+                        width: root.embedded ? 74 : 82
+                        height: root.embedded ? 26 : 30
+                        radius: 9
+                        color: bluetoothPowerMouse.containsMouse
+                            ? Qt.darker(root.themeAction, 1.08) : root.themeAction
+                        border.width: 1
+                        border.color: root.themeAction
+
+                        Text {
+                            anchors.centerIn: parent
+                            text: root.bluetoothState === "on" ? "Turn off" : "Turn on"
+                            color: root.themeActionText
+                            font.pixelSize: root.embedded ? 8 : 9
+                            font.weight: Font.DemiBold
+                        }
+
+                        MouseArea {
+                            id: bluetoothPowerMouse
+                            anchors.fill: parent
+                            hoverEnabled: true
+                            cursorShape: Qt.PointingHandCursor
+                            onClicked: root.run(["bluetooth", "toggle"])
+                        }
+                    }
+
+                    Rectangle {
+                        anchors.right: parent.right
+                        anchors.rightMargin: 9
+                        anchors.bottom: parent.bottom
+                        anchors.bottomMargin: root.embedded ? 6 : 10
+                        width: root.embedded ? 74 : 82
+                        height: root.embedded ? 20 : 24
+                        radius: 8
+                        visible: root.bluetoothScanning && root.bluetoothState === "on"
+                        color: bluetoothStopMouse.containsMouse ? root.themeHover : root.themeSurface
+                        border.width: 1
+                        border.color: root.themeBorder
+
+                        Text {
+                            anchors.centerIn: parent
+                            text: "Stop scan"
+                            color: root.themeText
+                            font.pixelSize: root.embedded ? 7 : 8
+                            font.weight: Font.DemiBold
+                        }
+
+                        MouseArea {
+                            id: bluetoothStopMouse
+                            anchors.fill: parent
+                            hoverEnabled: true
+                            cursorShape: Qt.PointingHandCursor
+                            onClicked: root.stopBluetoothScan()
+                        }
+                    }
+                }
+
+                Row {
+                    id: bluetoothHeading
+                    width: parent.width
+                    height: root.embedded ? 32 : 38
+                    spacing: 8
+
+                    Column {
+                        anchors.verticalCenter: parent.verticalCenter
+                        width: parent.width - bluetoothRefreshButton.width - parent.spacing
+                        spacing: 3
+
+                        Text {
+                            width: parent.width
+                            text: "Nearby devices"
+                            color: root.themeText
+                            font.pixelSize: root.embedded ? 10 : 12
+                            font.weight: Font.DemiBold
+                        }
+
+                        Text {
+                            width: parent.width
+                            text: root.bluetoothScanning
+                                ? "Searching for discoverable devices…"
+                                : root.bluetoothDevices.length
+                                    + (root.bluetoothDevices.length === 1
+                                        ? " device found" : " devices found")
+                            color: root.themeMutedText
+                            font.pixelSize: root.embedded ? 7 : 8
+                            elide: Text.ElideRight
+                        }
+                    }
+
+                    Rectangle {
+                        id: bluetoothRefreshButton
+                        width: root.embedded ? 32 : 36
+                        height: root.embedded ? 30 : 34
+                        radius: 10
+                        anchors.verticalCenter: parent.verticalCenter
+                        color: bluetoothRefreshMouse.containsMouse
+                            ? Qt.darker(root.themeAction, 1.08) : root.themeAction
+                        border.width: 1
+                        border.color: root.themeAction
+                        opacity: root.bluetoothState === "on" ? 1 : 0.45
+
+                        Image {
+                            anchors.centerIn: parent
+                            width: root.embedded ? 15 : 17
+                            height: width
+                            source: Qt.resolvedUrl("../assets/icons/lucide-rotate-cw-clean.svg")
+                            sourceSize.width: 36
+                            sourceSize.height: 36
+                            smooth: true
+                            layer.enabled: true
+                            layer.effect: MultiEffect {
+                                colorization: 1
+                                colorizationColor: root.themeActionText
+                            }
+
+                            RotationAnimation on rotation {
+                                from: 0
+                                to: 360
+                                duration: 760
+                                loops: Animation.Infinite
+                                running: root.bluetoothScanning
+                            }
+                        }
+
+                        MouseArea {
+                            id: bluetoothRefreshMouse
+                            anchors.fill: parent
+                            hoverEnabled: true
+                            enabled: root.bluetoothState === "on"
+                                && root.bluetoothActionMac.length === 0
+                            cursorShape: enabled ? Qt.PointingHandCursor : Qt.ArrowCursor
+                            onClicked: {
+                                if (root.bluetoothScanning)
+                                    root.stopBluetoothScan()
+                                else
+                                    root.startBluetoothScan()
+                            }
+                        }
+                    }
+                }
+
+                Flickable {
+                    id: bluetoothDeviceList
+                    width: parent.width
+                    height: Math.max(0, bluetoothView.height
+                        - bluetoothStatusCard.height - bluetoothHeading.height
+                        - bluetoothLayout.spacing * 2)
+                    clip: true
+                    contentHeight: bluetoothColumn.height
+                    boundsBehavior: Flickable.StopAtBounds
+                    flickableDirection: Flickable.VerticalFlick
+
+                    Column {
+                        id: bluetoothColumn
+                        width: bluetoothDeviceList.width
+                        spacing: 6
+
+                        Item {
+                            width: bluetoothColumn.width
+                            height: root.bluetoothDevices.length === 0
+                                ? Math.min(112, bluetoothDeviceList.height) : 0
+                            visible: root.bluetoothDevices.length === 0
+
+                            Column {
+                                anchors.centerIn: parent
+                                spacing: 7
+
+                                Rectangle {
+                                    anchors.horizontalCenter: parent.horizontalCenter
+                                    width: 32
+                                    height: 32
+                                    radius: 10
+                                    color: root.themeSurface
+                                    border.width: 1
+                                    border.color: root.themeBorder
+
+                                    Image {
+                                        anchors.centerIn: parent
+                                        width: 16
+                                        height: 16
+                                        source: Qt.resolvedUrl("../assets/icons/lucide-bluetooth-refined-dark.svg")
+                                        sourceSize.width: 32
+                                        sourceSize.height: 32
+                                        smooth: true
+                                        layer.enabled: true
+                                        layer.effect: MultiEffect {
+                                            colorization: 1
+                                            colorizationColor: root.themeIcon
+                                        }
+                                    }
+                                }
 
                                 Text {
-                                    anchors.centerIn: parent
-                                    text: modelData.connected ? "DISCONNECT" : "CONNECT"
-                                    color: modelData.connected ? "#FFFFFF" : root.textPrimary
+                                    anchors.horizontalCenter: parent.horizontalCenter
+                                    text: root.bluetoothState !== "on"
+                                        ? "Bluetooth is turned off"
+                                        : (root.bluetoothScanning
+                                            ? "Looking for nearby devices" : "No devices found yet")
+                                    color: root.themeSecondaryText
+                                    font.pixelSize: 9
+                                    font.weight: Font.DemiBold
+                                }
+
+                                Text {
+                                    anchors.horizontalCenter: parent.horizontalCenter
+                                    text: root.bluetoothState !== "on"
+                                        ? "Turn it on to discover accessories."
+                                        : (root.bluetoothScanning
+                                            ? "Make your device discoverable." : "Tap scan to search again.")
+                                    color: root.themeMutedText
+                                    font.pixelSize: 8
+                                }
+                            }
+                        }
+
+                        Repeater {
+                            model: root.bluetoothDevices
+
+                            delegate: Rectangle {
+                                id: bluetoothDeviceTile
+                                required property var modelData
+                                width: bluetoothColumn.width
+                                height: root.embedded ? 54 : 64
+                                radius: 12
+                                color: btMouse.containsMouse
+                                    ? root.themeHover
+                                    : (bluetoothDeviceTile.modelData.connected
+                                        ? root.themeSelected : root.themeSurface)
+                                border.width: bluetoothDeviceTile.modelData.connected ? 1.3 : 1
+                                border.color: bluetoothDeviceTile.modelData.connected
+                                    ? root.themeAction : root.themeBorder
+
+                                Rectangle {
+                                    x: 8
+                                    anchors.verticalCenter: parent.verticalCenter
+                                    width: root.embedded ? 28 : 34
+                                    height: width
+                                    radius: 9
+                                    color: root.themeSubtle
+                                    border.width: 1
+                                    border.color: root.themeBorder
+
+                                    Image {
+                                        anchors.centerIn: parent
+                                        width: root.embedded ? 15 : 18
+                                        height: width
+                                        source: Qt.resolvedUrl("../assets/icons/lucide-bluetooth-refined-dark.svg")
+                                        sourceSize.width: 36
+                                        sourceSize.height: 36
+                                        smooth: true
+                                        layer.enabled: true
+                                        layer.effect: MultiEffect {
+                                            colorization: 1
+                                            colorizationColor: bluetoothDeviceTile.modelData.connected
+                                                ? root.themeAction : root.themeIcon
+                                        }
+                                    }
+                                }
+
+                                Text {
+                                    x: root.embedded ? 44 : 52
+                                    y: root.embedded ? 9 : 12
+                                    width: parent.width - (root.embedded ? 130 : 155)
+                                    text: bluetoothDeviceTile.modelData.name
+                                    color: root.themeText
+                                    font.pixelSize: root.embedded ? 9 : 10
+                                    font.weight: Font.DemiBold
+                                    elide: Text.ElideRight
+                                }
+
+                                Text {
+                                    x: root.embedded ? 44 : 52
+                                    y: root.embedded ? 29 : 34
+                                    width: parent.width - (root.embedded ? 130 : 155)
+                                    text: bluetoothDeviceTile.modelData.connected
+                                        ? "CONNECTED"
+                                        : (bluetoothDeviceTile.modelData.paired
+                                            ? (bluetoothDeviceTile.modelData.trusted
+                                                ? "PAIRED · TRUSTED" : "PAIRED")
+                                            : "AVAILABLE NEARBY")
+                                    color: bluetoothDeviceTile.modelData.connected
+                                        ? root.themeSuccess : root.themeMutedText
                                     font.pixelSize: root.embedded ? 6 : 7
                                     font.weight: Font.DemiBold
+                                    font.letterSpacing: 0.45
+                                    elide: Text.ElideRight
+                                }
+
+                                Rectangle {
+                                    id: bluetoothDeviceAction
+                                    anchors.right: parent.right
+                                    anchors.rightMargin: root.embedded ? 7 : 9
+                                    anchors.verticalCenter: parent.verticalCenter
+                                    width: root.embedded ? 66 : 78
+                                    height: root.embedded ? 26 : 30
+                                    radius: 9
+                                    color: bluetoothDeviceTile.modelData.connected
+                                        ? root.themeSurface
+                                        : (root.bluetoothActionMac === bluetoothDeviceTile.modelData.mac
+                                            ? root.themeMutedText : root.themeAction)
+                                    border.width: bluetoothDeviceTile.modelData.connected ? 1 : 0
+                                    border.color: root.themeBorder
+
+                                    Text {
+                                        anchors.centerIn: parent
+                                        text: root.bluetoothActionMac === bluetoothDeviceTile.modelData.mac
+                                            ? (root.bluetoothActionVerb === "pair" ? "Pairing…"
+                                                : root.bluetoothActionVerb === "connect" ? "Connecting…"
+                                                : "Disconnecting…")
+                                            : (bluetoothDeviceTile.modelData.connected ? "Disconnect"
+                                                : bluetoothDeviceTile.modelData.paired ? "Connect" : "Pair")
+                                        color: bluetoothDeviceTile.modelData.connected
+                                            ? root.themeText : root.themeActionText
+                                        font.pixelSize: root.embedded ? 7 : 8
+                                        font.weight: Font.DemiBold
+                                        elide: Text.ElideRight
+                                    }
+
+                                    MouseArea {
+                                        anchors.fill: parent
+                                        cursorShape: Qt.PointingHandCursor
+                                        enabled: root.bluetoothActionMac.length === 0
+                                        onClicked: {
+                                            const action = bluetoothDeviceTile.modelData.connected
+                                                ? "disconnect"
+                                                : bluetoothDeviceTile.modelData.paired ? "connect" : "pair"
+                                            root.runBluetoothDeviceAction(action,
+                                                bluetoothDeviceTile.modelData.mac)
+                                        }
+                                    }
                                 }
 
                                 MouseArea {
+                                    id: btMouse
                                     anchors.fill: parent
-                                    cursorShape: Qt.PointingHandCursor
-                                    onClicked: root.run(["bluetooth", modelData.connected ? "disconnect" : "connect", modelData.mac])
-                                }
-                            }
-
-                            Rectangle {
-                                visible: !modelData.connected && !modelData.trusted
-                                anchors.right: parent.right
-                                anchors.rightMargin: root.embedded ? 10 : 15
-                                anchors.verticalCenter: parent.verticalCenter
-                                width: root.embedded ? 44 : 58
-                                height: root.embedded ? 24 : 30
-                                radius: root.embedded ? 8 : 9
-                                color: "#FFFFFF"
-                                border.width: 1
-                                border.color: root.border
-
-                                Text {
-                                    anchors.centerIn: parent
-                                    text: "PAIR"
-                                    color: root.textSecondary
-                                    font.pixelSize: 7
-                                    font.weight: Font.DemiBold
-                                }
-
-                                MouseArea {
-                                    anchors.fill: parent
-                                    cursorShape: Qt.PointingHandCursor
-                                    onClicked: root.run(["bluetooth", "pair", modelData.mac])
+                                    z: -1
+                                    hoverEnabled: true
+                                    acceptedButtons: Qt.NoButton
                                 }
                             }
                         }
