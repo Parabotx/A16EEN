@@ -1541,7 +1541,7 @@ Item {
                                     text: root.bluetoothState !== "on"
                                         ? "Turn it on to discover accessories."
                                         : (root.bluetoothScanning
-                                            ? "Make your device discoverable." : "Tap scan to search again.")
+                                            ? "Put your accessory in pairing mode." : "Tap scan to search again.")
                                     color: root.themeMutedText
                                     font.pixelSize: 8
                                 }
