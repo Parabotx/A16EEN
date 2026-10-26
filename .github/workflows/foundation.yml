@@ -710,7 +710,9 @@ jobs:
           grep -Fq 'sourceSize.width: root.thumbnailWidth * 2' quickshell/a16een/ui/WallpaperPicker.qml
           grep -Fq 'root.selectWallpaperByIndex' quickshell/a16een/ui/WallpaperPicker.qml
           grep -Fq 'settingsOpen ? 0.22 : 0' quickshell/a16een/ui/WallpaperPicker.qml
-          grep -Fq 'staticPreview.status === Image.Error' quickshell/a16een/ui/WallpaperPicker.qml
+          grep -Fq 'cache: false' quickshell/a16een/ui/WallpaperPicker.qml
+          ! grep -Fq 'wallpaper.displayName' quickshell/a16een/ui/WallpaperPicker.qml
+          ! grep -Fq 'wallpaper.name' quickshell/a16een/ui/WallpaperPicker.qml
           grep -Fq 'thumbnailWidth * 13' quickshell/a16een/ui/WallpaperPicker.qml
           grep -Fq 'spacing: 0' quickshell/a16een/ui/WallpaperPicker.qml
           grep -Fq 'anchors.bottomMargin: 78' quickshell/a16een/ui/WallpaperPicker.qml
