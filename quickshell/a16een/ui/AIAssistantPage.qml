@@ -790,6 +790,7 @@ Item {
                 Repeater {
                     model: root.providerChoices
                     delegate: Rectangle {
+                        id: settingsProviderChoice
                         required property var modelData
                         width: (settingsProviderSelector.width - 88) / 2
                         height: 31
@@ -815,7 +816,6 @@ Item {
                         }
 
                         Accessible.name: settingsProviderChoice.modelData.label + " API provider"
-                        id: settingsProviderChoice
                     }
                 }
             }
