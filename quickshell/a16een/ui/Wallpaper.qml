@@ -110,7 +110,9 @@ PanelWindow {
 
         const incoming = root.stagingWallpaperLayer()
         if (incoming.sourcePath !== root.pendingWallpaperPath) {
-            incoming.desktopAnimationAllowed = root.desktopAnimationAllowed
+            // Decode the staged wallpaper without running its animation or
+            // video until it is about to become visible.
+            incoming.desktopAnimationAllowed = false
             incoming.sourcePath = root.pendingWallpaperPath
         }
         Qt.callLater(root.tryBeginWallpaperTransition)
