@@ -1,4 +1,5 @@
 import QtQuick
+import QtQuick.Effects
 import Quickshell
 import Quickshell.Io
 
@@ -66,6 +67,21 @@ Item {
     readonly property color textSecondary: "#66707C"
     readonly property color textMuted: "#8A939E"
     readonly property color accent: "#B18B3F"
+
+    // Live palette passed by UtilitiesPanel so this view follows user-selected
+    // popup colors and stays neutral when no custom color is enabled.
+    property color themeSurface: "#F7F8FA"
+    property color themeSubtle: "#F7F8FA"
+    property color themeHover: "#EEF1F4"
+    property color themeSelected: "#E9EDF1"
+    property color themeBorder: "#E1E5EA"
+    property color themeText: "#111318"
+    property color themeSecondaryText: "#66707C"
+    property color themeMutedText: "#8A939E"
+    property color themeAction: "#242A32"
+    property color themeActionText: "#F3F5F8"
+    property color themeIcon: "#111318"
+    property color themeSuccess: "#438562"
     readonly property string title: {
         switch (root.mode) {
         case "wifi": return "WI-FI"
@@ -543,9 +559,9 @@ Item {
                     width: parent.width
                     height: root.embedded ? 68 : 88
                     radius: 15
-                    color: "#F8F7F3"
+                    color: root.themeSubtle
                     border.width: 1
-                    border.color: "#E9E2D4"
+                    border.color: root.themeBorder
 
                     Rectangle {
                         x: 10
@@ -553,17 +569,22 @@ Item {
                         width: root.embedded ? 39 : 48
                         height: width
                         radius: 12
-                        color: "#EFE7D8"
+                        color: root.themeSurface
 
                         Image {
                             anchors.centerIn: parent
                             width: root.embedded ? 19 : 23
                             height: width
-                            source: Qt.resolvedUrl("../assets/icons/lucide-wifi-refined.svg")
+                            source: Qt.resolvedUrl("../assets/icons/lucide-wifi-refined-dark.svg")
                             sourceSize.width: 48
                             sourceSize.height: 48
                             fillMode: Image.PreserveAspectFit
                             smooth: true
+                            layer.enabled: true
+                            layer.effect: MultiEffect {
+                                colorization: 1
+                                colorizationColor: root.themeIcon
+                            }
                         }
                     }
 
@@ -580,7 +601,7 @@ Item {
                             text: root.wifiName !== "Not connected"
                                 ? root.wifiName
                                 : (root.wifiRadioState === "off" ? "Wi-Fi is off" : "Not connected")
-                            color: root.textPrimary
+                            color: root.themeText
                             font.pixelSize: root.embedded ? 10 : 13
                             font.weight: Font.DemiBold
                             elide: Text.ElideRight
@@ -596,8 +617,8 @@ Item {
                                 height: 6
                                 radius: 3
                                 color: root.wifiName !== "Not connected"
-                                    ? "#438562"
-                                    : (root.wifiRadioState === "off" ? "#C27B42" : "#A0A7B0")
+                                    ? root.themeSuccess
+                                    : root.themeMutedText
                             }
 
                             Text {
@@ -607,7 +628,7 @@ Item {
                                     : (root.wifiRadioState === "off"
                                         ? "Switch Wi-Fi on to scan"
                                         : "Ready to find a network")
-                                color: root.textSecondary
+                                color: root.themeSecondaryText
                                 font.pixelSize: root.embedded ? 7 : 9
                                 elide: Text.ElideRight
                             }
@@ -618,22 +639,19 @@ Item {
                         id: wifiPowerButton
                         anchors.right: parent.right
                         anchors.rightMargin: 9
-                        anchors.verticalCenter: parent.verticalCenter
-                        width: root.wifiState === "on"
-                            ? (root.embedded ? 76 : 88)
-                            : (root.embedded ? 63 : 76)
-                        height: root.embedded ? 30 : 34
+                        anchors.top: parent.top
+                        anchors.topMargin: root.embedded ? 6 : 10
+                        width: root.embedded ? 74 : 82
+                        height: root.embedded ? 26 : 30
                         radius: 9
-                        color: wifiPowerMouse.containsMouse ? "#E8DCC6" : "#F0E6D5"
+                        color: wifiPowerMouse.containsMouse ? Qt.darker(root.themeAction, 1.08) : root.themeAction
                         border.width: 1
-                        border.color: "#E1D3BB"
+                        border.color: root.themeAction
 
                         Text {
                             anchors.centerIn: parent
-                            text: root.wifiState === "on"
-                                ? "Disconnect"
-                                : (root.wifiRadioState === "on" ? "Turn off" : "Turn on")
-                            color: "#624A25"
+                            text: root.wifiRadioState === "on" ? "Turn off" : "Turn on"
+                            color: root.themeActionText
                             font.pixelSize: root.embedded ? 8 : 9
                             font.weight: Font.DemiBold
                         }
@@ -644,11 +662,39 @@ Item {
                             hoverEnabled: true
                             cursorShape: Qt.PointingHandCursor
                             onClicked: {
-                                if (root.wifiState === "on")
-                                    root.run(["wifi", "disconnect"])
-                                else
-                                    root.run(["wifi", "toggle"])
+                                root.run(["wifi", "toggle"])
                             }
+                        }
+                    }
+
+                    Rectangle {
+                        id: wifiDisconnectButton
+                        anchors.right: parent.right
+                        anchors.rightMargin: 9
+                        anchors.bottom: parent.bottom
+                        anchors.bottomMargin: root.embedded ? 6 : 10
+                        width: root.embedded ? 74 : 82
+                        height: root.embedded ? 20 : 24
+                        radius: 8
+                        visible: root.wifiState === "on" && root.wifiRadioState === "on"
+                        color: disconnectWifiMouse.containsMouse ? root.themeHover : root.themeSurface
+                        border.width: 1
+                        border.color: root.themeBorder
+
+                        Text {
+                            anchors.centerIn: parent
+                            text: "Disconnect"
+                            color: root.themeText
+                            font.pixelSize: root.embedded ? 7 : 8
+                            font.weight: Font.DemiBold
+                        }
+
+                        MouseArea {
+                            id: disconnectWifiMouse
+                            anchors.fill: parent
+                            hoverEnabled: true
+                            cursorShape: Qt.PointingHandCursor
+                            onClicked: root.run(["wifi", "disconnect"])
                         }
                     }
                 }
@@ -667,7 +713,7 @@ Item {
                         Text {
                             width: parent.width
                             text: "Nearby networks"
-                            color: root.textPrimary
+                            color: root.themeText
                             font.pixelSize: root.embedded ? 10 : 12
                             font.weight: Font.DemiBold
                         }
@@ -677,7 +723,7 @@ Item {
                             text: root.wifiRefreshing
                                 ? "Scanning for networks…"
                                 : root.wifiNetworks.length + (root.wifiNetworks.length === 1 ? " network found" : " networks found")
-                            color: root.textMuted
+                            color: root.themeMutedText
                             font.pixelSize: root.embedded ? 7 : 8
                             elide: Text.ElideRight
                         }
@@ -685,43 +731,35 @@ Item {
 
                     Rectangle {
                         id: wifiRefreshButton
-                        width: root.embedded ? 82 : 92
-                        height: root.embedded ? 29 : 32
-                        radius: 9
+                        width: root.embedded ? 32 : 36
+                        height: root.embedded ? 30 : 34
+                        radius: 10
                         anchors.verticalCenter: parent.verticalCenter
-                        color: refreshWifiMouse.containsMouse ? "#EEE8DE" : "#F7F5F0"
+                        color: refreshWifiMouse.containsMouse ? Qt.darker(root.themeAction, 1.08) : root.themeAction
                         border.width: 1
-                        border.color: "#E8E0D3"
+                        border.color: root.themeAction
 
-                        Row {
+                        Image {
+                            id: wifiRefreshIcon
                             anchors.centerIn: parent
-                            spacing: 5
-
-                            Image {
-                                id: wifiRefreshIcon
-                                anchors.verticalCenter: parent.verticalCenter
-                                width: 13
-                                height: 13
-                                source: Qt.resolvedUrl("../assets/icons/lucide-refresh-cw-refined-dark.svg")
-                                sourceSize.width: 28
-                                sourceSize.height: 28
-                                smooth: true
-
-                                RotationAnimation on rotation {
-                                    from: 0
-                                    to: 360
-                                    duration: 700
-                                    loops: Animation.Infinite
-                                    running: root.wifiRefreshing
-                                }
+                            width: root.embedded ? 15 : 17
+                            height: width
+                            source: Qt.resolvedUrl("../assets/icons/lucide-rotate-cw-clean.svg")
+                            sourceSize.width: 36
+                            sourceSize.height: 36
+                            smooth: true
+                            layer.enabled: true
+                            layer.effect: MultiEffect {
+                                colorization: 1
+                                colorizationColor: root.themeActionText
                             }
 
-                            Text {
-                                anchors.verticalCenter: parent.verticalCenter
-                                text: root.wifiRefreshing ? "Scanning" : "Refresh"
-                                color: "#6B5736"
-                                font.pixelSize: root.embedded ? 8 : 9
-                                font.weight: Font.DemiBold
+                            RotationAnimation on rotation {
+                                from: 0
+                                to: 360
+                                duration: 760
+                                loops: Animation.Infinite
+                                running: root.wifiRefreshing
                             }
                         }
 
@@ -730,7 +768,7 @@ Item {
                             anchors.fill: parent
                             hoverEnabled: true
                             cursorShape: Qt.PointingHandCursor
-                            enabled: !root.wifiRefreshing
+                            enabled: !root.wifiRefreshing && root.wifiRadioState === "on"
                             onClicked: root.refreshWifiNetworks(true)
                         }
                     }
@@ -746,9 +784,9 @@ Item {
                     visible: height > 0
                     opacity: height > 0 ? 1 : 0
                     radius: 13
-                    color: "#FFFFFF"
+                    color: root.themeSubtle
                     border.width: 1
-                    border.color: "#DED3C0"
+                    border.color: root.themeBorder
                     clip: true
 
                     Behavior on height {
@@ -762,15 +800,6 @@ Item {
                             duration: 140
                             easing.type: Easing.OutCubic
                         }
-                    }
-
-                    Rectangle {
-                        width: 3
-                        anchors.left: parent.left
-                        anchors.top: parent.top
-                        anchors.bottom: parent.bottom
-                        radius: 2
-                        color: root.accent
                     }
 
                     Column {
@@ -789,7 +818,7 @@ Item {
                             Text {
                                 width: parent.width - wifiCancelLabel.width - parent.spacing
                                 text: "JOIN  ·  " + root.wifiSelectedSsid
-                                color: root.textPrimary
+                                color: root.themeText
                                 font.pixelSize: root.embedded ? 8 : 9
                                 font.weight: Font.DemiBold
                                 elide: Text.ElideRight
@@ -799,7 +828,7 @@ Item {
                             Text {
                                 id: wifiCancelLabel
                                 text: "CANCEL"
-                                color: wifiCancelMouse.containsMouse ? root.textPrimary : root.textMuted
+                                color: wifiCancelMouse.containsMouse ? root.themeText : root.themeMutedText
                                 font.pixelSize: 7
                                 font.weight: Font.DemiBold
                                 anchors.verticalCenter: parent.verticalCenter
@@ -827,9 +856,9 @@ Item {
                                 width: parent.width - wifiConnectButton.width - parent.spacing
                                 height: parent.height
                                 radius: 9
-                                color: "#F8F9FB"
+                                color: root.themeSurface
                                 border.width: 1
-                                border.color: wifiPasswordInput.activeFocus ? root.accent : "#E3E6EA"
+                                border.color: wifiPasswordInput.activeFocus ? root.themeAction : root.themeBorder
 
                                 Text {
                                     anchors.left: parent.left
@@ -838,7 +867,7 @@ Item {
                                     anchors.rightMargin: 42
                                     anchors.verticalCenter: parent.verticalCenter
                                     text: "Wi-Fi password"
-                                    color: root.textMuted
+                                    color: root.themeMutedText
                                     font.pixelSize: 9
                                     visible: root.wifiPassword.length === 0
                                 }
@@ -849,9 +878,9 @@ Item {
                                     anchors.leftMargin: 9
                                     anchors.rightMargin: 42
                                     verticalAlignment: TextInput.AlignVCenter
-                                    color: root.textPrimary
-                                    selectionColor: "#E6D7BC"
-                                    selectedTextColor: root.textPrimary
+                                    color: root.themeText
+                                    selectionColor: root.themeSelected
+                                    selectedTextColor: root.themeText
                                     font.pixelSize: 10
                                     echoMode: root.wifiPasswordVisible ? TextInput.Normal : TextInput.Password
                                     clip: true
@@ -869,7 +898,7 @@ Item {
                                     anchors.verticalCenter: parent.verticalCenter
                                     width: 31
                                     text: root.wifiPasswordVisible ? "HIDE" : "SHOW"
-                                    color: root.accent
+                                    color: root.themeSecondaryText
                                     font.pixelSize: 7
                                     font.weight: Font.DemiBold
                                     horizontalAlignment: Text.AlignHCenter
@@ -889,12 +918,12 @@ Item {
                                 width: root.embedded ? 76 : 86
                                 height: parent.height
                                 radius: 9
-                                color: root.wifiConnecting ? "#8B9097" : "#242A32"
+                                color: root.wifiConnecting ? root.themeMutedText : root.themeAction
 
                                 Text {
                                     anchors.centerIn: parent
                                     text: root.wifiConnecting ? "Joining…" : "Connect"
-                                    color: "#FFFFFF"
+                                    color: root.themeActionText
                                     font.pixelSize: root.embedded ? 8 : 9
                                     font.weight: Font.DemiBold
                                 }
@@ -911,7 +940,7 @@ Item {
                         Text {
                             width: parent.width
                             text: "Your password is used to join this network."
-                            color: root.textMuted
+                            color: root.themeMutedText
                             font.pixelSize: root.embedded ? 7 : 8
                             elide: Text.ElideRight
                         }
@@ -948,25 +977,30 @@ Item {
                                     width: 32
                                     height: 32
                                     radius: 10
-                                    color: "#F4F0E8"
+                                    color: root.themeSurface
                                     border.width: 1
-                                    border.color: "#E9E0D1"
+                                    border.color: root.themeBorder
 
                                     Image {
                                         anchors.centerIn: parent
                                         width: 16
                                         height: 16
-                                        source: Qt.resolvedUrl("../assets/icons/lucide-wifi-refined.svg")
+                                        source: Qt.resolvedUrl("../assets/icons/lucide-wifi-refined-dark.svg")
                                         sourceSize.width: 32
                                         sourceSize.height: 32
-                                        opacity: 0.65
+                                        opacity: 0.85
+                                        layer.enabled: true
+                                        layer.effect: MultiEffect {
+                                            colorization: 1
+                                            colorizationColor: root.themeIcon
+                                        }
                                     }
                                 }
 
                                 Text {
                                     anchors.horizontalCenter: parent.horizontalCenter
                                     text: root.wifiRefreshing ? "Looking for nearby networks" : "No networks found"
-                                    color: root.textSecondary
+                                    color: root.themeSecondaryText
                                     font.pixelSize: 9
                                     font.weight: Font.DemiBold
                                 }
@@ -974,7 +1008,7 @@ Item {
                                 Text {
                                     anchors.horizontalCenter: parent.horizontalCenter
                                     text: root.wifiRefreshing ? "This can take a moment." : "Try refreshing the scan."
-                                    color: root.textMuted
+                                    color: root.themeMutedText
                                     font.pixelSize: 8
                                 }
                             }
@@ -990,21 +1024,12 @@ Item {
                                 height: root.embedded ? 54 : 62
                                 radius: 12
                                 color: modelData.inUse
-                                    ? "#F7F3EA"
+                                    ? root.themeSelected
                                     : (networkMouse.containsMouse || modelData.ssid === root.wifiSelectedSsid
-                                        ? "#F3F5F7" : "#FAFBFC")
+                                        ? root.themeHover : root.themeSurface)
                                 border.width: modelData.inUse || modelData.ssid === root.wifiSelectedSsid ? 1.3 : 1
                                 border.color: modelData.inUse || modelData.ssid === root.wifiSelectedSsid
-                                    ? "#D8C7A8" : "#E7EAEE"
-
-                                Rectangle {
-                                    x: 8
-                                    anchors.verticalCenter: parent.verticalCenter
-                                    width: 3
-                                    height: parent.height - 18
-                                    radius: 2
-                                    color: wifiNetworkTile.modelData.inUse ? root.accent : "transparent"
-                                }
+                                    ? root.themeAction : root.themeBorder
 
                                 Column {
                                     anchors.left: parent.left
@@ -1017,7 +1042,7 @@ Item {
                                     Text {
                                         width: parent.width
                                         text: wifiNetworkTile.modelData.ssid
-                                        color: root.textPrimary
+                                        color: root.themeText
                                         font.pixelSize: root.embedded ? 9 : 10
                                         font.weight: Font.DemiBold
                                         elide: Text.ElideRight
@@ -1028,7 +1053,7 @@ Item {
                                         text: wifiNetworkTile.modelData.inUse
                                             ? "CONNECTED"
                                             : (wifiNetworkTile.modelData.security === "--" ? "OPEN NETWORK" : "SECURED NETWORK")
-                                        color: wifiNetworkTile.modelData.inUse ? "#8A6835" : root.textMuted
+                                        color: wifiNetworkTile.modelData.inUse ? root.themeText : root.themeMutedText
                                         font.pixelSize: 7
                                         font.weight: Font.DemiBold
                                         font.letterSpacing: 0.55
@@ -1046,7 +1071,7 @@ Item {
                                     Text {
                                         width: parent.width
                                         text: wifiNetworkTile.modelData.signal + "%"
-                                        color: root.textSecondary
+                                        color: root.themeSecondaryText
                                         font.pixelSize: 8
                                         horizontalAlignment: Text.AlignRight
                                     }
@@ -1067,8 +1092,7 @@ Item {
                                                 anchors.bottom: parent.bottom
                                                 radius: 2
                                                 color: wifiNetworkTile.modelData.signal >= (index + 1) * 25
-                                                    ? (wifiNetworkTile.modelData.inUse ? root.accent : "#7D8997")
-                                                    : "#DFE3E8"
+                                                    ? root.themeAction : root.themeBorder
                                             }
                                         }
                                     }

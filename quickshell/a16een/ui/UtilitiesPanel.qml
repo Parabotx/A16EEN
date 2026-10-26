@@ -216,6 +216,18 @@ PanelWindow {
                         active: root.opened && root.selectedMode !== "clipboard"
                         embedded: true
                         doNotDisturb: false
+                        themeSurface: popupCardStyle.fieldColor
+                        themeSubtle: popupCardStyle.subtleSurfaceColor
+                        themeHover: popupCardStyle.hoverSurfaceColor
+                        themeSelected: popupCardStyle.selectedSurfaceColor
+                        themeBorder: popupCardStyle.fieldBorderColor
+                        themeText: popupCardStyle.textColor
+                        themeSecondaryText: popupCardStyle.secondaryTextColor
+                        themeMutedText: popupCardStyle.mutedTextColor
+                        themeAction: popupCardStyle.actionColor
+                        themeActionText: popupCardStyle.actionTextColor
+                        themeIcon: popupCardStyle.iconColor
+                        themeSuccess: popupCardStyle.successColor
                         visible: root.selectedMode !== "clipboard"
                         onBackRequested: root.closeRequested()
                     }
