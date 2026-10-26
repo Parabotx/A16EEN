@@ -297,6 +297,14 @@ QtObject {
             verse: "ሰላምን እና መልካም ሥራን ፈልጉ።",
             reference: "መንፈሳዊ ማሰላሰያ",
             reflection: "የእስልምና መታሰቢያው ቀን በጨረቃ እይታ ሊለይ ይችላል።"
+        },
+        {
+            id: "debre-tabor", calendar: "ethiopian", month: 12, day: 13,
+            title: "ደብረ ታቦር", category: "የጌታችን መለወጥ በዓል",
+            description: "ነሐሴ 13 የኢየሱስ ክርስቶስ በደብረ ታቦር ተራራ ላይ መለወጡን የሚያስታውስ ታላቅ በዓል ነው።",
+            verse: "ፊቱ እንደ ፀሐይ አበራ፥ ልብሱም እንደ ብርሃን ነጭ ሆነ።",
+            reference: "ማቴዎስ 17፥2",
+            reflection: "ደብረ ታቦር የክርስቶስን መለኮታዊ ክብር የምናስብበት በዓል ነው።"
         }
     ]
 
@@ -447,6 +455,14 @@ QtObject {
 
             const easter = root.orthodoxEaster(year)
             const calculatedFeasts = [
+                {
+                    id: "debre-zeit", offset: -28,
+                    title: "ደብረ ዘይት", category: "የዐቢይ ጾም የሚንቀሳቀስ መታሰቢያ",
+                    description: "የደብረ ዘይት መታሰቢያ ከፋሲካ በፊት ባለው የዐቢይ ጾም የተወሰነ እሁድ ይከበራል።",
+                    verse: "በበሩ ግቡ፤ በሩ ሰፊ ነውና፥ መንገዱም ሰፊ ነውና።",
+                    reference: "ማቴዎስ 7፥13",
+                    reflection: "ደብረ ዘይት በዐቢይ ጾም ውስጥ የሚከበር ተንቀሳቃሽ መታሰቢያ ነው።"
+                },
                 {
                     id: "palm-sunday", offset: -7,
                     title: "ሆሣዕና", category: "የመዳን ሳምንት በዓል",
