@@ -4,6 +4,7 @@ set -u
 STATE_DIR="${XDG_STATE_HOME:-$HOME/.local/state}/a16een"
 DND_STATE="$STATE_DIR/do-not-disturb"
 NIGHTLIGHT_PID="$STATE_DIR/night-light.pid"
+BLUETOOTH_SCAN_PID="$STATE_DIR/bluetooth-scan.pid"
 
 mkdir -p "$STATE_DIR"
 
@@ -19,7 +20,7 @@ active_nightlight_pid() {
     if [ -f "$NIGHTLIGHT_PID" ]; then
         local pid
         pid=$(cat "$NIGHTLIGHT_PID" 2>/dev/null || true)
-        if [[ "$pid" =~ ^[0-9]+$ ]] && kill -0 "$pid" 2>/dev/null; then
+        if [[ "$pid" =~ ^[0-9]+$ ]] && kill -0 "$pid" 2>/dev/null && ps -p "$pid" -o comm= 2>/dev/null | grep -qx "bluetoothctl"; then
             printf '%s\n' "$pid"
             return 0
         fi
@@ -267,27 +268,64 @@ wifi_rescan() {
     nmcli device wifi rescan >/dev/null 2>&1
 }
 
-bluetooth_pair() {
-    bluetoothctl pair "${3:-}" >/dev/null 2>&1
+bluetooth_valid_address() {
+    [[ "$1" =~ ^([[:xdigit:]]{2}:){5}[[:xdigit:]]{2}$ ]]
 }
+
+bluetooth_pair() {
+    local mac="${3:-}"
+    bluetooth_valid_address "$mac" || return 2
+    bluetoothctl --timeout 30 --agent NoInputNoOutput pair "$mac" >/dev/null 2>&1
+}
+ 
 
 wifi_saved() {
     nmcli -t --separator '|' -f NAME,TYPE connection show 2>/dev/null |
         awk -F'|' '$2=="802-11-wireless" {print $1}'
 }
 
+bluetooth_scan_pid() {
+    local pid
+    if [ -f "$BLUETOOTH_SCAN_PID" ]; then
+        pid=$(cat "$BLUETOOTH_SCAN_PID" 2>/dev/null || true)
+        if [[ "$pid" =~ ^[0-9]+$ ]] && kill -0 "$pid" 2>/dev/null \
+            && ps -p "$pid" -o comm= 2>/dev/null | grep -qx 'bluetoothctl'; then
+            printf '%s\n' "$pid"
+            return 0
+        fi
+        rm -f "$BLUETOOTH_SCAN_PID"
+    fi
+    return 1
+}
+
 bluetooth_devices() {
     command -v bluetoothctl >/dev/null 2>&1 || return 1
 
-    bluetoothctl devices 2>/dev/null |
-        sed 's/^Device //' |
-        while read -r mac name; do
+    # Include the live discovery cache and the paired-device list. The second
+    # query also preserves paired devices on BlueZ versions that filter "devices".
+    {
+        bluetoothctl devices 2>/dev/null || true
+        bluetoothctl devices Paired 2>/dev/null || true
+    } | awk '$1 == "Device" && $2 ~ /:/ && !seen[tolower($2)]++ { print }' |
+        while IFS= read -r line; do
+            local mac name info connected trusted paired
+            mac=$(printf '%s\n' "$line" | awk '{print $2}')
+            name=$(printf '%s\n' "$line" | sed -E 's/^Device [^ ]+ //')
             [ -n "$mac" ] || continue
-            local info connected trusted
+            [ -n "$name" ] || name="Unknown device"
+
             info=$(bluetoothctl info "$mac" 2>/dev/null || true)
             connected=$(printf '%s\n' "$info" | awk '/Connected:/ {print tolower($2); exit}')
             trusted=$(printf '%s\n' "$info" | awk '/Trusted:/ {print tolower($2); exit}')
-            printf '%s|%s|%s|%s\n' "$mac" "$name" "${connected:-no}" "${trusted:-no}"
+            paired=$(printf '%s\n' "$info" | awk '/Paired:/ {print tolower($2); exit}')
+            [ -n "$connected" ] || connected=no
+            [ -n "$trusted" ] || trusted=no
+            [ -n "$paired" ] || paired=no
+
+            # Escape our presentation delimiter without losing device names
+            # that legitimately contain a pipe or backslash.
+            name=$(printf '%s\n' "$name" | sed 's/\\/\\\\/g; s/|/\\|/g')
+            printf '%s|%s|%s|%s|%s\n' "$mac" "$name" "$connected" "$trusted" "$paired"
         done
 }
 
@@ -295,24 +333,53 @@ bluetooth_toggle() {
     local state
     state=$(cmd_bluetooth_status)
     case "$state" in
-        on) bluetoothctl power off >/dev/null 2>&1 ;;
+        on)
+            bluetooth_scan_stop
+            bluetoothctl power off >/dev/null 2>&1
+            ;;
         off) bluetoothctl power on >/dev/null 2>&1 ;;
         *) return 1 ;;
     esac
 }
 
 bluetooth_connect() {
-    bluetoothctl connect "${3:-}" >/dev/null 2>&1
+    local mac="${3:-}"
+    bluetooth_valid_address "$mac" || return 2
+    bluetoothctl --timeout 20 connect "$mac" >/dev/null 2>&1
 }
 
 bluetooth_disconnect() {
-    bluetoothctl disconnect "${3:-}" >/dev/null 2>&1
+    local mac="${3:-}"
+    bluetooth_valid_address "$mac" || return 2
+    bluetoothctl --timeout 12 disconnect "$mac" >/dev/null 2>&1
 }
 
 bluetooth_scan() {
     command -v bluetoothctl >/dev/null 2>&1 || return 1
-    (timeout 7 bluetoothctl scan on >/dev/null 2>&1 || true) &
+    [ "$(cmd_bluetooth_status)" = "on" ] || return 1
+
+    # bluetoothctl exits immediately after "scan on" in non-interactive mode
+    # unless --timeout is supplied. Keep its D-Bus discovery session alive long
+    # enough for the UI to poll newly found devices, without blocking Quickshell.
+    if bluetooth_scan_pid >/dev/null 2>&1; then
+        return 0
+    fi
+
+    nohup bluetoothctl --timeout 12 scan on >/dev/null 2>&1 </dev/null &
+    printf '%s\n' "$!" > "$BLUETOOTH_SCAN_PID"
 }
+
+bluetooth_scan_stop() {
+    local pid
+    if pid=$(bluetooth_scan_pid); then
+        kill "$pid" >/dev/null 2>&1 || true
+        rm -f "$BLUETOOTH_SCAN_PID"
+        # Releasing the scanner client ends our discovery session. This command
+        # is best-effort because another Bluetooth client may own discovery too.
+        bluetoothctl scan off >/dev/null 2>&1 || true
+    fi
+}
+ 
 
 audio_detail() {
     local output percent muted sink
@@ -459,6 +526,7 @@ case "${1:-snapshot}" in
             disconnect) bluetooth_disconnect "$@" ;;
             pair) bluetooth_pair "$@" ;;
             scan) bluetooth_scan ;;
+            scan-stop) bluetooth_scan_stop ;;
         esac
         ;;
     audio)
