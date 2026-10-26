@@ -680,6 +680,9 @@ PanelWindow {
         property date clockNow: new Date()
         property bool calendarOpen: false
         property bool calendarWindowVisible: false
+        property bool calendarDetailsOpen: false
+        property int selectedCalendarDay: 0
+        property bool calendarDetailsHovering: false
 
         onCalendarOpenChanged: {
             if (calendarOpen) {
@@ -764,9 +767,11 @@ PanelWindow {
 
             for (let i = 0; i < 42; i++) {
                 const day = i - offset + 1
+                const validDay = day > 0 && day <= monthLength ? day : 0
                 cells.push({
-                    day: day > 0 && day <= monthLength ? day : 0,
-                    today: day === today.day
+                    day: validDay,
+                    today: validDay === today.day,
+                    selected: validDay > 0 && validDay === navbarClockPanel.selectedCalendarDay
                 })
             }
             return cells
@@ -875,6 +880,8 @@ PanelWindow {
             if (!visible) {
                 navbarClockPanel.calendarOpen = false
                 navbarClockPanel.calendarWindowVisible = false
+                navbarClockPanel.calendarDetailsOpen = false
+                navbarClockPanel.calendarDetailsHovering = false
                 calendarHideTimer.stop()
                 calendarPopupHideTimer.stop()
             }
@@ -1239,8 +1246,12 @@ PanelWindow {
         interval: 320
         repeat: false
         onTriggered: {
-            if (!clockHoverSensor.containsMouse && !calendarPopupHoverSensor.containsMouse)
+            if (!clockHoverSensor.containsMouse
+                    && !calendarPopupHoverSensor.containsMouse
+                    && !navbarClockPanel.calendarDetailsHovering) {
                 navbarClockPanel.calendarOpen = false
+                navbarClockPanel.calendarDetailsOpen = false
+            }
         }
     }
 
@@ -1385,26 +1396,43 @@ PanelWindow {
                     model: navbarClockPanel.calendarCells
 
                     delegate: Rectangle {
+                        id: dateCellModel
                         required property var modelData
                         width: 32
                         height: 29
                         radius: 9
-                        color: modelData.today
+                        color: modelData.selected || modelData.today
                             ? clockPopupStyle.actionColor
                             : (modelData.day > 0 ? clockPopupStyle.subtleSurfaceColor : "transparent")
-                        border.width: modelData.day === navbarClockPanel.ethiopianToday.day ? 1 : 0
+                        border.width: modelData.selected || modelData.today ? 1 : 0
                         border.color: clockPopupStyle.actionColor
 
                         Text {
                             anchors.fill: parent
                             text: modelData.day > 0 ? String(modelData.day) : ""
-                            color: modelData.today ? clockPopupStyle.actionTextColor : clockPopupStyle.textColor
+                            color: modelData.selected || modelData.today
+                                ? clockPopupStyle.actionTextColor : clockPopupStyle.textColor
                             font.family: "Monospace"
                             font.pixelSize: 11
-                            font.weight: modelData.today ? Font.DemiBold : Font.Normal
+                            font.weight: modelData.selected || modelData.today ? Font.DemiBold : Font.Normal
                             horizontalAlignment: Text.AlignHCenter
                             verticalAlignment: Text.AlignVCenter
                         }
+
+                        MouseArea {
+                            anchors.fill: parent
+                            enabled: dateCellModel.modelData.day > 0
+                            hoverEnabled: true
+                            cursorShape: Qt.PointingHandCursor
+                            onClicked: {
+                                navbarClockPanel.selectedCalendarDay = dateCellModel.modelData.day
+                                navbarClockPanel.calendarDetailsOpen = true
+                            }
+                        }
+
+                        // Named id keeps the click target bound to this day's cell.
+                        // This delegate is repeated for all 42 grid slots.
+                        // Empty slots remain non-interactive.
                     }
                 }
             }
@@ -1420,6 +1448,22 @@ PanelWindow {
                 onExited: calendarHideTimer.restart()
             }
         }
+    }
+
+    CalendarDayDetails {
+        id: calendarDayDetails
+        modelData: root.modelData
+        navbarPosition: root.navbarPosition
+        dockVisible: root.dockVisible
+        opened: navbarClockPanel.calendarOpen && navbarClockPanel.calendarDetailsOpen
+        selectedDay: navbarClockPanel.selectedCalendarDay
+        selectedMonth: navbarClockPanel.ethiopianToday.month
+        selectedYear: navbarClockPanel.ethiopianToday.year
+        onCloseRequested: {
+            navbarClockPanel.calendarDetailsOpen = false
+            navbarClockPanel.calendarDetailsHovering = false
+        }
+        onHoveringChanged: hovering => navbarClockPanel.calendarDetailsHovering = hovering
     }
 
     Rectangle {
