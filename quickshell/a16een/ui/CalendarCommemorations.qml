@@ -197,8 +197,7 @@ QtObject {
             verse: "ከዛሬ ጀምሮ ትውልድ ሁሉ ምስጉን ይሉኛል።",
             reference: "ሉቃስ 1፥48",
             reflection: "ይህ በዓል በቅድስት ማርያም ሕይወትና በእምነት ትውፊት ላይ ለማሰላሰል ይጋብዛል።"
-        }
-
+        },
         {
             id: "beata-mariam", calendar: "ethiopian", month: 4, day: 3,
             title: "በዓታ ለማርያም", category: "የቅድስት ማርያም ቤተ መቅደስ መግቢያ መታሰቢያ",
