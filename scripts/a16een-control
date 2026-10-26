@@ -309,7 +309,7 @@ bluetooth_devices() {
         while IFS= read -r line; do
             local mac name info connected trusted paired
             mac=$(printf '%s\n' "$line" | awk '{print $2}')
-            name=$(printf '%s\n' "$name" | sed 's/\\/\\\\/g; s/|/\\|/g')
+            name=$(printf '%s\n' "$line" | sed -E 's/^Device [^ ]+ //')
             [ -n "$mac" ] || continue
             [ -n "$name" ] || name="Unknown device"
 
@@ -525,6 +525,7 @@ case "${1:-snapshot}" in
             disconnect) bluetooth_disconnect "$@" ;;
             pair) bluetooth_pair "$@" ;;
             scan) bluetooth_scan ;;
+            scan-stop) bluetooth_scan_stop ;;
         esac
         ;;
     audio)
