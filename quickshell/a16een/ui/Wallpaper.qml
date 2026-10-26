@@ -8,14 +8,17 @@ PanelWindow {
     required property var modelData
     required property string currentWallpaperPath
     required property bool desktopAnimationAllowed
+    property string previewWallpaperPath: ""
     property bool editorialTimeWidgetEnabled: true
     property bool timeUse24Hour: true
     property bool timeShowSeconds: false
 
     readonly property string fallbackPath: Qt.resolvedUrl("../assets/wallpapers/default.png")
-    readonly property string activePath: root.currentWallpaperPath.length
-        ? root.currentWallpaperPath
-        : root.fallbackPath
+    readonly property string activePath: root.previewWallpaperPath.length
+        ? root.previewWallpaperPath
+        : (root.currentWallpaperPath.length
+            ? root.currentWallpaperPath
+            : root.fallbackPath)
     readonly property string lowerPath: root.activePath.toLowerCase()
     readonly property bool isAnimatedImage: lowerPath.endsWith(".gif")
         || lowerPath.endsWith(".webp")
