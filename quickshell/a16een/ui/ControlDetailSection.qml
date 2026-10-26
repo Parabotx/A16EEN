@@ -81,6 +81,7 @@ Item {
     property color themeAction: "#242A32"
     property color themeActionText: "#F3F5F8"
     property color themeIcon: "#111318"
+    property color themeSuccess: "#438562"
     readonly property string title: {
         switch (root.mode) {
         case "wifi": return "WI-FI"
@@ -616,7 +617,7 @@ Item {
                                 height: 6
                                 radius: 3
                                 color: root.wifiName !== "Not connected"
-                                    ? "#438562"
+                                    ? root.themeSuccess
                                     : root.themeMutedText
                             }
 
