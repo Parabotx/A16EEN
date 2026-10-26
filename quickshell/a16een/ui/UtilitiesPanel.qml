@@ -227,6 +227,7 @@ PanelWindow {
                         themeAction: popupCardStyle.actionColor
                         themeActionText: popupCardStyle.actionTextColor
                         themeIcon: popupCardStyle.iconColor
+                        themeSuccess: popupCardStyle.successColor
                         visible: root.selectedMode !== "clipboard"
                         onBackRequested: root.closeRequested()
                     }
