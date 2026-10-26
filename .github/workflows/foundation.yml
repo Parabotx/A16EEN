@@ -716,7 +716,8 @@ jobs:
           grep -Fq 'cache: false' quickshell/a16een/ui/WallpaperPicker.qml
           ! grep -Fq 'wallpaper.displayName' quickshell/a16een/ui/WallpaperPicker.qml
           ! grep -Fq 'wallpaper.name' quickshell/a16een/ui/WallpaperPicker.qml
-          grep -Fq 'thumbnailWidth * 13' quickshell/a16een/ui/WallpaperPicker.qml
+          grep -Fq 'visibleThumbnailCount: Math.max(8, Math.min(24' quickshell/a16een/ui/WallpaperPicker.qml
+          grep -Fq 'thumbnailWidth * root.visibleThumbnailCount' quickshell/a16een/ui/WallpaperPicker.qml
           grep -Fq 'wallpaper-settings.svg' quickshell/a16een/ui/WallpaperPicker.qml
           test -f quickshell/a16een/assets/icons/wallpaper-settings.svg
           grep -Fq 'spacing: 0' quickshell/a16een/ui/WallpaperPicker.qml
