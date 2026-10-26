@@ -44,7 +44,7 @@ PanelWindow {
     exclusionMode: ExclusionMode.Ignore
     exclusiveZone: 0
     width: 324
-    height: 326
+    height: 366
 
     anchors {
         left: root.navbarPosition !== "right"
@@ -132,7 +132,7 @@ PanelWindow {
         Column {
             anchors.fill: parent
             anchors.margins: 14
-            spacing: 6
+            spacing: 4
 
             Row {
                 width: parent.width
@@ -217,16 +217,94 @@ PanelWindow {
                 }
             }
 
-            Text {
+            // Portraits sit on the outside edge of the card; the text stays
+            // nearer the calendar so the two popups read as one composition.
+            Row {
                 width: parent.width
-                height: 43
-                text: root.dayInfo.description
-                color: popupCardStyle.secondaryTextColor
-                font.family: "Noto Sans Ethiopic"
-                font.pixelSize: 10
-                wrapMode: Text.WordWrap
-                maximumLineCount: 3
-                elide: Text.ElideRight
+                height: 106
+                spacing: 8
+                layoutDirection: root.navbarPosition === "right"
+                    ? Qt.LeftToRight : Qt.RightToLeft
+
+                Rectangle {
+                    id: portraitFrame
+                    visible: root.dayInfo.image !== undefined && String(root.dayInfo.image).length > 0
+                    width: visible ? 84 : 0
+                    height: parent.height
+                    radius: 13
+                    color: popupCardStyle.subtleSurfaceColor
+                    border.width: 1
+                    border.color: popupCardStyle.fieldBorderColor
+                    clip: true
+
+                    Image {
+                        id: portraitImage
+                        anchors.fill: parent
+                        anchors.margins: 1
+                        source: portraitFrame.visible
+                            ? Qt.resolvedUrl("../assets/calendar/" + root.dayInfo.image)
+                            : ""
+                        fillMode: Image.PreserveAspectCrop
+                        asynchronous: true
+                        cache: true
+                        smooth: true
+                        visible: status === Image.Ready
+                    }
+
+                    Column {
+                        anchors.centerIn: parent
+                        width: parent.width - 10
+                        spacing: 3
+                        visible: portraitFrame.visible && portraitImage.status !== Image.Ready
+
+                        Text {
+                            width: parent.width
+                            text: "✧"
+                            color: popupCardStyle.actionColor
+                            font.pixelSize: 21
+                            horizontalAlignment: Text.AlignHCenter
+                        }
+
+                        Text {
+                            width: parent.width
+                            text: "ምስል"
+                            color: popupCardStyle.mutedTextColor
+                            font.family: "Noto Sans Ethiopic"
+                            font.pixelSize: 9
+                            horizontalAlignment: Text.AlignHCenter
+                            elide: Text.ElideRight
+                        }
+                    }
+                }
+
+                Column {
+                    width: parent.width - (portraitFrame.visible ? 92 : 0)
+                    height: parent.height
+                    spacing: 5
+
+                    Text {
+                        width: parent.width
+                        height: 14
+                        text: "የዕለቱ መታሰቢያ"
+                        color: popupCardStyle.actionColor
+                        font.family: "Noto Sans Ethiopic"
+                        font.pixelSize: 9
+                        font.weight: Font.DemiBold
+                        elide: Text.ElideRight
+                    }
+
+                    Text {
+                        width: parent.width
+                        height: parent.height - 19
+                        text: root.dayInfo.description
+                        color: popupCardStyle.secondaryTextColor
+                        font.family: "Noto Sans Ethiopic"
+                        font.pixelSize: 10
+                        wrapMode: Text.WordWrap
+                        maximumLineCount: 5
+                        elide: Text.ElideRight
+                    }
+                }
             }
 
             Rectangle {
@@ -238,7 +316,8 @@ PanelWindow {
 
             Rectangle {
                 width: parent.width
-                height: 126
+                visible: root.dayInfo.showScripture !== false
+                height: 112
                 radius: 15
                 color: popupCardStyle.subtleSurfaceColor
                 border.width: 1
@@ -273,7 +352,7 @@ PanelWindow {
 
                     Text {
                         width: parent.width
-                        height: 55
+                        height: 45
                         text: "“" + root.dayInfo.verse + "”"
                         color: popupCardStyle.textColor
                         font.family: "Noto Sans Ethiopic"
@@ -298,7 +377,7 @@ PanelWindow {
 
             Text {
                 width: parent.width
-                height: 25
+                height: 28
                 text: root.dayInfo.reflection
                 color: popupCardStyle.mutedTextColor
                 font.family: "Noto Sans Ethiopic"
