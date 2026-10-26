@@ -35,6 +35,12 @@ with tempfile.TemporaryDirectory() as temp:
 
     status = invoke(env, "status")
     assert status["ok"] is True and status["configured"] is False
+    assert status["provider"] == "gemini"
+    assert status["gemini_configured"] is False and status["groq_configured"] is False
+    selected = invoke(env, "provider", "set", "groq")
+    assert selected["ok"] is True and selected["provider"] == "groq"
+    assert invoke(env, "status")["provider"] == "groq"
+    invoke(env, "provider", "set", "gemini")
 
     tools = invoke(env, "tools")
     assert tools["ok"] is True
@@ -59,6 +65,14 @@ with tempfile.TemporaryDirectory() as temp:
 
     invalid_key = invoke(env, "key", "set-stdin", input_text="bad\n", expected=1)
     assert invalid_key["ok"] is False
+    groq_saved = invoke(env, "key", "set-stdin", "groq", input_text="test-groq-key-123456\n")
+    groq_key_path = config / "a16een" / "ai" / "groq-api-key"
+    assert groq_saved["ok"] and groq_saved["provider"] == "groq"
+    assert groq_key_path.read_text().strip() == "test-groq-key-123456"
+    assert stat.S_IMODE(groq_key_path.stat().st_mode) == 0o600
+    assert invoke(env, "status")["groq_configured"] is True
+    assert invoke(env, "key", "remove", "groq")["configured"] is False
+    assert not groq_key_path.exists()
 
     # Confirmation-gated actions are denied by the executor unless the UI
     # explicitly sends the approval flag.
@@ -143,6 +157,39 @@ try:
 except ValueError:
     pass
 
+# Groq compatibility: translate local typed functions into OpenAI-style tools
+# and round-trip tool calls/results through A16EEN's provider-neutral history.
+openai_tools = ai_module.groq_tool_definitions()
+assert openai_tools[0]["type"] == "function"
+assert openai_tools[0]["function"]["parameters"]["type"] == "object"
+assert openai_tools[0]["function"]["parameters"]["properties"]["query"]["type"] == "string"
+mixed_history = [
+    {"role": "user", "parts": [{"text": "Turn the volume down"}]},
+    {"role": "model", "parts": [{"text": "I'll adjust it."}, {"functionCall": {
+        "name": "set_volume", "args": {"percent": 25}, "id": "call_test_01"
+    }}]},
+    {"role": "user", "parts": [{"functionResponse": {
+        "name": "set_volume", "response": {"ok": True, "result": "Volume set"}, "id": "call_test_01"
+    }}]},
+]
+groq_history = ai_module.groq_messages(mixed_history, "normal")
+assert groq_history[1] == {"role": "user", "content": "Turn the volume down"}
+assert groq_history[2]["role"] == "assistant" and groq_history[2]["tool_calls"][0]["id"] == "call_test_01"
+assert groq_history[3]["role"] == "tool" and groq_history[3]["tool_call_id"] == "call_test_01"
+groq_response = {"content": "I'll check that.", "tool_calls": [{
+    "id": "call_groq_01", "type": "function",
+    "function": {"name": "get_system_status", "arguments": "{}"},
+}]}
+with mock.patch.object(ai_module, "request_groq_completion", return_value=groq_response) as fake_groq:
+    parsed_groq = ai_module.ask_groq({
+        "mode": "normal",
+        "history": [{"role": "user", "parts": [{"text": "Check system status"}]}],
+    })
+assert parsed_groq["ok"] and parsed_groq["provider"] == "groq"
+assert parsed_groq["calls"][0]["id"] == "call_groq_01"
+assert parsed_groq["calls"][0]["name"] == "get_system_status"
+assert parsed_groq["text"] == "I'll check that."
+assert fake_groq.call_args.args[0][1]["role"] == "user"
 
 dock_qml = (ROOT / "quickshell/a16een/ui/Dock.qml").read_text()
 assistant_qml = (ROOT / "quickshell/a16een/ui/AIAssistantPage.qml").read_text()
@@ -202,6 +249,14 @@ assert 'color: bubble.fromUser ? "#F8FAFC" : root.textColor' in assistant_qml
 assert 'color: "#D6AD60"' in assistant_qml
 assert 'startNewConversation(true)' in tools_panel_qml
 assert 'AI settings' in tools_panel_qml
+assert 'function selectProvider(provider, fromChat)' in assistant_qml
+assert 'providerSelector' in assistant_qml
+assert 'id: typingIndicator' in assistant_qml
+assert 'SequentialAnimation on opacity' in assistant_qml
+assert 'TextMetrics {' in assistant_qml
+assert 'REQUEST_TIMEOUT_SECONDS = 120' in (ROOT / "scripts/a16een-ai").read_text()
+assert 'groq-api-key' in (ROOT / "scripts/a16een-ai").read_text()
+assert 'api.groq.com/openai/v1/chat/completions' in (ROOT / "scripts/a16een-ai").read_text()
 assert 'width: 1.5' in tools_panel_qml and 'height: 12' in tools_panel_qml
 assert 'visible: root.page !== "ai"' in tools_panel_qml
 assert 'root.closeRequested()' in tools_panel_qml and 'root.backRequested()' in tools_panel_qml

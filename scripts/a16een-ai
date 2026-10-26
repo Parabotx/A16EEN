@@ -11,6 +11,7 @@ import os
 import random
 import re
 import shutil
+import socket
 import subprocess
 import sys
 import tempfile
@@ -25,11 +26,17 @@ HOME = Path(os.environ.get("HOME", str(Path.home())))
 CONFIG_HOME = Path(os.environ.get("XDG_CONFIG_HOME", str(HOME / ".config")))
 AI_DIR = CONFIG_HOME / "a16een" / "ai"
 KEY_FILE = AI_DIR / "gemini-api-key"
+GROQ_KEY_FILE = AI_DIR / "groq-api-key"
+PROVIDER_FILE = AI_DIR / "provider.json"
 STATE_HOME = Path(os.environ.get("XDG_STATE_HOME", str(HOME / ".local/state")))
 AI_STATE_DIR = STATE_HOME / "a16een" / "ai"
 CONVERSATIONS_FILE = AI_STATE_DIR / "conversations.json"
 MODEL = os.environ.get("A16EEN_GEMINI_MODEL", "gemini-3.8-flash")
+GROQ_MODEL = os.environ.get("A16EEN_GROQ_MODEL", "openai/gpt-oss-20b")
 API_ROOT = "https://generativelanguage.googleapis.com/v1beta/models/"
+GROQ_API_URL = "https://api.groq.com/openai/v1/chat/completions"
+REQUEST_TIMEOUT_SECONDS = 120
+PROVIDERS = ("gemini", "groq")
 MAX_HISTORY_ITEMS = 48
 MAX_PROMPT_CHARS = 8000
 MAX_STORED_JSON_BYTES = 1_500_000
@@ -169,78 +176,131 @@ def read_json_stdin(max_bytes: int = MAX_PROMPT_CHARS * 4) -> dict[str, Any]:
         raise ValueError("Expected a JSON object.")
     return value
 
-def read_key() -> str:
-    try:
-        key = KEY_FILE.read_text(encoding="utf-8").strip()
-    except OSError:
-        return ""
-    return key if len(key) >= 10 else ""
+def provider_key_file(provider: str) -> Path:
+    normalized = str(provider or "gemini").strip().lower()
+    if normalized == "gemini":
+        return KEY_FILE
+    if normalized == "groq":
+        return GROQ_KEY_FILE
+    raise ValueError("Choose Google AI Studio (Gemini) or Groq.")
 
-def save_key_from_stdin() -> dict[str, Any]:
-    key = sys.stdin.readline(1024).strip()
-    if len(key) < 10 or len(key) > 512 or any(ch.isspace() for ch in key):
-        raise ValueError("Paste a valid Gemini API key without spaces or line breaks.")
+def get_provider() -> str:
+    try:
+        data = json.loads(PROVIDER_FILE.read_text(encoding="utf-8"))
+        provider = str(data.get("provider", "gemini")).strip().lower() if isinstance(data, dict) else "gemini"
+    except (OSError, ValueError, TypeError):
+        provider = "gemini"
+    return provider if provider in PROVIDERS else "gemini"
+
+def write_private_file(path: Path, content: str, prefix: str) -> None:
     AI_DIR.mkdir(parents=True, exist_ok=True, mode=0o700)
     try:
         AI_DIR.chmod(0o700)
     except OSError:
         pass
-    fd, temporary = tempfile.mkstemp(prefix=".gemini-api-key.", dir=str(AI_DIR))
+    fd, temporary = tempfile.mkstemp(prefix=prefix, dir=str(AI_DIR))
     try:
         os.fchmod(fd, 0o600)
         with os.fdopen(fd, "w", encoding="utf-8") as stream:
-            stream.write(key + "\n")
+            stream.write(content)
+            if not content.endswith("\n"):
+                stream.write("\n")
             stream.flush()
             os.fsync(stream.fileno())
-        os.replace(temporary, KEY_FILE)
+        os.replace(temporary, path)
+        temporary = ""
         try:
-            KEY_FILE.chmod(0o600)
+            path.chmod(0o600)
         except OSError:
             pass
-    except Exception:
+    finally:
+        if temporary:
+            try:
+                os.unlink(temporary)
+            except OSError:
+                pass
+
+def save_provider(provider: str) -> dict[str, Any]:
+    normalized = str(provider or "").strip().lower()
+    if normalized not in PROVIDERS:
+        raise ValueError("Choose Google AI Studio (Gemini) or Groq.")
+    write_private_file(PROVIDER_FILE, json.dumps({"provider": normalized}), ".provider.")
+    return {"ok": True, "provider": normalized, "message": "AI provider preference saved locally."}
+
+def read_key(provider: str = "gemini") -> str:
+    path = provider_key_file(provider)
+    try:
+        key = path.read_text(encoding="utf-8").strip()
+    except OSError:
+        return ""
+    return key if len(key) >= 10 else ""
+
+def save_key_from_stdin(provider: str = "gemini") -> dict[str, Any]:
+    normalized = str(provider or "gemini").strip().lower()
+    path = provider_key_file(normalized)
+    key = sys.stdin.readline(1024).strip()
+    if len(key) < 10 or len(key) > 512 or any(ch.isspace() for ch in key):
+        raise ValueError("Paste a valid " + ("Groq" if normalized == "groq" else "Gemini") + " API key without spaces or line breaks.")
+    write_private_file(path, key, "." + normalized + "-api-key.")
+    label = "Groq" if normalized == "groq" else "Gemini"
+    return {"ok": True, "configured": True, "provider": normalized, "message": label + " API key saved locally."}
+
+def remove_key(provider: str = "gemini") -> dict[str, Any]:
+    normalized = str(provider or "gemini").strip().lower()
+    path = provider_key_file(normalized)
+    try:
+        path.unlink()
+    except FileNotFoundError:
+        pass
+    label = "Groq" if normalized == "groq" else "Gemini"
+    return {"ok": True, "configured": False, "provider": normalized, "message": label + " API key removed."}
+
+def send_json_request(request: urllib.request.Request, provider_label: str) -> dict[str, Any]:
+    transient_codes = {408, 429, 500, 502, 503, 504}
+    for attempt in range(3):
         try:
-            os.unlink(temporary)
-        except OSError:
-            pass
-        raise
-    return {"ok": True, "configured": True, "message": "Gemini API key saved locally."}
+            with urllib.request.urlopen(request, timeout=REQUEST_TIMEOUT_SECONDS) as response:
+                raw = response.read(2 * 1024 * 1024 + 1)
+            if len(raw) > 2 * 1024 * 1024:
+                raise RuntimeError(provider_label + " returned an unexpectedly large response.")
+            parsed = json.loads(raw.decode("utf-8"))
+            if not isinstance(parsed, dict):
+                raise RuntimeError(provider_label + " returned an invalid response.")
+            return parsed
+        except urllib.error.HTTPError as error:
+            body_text = error.read(4000).decode("utf-8", errors="replace")
+            try:
+                detail = json.loads(body_text).get("error", {}).get("message", "")
+            except Exception:
+                detail = ""
+            if error.code in transient_codes and attempt < 2:
+                time.sleep(0.75 * (attempt + 1))
+                continue
+            if error.code in (401, 403):
+                raise RuntimeError(provider_label + " rejected this API key. Recheck it in A16EEN AI settings.")
+            if error.code == 429:
+                raise RuntimeError(provider_label + " rate limit or quota reached. Check your provider dashboard and try again.")
+            if error.code in (408, 500, 502, 503, 504):
+                raise RuntimeError(provider_label + " is taking too long or is temporarily unavailable (HTTP " + str(error.code) + "). Try again or switch providers.")
+            raise RuntimeError(provider_label + " API error (" + str(error.code) + "): " + (detail or "request failed"))
+        except urllib.error.URLError as error:
+            if isinstance(error.reason, (TimeoutError, socket.timeout)):
+                raise RuntimeError(provider_label + " timed out after " + str(REQUEST_TIMEOUT_SECONDS) + " seconds. Your request was not lost; try again or switch providers.")
+            raise RuntimeError("Could not reach " + provider_label + ". Check your internet connection: " + str(error.reason))
+        except (TimeoutError, socket.timeout):
+            raise RuntimeError(provider_label + " timed out after " + str(REQUEST_TIMEOUT_SECONDS) + " seconds. Try again or switch providers.")
+        except json.JSONDecodeError:
+            raise RuntimeError(provider_label + " returned unreadable JSON.")
 
 def request_gemini(body: dict[str, Any]) -> dict[str, Any]:
-    key = read_key()
+    key = read_key("gemini")
     if not key:
-        raise RuntimeError("Add your Gemini API key from Google AI Studio in A16EEN AI settings first.")
+        raise RuntimeError("Add your Google AI Studio (Gemini) API key in A16EEN AI settings first.")
     url = API_ROOT + urllib.parse.quote(MODEL, safe="-._") + ":generateContent"
-    request = urllib.request.Request(
-        url,
-        data=json.dumps(body).encode("utf-8"),
-        headers={
-            "Content-Type": "application/json",
-            "x-goog-api-key": key,
-            "User-Agent": "A16EEN-AI/1.0",
-        },
-        method="POST",
-    )
-    try:
-        with urllib.request.urlopen(request, timeout=45) as response:
-            raw = response.read(2 * 1024 * 1024 + 1)
-        if len(raw) > 2 * 1024 * 1024:
-            raise RuntimeError("Gemini returned an unexpectedly large response.")
-        parsed = json.loads(raw.decode("utf-8"))
-    except urllib.error.HTTPError as error:
-        body_text = error.read(4000).decode("utf-8", errors="replace")
-        try:
-            detail = json.loads(body_text).get("error", {}).get("message", "")
-        except Exception:
-            detail = ""
-        if error.code in (401, 403):
-            raise RuntimeError("Gemini rejected this API key. Check it in Google AI Studio and try again.")
-        if error.code == 429:
-            raise RuntimeError("Gemini rate limit or quota reached. Check your AI Studio usage and try again.")
-        raise RuntimeError("Gemini API error (" + str(error.code) + "): " + (detail or "request failed"))
-    except urllib.error.URLError as error:
-        raise RuntimeError("Could not reach Gemini. Check your internet connection: " + str(error.reason))
-    except TimeoutError:
-        raise RuntimeError("Gemini took too long to respond. Please try again.")
+    request = urllib.request.Request(url, data=json.dumps(body).encode("utf-8"), headers={
+        "Content-Type": "application/json", "x-goog-api-key": key, "User-Agent": "A16EEN-AI/1.0",
+    }, method="POST")
+    parsed = send_json_request(request, "Gemini")
     candidates = parsed.get("candidates") or []
     if not candidates or not isinstance(candidates[0].get("content"), dict):
         feedback = parsed.get("promptFeedback", {})
@@ -248,14 +308,45 @@ def request_gemini(body: dict[str, Any]) -> dict[str, Any]:
         raise RuntimeError("Gemini returned no response" + (": " + str(reason) if reason else "."))
     return candidates[0]["content"]
 
-def ask_gemini(payload: dict[str, Any]) -> dict[str, Any]:
+def lower_openai_schema(value: Any) -> Any:
+    if isinstance(value, dict):
+        return {key: (item.lower() if key == "type" and isinstance(item, str) else lower_openai_schema(item))
+                for key, item in value.items()}
+    if isinstance(value, list):
+        return [lower_openai_schema(item) for item in value]
+    return value
+
+def groq_tool_definitions() -> list[dict[str, Any]]:
+    return [{
+        "type": "function",
+        "function": {"name": item["name"], "description": item["description"],
+                     "parameters": lower_openai_schema(item["parameters"])},
+    } for item in FUNCTIONS]
+
+def request_groq_completion(messages: list[dict[str, Any]], include_tools: bool = True) -> dict[str, Any]:
+    key = read_key("groq")
+    if not key:
+        raise RuntimeError("Add your Groq API key in A16EEN AI settings first.")
+    body: dict[str, Any] = {"model": GROQ_MODEL, "messages": messages, "max_tokens": 1800}
+    if include_tools:
+        body["tools"] = groq_tool_definitions()
+        body["tool_choice"] = "auto"
+    request = urllib.request.Request(GROQ_API_URL, data=json.dumps(body).encode("utf-8"), headers={
+        "Content-Type": "application/json", "Authorization": "Bearer " + key, "User-Agent": "A16EEN-AI/1.0",
+    }, method="POST")
+    parsed = send_json_request(request, "Groq")
+    choices = parsed.get("choices") or []
+    if not choices or not isinstance(choices[0].get("message"), dict):
+        raise RuntimeError("Groq returned no message. Check the model and key in your Groq console.")
+    return choices[0]["message"]
+
+def validated_request(payload: dict[str, Any]) -> tuple[str, list[dict[str, Any]]]:
     raw_mode = payload.get("mode", "normal")
     if not isinstance(raw_mode, str):
         raise ValueError("Choose normal, explain, or diagnose mode.")
     mode = raw_mode.strip().lower()
     if mode not in MODE_INSTRUCTIONS:
         raise ValueError("Choose normal, explain, or diagnose mode.")
-
     history = payload.get("history", [])
     if not isinstance(history, list) or not history or len(history) > MAX_HISTORY_ITEMS:
         raise ValueError("Conversation history is missing or too long. Start a new chat.")
@@ -267,6 +358,80 @@ def ask_gemini(payload: dict[str, Any]) -> dict[str, Any]:
         if not isinstance(parts, list) or len(parts) > 24:
             raise ValueError("Conversation message contains invalid parts.")
         cleaned.append(item)
+    return mode, cleaned
+
+def groq_messages(history: list[dict[str, Any]], mode: str) -> list[dict[str, Any]]:
+    messages: list[dict[str, Any]] = [{"role": "system", "content": SYSTEM_INSTRUCTION + "\n\n" + MODE_INSTRUCTIONS[mode]}]
+    for item in history:
+        role = "assistant" if item["role"] == "model" else "user"
+        parts = item.get("parts", [])
+        text_parts = [part.get("text", "") for part in parts if isinstance(part, dict) and isinstance(part.get("text"), str)]
+        function_calls = [part.get("functionCall") for part in parts if isinstance(part, dict) and isinstance(part.get("functionCall"), dict)]
+        function_responses = [part.get("functionResponse") for part in parts if isinstance(part, dict) and isinstance(part.get("functionResponse"), dict)]
+        if role == "assistant":
+            tool_calls = []
+            for index, call in enumerate(function_calls):
+                name, args = str(call.get("name", "")), call.get("args", {})
+                if not name or not isinstance(args, dict):
+                    continue
+                call_id = str(call.get("id", "") or ("a16een-call-" + str(index)))
+                tool_calls.append({"id": call_id, "type": "function", "function": {"name": name, "arguments": json.dumps(args, ensure_ascii=False)}})
+            if text_parts or tool_calls:
+                messages.append({"role": "assistant", "content": "\n".join(text_parts).strip() or None, **({"tool_calls": tool_calls} if tool_calls else {})})
+        else:
+            text_value = "\n".join(text_parts).strip()
+            if text_value:
+                messages.append({"role": "user", "content": text_value})
+            for response in function_responses:
+                name = str(response.get("name", "desktop_action"))
+                content = json.dumps(response.get("response", {}), ensure_ascii=False)
+                call_id = str(response.get("id", "") or "")
+                if call_id:
+                    messages.append({"role": "tool", "tool_call_id": call_id, "name": name, "content": content})
+                else:
+                    messages.append({"role": "user", "content": "Previous desktop action result (" + name + "): " + content})
+    return messages
+
+def ask_groq(payload: dict[str, Any]) -> dict[str, Any]:
+    mode, history = validated_request(payload)
+    message = request_groq_completion(groq_messages(history, mode), include_tools=True)
+    parts: list[dict[str, Any]] = []
+    calls: list[dict[str, Any]] = []
+    text_value = message.get("content")
+    if isinstance(text_value, str) and text_value.strip():
+        parts.append({"text": text_value.strip()})
+    for index, tool_call in enumerate(message.get("tool_calls") or []):
+        if not isinstance(tool_call, dict):
+            continue
+        fn = tool_call.get("function") or {}
+        name = str(fn.get("name", "")).strip()
+        if not name:
+            continue
+        raw_args = fn.get("arguments", "{}")
+        try:
+            args = json.loads(raw_args) if isinstance(raw_args, str) else raw_args
+        except json.JSONDecodeError:
+            raise RuntimeError("Groq returned invalid arguments for a desktop action. Please rephrase and try again.")
+        if not isinstance(args, dict):
+            raise RuntimeError("Groq returned an invalid desktop action. Please try again.")
+        call_id = str(tool_call.get("id", "") or ("a16een-call-" + str(index)))
+        parts.append({"functionCall": {"name": name, "args": args, "id": call_id}})
+        calls.append({"name": name, "args": args, "id": call_id})
+    content = {"role": "model", "parts": parts}
+    return {"ok": True, "provider": "groq", "model": GROQ_MODEL, "mode": mode, "content": content, "calls": calls,
+            "text": "\n".join(part["text"] for part in parts if "text" in part).strip()}
+
+def ask_ai(payload: dict[str, Any]) -> dict[str, Any]:
+    provider = str(payload.get("provider") or get_provider()).strip().lower()
+    if provider not in PROVIDERS:
+        raise ValueError("Choose Google AI Studio (Gemini) or Groq.")
+    result = ask_gemini(payload) if provider == "gemini" else ask_groq(payload)
+    result["provider"] = provider
+    result.setdefault("model", MODEL if provider == "gemini" else GROQ_MODEL)
+    return result
+
+def ask_gemini(payload: dict[str, Any]) -> dict[str, Any]:
+    mode, cleaned = validated_request(payload)
     body = {
         "systemInstruction": {
             "parts": [{"text": SYSTEM_INSTRUCTION + "\n\n" + MODE_INSTRUCTIONS[mode]}]
@@ -292,6 +457,7 @@ def ask_gemini(payload: dict[str, Any]) -> dict[str, Any]:
             })
     return {
         "ok": True,
+        "provider": "gemini",
         "model": MODEL,
         "mode": mode,
         "content": content,
@@ -697,14 +863,25 @@ def application_catalog() -> list[dict[str, str]]:
             continue
     return sorted(out, key=lambda item: item["name"].casefold())
 
-def run_test() -> dict[str, Any]:
-    content = request_gemini({
-        "contents": [{"role": "user", "parts": [{"text": "Reply with exactly: A16EEN connected"}]}],
-        "generationConfig": {"temperature": 0, "maxOutputTokens": 24},
-    })
-    text_parts = [part.get("text", "") for part in content.get("parts", []) if isinstance(part, dict)]
-    answer = " ".join(text_parts).strip()
-    return {"ok": True, "configured": True, "model": MODEL, "message": "Connected to Gemini (" + MODEL + ").", "reply": answer[:100]}
+def run_test(provider: str | None = None) -> dict[str, Any]:
+    selected = str(provider or get_provider()).strip().lower()
+    if selected not in PROVIDERS:
+        raise ValueError("Choose Google AI Studio (Gemini) or Groq.")
+    if selected == "gemini":
+        content = request_gemini({
+            "contents": [{"role": "user", "parts": [{"text": "Reply with exactly: A16EEN connected"}]}],
+            "generationConfig": {"temperature": 0, "maxOutputTokens": 24},
+        })
+        text_parts = [part.get("text", "") for part in content.get("parts", []) if isinstance(part, dict)]
+        answer, model, label = " ".join(text_parts).strip(), MODEL, "Gemini"
+    else:
+        message = request_groq_completion([
+            {"role": "system", "content": "Reply with exactly: A16EEN connected"},
+            {"role": "user", "content": "Reply with exactly: A16EEN connected"},
+        ], include_tools=False)
+        answer, model, label = str(message.get("content") or "").strip(), GROQ_MODEL, "Groq"
+    return {"ok": True, "configured": True, "provider": selected, "model": model,
+            "message": "Connected to " + label + " (" + model + ").", "reply": answer[:100]}
 
 def empty_history_store() -> dict[str, Any]:
     return {"active_id": "", "conversations": []}
@@ -914,15 +1091,23 @@ def main() -> None:
     args = sys.argv[1:]
     try:
         if args == ["status"]:
-            emit({"ok": True, "configured": bool(read_key()), "model": MODEL})
-        if args == ["key", "set-stdin"]:
-            emit(save_key_from_stdin())
-        if args == ["key", "remove"]:
-            try:
-                KEY_FILE.unlink()
-            except FileNotFoundError:
-                pass
-            emit({"ok": True, "configured": False, "message": "Gemini API key removed."})
+            provider = get_provider()
+            gemini_configured = bool(read_key("gemini"))
+            groq_configured = bool(read_key("groq"))
+            emit({
+                "ok": True, "provider": provider,
+                "configured": groq_configured if provider == "groq" else gemini_configured,
+                "gemini_configured": gemini_configured, "groq_configured": groq_configured,
+                "model": GROQ_MODEL if provider == "groq" else MODEL,
+            })
+        if len(args) == 3 and args[:2] == ["provider", "set"]:
+            emit(save_provider(args[2]))
+        if args == ["provider", "get"]:
+            emit({"ok": True, "provider": get_provider()})
+        if args[:2] == ["key", "set-stdin"] and len(args) in (2, 3):
+            emit(save_key_from_stdin(args[2] if len(args) == 3 else "gemini"))
+        if args[:2] == ["key", "remove"] and len(args) in (2, 3):
+            emit(remove_key(args[2] if len(args) == 3 else "gemini"))
         if args == ["history", "list"]:
             store = load_history_store()
             emit({"ok": True, "active_id": store["active_id"], "conversations": store["conversations"]})
@@ -935,14 +1120,16 @@ def main() -> None:
         if args == ["test"]:
             emit(run_test())
         if args == ["ask"]:
-            emit(ask_gemini(read_json_stdin()))
+            payload = read_json_stdin()
+            payload.setdefault("provider", get_provider())
+            emit(ask_ai(payload))
         if args == ["execute"]:
             payload = read_json_stdin()
             name = str(payload.get("name", ""))
             action_args = payload.get("args", {})
             approved = payload.get("approved") is True
             emit(call_tool(name, action_args, approved))
-        emit({"ok": False, "error": "Unknown command. Use status, key set-stdin, key remove, history list, history save-stdin, history delete <id>, test, ask, execute, or tools."}, 2)
+        emit({"ok": False, "error": "Unknown command. Use status, provider get|set <gemini|groq>, key set-stdin [gemini|groq], key remove [gemini|groq], history list, history save-stdin, history delete <id>, test, ask, execute, or tools."}, 2)
     except SystemExit:
         raise
     except Exception as error:
