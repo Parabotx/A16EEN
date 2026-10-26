@@ -30,6 +30,8 @@ Usage:
   a16een wallpaper previous
   a16een wallpaper reset
   a16een-wallpaper set-path <absolute-file-path>
+  a16een-wallpaper preview-path <absolute-file-path>
+  a16een-wallpaper clear-preview
   a16een-wallpaper pick-file <set|morning|evening>
   a16een-wallpaper settings show|set <key> <value>
   a16een-wallpaper auto-check
@@ -244,6 +246,31 @@ notify_shell() {
     if command -v qs >/dev/null 2>&1; then
         qs -c "$QUICKSHELL_CONFIG_DIR" ipc call wallpaper apply "$1" >/dev/null 2>&1 || true
     fi
+}
+
+notify_shell_preview() {
+    if command -v qs >/dev/null 2>&1; then
+        qs -c "$QUICKSHELL_CONFIG_DIR" ipc call wallpaper preview "$1" >/dev/null 2>&1 || true
+    fi
+}
+
+clear_shell_preview() {
+    if command -v qs >/dev/null 2>&1; then
+        qs -c "$QUICKSHELL_CONFIG_DIR" ipc call wallpaper clearPreview >/dev/null 2>&1 || true
+    fi
+}
+
+preview_path() {
+    local path="$1"
+    case "$path" in
+        /*) ;;
+        *) echo "A16EEN: preview wallpaper path must be absolute." >&2; return 1 ;;
+    esac
+    if [ ! -f "$path" ] || ! is_supported "$path"; then
+        echo "A16EEN: unsupported or missing preview wallpaper: $path" >&2
+        return 1
+    fi
+    notify_shell_preview "$path"
 }
 
 validate_filename() {
@@ -503,6 +530,14 @@ case "$command" in
     set-path)
         [ "$#" -eq 2 ] || { echo "A16EEN: usage: a16een-wallpaper set-path <absolute-file-path>" >&2; exit 1; }
         set_external_path "$2"
+        ;;
+    preview-path)
+        [ "$#" -eq 2 ] || { echo "A16EEN: usage: a16een-wallpaper preview-path <absolute-file-path>" >&2; exit 1; }
+        preview_path "$2"
+        ;;
+    clear-preview)
+        [ "$#" -eq 1 ] || { echo "A16EEN: usage: a16een-wallpaper clear-preview" >&2; exit 1; }
+        clear_shell_preview
         ;;
     list)
         while IFS=$'\t' read -r source filename display path; do
