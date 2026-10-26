@@ -600,7 +600,7 @@ Item {
                             text: root.wifiName !== "Not connected"
                                 ? root.wifiName
                                 : (root.wifiRadioState === "off" ? "Wi-Fi is off" : "Not connected")
-                            color: root.textPrimary
+                            color: root.themeText
                             font.pixelSize: root.embedded ? 10 : 13
                             font.weight: Font.DemiBold
                             elide: Text.ElideRight
@@ -627,7 +627,7 @@ Item {
                                     : (root.wifiRadioState === "off"
                                         ? "Switch Wi-Fi on to scan"
                                         : "Ready to find a network")
-                                color: root.textSecondary
+                                color: root.themeSecondaryText
                                 font.pixelSize: root.embedded ? 7 : 9
                                 elide: Text.ElideRight
                             }
@@ -680,7 +680,7 @@ Item {
                         Text {
                             width: parent.width
                             text: "Nearby networks"
-                            color: root.textPrimary
+                            color: root.themeText
                             font.pixelSize: root.embedded ? 10 : 12
                             font.weight: Font.DemiBold
                         }
@@ -690,7 +690,7 @@ Item {
                             text: root.wifiRefreshing
                                 ? "Scanning for networks…"
                                 : root.wifiNetworks.length + (root.wifiNetworks.length === 1 ? " network found" : " networks found")
-                            color: root.textMuted
+                            color: root.themeMutedText
                             font.pixelSize: root.embedded ? 7 : 8
                             elide: Text.ElideRight
                         }
@@ -785,7 +785,7 @@ Item {
                             Text {
                                 width: parent.width - wifiCancelLabel.width - parent.spacing
                                 text: "JOIN  ·  " + root.wifiSelectedSsid
-                                color: root.textPrimary
+                                color: root.themeText
                                 font.pixelSize: root.embedded ? 8 : 9
                                 font.weight: Font.DemiBold
                                 elide: Text.ElideRight
@@ -795,7 +795,7 @@ Item {
                             Text {
                                 id: wifiCancelLabel
                                 text: "CANCEL"
-                                color: wifiCancelMouse.containsMouse ? root.textPrimary : root.textMuted
+                                color: wifiCancelMouse.containsMouse ? root.themeText : root.themeMutedText
                                 font.pixelSize: 7
                                 font.weight: Font.DemiBold
                                 anchors.verticalCenter: parent.verticalCenter
@@ -834,7 +834,7 @@ Item {
                                     anchors.rightMargin: 42
                                     anchors.verticalCenter: parent.verticalCenter
                                     text: "Wi-Fi password"
-                                    color: root.textMuted
+                                    color: root.themeMutedText
                                     font.pixelSize: 9
                                     visible: root.wifiPassword.length === 0
                                 }
@@ -845,9 +845,9 @@ Item {
                                     anchors.leftMargin: 9
                                     anchors.rightMargin: 42
                                     verticalAlignment: TextInput.AlignVCenter
-                                    color: root.textPrimary
+                                    color: root.themeText
                                     selectionColor: root.themeSelected
-                                    selectedTextColor: root.textPrimary
+                                    selectedTextColor: root.themeText
                                     font.pixelSize: 10
                                     echoMode: root.wifiPasswordVisible ? TextInput.Normal : TextInput.Password
                                     clip: true
@@ -907,7 +907,7 @@ Item {
                         Text {
                             width: parent.width
                             text: "Your password is used to join this network."
-                            color: root.textMuted
+                            color: root.themeMutedText
                             font.pixelSize: root.embedded ? 7 : 8
                             elide: Text.ElideRight
                         }
@@ -967,7 +967,7 @@ Item {
                                 Text {
                                     anchors.horizontalCenter: parent.horizontalCenter
                                     text: root.wifiRefreshing ? "Looking for nearby networks" : "No networks found"
-                                    color: root.textSecondary
+                                    color: root.themeSecondaryText
                                     font.pixelSize: 9
                                     font.weight: Font.DemiBold
                                 }
@@ -975,7 +975,7 @@ Item {
                                 Text {
                                     anchors.horizontalCenter: parent.horizontalCenter
                                     text: root.wifiRefreshing ? "This can take a moment." : "Try refreshing the scan."
-                                    color: root.textMuted
+                                    color: root.themeMutedText
                                     font.pixelSize: 8
                                 }
                             }
@@ -1009,7 +1009,7 @@ Item {
                                     Text {
                                         width: parent.width
                                         text: wifiNetworkTile.modelData.ssid
-                                        color: root.textPrimary
+                                        color: root.themeText
                                         font.pixelSize: root.embedded ? 9 : 10
                                         font.weight: Font.DemiBold
                                         elide: Text.ElideRight
@@ -1038,7 +1038,7 @@ Item {
                                     Text {
                                         width: parent.width
                                         text: wifiNetworkTile.modelData.signal + "%"
-                                        color: root.textSecondary
+                                        color: root.themeSecondaryText
                                         font.pixelSize: 8
                                         horizontalAlignment: Text.AlignRight
                                     }
