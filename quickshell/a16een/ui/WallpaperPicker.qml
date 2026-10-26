@@ -513,7 +513,7 @@ PanelWindow {
                     anchors.centerIn: parent
                     width: 20
                     height: 20
-                    source: Qt.resolvedUrl("../assets/icons/lucide-sliders-horizontal.svg")
+                    source: Qt.resolvedUrl("../assets/icons/wallpaper-settings.svg")
                     fillMode: Image.PreserveAspectFit
                     smooth: true
                 }
