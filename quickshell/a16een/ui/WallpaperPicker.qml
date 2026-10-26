@@ -31,8 +31,10 @@ PanelWindow {
     property int railCurrentIndex: -1
     property string selectedWallpaperKey: ""
     property string appliedWallpaperKey: ""
+    property string previewedWallpaperKey: ""
     property string failedWallpaperKey: ""
     property string runningWallpaperKey: ""
+    property string previewRunningKey: ""
     property var pendingWallpaper: null
     property bool closeAfterApply: false
 
@@ -107,6 +109,7 @@ PanelWindow {
         root.selectedWallpaperKey = nextIndex >= 0
             ? root.wallpaperKey(shuffled[nextIndex]) : ""
         root.appliedWallpaperKey = originalKey || root.selectedWallpaperKey
+        root.previewedWallpaperKey = root.selectedWallpaperKey
         root.railCurrentIndex = shuffled.length > 0 ? shuffled.length + nextIndex : -1
 
         Qt.callLater(function() {
@@ -139,7 +142,7 @@ PanelWindow {
 
         root.pendingWallpaper = entry
         root.failedWallpaperKey = ""
-        Qt.callLater(() => root.startPendingWallpaperApply())
+        Qt.callLater(() => root.startPendingWallpaperPreview())
     }
 
     function stepWallpaper(direction) {
@@ -163,6 +166,21 @@ PanelWindow {
 
         root.closeAfterApply = true
         root.pendingWallpaper = root.wallpapers[root.selectedIndex]
+        if (wallpaperPreviewProcess.running)
+            return
+
+        const selectedKey = root.wallpaperKey(root.pendingWallpaper)
+        if (selectedKey !== root.previewedWallpaperKey) {
+            root.startPendingWallpaperPreview()
+            return
+        }
+        root.commitConfirmedWallpaper()
+    }
+
+    function commitConfirmedWallpaper() {
+        if (!root.closeAfterApply || !root.pendingWallpaper)
+            return
+
         const selectedKey = root.wallpaperKey(root.pendingWallpaper)
         if (selectedKey === root.appliedWallpaperKey && !wallpaperApplyProcess.running) {
             root.closeAfterApply = false
@@ -172,6 +190,44 @@ PanelWindow {
 
         root.failedWallpaperKey = ""
         Qt.callLater(() => root.startPendingWallpaperApply())
+    }
+
+    function startPendingWallpaperPreview() {
+        if (!root.pendingWallpaper || wallpaperPreviewProcess.running)
+            return
+
+        const entry = root.pendingWallpaper
+        const key = root.wallpaperKey(entry)
+        if (!key.length || key === root.previewedWallpaperKey) {
+            if (root.closeAfterApply)
+                root.commitConfirmedWallpaper()
+            return
+        }
+
+        root.previewRunningKey = key
+        wallpaperPreviewProcess.command = ["a16een-wallpaper", "preview-path", entry.path]
+        wallpaperPreviewProcess.running = true
+    }
+
+    function finishWallpaperPreview(exitCode) {
+        const finishedKey = root.previewRunningKey
+        if (exitCode === 0) {
+            root.previewedWallpaperKey = finishedKey
+        } else if (finishedKey.length) {
+            console.warn("A16EEN wallpaper preview failed for", finishedKey)
+        }
+        root.previewRunningKey = ""
+
+        if (root.pendingWallpaper) {
+            const pendingKey = root.wallpaperKey(root.pendingWallpaper)
+            if (pendingKey !== root.previewedWallpaperKey) {
+                Qt.callLater(() => root.startPendingWallpaperPreview())
+                return
+            }
+        }
+
+        if (root.closeAfterApply)
+            root.commitConfirmedWallpaper()
     }
 
     function startPendingWallpaperApply() {
@@ -322,6 +378,20 @@ PanelWindow {
                 root.chooseCatalog(next)
             }
         }
+    }
+
+    Process {
+        id: wallpaperPreviewProcess
+        command: []
+        running: false
+        stderr: StdioCollector {
+            onStreamFinished: {
+                const message = String(text || "").trim()
+                if (message.length)
+                    console.warn("A16EEN wallpaper preview:", message)
+            }
+        }
+        onExited: (exitCode, exitStatus) => root.finishWallpaperPreview(exitCode)
     }
 
     Process {
@@ -1067,6 +1137,7 @@ PanelWindow {
         onTriggered: {
             if (root.opened)
                 return
+            Quickshell.execDetached(["a16een-wallpaper", "clear-preview"])
             root.wallpapers = []
             root.wallpaperCatalogReady = false
             root.selectedIndex = -1
@@ -1080,11 +1151,15 @@ PanelWindow {
             root.settingsOpen = false
             root.closeAfterApply = false
             root.pendingWallpaper = null
+            if (wallpaperPreviewProcess.running)
+                wallpaperPreviewProcess.running = false
+            Quickshell.execDetached(["a16een-wallpaper", "clear-preview"])
             releasePreviewTimer.restart()
             return
         }
 
         releasePreviewTimer.stop()
+        Quickshell.execDetached(["a16een-wallpaper", "clear-preview"])
         root.settingsOpen = root.showSettingsAfterPicker
         root.showSettingsAfterPicker = false
         Qt.callLater(function() {
