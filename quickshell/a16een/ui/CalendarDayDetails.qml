@@ -278,7 +278,6 @@ PanelWindow {
                         font.family: "Noto Sans Ethiopic"
                         font.pixelSize: 11
                         font.weight: Font.Medium
-                        lineHeight: 1.15
                         wrapMode: Text.WordWrap
                         maximumLineCount: 4
                         elide: Text.ElideRight
