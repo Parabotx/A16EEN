@@ -6,7 +6,7 @@ TMP_DIR=$(mktemp -d)
 SCAN_PID=""
 
 cleanup() {
-    if [[ "${SCAN_PID" =~ ^[0-9]+$ ]]; then
+    if [[ "${SCAN_PID}" =~ ^[0-9]+$ ]]; then
         kill "$SCAN_PID" >/dev/null 2>&1 || true
     fi
     rm -rf "$TMP_DIR"
@@ -20,17 +20,17 @@ cat > "$TMP_DIR/bin/bluetoothctl" <<'MOCK'
 #!/usr/bin/env bash
 printf '%s\n' "$*" >> "$MOCK_BT_LOG"
 
-if [[ "${1:-" == "--timeout" && "${3:-" == "scan" && "${4:-" == "on" ]]; then
+if [[ "${1:-}" == "--timeout" && "${3:-}" == "scan" && "${4:-}" == "on" ]]; then
     sleep 4
     exit 0
 fi
 
-case "${1:-" in
+case "${1:-}" in
     show)
         printf 'Controller 00:11:22:33:44:55 (public)\n\tPowered: yes\n'
         ;;
     devices)
-        if [[ "${2:-" == "Paired" ]]; then
+        if [[ "${2:-}" == "Paired" ]]; then
             printf 'Device AA:BB:CC:DD:EE:01 Existing Headphones\n'
         else
             printf 'Device AA:BB:CC:DD:EE:01 Existing Headphones\n'
@@ -38,7 +38,7 @@ case "${1:-" in
         fi
         ;;
     info)
-        case "${2:-" in
+        case "${2:-}" in
             AA:BB:CC:DD:EE:01)
                 printf 'Device AA:BB:CC:DD:EE:01\n\tPaired: yes\n\tTrusted: yes\n\tConnected: yes\n'
                 ;;
