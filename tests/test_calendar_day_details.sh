@@ -59,6 +59,8 @@ grep -Fq 'function islamicDateToGregorian(year, month, day)' "$DATA"
 grep -Fq 'id: "palm-sunday"' "$DATA"
 grep -Fq 'id: "ascension"' "$DATA"
 grep -Fq 'id: "pentecost"' "$DATA"
+grep -Fq 'id: "debre-zeit"' "$DATA"
+grep -Fq 'id: "debre-tabor", calendar: "ethiopian", month: 12, day: 13' "$DATA"
 
 grep -Fq 'id: todayGlow' "$DOCK"
 grep -Fq 'RotationAnimation on rotation' "$DOCK"
