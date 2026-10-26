@@ -43,13 +43,15 @@ chmod +x "$A16EEN_NAVBAR_CMD"
 run() { bash "$ROOT/scripts/a16een-navbar-appearance" "$@"; }
 
 run get >/dev/null
-jq -e '.schemaVersion == 6 and (.workspaces == null)
-    and (.containers | has("workspaces") and has("ai") and has("battery") and has("time") and has("utilities") and has("power")
+jq -e '.schemaVersion == 7 and (.workspaces == null)
+    and (.containers | has("workspaces") and has("ai") and has("ai-assistant") and has("battery") and has("time") and has("utilities") and has("power")
         and has("quick-actions") and has("quick-hub") and has("data-meter"))
     and .containers.workspaces.visible == true
     and .containers.workspaces.iconColor == "inherit"
     and .containers.ai.visible == true
     and .containers.ai.iconColor == "inherit"
+    and .containers["ai-assistant"].applyPopupCardColor == false
+    and .containers["ai-assistant"].containerEnabled == false
     and .containers["quick-hub"].applyPopupCardColor == false
     and .containers["quick-actions"].visible == true
     and .containers["quick-hub"].visible == true' \
@@ -61,7 +63,15 @@ run set all - containerColor '#15171A'
 run set all - applyIconColor on
 run set all - iconColor auto
 run set all - applyPopupCardColor on
-jq -e '.all.applyPopupCardColor == true' "$XDG_STATE_HOME/a16een/navbar-appearance.json" >/dev/null
+# The AI card must remain independently customizable even with global overrides enabled.
+run set container ai-assistant containerColor '#1D4ED8'
+run set container ai-assistant iconColor '#FFFFFF'
+run set container ai-assistant applyPopupCardColor on
+jq -e '.all.applyPopupCardColor == true
+    and .containers["ai-assistant"].containerColor == "#1D4ED8"
+    and .containers["ai-assistant"].iconColor == "#FFFFFF"
+    and .containers["ai-assistant"].applyPopupCardColor == true' \
+    "$XDG_STATE_HOME/a16een/navbar-appearance.json" >/dev/null
 if run set container quick-hub applyPopupCardColor on 2>/dev/null; then
     echo "Expected All popup-card override to block an individual popup setting." >&2; exit 1
 fi
@@ -113,6 +123,9 @@ jq -e '.containers["quick-actions"].containerEnabled == true
     and .containers["quick-actions"].containerColor == "#E7E8EA"
     and .containers["quick-hub"].iconColor == "#1D4ED8"
     and .containers["quick-hub"].applyPopupCardColor == true
+    and .containers["ai-assistant"].applyPopupCardColor == true
+    and .containers["ai-assistant"].containerColor == "#1D4ED8"
+    and .containers["ai-assistant"].iconColor == "#FFFFFF"
     and .containers.utilities.applyPopupCardColor == true
     and .containers["data-meter"].containerEnabled == true
     and .containers["data-meter"].containerColor == "#070B13"

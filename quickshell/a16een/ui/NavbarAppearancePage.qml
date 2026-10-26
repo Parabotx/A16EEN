@@ -29,6 +29,7 @@ Item {
         { id: "all", name: "All Containers", detail: "Shared settings" },
         { id: "workspaces", name: "Workspaces", detail: "Workspace icon rail" },
         { id: "ai", name: "A16EEN AI", detail: "AI assistant shortcut above workspaces" },
+        { id: "ai-assistant", name: "AI Assistant Card", detail: "Independent appearance for the AI chat popup" },
         { id: "battery", name: "Battery", detail: "Battery capsule" },
         { id: "time", name: "Clock / Time", detail: "Clock display" },
         { id: "utilities", name: "Utilities", detail: "Wi-Fi and Bluetooth" },
@@ -94,9 +95,15 @@ Item {
 
     readonly property bool isAllScope: root.selectedScope === "all"
     readonly property bool visibilityLocked: !root.isAllScope && root.allSetting("visibilityControl", false)
-    readonly property bool backgroundLocked: !root.isAllScope && root.allSetting("applyContainerColor", false)
-    readonly property bool iconLocked: !root.isAllScope && root.allSetting("applyIconColor", false)
-    readonly property bool popupCardColorLocked: !root.isAllScope && root.allSetting("applyPopupCardColor", false)
+    readonly property bool backgroundLocked: !root.isAllScope
+        && root.selectedScope !== "ai-assistant"
+        && root.allSetting("applyContainerColor", false)
+    readonly property bool iconLocked: !root.isAllScope
+        && root.selectedScope !== "ai-assistant"
+        && root.allSetting("applyIconColor", false)
+    readonly property bool popupCardColorLocked: !root.isAllScope
+        && root.selectedScope !== "ai-assistant"
+        && root.allSetting("applyPopupCardColor", false)
 
     function loadSettings(raw) {
         try {
@@ -153,15 +160,15 @@ Item {
                 root.statusText = "Disable All visibility control first."
                 return
             }
-            if (key === "containerColor" && root.allSetting("applyContainerColor", false)) {
+            if (slot !== "ai-assistant" && key === "containerColor" && root.allSetting("applyContainerColor", false)) {
                 root.statusText = "Disable All background override first."
                 return
             }
-            if (key === "iconColor" && root.allSetting("applyIconColor", false)) {
+            if (slot !== "ai-assistant" && key === "iconColor" && root.allSetting("applyIconColor", false)) {
                 root.statusText = "Disable All icon-color override first."
                 return
             }
-            if (key === "applyPopupCardColor" && root.allSetting("applyPopupCardColor", false)) {
+            if (slot !== "ai-assistant" && key === "applyPopupCardColor" && root.allSetting("applyPopupCardColor", false)) {
                 root.statusText = "Disable All popup-card override first."
                 return
             }
@@ -309,7 +316,7 @@ Item {
                         Text {
                             Layout.fillWidth: true
                             text: root.isAllScope
-                                ? "Shared settings for navbar containers, the speed meter, and popup-card colors."
+                                ? "Shared settings for navbar containers and standard popup cards. The AI Assistant Card has its own appearance."
                                 : root.containerChoices.find(function(item) { return item.id === root.selectedScope }).detail
                             color: "#7B8591"
                             font.pixelSize: 8
@@ -379,7 +386,7 @@ Item {
                             visible: root.isAllScope
                             Layout.fillWidth: true
                             title: "Apply container colors to popup cards"
-                            detail: "Master switch for every popup. Turn it off to configure popup colors separately in each section."
+                            detail: "Master switch for standard popups. The AI Assistant Card is styled independently."
                             checked: root.allSetting("applyPopupCardColor", false)
                             enabledControl: !root.writing
                             onToggleRequested: root.toggleAll("applyPopupCardColor")
@@ -415,6 +422,7 @@ Item {
                         }
                         ToggleRow {
                             visible: !root.isAllScope && root.selectedScope !== "data-meter"
+                                && root.selectedScope !== "ai-assistant"
                             Layout.fillWidth: true
                             title: "Show this container"
                             detail: "Hide or show only this navbar element."
@@ -453,7 +461,9 @@ Item {
                             visible: !root.isAllScope
                             Layout.fillWidth: true
                             title: "Apply this container color to popup cards"
-                            detail: "Let this section's popup cards follow its background and contrast-aware icon colors."
+                            detail: root.selectedScope === "ai-assistant"
+                                ? "Only this AI card uses this background. Global colors and quick-hub settings will not override it."
+                                : "Let this section's popup cards follow its background and contrast-aware icon colors."
                             checked: root.containerSetting(root.selectedScope, "applyPopupCardColor", false)
                             enabledControl: !root.writing && !root.popupCardColorLocked
                             onToggleRequested: root.setSetting("container", root.selectedScope, "applyPopupCardColor",
