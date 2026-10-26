@@ -19,6 +19,7 @@ ShellRoot {
     property bool screenshotPreviewOpen: false
     property string screenshotPreviewPath: ""
     property string wallpaperPath: ""
+    property string wallpaperPreviewPath: ""
     property string searchText: ""
     property string powerProfile: "balanced"
     property bool doNotDisturb: false
@@ -986,9 +987,22 @@ ShellRoot {
     IpcHandler {
         target: "wallpaper"
 
-        function apply(path: string): void {
+        function preview(path: string): void {
             if (path.length)
+                root.wallpaperPreviewPath = path
+        }
+
+        function clearPreview(): void {
+            root.wallpaperPreviewPath = ""
+        }
+
+        function apply(path: string): void {
+            if (path.length) {
+                // Commit first, then clear the temporary preview. If both
+                // paths match this avoids a duplicate wallpaper reload.
                 root.wallpaperPath = path
+                root.wallpaperPreviewPath = ""
+            }
         }
     }
 
@@ -1627,6 +1641,7 @@ ShellRoot {
         Wallpaper {
             modelData: modelData
             currentWallpaperPath: root.wallpaperPath
+            previewWallpaperPath: root.wallpaperPreviewPath
             desktopAnimationAllowed: root.wallpaperAnimationAllowed
             editorialTimeWidgetEnabled: root.editorialTimeWidgetEnabled
             timeUse24Hour: root.timeUse24Hour
