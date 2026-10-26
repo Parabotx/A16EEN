@@ -1459,8 +1459,15 @@ PanelWindow {
         onCloseRequested: {
             navbarClockPanel.calendarDetailsOpen = false
             navbarClockPanel.calendarDetailsHovering = false
+            calendarHideTimer.restart()
         }
-        onHoveringChanged: navbarClockPanel.calendarDetailsHovering = hovering
+        onHoveringChanged: {
+            navbarClockPanel.calendarDetailsHovering = hovering
+            if (hovering)
+                calendarHideTimer.stop()
+            else
+                calendarHideTimer.restart()
+        }
     }
 
     Rectangle {
