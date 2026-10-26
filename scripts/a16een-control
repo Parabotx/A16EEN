@@ -289,7 +289,7 @@ bluetooth_scan_pid() {
     if [ -f "$BLUETOOTH_SCAN_PID" ]; then
         pid=$(cat "$BLUETOOTH_SCAN_PID" 2>/dev/null || true)
         if [[ "$pid" =~ ^[0-9]+$ ]] && kill -0 "$pid" 2>/dev/null; then
-            printf '%s\\n' "$pid"
+            printf '%s\n' "$pid"
             return 0
         fi
         rm -f "$BLUETOOTH_SCAN_PID"
@@ -308,23 +308,23 @@ bluetooth_devices() {
     } | awk '$1 == "Device" && $2 ~ /:/ && !seen[tolower($2)]++ { print }' |
         while IFS= read -r line; do
             local mac name info connected trusted paired
-            mac=$(printf '%s\\n' "$line" | awk '{print $2}')
-            name=$(printf '%s\\n' "$line" | sed -E 's/^Device [^ ]+ //')
+            mac=$(printf '%s\n' "$line" | awk '{print $2}')
+            name=$(printf '%s\n' "$name" | sed 's/\\/\\\\/g; s/|/\\|/g')
             [ -n "$mac" ] || continue
             [ -n "$name" ] || name="Unknown device"
 
             info=$(bluetoothctl info "$mac" 2>/dev/null || true)
-            connected=$(printf '%s\\n' "$info" | awk '/Connected:/ {print tolower($2); exit}')
-            trusted=$(printf '%s\\n' "$info" | awk '/Trusted:/ {print tolower($2); exit}')
-            paired=$(printf '%s\\n' "$info" | awk '/Paired:/ {print tolower($2); exit}')
+            connected=$(printf '%s\n' "$info" | awk '/Connected:/ {print tolower($2); exit}')
+            trusted=$(printf '%s\n' "$info" | awk '/Trusted:/ {print tolower($2); exit}')
+            paired=$(printf '%s\n' "$info" | awk '/Paired:/ {print tolower($2); exit}')
             [ -n "$connected" ] || connected=no
             [ -n "$trusted" ] || trusted=no
             [ -n "$paired" ] || paired=no
 
             # Escape our presentation delimiter without losing device names
             # that legitimately contain a pipe or backslash.
-            name=$(printf '%s\\n' "$name" | sed 's/\\/\\\\/g; s/|/\\|/g')
-            printf '%s|%s|%s|%s|%s\\n' "$mac" "$name" "$connected" "$trusted" "$paired"
+            name=$(printf '%s\n' "$name" | sed 's/\\/\\\\/g; s/|/\\|/g')
+            printf '%s|%s|%s|%s|%s\n' "$mac" "$name" "$connected" "$trusted" "$paired"
         done
 }
 
@@ -365,7 +365,7 @@ bluetooth_scan() {
     fi
 
     nohup bluetoothctl --timeout 12 scan on >/dev/null 2>&1 </dev/null &
-    printf '%s\\n' "$!" > "$BLUETOOTH_SCAN_PID"
+    printf '%s\n' "$!" > "$BLUETOOTH_SCAN_PID"
 }
 
 bluetooth_scan_stop() {
