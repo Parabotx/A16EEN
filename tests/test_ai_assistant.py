@@ -30,6 +30,8 @@ with tempfile.TemporaryDirectory() as temp:
     env = os.environ.copy()
     env["HOME"] = str(home)
     env["XDG_CONFIG_HOME"] = str(config)
+    state_home = Path(temp) / "state"
+    env["XDG_STATE_HOME"] = str(state_home)
 
     status = invoke(env, "status")
     assert status["ok"] is True and status["configured"] is False
@@ -76,6 +78,33 @@ with tempfile.TemporaryDirectory() as temp:
     removed = invoke(env, "key", "remove")
     assert removed["configured"] is False
     assert not key_path.exists()
+
+    saved_chat = {
+        "id": "chat-test-001",
+        "title": "Diagnose Wi-Fi disconnects",
+        "mode": "diagnose",
+        "updated_at": 1700000000,
+        "history": [{"role": "user", "parts": [{"text": "Diagnose Wi-Fi disconnects"}]}],
+        "messages": [
+            {"speaker": "user", "body": "Diagnose Wi-Fi disconnects"},
+            {"speaker": "assistant", "body": "I will inspect the network state first."},
+        ],
+    }
+    saved_result = invoke(env, "history", "save-stdin", input_text=json.dumps(saved_chat) + "\n")
+    assert saved_result["ok"] is True and saved_result["active_id"] == "chat-test-001"
+    history_file = state_home / "a16een" / "ai" / "conversations.json"
+    assert history_file.exists()
+    assert stat.S_IMODE(history_file.stat().st_mode) == 0o600
+    assert stat.S_IMODE(history_file.parent.stat().st_mode) == 0o700
+
+    loaded = invoke(env, "history", "list")
+    assert loaded["ok"] is True and loaded["active_id"] == "chat-test-001"
+    assert loaded["conversations"][0]["title"] == "Diagnose Wi-Fi disconnects"
+    assert loaded["conversations"][0]["history"] == saved_chat["history"]
+    assert loaded["conversations"][0]["messages"] == saved_chat["messages"]
+
+    deleted = invoke(env, "history", "delete", "chat-test-001")
+    assert deleted["ok"] is True and deleted["conversations"] == []
 
 # Test mode-specific system prompts with a stubbed network boundary.
 loader = importlib.machinery.SourceFileLoader("a16een_ai_under_test", str(SCRIPT))
@@ -128,20 +157,36 @@ assert "width: 24" in dock_qml and "height: 26" in dock_qml
 assert 'x: root.navbarPosition === "right" ? parent.width - width - 8 : 8' in dock_qml
 assert 'text: "AI"' not in dock_qml
 assert 'fallbackPath: root.fallbackIconPath("a16een-ai-sigil.svg")' in dock_qml
+assert 'aiNavbarMouse.containsMouse' not in dock_qml
+assert 'configured_style="solid:#FFFFFF"' in navbar_script
+assert 'if [[ "$slot" == "ai" && "$all_icon_on" != "true" && "$individual_icon" == "inherit" ]]' in navbar_script
+assert 'return id === "ai" ? "#15171A" : "#FFFFFF"' in dock_qml
+assert 'stroke="#FFFFFF"' in ai_icon
+assert 'args == ["history", "list"]' in (ROOT / "scripts/a16een-ai").read_text()
+assert 'command: ["a16een-ai", "history", "list"]' in assistant_qml
+assert 'function openConversation' in assistant_qml
+assert 'const firstPending = historySaveProcess.running ? 1 : 0' in assistant_qml
+assert 'id: historyOverlay' in assistant_qml
 assert 'property string assistantMode: "normal"' in assistant_qml
 assert 'model: root.assistantModes' in assistant_qml
 assert 'mode: root.assistantMode' in assistant_qml
-assert 'Math.max(80, chatPanel.height - chatStatusRow.height - modeSelector.height' in assistant_qml
+assert 'Math.max(80, chatPanel.height - modeSelector.height' in assistant_qml
+assert 'id: chatStatusRow' not in assistant_qml
+assert 'progressPhrases[root.progressIndex]' not in assistant_qml
 assert 'MODE_INSTRUCTIONS[mode]' in (ROOT / "scripts/a16een-ai").read_text()
 assert 'viewBox="0 0 24 24"' in ai_icon and ai_icon.count("<path") >= 2
 assert assistant_qml.index("id: errorMessage") < assistant_qml.index("id: composerSendButton")
 assert 'text: "A16EEN AI"' not in assistant_qml
 assert 'text: root.busy ? "WORKING" : "SEND  ↑"' not in assistant_qml
-assert 'iconName: "lucide-settings.svg"' in assistant_qml
+assert 'iconName: "lucide-settings.svg"' not in assistant_qml
+assert 'Open chat history' in tools_panel_qml
+assert 'startNewConversation(true)' in tools_panel_qml
+assert 'AI settings' in tools_panel_qml
+assert 'width: 1.5' in tools_panel_qml and 'height: 12' in tools_panel_qml
 assert 'visible: root.page !== "ai"' in tools_panel_qml
 assert 'root.closeRequested()' in tools_panel_qml and 'root.backRequested()' in tools_panel_qml
 assert 'ai) configured_icon="a16een-ai-sigil.svg" ;;' in navbar_script
 assert "migrate_ai_default_icon()" in navbar_script
 assert "ai-navbar-sigil-v1" in navbar_script
 
-print("A16EEN AI safety, key-storage, UI, and mode tests passed.")
+print("A16EEN AI safety, key-storage, response modes, local history, and UI tests passed.")

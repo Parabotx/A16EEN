@@ -168,7 +168,7 @@ PanelWindow {
             return String(all.containerColor)
         if (item.containerEnabled === true && root.validAppearanceHex(item.containerColor))
             return String(item.containerColor)
-        return "#FFFFFF"
+        return id === "ai" ? "#15171A" : "#FFFFFF"
     }
 
     function popupCardColorFor(id) {
@@ -1562,25 +1562,6 @@ PanelWindow {
         Behavior on border.color { ColorAnimation { duration: 140; easing.type: Easing.OutCubic } }
         Behavior on y { NumberAnimation { duration: 160; easing.type: Easing.OutCubic } }
 
-        Rectangle {
-            anchors.fill: parent
-            anchors.margins: -2
-            radius: 12
-            color: root.iconColorFor("ai")
-            opacity: aiNavbarMouse.containsMouse ? 0.14 : 0.025
-            Behavior on opacity { NumberAnimation { duration: 180; easing.type: Easing.OutCubic } }
-            z: -1
-        }
-
-        Rectangle {
-            anchors.centerIn: parent
-            width: 20
-            height: 20
-            radius: 7
-            color: aiNavbarMouse.containsMouse ? root.hoverColorFor("ai") : "transparent"
-            Behavior on color { ColorAnimation { duration: 130; easing.type: Easing.OutCubic } }
-        }
-
         NavbarImage {
             anchors.centerIn: parent
             width: 16
@@ -1589,13 +1570,8 @@ PanelWindow {
             generatedPath: root.generatedIconPath("ai")
             fallbackPath: root.fallbackIconPath("a16een-ai-sigil.svg")
             refreshRevision: root.navbarRevision
-            active: aiNavbarMouse.containsMouse
-            hovered: aiNavbarMouse.containsMouse
-        }
-
-        scale: aiNavbarMouse.containsMouse ? 1.07 : 1.0
-        Behavior on scale {
-            NumberAnimation { duration: 130; easing.type: Easing.OutCubic }
+            active: false
+            hovered: false
         }
 
         MouseArea {

@@ -444,19 +444,52 @@ PanelWindow {
                             anchors.centerIn: parent
                             width: 16
                             height: 16
-                            iconPath: Qt.resolvedUrl(root.page === "ai"
-                                ? "../assets/icons/wand-sparkles.svg"
-                                : (root.page === "stash"
-                                    ? "../assets/icons/lucide-archive.svg"
-                                    : (root.page === "monitor"
-                                        ? "../assets/icons/lucide-activity.svg"
-                                        : (root.page === "calculator"
-                                            ? "../assets/icons/lucide-calculator.svg"
-                                            : ((root.page === "data-meter" || root.page === "screen-time")
-                                                ? "../assets/icons/lucide-activity.svg"
-                                                : "../assets/icons/lucide-toolbox.svg")))))
+                            visible: root.page !== "ai"
+                            iconPath: Qt.resolvedUrl(root.page === "stash"
+                                ? "../assets/icons/lucide-archive.svg"
+                                : (root.page === "monitor"
+                                    ? "../assets/icons/lucide-activity.svg"
+                                    : (root.page === "calculator"
+                                        ? "../assets/icons/lucide-calculator.svg"
+                                        : ((root.page === "data-meter" || root.page === "screen-time")
+                                            ? "../assets/icons/lucide-activity.svg"
+                                            : "../assets/icons/lucide-toolbox.svg"))))
                             iconColor: popupCardStyle.iconColor
                         }
+
+                        Item {
+                            visible: root.page === "ai"
+                            anchors.centerIn: parent
+                            width: 14
+                            height: 12
+
+                            Repeater {
+                                model: 3
+                                delegate: Rectangle {
+                                    required property int index
+                                    x: index === 1 ? 2 : 0
+                                    y: index * 4.5
+                                    width: index === 1 ? 10 : 14
+                                    height: 1.5
+                                    radius: 1
+                                    color: popupCardStyle.iconColor
+                                }
+                            }
+                        }
+
+                        MouseArea {
+                            id: aiHistoryMouse
+                            visible: root.page === "ai"
+                            anchors.fill: parent
+                            hoverEnabled: true
+                            cursorShape: Qt.PointingHandCursor
+                            onClicked: {
+                                if (aiAssistantLoader.item)
+                                    aiAssistantLoader.item.toggleHistoryMenu()
+                            }
+                        }
+
+                        Accessible.name: root.page === "ai" ? "Open chat history" : "Tool icon"
                     }
 
                     Column {
@@ -491,6 +524,84 @@ PanelWindow {
                             font.pixelSize: 8
                             elide: Text.ElideRight
                         }
+                    }
+
+                    Rectangle {
+                        id: aiNewChatButton
+                        visible: root.page === "ai"
+                        width: visible ? 25 : 0
+                        height: 25
+                        radius: 8
+                        color: aiNewChatMouse.containsMouse ? popupCardStyle.hoverSurfaceColor : "transparent"
+                        anchors.verticalCenter: parent.verticalCenter
+
+                        Item {
+                            anchors.centerIn: parent
+                            width: 14
+                            height: 14
+                            Rectangle {
+                                anchors.centerIn: parent
+                                width: 12
+                                height: 1.5
+                                radius: 1
+                                color: popupCardStyle.iconColor
+                            }
+                            Rectangle {
+                                anchors.centerIn: parent
+                                width: 1.5
+                                height: 12
+                                radius: 1
+                                color: popupCardStyle.iconColor
+                            }
+                        }
+
+                        MouseArea {
+                            id: aiNewChatMouse
+                            anchors.fill: parent
+                            hoverEnabled: true
+                            cursorShape: Qt.PointingHandCursor
+                            enabled: !aiAssistantLoader.item || (!aiAssistantLoader.item.busy && !aiAssistantLoader.item.awaitingApproval)
+                            onClicked: {
+                                if (aiAssistantLoader.item)
+                                    aiAssistantLoader.item.startNewConversation(true)
+                            }
+                        }
+
+                        Accessible.name: "New chat"
+                    }
+
+                    Rectangle {
+                        id: aiSettingsButton
+                        visible: root.page === "ai"
+                        width: visible ? 25 : 0
+                        height: 25
+                        radius: 8
+                        color: aiSettingsMouse.containsMouse ? popupCardStyle.hoverSurfaceColor : "transparent"
+                        anchors.verticalCenter: parent.verticalCenter
+
+                        NavbarIcon {
+                            anchors.centerIn: parent
+                            width: 14
+                            height: 14
+                            iconName: "lucide-settings.svg"
+                            iconColor: popupCardStyle.iconColor
+                        }
+
+                        MouseArea {
+                            id: aiSettingsMouse
+                            anchors.fill: parent
+                            hoverEnabled: true
+                            cursorShape: Qt.PointingHandCursor
+                            enabled: !aiAssistantLoader.item || (!aiAssistantLoader.item.busy && !aiAssistantLoader.item.awaitingApproval)
+                            onClicked: {
+                                if (aiAssistantLoader.item) {
+                                    aiAssistantLoader.item.historyMenuOpen = false
+                                    aiAssistantLoader.item.pageMode = "settings"
+                                }
+                            }
+                        }
+
+                        Accessible.name: "AI settings"
                     }
 
                     Rectangle {

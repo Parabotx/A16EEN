@@ -31,6 +31,14 @@ Item {
         "Verifying the result"
     ]
     property var history: []
+    property string activeConversationId: ""
+    property string activeConversationTitle: "New chat"
+    property var savedConversations: []
+    property bool historyMenuOpen: false
+    property bool loadingSavedHistory: false
+    property bool persistEmptyConversation: false
+    property string pendingHistoryPayload: ""
+    property var historySaveQueue: []
     property var pendingCalls: []
     property int pendingCallIndex: 0
     property var toolResponses: []
@@ -53,9 +61,168 @@ Item {
     width: parent ? parent.width : 400
     height: parent ? parent.height : 520
 
+    onHistoryChanged: root.scheduleHistorySave()
+    onAssistantModeChanged: root.scheduleHistorySave()
+
     function refreshStatus() {
         if (!statusProcess.running)
             statusProcess.running = true
+    }
+
+    function snapshotMessages() {
+        const result = []
+        for (let i = 0; i < messageModel.count; i++) {
+            const item = messageModel.get(i)
+            result.push({ speaker: String(item.speaker || "assistant"), body: String(item.body || "") })
+        }
+        return result.slice(-80)
+    }
+
+    function scheduleHistorySave() {
+        if (root.loadingSavedHistory || !root.activeConversationId)
+            return
+        if (root.history.length === 0 && !root.persistEmptyConversation)
+            return
+        historySaveTimer.restart()
+    }
+
+    function saveCurrentConversation(force) {
+        if (root.loadingSavedHistory || !root.activeConversationId)
+            return
+        if (root.history.length === 0 && !root.persistEmptyConversation && force !== true)
+            return
+
+        const payload = JSON.stringify({
+            id: root.activeConversationId,
+            title: root.activeConversationTitle,
+            mode: root.assistantMode,
+            history: root.history,
+            messages: root.snapshotMessages(),
+            updated_at: Math.floor(Date.now() / 1000)
+        })
+        const queue = root.historySaveQueue.slice()
+        let replaced = false
+        const firstPending = historySaveProcess.running ? 1 : 0
+        if (queue.length > firstPending) {
+            const lastIndex = queue.length - 1
+            try {
+                if (JSON.parse(queue[lastIndex]).id === root.activeConversationId) {
+                    queue[lastIndex] = payload
+                    replaced = true
+                }
+            } catch (error) {
+                // Replace malformed pending data rather than letting it block later saves.
+            }
+        }
+        if (!replaced)
+            queue.push(payload)
+        root.historySaveQueue = queue.slice(-10)
+        root.startNextHistorySave()
+    }
+
+    function startNextHistorySave() {
+        if (historySaveProcess.running || root.historySaveQueue.length === 0)
+            return
+        root.pendingHistoryPayload = String(root.historySaveQueue[0] || "")
+        if (root.pendingHistoryPayload.length)
+            historySaveProcess.running = true
+        else
+            root.historySaveQueue = root.historySaveQueue.slice(1)
+    }
+
+    function handleHistorySaveResponse(raw) {
+        try {
+            const response = JSON.parse(String(raw || "{}"))
+            if (response.ok === true && Array.isArray(response.conversations))
+                root.savedConversations = response.conversations
+            else if (response.error)
+                root.lastError = String(response.error)
+        } catch (error) {
+            root.lastError = "Could not update local chat history."
+        }
+    }
+
+    function restoreSavedConversations(raw) {
+        try {
+            const response = JSON.parse(String(raw || "{}"))
+            if (response.ok !== true || !Array.isArray(response.conversations))
+                throw new Error(String(response.error || "Invalid saved history"))
+            root.savedConversations = response.conversations
+            const activeId = String(response.active_id || "")
+            const active = root.savedConversations.find(item => String(item.id || "") === activeId)
+            if (active)
+                root.openConversation(active.id, false)
+            else
+                root.startNewConversation(false)
+        } catch (error) {
+            root.lastError = "Saved chat history could not be loaded. " + String(error)
+            root.startNewConversation(false)
+        }
+    }
+
+    function openConversation(conversationId, markActive) {
+        if (root.busy || root.awaitingApproval)
+            return
+        const selected = root.savedConversations.find(item => String(item.id || "") === String(conversationId || ""))
+        if (!selected)
+            return
+        if (root.history.length > 0 || root.persistEmptyConversation)
+            root.saveCurrentConversation(true)
+
+        root.loadingSavedHistory = true
+        root.historyMenuOpen = false
+        root.activeConversationId = String(selected.id)
+        root.activeConversationTitle = String(selected.title || "New chat")
+        root.assistantMode = root.assistantModes.some(item => item.id === selected.mode)
+            ? String(selected.mode) : "normal"
+        root.history = Array.isArray(selected.history) ? selected.history : []
+        root.persistEmptyConversation = true
+        root.inputText = ""
+        root.lastError = ""
+        messageModel.clear()
+        const messages = Array.isArray(selected.messages) ? selected.messages : []
+        for (let i = 0; i < messages.length; i++) {
+            const item = messages[i]
+            if (item && (item.speaker === "user" || item.speaker === "assistant"))
+                messageModel.append({ speaker: item.speaker, body: String(item.body || "") })
+        }
+        root.pageMode = root.hasApiKey ? "chat" : "settings"
+        root.loadingSavedHistory = false
+        Qt.callLater(() => messageList.positionViewAtEnd())
+        if (markActive !== false)
+            root.scheduleHistorySave()
+    }
+
+    function toggleHistoryMenu() {
+        if (root.busy || root.awaitingApproval)
+            return
+        root.historyMenuOpen = !root.historyMenuOpen
+    }
+
+    function startNewConversation(persistBlank) {
+        if (root.busy || root.awaitingApproval)
+            return
+        if (root.history.length > 0 || root.persistEmptyConversation)
+            root.saveCurrentConversation(true)
+
+        root.loadingSavedHistory = true
+        root.activeConversationId = Date.now().toString(36) + "-" + Math.random().toString(36).slice(2, 9)
+        root.activeConversationTitle = "New chat"
+        root.assistantMode = "normal"
+        root.history = []
+        root.inputText = ""
+        root.lastError = ""
+        root.historyMenuOpen = false
+        root.persistEmptyConversation = persistBlank === true
+        messageModel.clear()
+        messageModel.append({
+            speaker: "assistant",
+            body: "I'm A16EEN's desktop assistant. I can change wallpapers, open apps, adjust settings, diagnose your system, and perform approved power actions."
+        })
+        root.pageMode = root.hasApiKey ? "chat" : "settings"
+        root.loadingSavedHistory = false
+        if (root.persistEmptyConversation)
+            root.saveCurrentConversation(true)
     }
 
     function appendMessage(speaker, body) {
@@ -65,6 +232,7 @@ Item {
         messageModel.append({ speaker: speaker, body: text })
         while (messageModel.count > 80)
             messageModel.remove(0)
+        root.scheduleHistorySave()
         Qt.callLater(() => messageList.positionViewAtEnd())
     }
 
@@ -73,6 +241,12 @@ Item {
         if (!text.length || root.busy || root.awaitingApproval || !root.hasApiKey)
             return
         root.lastError = ""
+        if (!root.activeConversationId)
+            root.startNewConversation(false)
+        if (root.history.length === 0) {
+            root.activeConversationTitle = text.replace(/\s+/g, " ").slice(0, 64)
+            root.persistEmptyConversation = true
+        }
         root.inputText = ""
         root.appendMessage("user", text)
         root.history = root.history.concat([{ role: "user", parts: [{ text: text }] }])
@@ -299,13 +473,7 @@ Item {
     }
 
     function clearConversation() {
-        if (root.busy || root.awaitingApproval)
-            return
-        root.history = []
-        messageModel.clear()
-        root.lastError = ""
-        root.statusLine = "New conversation"
-        root.appendMessage("assistant", "I'm A16EEN's desktop assistant. I can change wallpapers, open apps, adjust settings, diagnose your system, and perform approved power actions.")
+        root.startNewConversation(true)
     }
 
     function saveKey() {
@@ -364,15 +532,52 @@ Item {
 
     Component.onCompleted: {
         root.refreshStatus()
-        if (messageModel.count === 0)
-            root.appendMessage("assistant", "I'm A16EEN's desktop assistant. Try “change my wallpaper randomly”, “open Firefox”, or “diagnose my Wi-Fi”.")
+        historyLoadProcess.running = true
     }
 
     Timer {
-        interval: 1250
-        repeat: true
-        running: root.busy
-        onTriggered: root.progressIndex = (root.progressIndex + 1) % root.progressPhrases.length
+        id: historySaveTimer
+        interval: 350
+        repeat: false
+        onTriggered: root.saveCurrentConversation(false)
+    }
+
+    Process {
+        id: historyLoadProcess
+        command: ["a16een-ai", "history", "list"]
+        running: false
+        stdout: StdioCollector {
+            onStreamFinished: root.restoreSavedConversations(String(text || "{}"))
+        }
+        stderr: StdioCollector {
+            onStreamFinished: {
+                const value = String(text || "").trim()
+                if (value.length)
+                    console.warn("A16EEN local chat history:", value)
+            }
+        }
+    }
+
+    Process {
+        id: historySaveProcess
+        command: ["a16een-ai", "history", "save-stdin"]
+        stdinEnabled: true
+        running: false
+        onStarted: write(root.pendingHistoryPayload + "\n")
+        onExited: (exitCode, exitStatus) => {
+            root.historySaveQueue = root.historySaveQueue.slice(1)
+            Qt.callLater(() => root.startNextHistorySave())
+        }
+        stdout: StdioCollector {
+            onStreamFinished: root.handleHistorySaveResponse(String(text || "{}"))
+        }
+        stderr: StdioCollector {
+            onStreamFinished: {
+                const value = String(text || "").trim()
+                if (value.length)
+                    console.warn("A16EEN chat save:", value)
+            }
+        }
     }
 
     Process {
@@ -389,6 +594,8 @@ Item {
                 }
                 if (!root.hasApiKey)
                     root.pageMode = "settings"
+                else if (root.activeConversationId.length && root.pageMode === "settings")
+                    root.pageMode = "chat"
             }
         }
     }
@@ -677,101 +884,6 @@ Item {
             spacing: 7
 
             Row {
-                id: chatStatusRow
-                width: parent.width
-                height: 22
-                spacing: 6
-
-                Rectangle {
-                    width: 6
-                    height: 6
-                    radius: 3
-                    anchors.verticalCenter: parent.verticalCenter
-                    color: root.busy ? root.accentColor : (root.connected ? root.successColor : root.mutedTextColor)
-
-                    SequentialAnimation on scale {
-                        running: root.busy
-                        loops: Animation.Infinite
-                        NumberAnimation { to: 1.45; duration: 520; easing.type: Easing.InOutSine }
-                        NumberAnimation { to: 1.0; duration: 520; easing.type: Easing.InOutSine }
-                    }
-                }
-
-                Text {
-                    width: Math.max(72, parent.width - 111)
-                    anchors.verticalCenter: parent.verticalCenter
-                    text: root.busy ? root.progressPhrases[root.progressIndex] : root.statusLine
-                    color: root.busy ? root.textColor : root.mutedTextColor
-                    font.pixelSize: 8
-                    elide: Text.ElideRight
-
-                    SequentialAnimation on opacity {
-                        running: root.busy
-                        loops: Animation.Infinite
-                        NumberAnimation { to: 0.45; duration: 400; easing.type: Easing.OutCubic }
-                        NumberAnimation { to: 1.0; duration: 500; easing.type: Easing.InOutCubic }
-                        PauseAnimation { duration: 350 }
-                    }
-                }
-
-                Rectangle {
-                    id: assistantSettingsButton
-                    width: 24
-                    height: 22
-                    radius: 7
-                    color: settingsMouse.containsMouse ? root.subtleColor : "transparent"
-                    border.width: 1
-                    border.color: root.borderColor
-
-                    NavbarIcon {
-                        anchors.centerIn: parent
-                        width: 13
-                        height: 13
-                        iconName: "lucide-settings.svg"
-                        iconColor: root.secondaryTextColor
-                    }
-
-                    MouseArea {
-                        id: settingsMouse
-                        anchors.fill: parent
-                        hoverEnabled: true
-                        cursorShape: Qt.PointingHandCursor
-                        enabled: !root.busy && !root.awaitingApproval
-                        onClicked: root.pageMode = "settings"
-                    }
-
-                    Accessible.name: "Gemini API key settings"
-                }
-
-                Rectangle {
-                    width: 63
-                    height: 22
-                    radius: 7
-                    color: clearMouse.containsMouse ? root.subtleColor : "transparent"
-
-                    Text {
-                        anchors.centerIn: parent
-                        text: "NEW CHAT"
-                        color: root.mutedTextColor
-                        font.pixelSize: 7
-                        font.weight: Font.DemiBold
-                        font.letterSpacing: 0.25
-                    }
-
-                    MouseArea {
-                        id: clearMouse
-                        anchors.fill: parent
-                        hoverEnabled: true
-                        cursorShape: Qt.PointingHandCursor
-                        enabled: !root.busy && !root.awaitingApproval
-                        onClicked: root.clearConversation()
-                    }
-
-                    Accessible.name: "Start a new conversation"
-                }
-            }
-
-            Row {
                 id: modeSelector
                 width: parent.width
                 height: 29
@@ -830,8 +942,8 @@ Item {
             ListView {
                 id: messageList
                 width: parent.width
-                height: Math.max(80, chatPanel.height - chatStatusRow.height - modeSelector.height
-                    - chatComposerRow.height - approvalCard.height - errorMessage.height - chatPanel.spacing * 5)
+                height: Math.max(80, chatPanel.height - modeSelector.height
+                    - chatComposerRow.height - approvalCard.height - errorMessage.height - chatPanel.spacing * 4)
                 clip: true
                 spacing: 7
                 model: messageModel
@@ -1060,6 +1172,154 @@ Item {
             }
 
 
+        }
+    }
+
+    Item {
+        id: historyOverlay
+        anchors.fill: parent
+        visible: root.historyMenuOpen
+        z: 50
+
+        Rectangle {
+            anchors.fill: parent
+            radius: 12
+            color: root.fieldColor
+            border.width: 1
+            border.color: root.borderColor
+        }
+
+        Column {
+            anchors.fill: parent
+            anchors.margins: 11
+            spacing: 9
+
+            Row {
+                width: parent.width
+                height: 25
+                spacing: 8
+
+                Text {
+                    width: parent.width - 30
+                    anchors.verticalCenter: parent.verticalCenter
+                    text: "CHAT HISTORY"
+                    color: root.textColor
+                    font.pixelSize: 10
+                    font.weight: Font.DemiBold
+                    font.letterSpacing: 0.7
+                }
+
+                Rectangle {
+                    width: 24
+                    height: 24
+                    radius: 7
+                    color: historyCloseMouse.containsMouse ? root.subtleColor : "transparent"
+
+                    Item {
+                        anchors.centerIn: parent
+                        width: 12
+                        height: 12
+                        Rectangle {
+                            anchors.centerIn: parent
+                            width: 13
+                            height: 1.5
+                            radius: 1
+                            color: root.secondaryTextColor
+                            rotation: 45
+                        }
+                        Rectangle {
+                            anchors.centerIn: parent
+                            width: 13
+                            height: 1.5
+                            radius: 1
+                            color: root.secondaryTextColor
+                            rotation: -45
+                        }
+                    }
+
+                    MouseArea {
+                        id: historyCloseMouse
+                        anchors.fill: parent
+                        hoverEnabled: true
+                        cursorShape: Qt.PointingHandCursor
+                        onClicked: root.historyMenuOpen = false
+                    }
+
+                    Accessible.name: "Close chat history"
+                }
+            }
+
+            Text {
+                width: parent.width
+                visible: root.savedConversations.length === 0
+                text: "Your conversations will appear here as you chat."
+                color: root.mutedTextColor
+                font.pixelSize: 9
+                wrapMode: Text.WordWrap
+            }
+
+            ListView {
+                id: conversationList
+                width: parent.width
+                height: Math.max(60, parent.height - 38)
+                clip: true
+                spacing: 5
+                model: root.savedConversations
+                boundsBehavior: Flickable.StopAtBounds
+
+                delegate: Rectangle {
+                    id: conversationRow
+                    required property var modelData
+                    width: conversationList.width
+                    height: 52
+                    radius: 9
+                    color: String(conversationRow.modelData.id || "") === root.activeConversationId
+                        ? root.subtleColor : "transparent"
+                    border.width: 1
+                    border.color: String(conversationRow.modelData.id || "") === root.activeConversationId
+                        ? root.accentColor : root.borderColor
+
+                    Column {
+                        anchors.fill: parent
+                        anchors.leftMargin: 10
+                        anchors.rightMargin: 10
+                        anchors.topMargin: 7
+                        anchors.bottomMargin: 6
+                        spacing: 3
+
+                        Text {
+                            width: parent.width
+                            text: String(conversationRow.modelData.title || "New chat")
+                            color: root.textColor
+                            font.pixelSize: 9
+                            font.weight: Font.DemiBold
+                            elide: Text.ElideRight
+                        }
+
+                        Text {
+                            width: parent.width
+                            text: String(conversationRow.modelData.mode || "normal").toUpperCase()
+                                + "  ·  "
+                                + (Number(conversationRow.modelData.updated_at) > 0
+                                    ? new Date(Number(conversationRow.modelData.updated_at) * 1000).toLocaleString()
+                                    : "Saved locally")
+                            color: root.mutedTextColor
+                            font.pixelSize: 7
+                            elide: Text.ElideRight
+                        }
+                    }
+
+                    MouseArea {
+                        anchors.fill: parent
+                        hoverEnabled: true
+                        cursorShape: Qt.PointingHandCursor
+                        enabled: !root.busy && !root.awaitingApproval
+                        onClicked: root.openConversation(conversationRow.modelData.id, true)
+                    }
+
+                    Accessible.name: String(conversationRow.modelData.title || "New chat")
+                }
+            }
         }
     }
 }
