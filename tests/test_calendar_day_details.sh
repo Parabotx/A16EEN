@@ -24,6 +24,6 @@ grep -Fq 'ቅድስት ማርያም' "$DATA"
 grep -Fq 'ራእይ 12፥7' "$DATA"
 grep -Fq 'ሉቃስ 1፥50' "$DATA"
 grep -Fq 'ሉቃስ 1፥48' "$DATA"
-grep -Fq 'root.calendarDetailsHovering' "$DOCK"
+grep -Fq 'navbarClockPanel.calendarDetailsHovering' "$DOCK"
 
 printf 'Calendar day-detail foundation checks passed.\n'
