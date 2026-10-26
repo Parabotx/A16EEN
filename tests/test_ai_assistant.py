@@ -228,7 +228,7 @@ assert 'id: historyOverlay' in assistant_qml
 assert 'property string assistantMode: "normal"' in assistant_qml
 assert 'model: root.assistantModes' in assistant_qml
 assert 'mode: root.assistantMode' in assistant_qml
-assert 'Math.max(80, chatPanel.height - modeSelector.height' in assistant_qml
+assert 'Math.max(80, chatPanel.height - providerSelector.height - modeSelector.height' in assistant_qml
 assert 'id: chatStatusRow' not in assistant_qml
 assert 'progressPhrases[root.progressIndex]' not in assistant_qml
 assert 'MODE_INSTRUCTIONS[mode]' in (ROOT / "scripts/a16een-ai").read_text()
