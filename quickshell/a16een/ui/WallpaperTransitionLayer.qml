@@ -14,10 +14,13 @@ Item {
         || lowerPath.endsWith(".mov")
         || lowerPath.endsWith(".m4v")
         || lowerPath.endsWith(".mkv")
+    readonly property bool videoPreviewFailed: root.isVideo
+        && (videoLayerLoader.status === Loader.Error
+            || (videoLayerLoader.item && videoLayerLoader.item.previewError))
     readonly property bool contentReady: root.isVideo
-        ? ((videoLayerLoader.item
-                && (videoLayerLoader.item.hasVideo || videoLayerLoader.item.previewError))
-            || videoLayerLoader.status === Loader.Error)
+        ? ((videoLayerLoader.item && videoLayerLoader.item.hasVideo)
+            || (root.videoPreviewFailed
+                && (staticLayer.status === Image.Ready || staticLayer.status === Image.Error)))
         : root.isAnimatedImage
             ? (animatedLayer.status === AnimatedImage.Ready
                 || animatedLayer.status === AnimatedImage.Error)
@@ -29,7 +32,9 @@ Item {
         anchors.fill: parent
         source: !root.isAnimatedImage
             ? (root.isVideo
-                ? (videoLayerLoader.status === Loader.Error ? Qt.resolvedUrl("../assets/wallpapers/default.png") : "")
+                ? (root.videoPreviewFailed
+                    ? Qt.resolvedUrl("../assets/wallpapers/default.png")
+                    : "")
                 : root.sourcePath)
             : ""
         fillMode: Image.PreserveAspectFit
@@ -37,7 +42,7 @@ Item {
         cache: false
         mipmap: true
         visible: !root.isAnimatedImage
-            && (!root.isVideo || videoLayerLoader.status === Loader.Error)
+            && (!root.isVideo || root.videoPreviewFailed)
             && status === Image.Ready
     }
 
