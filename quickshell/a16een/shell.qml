@@ -1734,6 +1734,7 @@ ShellRoot {
     }
 
     function handleUtilitiesRequest(mode) {
+        root.gamingPanelOpen = false
         root.notificationCenterOpen = false
         root.toolsPanelOpen = false
         root.toolsPanelPage = "tools"
@@ -1760,6 +1761,7 @@ ShellRoot {
     }
 
     function openQuickTasks() {
+        root.gamingPanelOpen = false
         root.notificationCenterOpen = false
         root.toolsPanelOpen = false
         root.toolsPanelPage = "tools"
@@ -1778,6 +1780,7 @@ ShellRoot {
     }
 
     function openQuickPresets() {
+        root.gamingPanelOpen = false
         root.notificationCenterOpen = false
         root.toolsPanelOpen = false
         root.toolsPanelPage = "tools"
@@ -1821,6 +1824,7 @@ ShellRoot {
         dockVisible: !root.secureLockActive && (!root.focusedWindowFullscreen || root.navbarRevealed)
 
         onNotesRequested: {
+            root.gamingPanelOpen = false
             root.quickNotesOpen = true
             root.quickUtilitiesOpen = false
             root.utilitiesExpanded = false
