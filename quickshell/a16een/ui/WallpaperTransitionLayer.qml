@@ -15,7 +15,8 @@ Item {
         || lowerPath.endsWith(".m4v")
         || lowerPath.endsWith(".mkv")
     readonly property bool contentReady: root.isVideo
-        ? ((videoLayerLoader.item && videoLayerLoader.item.hasVideo)
+        ? ((videoLayerLoader.item
+                && (videoLayerLoader.item.hasVideo || videoLayerLoader.item.previewError))
             || videoLayerLoader.status === Loader.Error)
         : root.isAnimatedImage
             ? (animatedLayer.status === AnimatedImage.Ready
@@ -33,7 +34,7 @@ Item {
             : ""
         fillMode: Image.PreserveAspectFit
         asynchronous: true
-        cache: true
+        cache: false
         mipmap: true
         visible: !root.isAnimatedImage
             && (!root.isVideo || videoLayerLoader.status === Loader.Error)
@@ -60,6 +61,9 @@ Item {
         onLoaded: {
             item.sourcePath = Qt.binding(function() {
                 return root.sourcePath
+            })
+            item.desktopAnimationAllowed = Qt.binding(function() {
+                return root.desktopAnimationAllowed
             })
         }
     }
