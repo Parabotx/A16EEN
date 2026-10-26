@@ -152,9 +152,14 @@ navbar_script = (ROOT / "scripts/a16een-navbar").read_text()
 popup_style = (ROOT / "quickshell/a16een/ui/PopupCardStyle.qml").read_text()
 appearance_ui = (ROOT / "quickshell/a16een/ui/NavbarAppearancePage.qml").read_text()
 
-# UI regressions: keep the navbar tile compact/icon-only, the composer pinned
-# to the bottom, and the AI popup's top-right control a real close action.
-assert "readonly property int aiContainerHeight: 52" in dock_qml
+# UI regressions: keep navbar shortcuts compact/icon-only, keep the AI tile
+# separate from Gaming, and keep the AI popup's top-right control a real close action.
+assert "readonly property int shortcutTileHeight: 26" in dock_qml
+assert "readonly property int shortcutTileGap: 4" in dock_qml
+assert "readonly property int shortcutRailGap: 24" in dock_qml
+assert "id: gamingNavbarContainer" in dock_qml
+assert 'iconName: "gamepad-2.svg"' in dock_qml
+assert 'containerColorFor("gaming")' in dock_qml
 assert "width: 24" in dock_qml and "height: 26" in dock_qml
 assert 'x: root.navbarPosition === "right" ? parent.width - width - 8 : 8' in dock_qml
 assert 'text: "AI"' not in dock_qml
@@ -162,7 +167,8 @@ assert 'fallbackPath: root.fallbackIconPath("a16een-ai-sigil.svg")' in dock_qml
 assert 'aiNavbarMouse.containsMouse' not in dock_qml
 assert 'configured_style="solid:#FFFFFF"' in navbar_script
 assert 'if [[ "$slot" == "ai" && "$all_icon_on" != "true" && "$individual_icon" == "inherit" ]]' in navbar_script
-assert 'return id === "ai" ? "#15171A" : "#FFFFFF"' in dock_qml
+assert 'return (id === "ai" || id === "gaming") ? "#15171A" : "#FFFFFF"' in dock_qml
+assert '{ id: "gaming", name: "Gaming"' in appearance_ui
 assert 'stroke="#FFFFFF"' in ai_icon
 assert 'args == ["history", "list"]' in (ROOT / "scripts/a16een-ai").read_text()
 assert 'command: ["a16een-ai", "history", "list"]' in assistant_qml

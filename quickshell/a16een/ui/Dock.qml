@@ -168,7 +168,7 @@ PanelWindow {
             return String(all.containerColor)
         if (item.containerEnabled === true && root.validAppearanceHex(item.containerColor))
             return String(item.containerColor)
-        return id === "ai" ? "#15171A" : "#FFFFFF"
+        return (id === "ai" || id === "gaming") ? "#15171A" : "#FFFFFF"
     }
 
     function popupCardColorFor(id) {
@@ -260,16 +260,27 @@ PanelWindow {
             : (root.dockVisible ? 66 : 8)
 
     readonly property bool aiContainerVisible: root.containerIsVisible("ai")
-
-    // The AI tile shares the existing Wayland navbar surface but remains its own
-    // independently styled/visible container in Appearance → Navbar Containers.
-    readonly property int aiContainerHeight: 52
+    readonly property bool gamingContainerVisible: root.containerIsVisible("gaming")
+    readonly property int shortcutTileHeight: 26
+    readonly property int shortcutTileGap: 4
+    readonly property int shortcutTileTopInset: 2
+    readonly property int shortcutRailGap: 24
+    readonly property int shortcutCount:
+        (root.aiContainerVisible ? 1 : 0) + (root.gamingContainerVisible ? 1 : 0)
+    // Preserve the existing breathing room above the workspace rail while
+    // packing Gaming and AI together when both independent tiles are visible.
+    readonly property int shortcutStackHeight: root.shortcutCount > 0
+        ? root.shortcutTileTopInset
+            + root.shortcutCount * root.shortcutTileHeight
+            + Math.max(0, root.shortcutCount - 1) * root.shortcutTileGap
+            + root.shortcutRailGap
+        : 0
 
     readonly property int surfaceHeight:
         root.horizontalNavbar
             ? (root.dockVisible ? root.dockHeight : 8)
             : (root.dockVisible
-                ? root.dockHeight + (root.aiContainerVisible ? root.aiContainerHeight : 0)
+                ? root.dockHeight + root.shortcutStackHeight
                 : 240)
 
     readonly property int horizontalCenterMargin:
@@ -1436,7 +1447,7 @@ PanelWindow {
                 ? 0
                 : (root.navbarPosition === "bottom" ? parent.height + 2 : -height - 2))
             : Math.round((parent.height - height) / 2)
-                + (root.dockVisible && root.aiContainerVisible ? root.aiContainerHeight / 2 : 0)
+                + (root.dockVisible ? root.shortcutStackHeight / 2 : 0)
 
         visible: root.containerIsVisible("workspaces")
         width: root.horizontalNavbar ? root.dockWidth : 44
@@ -1544,12 +1555,46 @@ PanelWindow {
     }
 
     Rectangle {
+        id: gamingNavbarContainer
+        visible: !root.horizontalNavbar && root.dockVisible && root.gamingContainerVisible
+        // Keep the gamepad as an independent icon-only tile directly above AI.
+        x: root.navbarPosition === "right" ? parent.width - width - 8 : 8
+        y: Math.max(0,
+            Math.round((parent.height - (root.dockHeight + root.shortcutStackHeight)) / 2)
+                + root.shortcutTileTopInset)
+        width: 24
+        height: 26
+        radius: 9
+        color: root.containerColorFor("gaming")
+        border.width: 1
+        border.color: root.containerBorderColorFor("gaming")
+        z: 10
+
+        Behavior on color { ColorAnimation { duration: 140; easing.type: Easing.OutCubic } }
+        Behavior on border.color { ColorAnimation { duration: 140; easing.type: Easing.OutCubic } }
+        Behavior on y { NumberAnimation { duration: 160; easing.type: Easing.OutCubic } }
+
+        NavbarIcon {
+            anchors.centerIn: parent
+            width: 16
+            height: 16
+            iconName: "gamepad-2.svg"
+            iconColor: root.iconColorFor("gaming")
+        }
+
+        Accessible.name: "Gaming"
+    }
+
+    Rectangle {
         id: aiNavbarContainer
         visible: !root.horizontalNavbar && root.dockVisible && root.aiContainerVisible
-        // Center this tiny sigil with the workspace rail, inset from the edge.
-        // The added rail height creates breathing room above the workspace list.
+        // Keep the original AI tile size. Add only a compact gap below Gaming
+        // when both containers are visible.
         x: root.navbarPosition === "right" ? parent.width - width - 8 : 8
-        y: Math.max(0, Math.round((parent.height - (root.dockHeight + root.aiContainerHeight)) / 2) + 2)
+        y: Math.max(0,
+            Math.round((parent.height - (root.dockHeight + root.shortcutStackHeight)) / 2)
+                + root.shortcutTileTopInset
+                + (root.gamingContainerVisible ? root.shortcutTileHeight + root.shortcutTileGap : 0))
         width: 24
         height: 26
         radius: 9
