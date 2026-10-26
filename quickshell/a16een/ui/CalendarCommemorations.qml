@@ -107,6 +107,7 @@ QtObject {
         },
         {
             id: "mikael-hidar", calendar: "ethiopian", month: 3, day: 12,
+            image: "saint-michael.webp",
             title: "ሕዳር ሚካኤል", category: "የቅዱስ ሚካኤል ታላቅ ዓመታዊ በዓል",
             description: "ቅዱስ ሚካኤል በየወሩ 12ኛው ቀን ይታሰባል፤ ሕዳር 12 ከሁለቱ ዋና ዋና ዓመታዊ በዓላቱ አንዱ ነው።",
             verse: "በሰማይም ሰልፍ ሆነ፤ ሚካኤልና መላእክቱ ዘንዶውን ተዋጉ።",
@@ -147,6 +148,7 @@ QtObject {
         },
         {
             id: "kidane-mihret-yekatit", calendar: "ethiopian", month: 6, day: 16,
+            image: "kidane-mehret.webp",
             title: "የካቲት ኪዳነ ምሕረት", category: "የቅድስት ማርያም ዓመታዊ መታሰቢያ",
             description: "የካቲት 16 ከኪዳነ ምሕረት ዋና መታሰቢያዎች አንዱ ነው።",
             verse: "ምሕረቱም ለሚፈሩት ከትውልድ እስከ ትውልድ ይኖራል።",
@@ -171,6 +173,7 @@ QtObject {
         },
         {
             id: "lideta-ginbot", calendar: "ethiopian", month: 9, day: 1,
+            image: "saint-mary.webp",
             title: "ልደታ ለማርያም", category: "የቅድስት ማርያም ዓመታዊ በዓል",
             description: "ግንቦት 1 ልደታ ለማርያም የሚታሰብበት ሌላው ዓመታዊ ቀን ነው።",
             verse: "ከዛሬ ጀምሮ ትውልድ ሁሉ ምስጉን ይሉኛል።",
@@ -179,6 +182,7 @@ QtObject {
         },
         {
             id: "mikael-sene", calendar: "ethiopian", month: 10, day: 12,
+            image: "saint-michael.webp",
             title: "ሰኔ ሚካኤል", category: "የቅዱስ ሚካኤል ታላቅ ዓመታዊ በዓል",
             description: "ሰኔ 12 ለቅዱስ ሚካኤል ከተለዩት ሁለት ዋና ዋና ዓመታዊ በዓላት አንዱ ነው።",
             verse: "በሰማይም ሰልፍ ሆነ፤ ሚካኤልና መላእክቱ ዘንዶውን ተዋጉ።",
@@ -187,6 +191,7 @@ QtObject {
         },
         {
             id: "filsata", calendar: "ethiopian", month: 12, day: 16,
+            image: "saint-mary.webp",
             title: "ፍልሰታ ለማርያም", category: "የቅድስት ማርያም መታሰቢያ",
             description: "ከነሐሴ 1 እስከ 16 የሚከበረው የፍልሰታ ጾም በነሐሴ 16 ይደርሳል።",
             verse: "ከዛሬ ጀምሮ ትውልድ ሁሉ ምስጉን ይሉኛል።",
@@ -212,6 +217,7 @@ QtObject {
         },
         {
             id: "mikael-tirr", calendar: "ethiopian", month: 5, day: 12,
+            image: "saint-michael.webp",
             title: "ጥር ሚካኤል", category: "የቅዱስ ሚካኤል ዓመታዊ መታሰቢያ",
             description: "ቅዱስ ሚካኤል በየወሩ 12ኛው ቀን ይታሰባል፤ አንዳንድ የመታሰቢያ ዝርዝሮች ጥር 12ንም እንደ ዓመታዊ በዓል ይጠቅሳሉ።",
             verse: "በሰማይም ሰልፍ ሆነ፤ ሚካኤልና መላእክቱ ዘንዶውን ተዋጉ።",
