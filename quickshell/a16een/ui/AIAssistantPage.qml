@@ -8,6 +8,15 @@ Item {
 
     property var palette: null
     property bool hasApiKey: false
+    property bool geminiConfigured: false
+    property bool groqConfigured: false
+    property string selectedProvider: "gemini"
+    readonly property string providerLabel: root.selectedProvider === "groq" ? "Groq" : "Google AI Studio / Gemini"
+    readonly property string providerShortLabel: root.selectedProvider === "groq" ? "GROQ" : "AI STUDIO"
+    readonly property var providerChoices: [
+        { id: "gemini", label: "AI STUDIO" },
+        { id: "groq", label: "GROQ" }
+    ]
     property bool connected: false
     property bool busy: false
     property bool awaitingApproval: false
@@ -63,6 +72,10 @@ Item {
 
     onHistoryChanged: root.scheduleHistorySave()
     onAssistantModeChanged: root.scheduleHistorySave()
+    onBusyChanged: {
+        if (root.busy)
+            Qt.callLater(() => messageList.positionViewAtEnd())
+    }
 
     function refreshStatus() {
         if (!statusProcess.running)
@@ -236,6 +249,28 @@ Item {
         Qt.callLater(() => messageList.positionViewAtEnd())
     }
 
+    function providerConfigured(provider) {
+        return String(provider || "gemini") === "groq" ? root.groqConfigured : root.geminiConfigured
+    }
+
+    function selectProvider(provider, fromChat) {
+        const normalized = String(provider || "").toLowerCase()
+        if (!["gemini", "groq"].includes(normalized) || root.busy || providerSetProcess.running)
+            return
+        root.selectedProvider = normalized
+        root.hasApiKey = root.providerConfigured(normalized)
+        root.connected = false
+        root.lastError = ""
+        root.keyDraft = ""
+        if (fromChat)
+            root.pageMode = root.hasApiKey ? "chat" : "settings"
+        if (!root.hasApiKey)
+            root.statusLine = "Add your " + root.providerLabel + " API key"
+        else
+            root.statusLine = root.providerLabel + " selected"
+        providerSetProcess.running = true
+    }
+
     function sendMessage() {
         const text = String(root.inputText || "").trim()
         if (!text.length || root.busy || root.awaitingApproval || !root.hasApiKey)
@@ -252,7 +287,8 @@ Item {
         root.history = root.history.concat([{ role: "user", parts: [{ text: text }] }])
         root.busy = true
         root.progressIndex = 0
-        root.statusLine = "Understanding your request"
+        root.statusLine = "Waiting for " + root.providerLabel
+        Qt.callLater(() => messageList.positionViewAtEnd())
         root.requestGemini()
     }
 
@@ -478,14 +514,18 @@ Item {
 
     function saveKey() {
         const key = String(root.keyDraft || "").trim()
+        if (providerSetProcess.running) {
+            root.lastError = "Wait for the provider selection to save, then try again."
+            return
+        }
         if (key.length < 10) {
-            root.lastError = "Paste the API key you created in Google AI Studio."
+            root.lastError = "Paste your " + root.providerLabel + " API key."
             return
         }
         root.lastError = ""
         root.busy = true
         root.progressIndex = 0
-        root.statusLine = "Saving your Gemini key securely"
+        root.statusLine = "Saving your " + root.providerLabel + " key securely"
         if (!keySetProcess.running)
             keySetProcess.running = true
     }
@@ -494,12 +534,16 @@ Item {
         root.keyDraft = ""
         if (code !== 0) {
             root.busy = false
-            root.lastError = "The API key could not be saved. Make sure it is valid text without spaces."
+            root.lastError = "The API key could not be saved. Check the key format and try again."
             root.statusLine = "Key not saved"
             return
         }
+        if (root.selectedProvider === "groq")
+            root.groqConfigured = true
+        else
+            root.geminiConfigured = true
         root.hasApiKey = true
-        root.statusLine = "Testing Gemini connection"
+        root.statusLine = "Testing " + root.providerLabel + " connection"
         connectionTestProcess.running = true
     }
 
@@ -512,14 +556,14 @@ Item {
             root.connected = true
             root.lastError = ""
             root.pageMode = "chat"
-            root.statusLine = "Connected to Gemini"
+            root.statusLine = "Connected to " + root.providerLabel
             if (messageModel.count === 0)
-                root.appendMessage("assistant", "Gemini is connected. Tell me what you want done, and I'll use A16EEN's available system tools to help.")
+                root.appendMessage("assistant", root.providerLabel + " is connected. Tell me what you want done, and I'll use A16EEN's available system tools to help.")
         } else {
             root.connected = false
             root.hasApiKey = true
             root.pageMode = "settings"
-            root.lastError = String(result && result.error || "Gemini connection failed. Check your key and internet connection.")
+            root.lastError = String(result && result.error || (root.providerLabel + " connection failed. Check your key and internet connection."))
             root.statusLine = "Connection failed"
         }
     }
@@ -581,6 +625,27 @@ Item {
     }
 
     Process {
+        id: providerSetProcess
+        command: ["a16een-ai", "provider", "set", root.selectedProvider]
+        running: false
+        onExited: (exitCode, exitStatus) => {
+            if (exitCode === 0)
+                root.refreshStatus()
+            else {
+                root.lastError = "Could not save the selected AI provider."
+                root.refreshStatus()
+            }
+        }
+        stderr: StdioCollector {
+            onStreamFinished: {
+                const value = String(text || "").trim()
+                if (value.length)
+                    console.warn("A16EEN AI provider:", value)
+            }
+        }
+    }
+
+    Process {
         id: statusProcess
         command: ["a16een-ai", "status"]
         running: false
@@ -588,8 +653,14 @@ Item {
             onStreamFinished: {
                 try {
                     const value = JSON.parse(String(text || "{}"))
+                    root.selectedProvider = value.provider === "groq" ? "groq" : "gemini"
+                    root.geminiConfigured = value.gemini_configured === true
+                    root.groqConfigured = value.groq_configured === true
                     root.hasApiKey = value.ok === true && value.configured === true
                 } catch (error) {
+                    root.selectedProvider = "gemini"
+                    root.geminiConfigured = false
+                    root.groqConfigured = false
                     root.hasApiKey = false
                 }
                 if (!root.hasApiKey)
@@ -602,7 +673,7 @@ Item {
 
     Process {
         id: keySetProcess
-        command: ["a16een-ai", "key", "set-stdin"]
+        command: ["a16een-ai", "key", "set-stdin", root.selectedProvider]
         stdinEnabled: true
         running: false
         onStarted: write(String(root.keyDraft || "").trim() + "\n")
@@ -618,9 +689,13 @@ Item {
 
     Process {
         id: keyRemoveProcess
-        command: ["a16een-ai", "key", "remove"]
+        command: ["a16een-ai", "key", "remove", root.selectedProvider]
         running: false
         onExited: (exitCode, exitStatus) => {
+            if (root.selectedProvider === "groq")
+                root.groqConfigured = false
+            else
+                root.geminiConfigured = false
             root.hasApiKey = false
             root.connected = false
             root.pageMode = "settings"
@@ -651,7 +726,7 @@ Item {
         command: ["a16een-ai", "ask"]
         stdinEnabled: true
         running: false
-        onStarted: write(JSON.stringify({ history: root.history, mode: root.assistantMode }) + "\n")
+        onStarted: write(JSON.stringify({ history: root.history, mode: root.assistantMode, provider: root.selectedProvider }) + "\n")
         stdout: StdioCollector {
             onStreamFinished: root.handleGeminiResponse(String(text || "{}"))
         }
@@ -696,9 +771,58 @@ Item {
             height: visible ? parent.height : 0
             spacing: 8
 
+            Row {
+                id: settingsProviderSelector
+                width: parent.width
+                height: 31
+                spacing: 6
+
+                Text {
+                    width: 76
+                    anchors.verticalCenter: parent.verticalCenter
+                    text: "AI PROVIDER"
+                    color: root.mutedTextColor
+                    font.pixelSize: 8
+                    font.weight: Font.DemiBold
+                    font.letterSpacing: 0.45
+                }
+
+                Repeater {
+                    model: root.providerChoices
+                    delegate: Rectangle {
+                        required property var modelData
+                        width: (settingsProviderSelector.width - 88) / 2
+                        height: 31
+                        radius: 9
+                        color: root.selectedProvider === modelData.id ? root.subtleColor : "transparent"
+                        border.width: 1
+                        border.color: root.selectedProvider === modelData.id ? root.accentColor : root.borderColor
+
+                        Text {
+                            anchors.centerIn: parent
+                            text: settingsProviderChoice.modelData.label
+                            color: root.selectedProvider === settingsProviderChoice.modelData.id ? root.textColor : root.mutedTextColor
+                            font.pixelSize: 8
+                            font.weight: root.selectedProvider === settingsProviderChoice.modelData.id ? Font.DemiBold : Font.Medium
+                        }
+
+                        MouseArea {
+                            id: settingsProviderChoiceMouse
+                            anchors.fill: parent
+                            enabled: !root.busy && !providerSetProcess.running
+                            cursorShape: Qt.PointingHandCursor
+                            onClicked: root.selectProvider(settingsProviderChoice.modelData.id, false)
+                        }
+
+                        Accessible.name: settingsProviderChoice.modelData.label + " API provider"
+                        id: settingsProviderChoice
+                    }
+                }
+            }
+
             Text {
                 width: parent.width
-                text: root.hasApiKey ? "GEMINI CONNECTION" : "CONNECT YOUR GEMINI KEY"
+                text: root.hasApiKey ? (root.providerShortLabel + " CONNECTION") : ("CONNECT YOUR " + root.providerShortLabel + " KEY")
                 color: root.textColor
                 font.pixelSize: 10
                 font.weight: Font.DemiBold
@@ -707,7 +831,9 @@ Item {
 
             Text {
                 width: parent.width
-                text: "Create or copy a Gemini API key in Google AI Studio. A16EEN stores it locally with owner-only permissions; prompts and any system details needed for your request are sent to Google Gemini."
+                text: root.selectedProvider === "groq"
+                    ? "Create a Groq API key in the Groq console. A16EEN stores it locally with owner-only permissions; prompts and any system details needed for your request are sent to Groq."
+                    : "Create or copy a Gemini API key in Google AI Studio. A16EEN stores it locally with owner-only permissions; prompts and any system details needed for your request are sent to Google Gemini."
                 color: root.secondaryTextColor
                 font.pixelSize: 9
                 wrapMode: Text.WordWrap
@@ -724,7 +850,7 @@ Item {
 
                 Text {
                     anchors.centerIn: parent
-                    text: "OPEN GOOGLE AI STUDIO  ↗"
+                    text: root.selectedProvider === "groq" ? "OPEN GROQ CONSOLE  ↗" : "OPEN GOOGLE AI STUDIO  ↗"
                     color: root.textColor
                     font.pixelSize: 8
                     font.weight: Font.DemiBold
@@ -735,13 +861,13 @@ Item {
                     anchors.fill: parent
                     hoverEnabled: true
                     cursorShape: Qt.PointingHandCursor
-                    onClicked: Quickshell.execDetached(["xdg-open", "https://aistudio.google.com/apikeys"])
+                    onClicked: Quickshell.execDetached(["xdg-open", root.selectedProvider === "groq" ? "https://console.groq.com/keys" : "https://aistudio.google.com/apikeys"])
                 }
             }
 
             Text {
                 width: parent.width
-                text: "Paste API key"
+                text: "Paste " + root.providerLabel + " API key"
                 color: root.secondaryTextColor
                 font.pixelSize: 8
                 font.weight: Font.DemiBold
@@ -790,7 +916,7 @@ Item {
 
                     Text {
                         anchors.centerIn: parent
-                        text: root.busy ? "CONNECTING…" : (root.hasApiKey ? "SAVE & TEST KEY" : "SAVE & CONNECT")
+                        text: root.busy ? "CONNECTING…" : (root.providerConfigured(root.selectedProvider) ? "SAVE & TEST KEY" : "SAVE & CONNECT")
                         color: root.busy ? root.secondaryTextColor : root.accentTextColor
                         font.pixelSize: 8
                         font.weight: Font.Bold
@@ -799,7 +925,7 @@ Item {
 
                     MouseArea {
                         anchors.fill: parent
-                        enabled: !root.busy
+                        enabled: !root.busy && !providerSetProcess.running
                         cursorShape: Qt.PointingHandCursor
                         onClicked: root.saveKey()
                     }
@@ -812,11 +938,11 @@ Item {
                     color: secondaryMouse.containsMouse ? root.subtleColor : "transparent"
                     border.width: 1
                     border.color: root.borderColor
-                    visible: root.hasApiKey
+                    visible: root.providerConfigured(root.selectedProvider)
 
                     Text {
                         anchors.centerIn: parent
-                        text: "REMOVE"
+                        text: "REMOVE KEY"
                         color: root.secondaryTextColor
                         font.pixelSize: 8
                         font.weight: Font.DemiBold
@@ -843,8 +969,8 @@ Item {
 
             Text {
                 width: parent.width
-                visible: root.hasApiKey
-                text: "Your saved key stays on this computer until you remove it. Keep it private."
+                visible: root.providerConfigured(root.selectedProvider)
+                text: "Your " + root.providerLabel + " key stays on this computer until you remove it. Keep it private."
                 color: root.mutedTextColor
                 font.pixelSize: 8
                 wrapMode: Text.WordWrap
@@ -882,6 +1008,68 @@ Item {
             width: parent.width
             height: visible ? parent.height : 0
             spacing: 7
+
+            Row {
+                id: providerSelector
+                width: parent.width
+                height: 28
+                spacing: 6
+
+                Text {
+                    width: 57
+                    anchors.verticalCenter: parent.verticalCenter
+                    text: "PROVIDER"
+                    color: root.mutedTextColor
+                    font.pixelSize: 8
+                    font.weight: Font.DemiBold
+                    font.letterSpacing: 0.45
+                }
+
+                Repeater {
+                    model: root.providerChoices
+                    delegate: Rectangle {
+                        id: chatProviderChoice
+                        required property var modelData
+                        width: (providerSelector.width - 69) / 2
+                        height: 28
+                        radius: 9
+                        color: root.selectedProvider === modelData.id ? root.subtleColor : "transparent"
+                        border.width: 1
+                        border.color: root.selectedProvider === modelData.id ? root.accentColor : root.borderColor
+
+                        Row {
+                            anchors.centerIn: parent
+                            spacing: 5
+
+                            Rectangle {
+                                width: 5
+                                height: 5
+                                radius: 2.5
+                                anchors.verticalCenter: parent.verticalCenter
+                                color: root.selectedProvider === chatProviderChoice.modelData.id ? root.successColor : root.mutedTextColor
+                            }
+
+                            Text {
+                                anchors.verticalCenter: parent.verticalCenter
+                                text: chatProviderChoice.modelData.label
+                                color: root.selectedProvider === chatProviderChoice.modelData.id ? root.textColor : root.mutedTextColor
+                                font.pixelSize: 8
+                                font.weight: root.selectedProvider === chatProviderChoice.modelData.id ? Font.DemiBold : Font.Medium
+                            }
+                        }
+
+                        MouseArea {
+                            anchors.fill: parent
+                            enabled: !root.busy && !root.awaitingApproval && !providerSetProcess.running
+                            hoverEnabled: true
+                            cursorShape: Qt.PointingHandCursor
+                            onClicked: root.selectProvider(chatProviderChoice.modelData.id, true)
+                        }
+
+                        Accessible.name: chatProviderChoice.modelData.label + " provider"
+                    }
+                }
+            }
 
             Row {
                 id: modeSelector
@@ -942,13 +1130,67 @@ Item {
             ListView {
                 id: messageList
                 width: parent.width
-                height: Math.max(80, chatPanel.height - modeSelector.height
-                    - chatComposerRow.height - approvalCard.height - errorMessage.height - chatPanel.spacing * 4)
+                height: Math.max(80, chatPanel.height - providerSelector.height - modeSelector.height
+                    - chatComposerRow.height - approvalCard.height - errorMessage.height - chatPanel.spacing * 5)
                 clip: true
                 spacing: 7
                 model: messageModel
                 boundsBehavior: Flickable.StopAtBounds
                 interactive: contentHeight > height
+
+                footer: Item {
+                    id: typingIndicator
+                    width: messageList.width
+                    height: root.busy && !root.awaitingApproval ? 43 : 0
+                    visible: root.busy && !root.awaitingApproval
+                    clip: true
+
+                    Rectangle {
+                        width: 156
+                        height: 34
+                        radius: 12
+                        color: root.fieldColor
+                        border.width: 1
+                        border.color: root.borderColor
+
+                        Row {
+                            anchors.left: parent.left
+                            anchors.leftMargin: 12
+                            anchors.verticalCenter: parent.verticalCenter
+                            spacing: 4
+
+                            Repeater {
+                                model: 3
+                                delegate: Rectangle {
+                                    id: typingDot
+                                    required property int index
+                                    width: 5
+                                    height: 5
+                                    radius: 2.5
+                                    anchors.verticalCenter: parent.verticalCenter
+                                    color: "#D6AD60"
+                                    opacity: 0.45
+
+                                    SequentialAnimation on opacity {
+                                        running: typingIndicator.visible
+                                        loops: Animation.Infinite
+                                        PauseAnimation { duration: typingDot.index * 140 }
+                                        NumberAnimation { to: 1.0; duration: 220; easing.type: Easing.InOutSine }
+                                        NumberAnimation { to: 0.35; duration: 300; easing.type: Easing.InOutSine }
+                                        PauseAnimation { duration: (2 - typingDot.index) * 140 }
+                                    }
+                                }
+                            }
+
+                            Text {
+                                anchors.verticalCenter: parent.verticalCenter
+                                text: root.providerLabel + " is thinking"
+                                color: root.secondaryTextColor
+                                font.pixelSize: 8
+                            }
+                        }
+                    }
+                }
 
                 delegate: Item {
                     id: messageRow
@@ -957,10 +1199,17 @@ Item {
                     width: messageList.width
                     height: bubble.height + 10
 
+                    TextMetrics {
+                        id: messageMetrics
+                        text: messageRow.body
+                        font.pixelSize: 10
+                    }
+
                     Rectangle {
                         id: bubble
                         readonly property bool fromUser: messageRow.speaker === "user"
-                        width: fromUser ? messageRow.width * 0.84 : messageRow.width - 6
+                        width: Math.min(messageRow.width * (fromUser ? 0.78 : 0.94),
+                            Math.max(fromUser ? 54 : 88, messageMetrics.advanceWidth + (fromUser ? 24 : 35)))
                         height: Math.max(fromUser ? 43 : 49,
                             messageBody.implicitHeight + messageMetaRow.height + 22)
                         anchors.left: fromUser ? undefined : parent.left
