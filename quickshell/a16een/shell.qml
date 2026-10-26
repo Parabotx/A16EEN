@@ -28,6 +28,7 @@ ShellRoot {
     property bool quickNotesOpen: false
     property bool quickTasksOpen: false
     property bool quickPresetsOpen: false
+    property bool gamingPanelOpen: false
     property bool quickUtilitiesOpen: false
     property bool utilitiesExpanded: false
     property string utilitiesMode: "wifi"
@@ -284,6 +285,7 @@ ShellRoot {
         root.quickNotesOpen = false
         root.quickTasksOpen = false
         root.quickPresetsOpen = false
+        root.gamingPanelOpen = false
         root.quickUtilitiesOpen = false
         root.utilitiesExpanded = false
         root.commandCenterOpen = false
@@ -1438,8 +1440,18 @@ ShellRoot {
             dataMeterProcess.running = true
     }
 
+    function openGamingPanel() {
+        if (root.gamingPanelOpen) {
+            root.gamingPanelOpen = false
+            return
+        }
+        root.closeTransientPanels()
+        root.gamingPanelOpen = true
+    }
+
     function openToolsPage(pageName) {
         // Reuse the existing layer-shell surface to avoid overlay handoff/blink.
+        root.gamingPanelOpen = false
         root.quickNotesOpen = false
         root.quickTasksOpen = false
         root.quickPresetsOpen = false
@@ -1461,6 +1473,7 @@ ShellRoot {
     }
 
     function closeTransientPanels() {
+        root.gamingPanelOpen = false
         root.quickNotesOpen = false
         root.quickTasksOpen = false
         root.quickPresetsOpen = false
@@ -1716,10 +1729,12 @@ ShellRoot {
             onLockRequested: root.requestLockScreen()
             onUtilitiesRequested: root.handleUtilitiesRequest(mode)
             onAiRequested: root.openToolsPage("ai")
+            onGamingRequested: root.openGamingPanel()
         }
     }
 
     function handleUtilitiesRequest(mode) {
+        root.gamingPanelOpen = false
         root.notificationCenterOpen = false
         root.toolsPanelOpen = false
         root.toolsPanelPage = "tools"
@@ -1746,6 +1761,7 @@ ShellRoot {
     }
 
     function openQuickTasks() {
+        root.gamingPanelOpen = false
         root.notificationCenterOpen = false
         root.toolsPanelOpen = false
         root.toolsPanelPage = "tools"
@@ -1764,6 +1780,7 @@ ShellRoot {
     }
 
     function openQuickPresets() {
+        root.gamingPanelOpen = false
         root.notificationCenterOpen = false
         root.toolsPanelOpen = false
         root.toolsPanelPage = "tools"
@@ -1807,6 +1824,7 @@ ShellRoot {
         dockVisible: !root.secureLockActive && (!root.focusedWindowFullscreen || root.navbarRevealed)
 
         onNotesRequested: {
+            root.gamingPanelOpen = false
             root.quickNotesOpen = true
             root.quickUtilitiesOpen = false
             root.utilitiesExpanded = false
@@ -1910,6 +1928,14 @@ ShellRoot {
         dockVisible: !root.secureLockActive
         opened: root.quickPresetsOpen
         onCloseRequested: root.quickPresetsOpen = false
+    }
+
+    GamingPanel {
+        modelData: root.primaryScreen
+        navbarPosition: root.navbarPosition
+        dockVisible: !root.secureLockActive
+        opened: root.gamingPanelOpen
+        onCloseRequested: root.gamingPanelOpen = false
     }
 
     CommandCenter {

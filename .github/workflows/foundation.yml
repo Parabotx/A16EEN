@@ -57,6 +57,7 @@ jobs:
           python3 tests/test_system_monitor.py
           python3 tests/test_data_meter.py
           node tests/test_window_geometry.js
+          node tests/test_tic_tac_toe.js
           bash tests/test_screenshot_capture.sh
           bash tests/test_navbar_appearance.sh
           bash tests/test_mpv_theme.sh
@@ -108,6 +109,9 @@ jobs:
           grep -Fq 'label: "System Monitor"' quickshell/a16een/ui/ToolsPanel.qml
           grep -Fq 'id: aiNavbarContainer' quickshell/a16een/ui/Dock.qml
           grep -Fq 'id: gamingNavbarContainer' quickshell/a16een/ui/Dock.qml
+          grep -Fq 'onGamingRequested: root.openGamingPanel()' quickshell/a16een/shell.qml
+          grep -Fq 'GamingPanel {' quickshell/a16een/shell.qml
+          grep -Fq 'function bestMove(board, botMark, humanMark)' quickshell/a16een/ui/TicTacToe.js
           grep -Fq 'onAiRequested: root.openToolsPage("ai")' quickshell/a16een/shell.qml
           grep -Fq '{ id: "ai", name: "A16EEN AI"' quickshell/a16een/ui/NavbarAppearancePage.qml
           grep -Fq '{ id: "gaming", name: "Gaming"' quickshell/a16een/ui/NavbarAppearancePage.qml
@@ -206,6 +210,9 @@ jobs:
           test -f quickshell/a16een/shell.qml
           test -f quickshell/a16een/ui/Launcher.qml
           test -f quickshell/a16een/ui/Dock.qml
+          test -f quickshell/a16een/ui/GamingPanel.qml
+          test -f quickshell/a16een/ui/TicTacToe.js
+          test -f tests/test_tic_tac_toe.js
           test -f quickshell/a16een/ui/CommandCenter.qml
           test ! -e quickshell/a16een/ui/Dashboard.qml
           ! grep -Fq 'dashboardOpen' quickshell/a16een/shell.qml
