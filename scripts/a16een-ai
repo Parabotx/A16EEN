@@ -14,6 +14,7 @@ import shutil
 import subprocess
 import sys
 import tempfile
+import time
 import urllib.error
 import urllib.parse
 import urllib.request
@@ -24,10 +25,16 @@ HOME = Path(os.environ.get("HOME", str(Path.home())))
 CONFIG_HOME = Path(os.environ.get("XDG_CONFIG_HOME", str(HOME / ".config")))
 AI_DIR = CONFIG_HOME / "a16een" / "ai"
 KEY_FILE = AI_DIR / "gemini-api-key"
+STATE_HOME = Path(os.environ.get("XDG_STATE_HOME", str(HOME / ".local/state")))
+AI_STATE_DIR = STATE_HOME / "a16een" / "ai"
+CONVERSATIONS_FILE = AI_STATE_DIR / "conversations.json"
 MODEL = os.environ.get("A16EEN_GEMINI_MODEL", "gemini-3.8-flash")
 API_ROOT = "https://generativelanguage.googleapis.com/v1beta/models/"
 MAX_HISTORY_ITEMS = 48
 MAX_PROMPT_CHARS = 8000
+MAX_STORED_JSON_BYTES = 1_500_000
+MAX_STORED_CONVERSATIONS = 50
+MAX_STORED_MESSAGES = 80
 CONFIRM_ACTIONS = {
     "close_active_window",
     "logout_session",
@@ -151,11 +158,11 @@ def emit(value: dict[str, Any], code: int = 0) -> None:
     print(json.dumps(value, ensure_ascii=False, separators=(",", ":")))
     raise SystemExit(code)
 
-def read_json_stdin() -> dict[str, Any]:
-    line = sys.stdin.readline(MAX_PROMPT_CHARS * 4 + 1)
+def read_json_stdin(max_bytes: int = MAX_PROMPT_CHARS * 4) -> dict[str, Any]:
+    line = sys.stdin.readline(max_bytes + 1)
     if not line:
         return {}
-    if len(line) > MAX_PROMPT_CHARS * 4:
+    if len(line.encode("utf-8")) > max_bytes:
         raise ValueError("The request is too large.")
     value = json.loads(line)
     if not isinstance(value, dict):
@@ -699,6 +706,210 @@ def run_test() -> dict[str, Any]:
     answer = " ".join(text_parts).strip()
     return {"ok": True, "configured": True, "model": MODEL, "message": "Connected to Gemini (" + MODEL + ").", "reply": answer[:100]}
 
+def empty_history_store() -> dict[str, Any]:
+    return {"active_id": "", "conversations": []}
+
+
+def safe_conversation_id(value: Any) -> str:
+    result = str(value or "")
+    if not re.fullmatch(r"[A-Za-z0-9_-]{1,80}", result):
+        raise ValueError("Invalid conversation ID.")
+    return result
+
+
+def ensure_history_directory() -> None:
+    AI_STATE_DIR.mkdir(parents=True, exist_ok=True, mode=0o700)
+    try:
+        AI_STATE_DIR.chmod(0o700)
+    except OSError:
+        pass
+
+
+def load_history_store() -> dict[str, Any]:
+    ensure_history_directory()
+    try:
+        if CONVERSATIONS_FILE.stat().st_size > MAX_STORED_JSON_BYTES:
+            raise RuntimeError("Saved AI conversation history is too large; it was not changed.")
+        raw = CONVERSATIONS_FILE.read_text(encoding="utf-8")
+    except FileNotFoundError:
+        return empty_history_store()
+    except OSError as error:
+        raise RuntimeError("Could not read local AI conversation history: " + str(error))
+    try:
+        parsed = json.loads(raw)
+    except json.JSONDecodeError:
+        raise RuntimeError("Saved AI conversation history is invalid; the file was not overwritten.")
+    if not isinstance(parsed, dict) or not isinstance(parsed.get("conversations", []), list):
+        raise RuntimeError("Saved AI conversation history has an invalid structure.")
+
+    conversations: list[dict[str, Any]] = []
+    for item in parsed.get("conversations", [])[:MAX_STORED_CONVERSATIONS * 2]:
+        if not isinstance(item, dict):
+            continue
+        try:
+            conversation_id = safe_conversation_id(item.get("id"))
+        except ValueError:
+            continue
+        title, mode = item.get("title", "New chat"), item.get("mode", "normal")
+        history, messages = item.get("history", []), item.get("messages", [])
+        if not isinstance(title, str) or not isinstance(mode, str) or mode not in MODE_INSTRUCTIONS:
+            continue
+        if not isinstance(history, list) or not isinstance(messages, list):
+            continue
+        safe_history: list[dict[str, Any]] = []
+        for entry in history[-MAX_HISTORY_ITEMS:]:
+            if not isinstance(entry, dict) or entry.get("role") not in ("user", "model"):
+                continue
+            parts = entry.get("parts")
+            if not isinstance(parts, list) or len(parts) > 24:
+                continue
+            try:
+                if len(json.dumps(entry, ensure_ascii=False).encode("utf-8")) > 160_000:
+                    continue
+            except (TypeError, ValueError):
+                continue
+            safe_history.append(entry)
+        safe_messages: list[dict[str, str]] = []
+        for message in messages[-MAX_STORED_MESSAGES:]:
+            if not isinstance(message, dict) or message.get("speaker") not in ("user", "assistant"):
+                continue
+            body = message.get("body")
+            if isinstance(body, str):
+                safe_messages.append({"speaker": message["speaker"], "body": body[:6000]})
+        try:
+            updated_at = float(item.get("updated_at", 0))
+        except (TypeError, ValueError):
+            updated_at = 0.0
+        conversations.append({
+            "id": conversation_id, "title": title[:100], "mode": mode,
+            "history": safe_history, "messages": safe_messages, "updated_at": updated_at,
+        })
+
+    conversations.sort(key=lambda item: item["updated_at"], reverse=True)
+    conversations = conversations[:MAX_STORED_CONVERSATIONS]
+    valid_ids = {item["id"] for item in conversations}
+    active_id = str(parsed.get("active_id", ""))
+    if active_id not in valid_ids:
+        active_id = conversations[0]["id"] if conversations else ""
+    try:
+        CONVERSATIONS_FILE.chmod(0o600)
+    except OSError:
+        pass
+    return {"active_id": active_id, "conversations": conversations}
+
+
+def save_conversation_from_stdin() -> dict[str, Any]:
+    payload = read_json_stdin(MAX_STORED_JSON_BYTES)
+    conversation_id = safe_conversation_id(payload.get("id"))
+    title, mode = payload.get("title", "New chat"), payload.get("mode", "normal")
+    history, messages = payload.get("history", []), payload.get("messages", [])
+    if not isinstance(title, str) or not isinstance(mode, str) or mode not in MODE_INSTRUCTIONS:
+        raise ValueError("Conversation title or response mode is invalid.")
+    if not isinstance(history, list) or len(history) > MAX_HISTORY_ITEMS:
+        raise ValueError("Conversation context is too large to save.")
+    if not isinstance(messages, list) or len(messages) > MAX_STORED_MESSAGES:
+        raise ValueError("Conversation message list is too large to save.")
+
+    safe_history: list[dict[str, Any]] = []
+    for entry in history:
+        if not isinstance(entry, dict) or entry.get("role") not in ("user", "model"):
+            raise ValueError("Conversation context contains an invalid message.")
+        parts = entry.get("parts")
+        if not isinstance(parts, list) or len(parts) > 24:
+            raise ValueError("Conversation context contains invalid parts.")
+        try:
+            encoded_size = len(json.dumps(entry, ensure_ascii=False).encode("utf-8"))
+        except (TypeError, ValueError):
+            raise ValueError("Conversation context cannot be serialized.")
+        if encoded_size > 160_000:
+            raise ValueError("A saved conversation message is too large.")
+        safe_history.append(entry)
+
+    safe_messages: list[dict[str, str]] = []
+    for message in messages:
+        if not isinstance(message, dict) or message.get("speaker") not in ("user", "assistant"):
+            raise ValueError("Conversation transcript contains an invalid message.")
+        body = message.get("body")
+        if not isinstance(body, str):
+            raise ValueError("Conversation transcript contains an invalid message body.")
+        safe_messages.append({"speaker": message["speaker"], "body": body[:6000]})
+
+    try:
+        updated_at = float(payload.get("updated_at", time.time()))
+    except (TypeError, ValueError):
+        updated_at = time.time()
+    if updated_at <= 0:
+        updated_at = time.time()
+
+    ensure_history_directory()
+    store = load_history_store()
+    conversation = {
+        "id": conversation_id, "title": title.strip()[:100] or "New chat", "mode": mode,
+        "history": safe_history[-MAX_HISTORY_ITEMS:], "messages": safe_messages[-MAX_STORED_MESSAGES:],
+        "updated_at": updated_at,
+    }
+    conversations = [item for item in store["conversations"] if item["id"] != conversation_id]
+    conversations.append(conversation)
+    conversations.sort(key=lambda item: item["updated_at"], reverse=True)
+    conversations = conversations[:MAX_STORED_CONVERSATIONS]
+    active_id = conversation_id if any(item["id"] == conversation_id for item in conversations) else (
+        conversations[0]["id"] if conversations else ""
+    )
+    updated = {"active_id": active_id, "conversations": conversations}
+
+    temporary = ""
+    try:
+        fd, temporary = tempfile.mkstemp(prefix=".conversations.", dir=str(AI_STATE_DIR))
+        with os.fdopen(fd, "w", encoding="utf-8") as output:
+            json.dump(updated, output, ensure_ascii=False, separators=(",", ":"))
+            output.write("\n")
+            output.flush()
+            os.fsync(output.fileno())
+        os.chmod(temporary, 0o600)
+        os.replace(temporary, CONVERSATIONS_FILE)
+        temporary = ""
+        try:
+            CONVERSATIONS_FILE.chmod(0o600)
+            AI_STATE_DIR.chmod(0o700)
+        except OSError:
+            pass
+    finally:
+        if temporary:
+            try:
+                os.unlink(temporary)
+            except OSError:
+                pass
+    return {"ok": True, "active_id": updated["active_id"], "conversations": updated["conversations"]}
+
+
+def delete_saved_conversation(conversation_id: str) -> dict[str, Any]:
+    conversation_id = safe_conversation_id(conversation_id)
+    store = load_history_store()
+    conversations = [item for item in store["conversations"] if item["id"] != conversation_id]
+    active_id = store["active_id"]
+    if active_id == conversation_id:
+        active_id = conversations[0]["id"] if conversations else ""
+    ensure_history_directory()
+    temporary = ""
+    try:
+        fd, temporary = tempfile.mkstemp(prefix=".conversations.", dir=str(AI_STATE_DIR))
+        with os.fdopen(fd, "w", encoding="utf-8") as output:
+            json.dump({"active_id": active_id, "conversations": conversations}, output, ensure_ascii=False, separators=(",", ":"))
+            output.write("\n")
+            output.flush()
+            os.fsync(output.fileno())
+        os.chmod(temporary, 0o600)
+        os.replace(temporary, CONVERSATIONS_FILE)
+        temporary = ""
+    finally:
+        if temporary:
+            try:
+                os.unlink(temporary)
+            except OSError:
+                pass
+    return {"ok": True, "active_id": active_id, "conversations": conversations}
+
+
 def main() -> None:
     args = sys.argv[1:]
     try:
@@ -712,6 +923,13 @@ def main() -> None:
             except FileNotFoundError:
                 pass
             emit({"ok": True, "configured": False, "message": "Gemini API key removed."})
+        if args == ["history", "list"]:
+            store = load_history_store()
+            emit({"ok": True, "active_id": store["active_id"], "conversations": store["conversations"]})
+        if args == ["history", "save-stdin"]:
+            emit(save_conversation_from_stdin())
+        if len(args) == 3 and args[:2] == ["history", "delete"]:
+            emit(delete_saved_conversation(args[2]))
         if args == ["tools"]:
             emit({"ok": True, "actions": [{"name": item["name"], "requires_confirmation": item["name"] in CONFIRM_ACTIONS} for item in FUNCTIONS]})
         if args == ["test"]:
@@ -724,7 +942,7 @@ def main() -> None:
             action_args = payload.get("args", {})
             approved = payload.get("approved") is True
             emit(call_tool(name, action_args, approved))
-        emit({"ok": False, "error": "Unknown command. Use status, key set-stdin, key remove, test, ask, execute, or tools."}, 2)
+        emit({"ok": False, "error": "Unknown command. Use status, key set-stdin, key remove, history list, history save-stdin, history delete <id>, test, ask, execute, or tools."}, 2)
     except SystemExit:
         raise
     except Exception as error:

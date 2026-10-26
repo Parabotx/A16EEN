@@ -230,7 +230,11 @@ apply_appearance_style() {
         fi
     fi
 
-    ensure_style_contrast "$original_style" "$background"
+    if [[ "$slot" == "ai" && "$all_icon_on" != "true" && "$individual_icon" == "inherit" ]]; then
+        printf '%s' "$original_style"
+    else
+        ensure_style_contrast "$original_style" "$background"
+    fi
 }
 
 normalize_icon() {
@@ -324,7 +328,12 @@ generate_icon() {
         esac
     fi
 
-    [[ -n "$configured_style" ]] || configured_style="solid:#111318"
+    if [[ -z "$configured_style" ]]; then
+        case "$slot" in
+            ai) configured_style="solid:#FFFFFF" ;;
+            *) configured_style="solid:#111318" ;;
+        esac
+    fi
     configured_style="$(apply_appearance_style "$slot" "$configured_style")"
 
     icon_file="$ICON_ROOT/$configured_icon"
