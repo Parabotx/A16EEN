@@ -22,8 +22,9 @@ jobs:
           sudo apt-get update
           sudo apt-get install -y qt6-declarative-dev-tools lua5.4
           export PATH="/usr/lib/qt6/bin:$PATH"
-          # Parse every QML component: checking shell.qml alone does not validate its children.
-          find quickshell/a16een -type f -name '*.qml' -print0 | xargs -0 -n1 qmlformat >/dev/null
+          # Parse every QML component individually and report the active file.
+          # A per-file timeout prevents a stuck formatter from obscuring the cause.
+          find quickshell/a16een -type f -name '*.qml' -print0 | xargs -0 -n1 sh -c 'printf "Checking QML: %s\\n" "$1"; timeout 15s qmlformat "$1" >/dev/null' sh
 
       - name: Validate shell scripts
         run: |
