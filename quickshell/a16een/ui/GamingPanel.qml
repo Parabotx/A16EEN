@@ -227,7 +227,7 @@ PanelWindow {
                     }
 
                     Text {
-                        width: parent.width - (root.currentView === "xo" ? 28 : 0) - 28 - (root.currentView === "xo" ? 28 : 0) - parent.spacing * (root.currentView === "xo" ? 3 : 2)
+                        width: parent.width - (root.currentView === "xo" ? 28 : 0) - 28 - (root.currentView === "xo" ? 28 : 0) - parent.spacing * 3
                         anchors.verticalCenter: parent.verticalCenter
                         text: root.currentView === "xo" ? "X & O" : "GAMES"
                         color: popupCardStyle.textColor
