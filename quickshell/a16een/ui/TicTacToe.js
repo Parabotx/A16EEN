@@ -49,8 +49,8 @@ function minimax(board, botMark, humanMark, botTurn, depth) {
     return bestScore
 }
 
-// Optimal play: the bot cannot be beaten. Center/corners are visited first to
-// make its opening choices feel intentional while retaining minimax accuracy.
+// Best possible move. Keep this deterministic helper for tests and for the
+// occasional sharp bot turn; casualMove deliberately adds human-like mistakes.
 function bestMove(board, botMark, humanMark) {
     if (winner(board) || isFull(board))
         return -1
@@ -73,4 +73,59 @@ function bestMove(board, botMark, humanMark) {
         }
     }
     return choice
+}
+
+function rankedMoves(board, botMark, humanMark) {
+    var moveOrder = [4, 0, 2, 6, 8, 1, 3, 5, 7]
+    var work = board.slice(0)
+    var moves = []
+    for (var i = 0; i < moveOrder.length; i++) {
+        var index = moveOrder[i]
+        if (work[index])
+            continue
+        work[index] = botMark
+        var score = minimax(work, botMark, humanMark, false, 1)
+        work[index] = ""
+        moves.push({ index: index, score: score })
+    }
+    return moves
+}
+
+// A single bot with varied judgement: it usually plays optimally, sometimes
+// chooses a weaker move, and occasionally makes a plainly imperfect move.
+// roll and choiceRoll are injectable so automated tests can check blunders.
+function casualMove(board, botMark, humanMark, roll, choiceRoll) {
+    if (winner(board) || isFull(board))
+        return -1
+
+    var skillRoll = typeof roll === "number" ? roll : Math.random()
+    var optimal = bestMove(board, botMark, humanMark)
+    if (skillRoll < 0.68)
+        return optimal
+
+    var ranked = rankedMoves(board, botMark, humanMark)
+    var alternatives = []
+    var bestScore = -Infinity
+    for (var i = 0; i < ranked.length; i++)
+        bestScore = Math.max(bestScore, ranked[i].score)
+
+    if (skillRoll < 0.90) {
+        for (var j = 0; j < ranked.length; j++) {
+            if (ranked[j].score < bestScore)
+                alternatives.push(ranked[j].index)
+        }
+    }
+
+    if (alternatives.length === 0) {
+        for (var k = 0; k < ranked.length; k++) {
+            if (ranked[k].index !== optimal)
+                alternatives.push(ranked[k].index)
+        }
+    }
+    if (alternatives.length === 0)
+        return optimal
+
+    var pickRoll = typeof choiceRoll === "number" ? choiceRoll : Math.random()
+    pickRoll = Math.max(0, Math.min(0.999999, pickRoll))
+    return alternatives[Math.floor(pickRoll * alternatives.length)]
 }
