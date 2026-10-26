@@ -23,6 +23,7 @@ PanelWindow {
     signal dockVisibilityChanged(bool visible)
     signal utilitiesRequested(string mode)
     signal aiRequested()
+    signal gamingRequested()
 
     property bool lockInProgress: false
     property bool powerMenuOpen: false
@@ -1580,6 +1581,16 @@ PanelWindow {
             height: 16
             iconName: "gamepad-2.svg"
             iconColor: root.iconColorFor("gaming")
+        }
+
+        MouseArea {
+            id: gamingNavbarMouse
+            anchors.fill: parent
+            hoverEnabled: true
+            cursorShape: Qt.PointingHandCursor
+            onEntered: root.revealDock()
+            onExited: root.scheduleHide()
+            onClicked: root.gamingRequested()
         }
 
         Accessible.name: "Gaming"
