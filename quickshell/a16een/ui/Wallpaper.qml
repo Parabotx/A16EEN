@@ -44,128 +44,178 @@ PanelWindow {
         color: "#050608"
     }
 
-    Image {
-        id: staticWallpaper
+    // Double-buffer the wallpaper: load the next file behind the current one,
+    // then fade the outgoing layer only after the incoming layer is ready.
+    property bool wallpaperLayersReady: false
+    property bool frontIsA: true
+    property string displayedWallpaperPath: ""
+    property string pendingWallpaperPath: ""
+    property string transitionWallpaperPath: ""
+
+    WallpaperTransitionLayer {
+        id: wallpaperLayerA
         anchors.fill: parent
-        source: !root.isAnimatedImage
-            ? (root.isVideo
-                ? (videoWallpaperLoader.status === Loader.Error ? root.fallbackPath : "")
-                : root.activePath)
-            : ""
-        fillMode: Image.PreserveAspectFit
-        asynchronous: true
-        retainWhileLoading: true
-        mipmap: true
-        cache: true
-        visible: !root.isAnimatedImage
-            && (!root.isVideo || videoWallpaperLoader.status === Loader.Error)
-            && status === Image.Ready
-    }
-
-    AnimatedImage {
-        id: animatedWallpaper
-        anchors.fill: parent
-        source: root.isAnimatedImage ? root.activePath : ""
-        sourceSize.width: Math.max(1, Math.round(width))
-        fillMode: Image.PreserveAspectFit
-        asynchronous: true
-        cache: false
-        playing: root.isAnimatedImage && root.desktopAnimationAllowed
-        visible: root.isAnimatedImage && status === AnimatedImage.Ready
-    }
-
-    // Keep Qt Multimedia outside the always-loaded wallpaper component.
-    // A missing or ABI-incompatible video plugin must not prevent the static
-    // wallpaper, navbar, and the rest of the A16EEN shell from loading.
-    Loader {
-        id: videoWallpaperLoader
-        anchors.fill: parent
-        active: root.isVideo
-        source: root.isVideo ? "VideoWallpaper.qml" : ""
-
-        onLoaded: {
-            item.sourcePath = Qt.binding(function() {
-                return root.activePath
-            })
-            item.desktopAnimationAllowed = Qt.binding(function() {
-                return root.desktopAnimationAllowed
-            })
-        }
-    }
-
-    // Keep the outgoing wallpaper above the newly loaded one, then fade
-    // it away. Rapid changes remain smooth without restarting the shell.
-    property string lastActivePath: ""
-    property string previousWallpaperPath: ""
-    property bool transitionLayerEnabled: false
-
-    onActivePathChanged: {
-        if (!root.lastActivePath.length) {
-            root.lastActivePath = root.activePath
-            return
-        }
-        if (root.activePath === root.lastActivePath)
-            return
-
-        root.previousWallpaperPath = root.lastActivePath
-        root.lastActivePath = root.activePath
-        if (!root.previousWallpaperPath.length)
-            return
-
-        transitionFade.stop()
-        root.transitionLayerEnabled = true
-        transitionLayer.opacity = 0
-    }
-
-    Loader {
-        id: transitionLayer
-        anchors.fill: parent
-        active: root.transitionLayerEnabled
-        source: active ? "WallpaperTransitionLayer.qml" : ""
-        opacity: 0
         z: 2
+        opacity: 1
+        desktopAnimationAllowed: false
+    }
 
-        onLoaded: {
-            item.sourcePath = Qt.binding(function() {
-                return root.previousWallpaperPath
-            })
-            item.desktopAnimationAllowed = false
-            if (item.contentReady)
-                root.beginWallpaperTransition()
+    WallpaperTransitionLayer {
+        id: wallpaperLayerB
+        anchors.fill: parent
+        z: 1
+        opacity: 1
+        desktopAnimationAllowed: false
+    }
+
+    function currentWallpaperLayer() {
+        return root.frontIsA ? wallpaperLayerA : wallpaperLayerB
+    }
+
+    function stagingWallpaperLayer() {
+        return root.frontIsA ? wallpaperLayerB : wallpaperLayerA
+    }
+
+    function requestWallpaperTransition(path) {
+        const desiredPath = path && path.length ? path : root.fallbackPath
+        if (!root.wallpaperLayersReady) {
+            root.initialWallpaperPath = desiredPath
+            return
+        }
+
+        root.pendingWallpaperPath = desiredPath
+        if (transitionFade.running)
+            return
+
+        if (desiredPath === root.displayedWallpaperPath) {
+            const staging = root.stagingWallpaperLayer()
+            staging.desktopAnimationAllowed = false
+            staging.sourcePath = ""
+            return
+        }
+
+        root.prepareIncomingWallpaper()
+    }
+
+    property string initialWallpaperPath: ""
+
+    function prepareIncomingWallpaper() {
+        if (!root.wallpaperLayersReady || transitionFade.running
+                || !root.pendingWallpaperPath.length
+                || root.pendingWallpaperPath === root.displayedWallpaperPath)
+            return
+
+        const incoming = root.stagingWallpaperLayer()
+        if (incoming.sourcePath !== root.pendingWallpaperPath) {
+            incoming.desktopAnimationAllowed = root.desktopAnimationAllowed
+            incoming.sourcePath = root.pendingWallpaperPath
+        }
+        Qt.callLater(root.tryBeginWallpaperTransition)
+    }
+
+    function tryBeginWallpaperTransition() {
+        if (!root.wallpaperLayersReady || transitionFade.running
+                || !root.pendingWallpaperPath.length
+                || root.pendingWallpaperPath === root.displayedWallpaperPath)
+            return
+
+        const incoming = root.stagingWallpaperLayer()
+        if (incoming.sourcePath !== root.pendingWallpaperPath) {
+            root.prepareIncomingWallpaper()
+            return
+        }
+        if (!incoming.contentReady)
+            return
+
+        root.transitionWallpaperPath = root.pendingWallpaperPath
+        const outgoing = root.currentWallpaperLayer()
+        outgoing.desktopAnimationAllowed = false
+        incoming.desktopAnimationAllowed = root.desktopAnimationAllowed
+        // Keep the current wallpaper above the staged image until the new
+        // image/video is genuinely ready; fading this layer reveals it smoothly.
+        outgoing.z = 2
+        incoming.z = 1
+        transitionFade.target = outgoing
+        transitionFade.from = 1
+        transitionFade.to = 0
+        transitionFade.start()
+    }
+
+    function finishWallpaperTransition() {
+        if (!root.transitionWallpaperPath.length)
+            return
+
+        root.displayedWallpaperPath = root.transitionWallpaperPath
+        root.frontIsA = !root.frontIsA
+
+        const incoming = root.currentWallpaperLayer()
+        const outgoing = root.stagingWallpaperLayer()
+        incoming.opacity = 1
+        incoming.z = 2
+        incoming.desktopAnimationAllowed = root.desktopAnimationAllowed
+
+        // Unload the previous full-resolution image/video immediately after
+        // the fade. Thumbnail resources are separately released when the
+        // picker closes, keeping only the current desktop wallpaper resident.
+        outgoing.desktopAnimationAllowed = false
+        outgoing.sourcePath = ""
+        outgoing.opacity = 1
+        outgoing.z = 1
+        root.transitionWallpaperPath = ""
+
+        if (root.pendingWallpaperPath === root.displayedWallpaperPath) {
+            root.pendingWallpaperPath = ""
+        } else if (root.pendingWallpaperPath.length) {
+            Qt.callLater(root.prepareIncomingWallpaper)
         }
     }
 
     Connections {
-        target: transitionLayer.item
-        ignoreUnknownSignals: true
+        target: wallpaperLayerA
         function onContentReadyChanged() {
-            if (transitionLayer.item && transitionLayer.item.contentReady)
-                root.beginWallpaperTransition()
+            root.tryBeginWallpaperTransition()
         }
     }
 
-    function beginWallpaperTransition() {
-        if (!root.transitionLayerEnabled
-                || !transitionLayer.item
-                || !transitionLayer.item.contentReady)
-            return
-        transitionFade.stop()
-        transitionLayer.opacity = 1
-        transitionFade.start()
+    Connections {
+        target: wallpaperLayerB
+        function onContentReadyChanged() {
+            root.tryBeginWallpaperTransition()
+        }
+    }
+
+    onActivePathChanged: root.requestWallpaperTransition(root.activePath)
+
+    onDesktopAnimationAllowedChanged: {
+        if (!transitionFade.running)
+            root.currentWallpaperLayer().desktopAnimationAllowed = root.desktopAnimationAllowed
     }
 
     NumberAnimation {
         id: transitionFade
-        target: transitionLayer
+        target: null
         property: "opacity"
-        from: 1
-        to: 0
-        duration: 240
-        easing.type: Easing.OutCubic
-        onFinished: root.transitionLayerEnabled = false
+        duration: 190
+        easing.type: Easing.InOutCubic
+        onFinished: root.finishWallpaperTransition()
     }
 
-    Component.onCompleted: root.lastActivePath = root.activePath
+    Component.onCompleted: {
+        const initial = root.initialWallpaperPath.length
+            ? root.initialWallpaperPath : root.activePath
+        wallpaperLayerA.sourcePath = initial
+        wallpaperLayerA.desktopAnimationAllowed = root.desktopAnimationAllowed
+        wallpaperLayerA.z = 2
+        wallpaperLayerA.opacity = 1
+        wallpaperLayerB.sourcePath = ""
+        wallpaperLayerB.desktopAnimationAllowed = false
+        wallpaperLayerB.z = 1
+        wallpaperLayerB.opacity = 1
+        root.displayedWallpaperPath = initial
+        root.wallpaperLayersReady = true
+        if (root.activePath !== initial)
+            root.requestWallpaperTransition(root.activePath)
+    }
 
     Rectangle {
         anchors.fill: parent
