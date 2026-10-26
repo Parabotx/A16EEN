@@ -3,6 +3,7 @@ import Quickshell
 import Quickshell.Wayland
 import qs.ui
 import "TicTacToe.js" as TicTacToe
+import "DotsAndBoxes.js" as DotsAndBoxes
 
 PanelWindow {
     id: root
@@ -17,10 +18,19 @@ PanelWindow {
     property bool opened: false
     property bool dockVisible: true
     property string currentView: "list"
+
     property var board: ["", "", "", "", "", "", "", "", ""]
     property string statusText: "YOUR TURN"
     property bool gameOver: false
     property bool botThinking: false
+
+    property var dotsHorizontal: ["", "", "", "", "", ""]
+    property var dotsVertical: ["", "", "", "", "", ""]
+    property var dotsOwners: ["", "", "", ""]
+    property var dotsScores: [0, 0]
+    property string dotsStatusText: "YOUR TURN"
+    property string dotsTurn: "X"
+    property bool dotsGameOver: false
 
     signal closeRequested()
 
@@ -29,7 +39,8 @@ PanelWindow {
     readonly property real screenWidth: root.modelData ? root.modelData.width : 1920
     readonly property real screenHeight: root.modelData ? root.modelData.height : 1080
     readonly property int popupWidth: 310
-    readonly property int popupHeight: root.currentView === "xo" ? 372 : 166
+    readonly property int popupHeight: root.currentView === "xo" ? 372
+        : (root.currentView === "dots" ? 420 : 166)
     readonly property real popupX: root.horizontalNavbar
         ? root.screenWidth - root.popupWidth - 102
         : (root.navbarPosition === "left"
@@ -76,8 +87,30 @@ PanelWindow {
         root.currentView = "xo"
         root.board = ["", "", "", "", "", "", "", "", ""]
         root.gameOver = false
+        root.dotsGameOver = false
         root.botThinking = false
         root.statusText = "YOUR TURN"
+    }
+
+    function startDotsGame() {
+        botMoveTimer.stop()
+        root.currentView = "dots"
+        root.dotsHorizontal = DotsAndBoxes.emptyHorizontal()
+        root.dotsVertical = DotsAndBoxes.emptyVertical()
+        root.dotsOwners = DotsAndBoxes.emptyOwners()
+        root.dotsScores = [0, 0]
+        root.dotsTurn = "X"
+        root.dotsStatusText = "YOUR TURN"
+        root.dotsGameOver = false
+        root.gameOver = false
+        root.botThinking = false
+    }
+
+    function restartCurrentGame() {
+        if (root.currentView === "dots")
+            root.startDotsGame()
+        else
+            root.startGame()
     }
 
     function returnToList() {
@@ -85,7 +118,9 @@ PanelWindow {
         root.currentView = "list"
         root.botThinking = false
         root.gameOver = false
+        root.dotsGameOver = false
         root.statusText = "YOUR TURN"
+        root.dotsStatusText = "YOUR TURN"
     }
 
     function finishIfNeeded() {
@@ -128,22 +163,92 @@ PanelWindow {
         botMoveTimer.restart()
     }
 
-    function playBotTurn() {
-        if (root.currentView !== "xo" || root.gameOver || !root.botThinking)
+    function applyDotsMove(orientation, index, player) {
+        var result = DotsAndBoxes.applyMove(
+            root.dotsHorizontal,
+            root.dotsVertical,
+            root.dotsOwners,
+            root.dotsScores,
+            orientation,
+            index,
+            player
+        )
+        if (!result)
             return
 
-        var choice = TicTacToe.bestMove(root.board, "O", "X")
-        if (choice < 0) {
-            root.finishIfNeeded()
+        root.dotsHorizontal = result.horizontal
+        root.dotsVertical = result.vertical
+        root.dotsOwners = result.owners
+        root.dotsScores = result.scores
+        root.dotsTurn = result.turn
+
+        if (result.gameOver) {
+            root.dotsGameOver = true
+            root.botThinking = false
+            botMoveTimer.stop()
+            if (result.scores[0] > result.scores[1])
+                root.dotsStatusText = "YOU WIN"
+            else if (result.scores[1] > result.scores[0])
+                root.dotsStatusText = "BOT WINS"
+            else
+                root.dotsStatusText = "DRAW"
             return
         }
 
-        var next = root.board.slice(0)
-        next[choice] = "O"
-        root.board = next
-        root.botThinking = false
-        if (!root.finishIfNeeded())
-            root.statusText = "YOUR TURN"
+        if (result.turn === "O") {
+            root.botThinking = true
+            root.dotsStatusText = "BOT THINKING"
+            botMoveTimer.restart()
+        } else {
+            root.botThinking = false
+            root.dotsStatusText = player === "X" && result.claimed.length > 0
+                ? (result.claimed.length === 1 ? "BOX CLAIMED · DRAW AGAIN" : "2 BOXES · DRAW AGAIN")
+                : "YOUR TURN"
+        }
+    }
+
+    function playDotsLine(orientation, index) {
+        if (root.currentView !== "dots" || root.dotsGameOver || root.botThinking
+            || root.dotsTurn !== "X")
+            return
+        root.applyDotsMove(orientation, index, "X")
+    }
+
+    function playBotTurn() {
+        if (root.gameOver || !root.botThinking)
+            return
+
+        if (root.currentView === "xo") {
+            var choice = TicTacToe.casualMove(
+                root.board, "O", "X", Math.random(), Math.random()
+            )
+            if (choice < 0) {
+                root.finishIfNeeded()
+                return
+            }
+
+            var next = root.board.slice(0)
+            next[choice] = "O"
+            root.board = next
+            root.botThinking = false
+            if (!root.finishIfNeeded())
+                root.statusText = "YOUR TURN"
+            return
+        }
+
+        if (root.currentView === "dots" && !root.dotsGameOver && root.dotsTurn === "O") {
+            var move = DotsAndBoxes.casualMove(
+                root.dotsHorizontal,
+                root.dotsVertical,
+                root.dotsOwners,
+                "O",
+                Math.random(),
+                Math.random()
+            )
+            if (!move)
+                return
+            root.applyDotsMove(move.orientation, move.index, "O")
+        }
     }
 
     MouseArea {
@@ -201,7 +306,7 @@ PanelWindow {
                     spacing: 8
 
                     Rectangle {
-                        visible: root.currentView === "xo"
+                        visible: root.currentView !== "list"
                         width: visible ? 28 : 0
                         height: 28
                         radius: 9
@@ -227,9 +332,11 @@ PanelWindow {
                     }
 
                     Text {
-                        width: parent.width - (root.currentView === "xo" ? 28 : 0) - 28 - (root.currentView === "xo" ? 28 : 0) - parent.spacing * 3
+                        width: parent.width - (root.currentView !== "list" ? 28 : 0)
+                            - 28 - (root.currentView !== "list" ? 28 : 0) - parent.spacing * 3
                         anchors.verticalCenter: parent.verticalCenter
-                        text: root.currentView === "xo" ? "X & O" : "GAMES"
+                        text: root.currentView === "xo" ? "X & O"
+                            : (root.currentView === "dots" ? "DOTS & BOXES" : "GAMES")
                         color: popupCardStyle.textColor
                         font.pixelSize: 13
                         font.weight: Font.DemiBold
@@ -238,7 +345,7 @@ PanelWindow {
                     }
 
                     Rectangle {
-                        visible: root.currentView === "xo"
+                        visible: root.currentView !== "list"
                         width: visible ? 28 : 0
                         height: 28
                         radius: 9
@@ -258,9 +365,9 @@ PanelWindow {
                             anchors.fill: parent
                             hoverEnabled: true
                             cursorShape: Qt.PointingHandCursor
-                            onClicked: root.startGame()
+                            onClicked: root.restartCurrentGame()
                         }
-                        Accessible.name: "Restart X and O"
+                        Accessible.name: "Restart current game"
                     }
 
                     Rectangle {
@@ -296,141 +403,414 @@ PanelWindow {
                 }
 
                 Item {
+                    id: gameContent
                     width: parent.width
                     height: parent.height - 28 - 1 - parent.spacing * 2
-                    visible: root.currentView === "list"
 
-                    Rectangle {
-                        anchors.left: parent.left
-                        anchors.right: parent.right
-                        anchors.top: parent.top
-                        height: 44
-                        radius: 12
-                        color: gameRowMouse.containsMouse ? popupCardStyle.hoverSurfaceColor : popupCardStyle.fieldColor
-                        border.width: 1
-                        border.color: gameRowMouse.containsMouse ? popupCardStyle.focusBorderColor : popupCardStyle.fieldBorderColor
+                    Item {
+                        anchors.fill: parent
+                        visible: root.currentView === "list"
 
-                        Row {
-                            anchors.fill: parent
-                            anchors.leftMargin: 10
-                            anchors.rightMargin: 10
-                            spacing: 10
+                        Column {
+                            anchors.left: parent.left
+                            anchors.right: parent.right
+                            anchors.top: parent.top
+                            spacing: 5
 
                             Rectangle {
-                                width: 32
-                                height: 32
-                                radius: 10
-                                anchors.verticalCenter: parent.verticalCenter
-                                color: popupCardStyle.subtleSurfaceColor
+                                width: parent.width
+                                height: 42
+                                radius: 12
+                                color: xoRowMouse.containsMouse ? popupCardStyle.hoverSurfaceColor : popupCardStyle.fieldColor
+                                border.width: 1
+                                border.color: xoRowMouse.containsMouse ? popupCardStyle.focusBorderColor : popupCardStyle.fieldBorderColor
 
-                                NavbarIcon {
-                                    anchors.centerIn: parent
-                                    width: 18
-                                    height: 18
-                                    iconName: "gamepad-2.svg"
-                                    iconColor: popupCardStyle.iconColor
-                                }
-                            }
+                                Row {
+                                    anchors.fill: parent
+                                    anchors.leftMargin: 10
+                                    anchors.rightMargin: 10
+                                    spacing: 10
 
-                            Text {
-                                anchors.verticalCenter: parent.verticalCenter
-                                text: "X & O"
-                                color: popupCardStyle.textColor
-                                font.pixelSize: 11
-                                font.weight: Font.DemiBold
-                            }
+                                    Rectangle {
+                                        width: 30
+                                        height: 30
+                                        radius: 9
+                                        anchors.verticalCenter: parent.verticalCenter
+                                        color: popupCardStyle.subtleSurfaceColor
 
-                            Item { width: Math.max(0, parent.width - 118); height: 1 }
+                                        NavbarIcon {
+                                            anchors.centerIn: parent
+                                            width: 17
+                                            height: 17
+                                            iconName: "gamepad-2.svg"
+                                            iconColor: popupCardStyle.iconColor
+                                        }
+                                    }
 
-                            Text {
-                                anchors.verticalCenter: parent.verticalCenter
-                                text: "›"
-                                color: popupCardStyle.mutedTextColor
-                                font.pixelSize: 22
-                            }
-                        }
+                                    Text {
+                                        anchors.verticalCenter: parent.verticalCenter
+                                        text: "X & O"
+                                        color: popupCardStyle.textColor
+                                        font.pixelSize: 11
+                                        font.weight: Font.DemiBold
+                                    }
 
-                        MouseArea {
-                            id: gameRowMouse
-                            anchors.fill: parent
-                            hoverEnabled: true
-                            cursorShape: Qt.PointingHandCursor
-                            onClicked: root.startGame()
-                        }
-                        Accessible.name: "X and O"
-                    }
-                }
+                                    Item { width: Math.max(0, parent.width - 116); height: 1 }
 
-                Column {
-                    width: parent.width
-                    visible: root.currentView === "xo"
-                    spacing: 8
-
-                    Row {
-                        width: parent.width
-                        height: 18
-                        spacing: 6
-
-                        Rectangle {
-                            width: 6
-                            height: 6
-                            radius: 3
-                            anchors.verticalCenter: parent.verticalCenter
-                            color: root.gameOver ? (root.statusText === "YOU WIN" ? "#2C9665" : "#8993A1")
-                                : (root.botThinking ? "#D6AD60" : "#3A9B74")
-                        }
-
-                        Text {
-                            width: parent.width - 12
-                            anchors.verticalCenter: parent.verticalCenter
-                            text: root.statusText
-                            color: popupCardStyle.secondaryTextColor
-                            font.pixelSize: 8
-                            font.weight: Font.DemiBold
-                            font.letterSpacing: 1
-                        }
-                    }
-
-                    Grid {
-                        id: boardGrid
-                        width: Math.min(parent.width, 250)
-                        height: width
-                        anchors.horizontalCenter: parent.horizontalCenter
-                        columns: 3
-                        rows: 3
-                        rowSpacing: 5
-                        columnSpacing: 5
-
-                        Repeater {
-                            model: 9
-
-                            delegate: Rectangle {
-                                required property int index
-                                width: (boardGrid.width - boardGrid.columnSpacing * 2) / 3
-                                height: width
-                                radius: 13
-                                color: root.board[index] === "X" ? "#FBF0D9"
-                                    : (root.board[index] === "O" ? "#E6EFFC" : popupCardStyle.fieldColor)
-                                border.width: root.board[index] === "" ? 1 : 0
-                                border.color: popupCardStyle.fieldBorderColor
-
-                                Behavior on color { ColorAnimation { duration: 100; easing.type: Easing.OutCubic } }
-
-                                Text {
-                                    anchors.centerIn: parent
-                                    text: root.board[index]
-                                    color: root.board[index] === "X" ? "#987020" : "#315A96"
-                                    font.pixelSize: Math.min(39, parent.width * 0.48)
-                                    font.weight: Font.DemiBold
+                                    Text {
+                                        anchors.verticalCenter: parent.verticalCenter
+                                        text: "›"
+                                        color: popupCardStyle.mutedTextColor
+                                        font.pixelSize: 22
+                                    }
                                 }
 
                                 MouseArea {
+                                    id: xoRowMouse
                                     anchors.fill: parent
-                                    enabled: root.board[index] === "" && !root.gameOver && !root.botThinking
+                                    hoverEnabled: true
                                     cursorShape: Qt.PointingHandCursor
-                                    onClicked: root.playCell(index)
+                                    onClicked: root.startGame()
                                 }
-                                Accessible.name: "Square " + (index + 1) + (root.board[index] ? ", " + root.board[index] : "")
+                                Accessible.name: "X and O"
+                            }
+
+                            Rectangle {
+                                width: parent.width
+                                height: 42
+                                radius: 12
+                                color: dotsRowMouse.containsMouse ? popupCardStyle.hoverSurfaceColor : popupCardStyle.fieldColor
+                                border.width: 1
+                                border.color: dotsRowMouse.containsMouse ? popupCardStyle.focusBorderColor : popupCardStyle.fieldBorderColor
+
+                                Row {
+                                    anchors.fill: parent
+                                    anchors.leftMargin: 10
+                                    anchors.rightMargin: 10
+                                    spacing: 10
+
+                                    Rectangle {
+                                        width: 30
+                                        height: 30
+                                        radius: 9
+                                        anchors.verticalCenter: parent.verticalCenter
+                                        color: popupCardStyle.subtleSurfaceColor
+
+                                        NavbarIcon {
+                                            anchors.centerIn: parent
+                                            width: 17
+                                            height: 17
+                                            iconName: "lucide-grid-2x2.svg"
+                                            iconColor: popupCardStyle.iconColor
+                                        }
+                                    }
+
+                                    Text {
+                                        anchors.verticalCenter: parent.verticalCenter
+                                        text: "Dots & Boxes"
+                                        color: popupCardStyle.textColor
+                                        font.pixelSize: 11
+                                        font.weight: Font.DemiBold
+                                    }
+
+                                    Item { width: Math.max(0, parent.width - 148); height: 1 }
+
+                                    Text {
+                                        anchors.verticalCenter: parent.verticalCenter
+                                        text: "›"
+                                        color: popupCardStyle.mutedTextColor
+                                        font.pixelSize: 22
+                                    }
+                                }
+
+                                MouseArea {
+                                    id: dotsRowMouse
+                                    anchors.fill: parent
+                                    hoverEnabled: true
+                                    cursorShape: Qt.PointingHandCursor
+                                    onClicked: root.startDotsGame()
+                                }
+                                Accessible.name: "Dots and Boxes"
+                            }
+                        }
+                    }
+
+                    Item {
+                        anchors.fill: parent
+                        visible: root.currentView === "xo"
+
+                        Column {
+                            anchors.fill: parent
+                            spacing: 8
+
+                            Row {
+                                width: parent.width
+                                height: 18
+                                spacing: 6
+
+                                Rectangle {
+                                    width: 6
+                                    height: 6
+                                    radius: 3
+                                    anchors.verticalCenter: parent.verticalCenter
+                                    color: root.gameOver ? (root.statusText === "YOU WIN" ? "#2C9665" : "#8993A1")
+                                        : (root.botThinking ? "#D6AD60" : "#3A9B74")
+                                }
+
+                                Text {
+                                    width: parent.width - 12
+                                    anchors.verticalCenter: parent.verticalCenter
+                                    text: root.statusText
+                                    color: popupCardStyle.secondaryTextColor
+                                    font.pixelSize: 8
+                                    font.weight: Font.DemiBold
+                                    font.letterSpacing: 1
+                                }
+                            }
+
+                            Grid {
+                                id: boardGrid
+                                width: Math.min(parent.width, 250)
+                                height: width
+                                anchors.horizontalCenter: parent.horizontalCenter
+                                columns: 3
+                                rows: 3
+                                rowSpacing: 5
+                                columnSpacing: 5
+
+                                Repeater {
+                                    model: 9
+
+                                    delegate: Rectangle {
+                                        required property int index
+                                        width: (boardGrid.width - boardGrid.columnSpacing * 2) / 3
+                                        height: width
+                                        radius: 13
+                                        color: root.board[index] === "X" ? "#FBF0D9"
+                                            : (root.board[index] === "O" ? "#E6EFFC" : popupCardStyle.fieldColor)
+                                        border.width: root.board[index] === "" ? 1 : 0
+                                        border.color: popupCardStyle.fieldBorderColor
+
+                                        Behavior on color { ColorAnimation { duration: 100; easing.type: Easing.OutCubic } }
+
+                                        Text {
+                                            anchors.centerIn: parent
+                                            text: root.board[index]
+                                            color: root.board[index] === "X" ? "#987020" : "#315A96"
+                                            font.pixelSize: Math.min(39, parent.width * 0.48)
+                                            font.weight: Font.DemiBold
+                                        }
+
+                                        MouseArea {
+                                            anchors.fill: parent
+                                            enabled: root.board[index] === "" && !root.gameOver && !root.botThinking
+                                            cursorShape: Qt.PointingHandCursor
+                                            onClicked: root.playCell(index)
+                                        }
+                                        Accessible.name: "Square " + (index + 1) + (root.board[index] ? ", " + root.board[index] : "")
+                                    }
+                                }
+                            }
+                        }
+                    }
+
+                    Item {
+                        anchors.fill: parent
+                        visible: root.currentView === "dots"
+
+                        Column {
+                            width: parent.width
+                            anchors.horizontalCenter: parent.horizontalCenter
+                            anchors.top: parent.top
+                            spacing: 5
+
+                            Row {
+                                width: parent.width
+                                height: 17
+                                spacing: 6
+
+                                Rectangle {
+                                    width: 6
+                                    height: 6
+                                    radius: 3
+                                    anchors.verticalCenter: parent.verticalCenter
+                                    color: root.dotsGameOver
+                                        ? (root.dotsStatusText === "YOU WIN" ? "#2C9665" : "#8993A1")
+                                        : (root.botThinking ? "#D6AD60" : "#3A9B74")
+                                }
+
+                                Text {
+                                    width: parent.width - 12
+                                    anchors.verticalCenter: parent.verticalCenter
+                                    text: root.dotsStatusText
+                                    color: popupCardStyle.secondaryTextColor
+                                    font.pixelSize: 8
+                                    font.weight: Font.DemiBold
+                                    font.letterSpacing: 0.7
+                                    elide: Text.ElideRight
+                                }
+                            }
+
+                            Row {
+                                width: parent.width
+                                height: 22
+                                spacing: 8
+
+                                Rectangle {
+                                    width: (parent.width - parent.spacing) / 2
+                                    height: parent.height
+                                    radius: 7
+                                    color: "#FBF0D9"
+                                    Text {
+                                        anchors.fill: parent
+                                        anchors.leftMargin: 8
+                                        text: "YOU   " + root.dotsScores[0]
+                                        color: "#987020"
+                                        font.pixelSize: 10
+                                        font.weight: Font.DemiBold
+                                        verticalAlignment: Text.AlignVCenter
+                                    }
+                                }
+
+                                Rectangle {
+                                    width: (parent.width - parent.spacing) / 2
+                                    height: parent.height
+                                    radius: 7
+                                    color: "#E6EFFC"
+                                    Text {
+                                        anchors.fill: parent
+                                        anchors.leftMargin: 8
+                                        text: "BOT   " + root.dotsScores[1]
+                                        color: "#315A96"
+                                        font.pixelSize: 10
+                                        font.weight: Font.DemiBold
+                                        verticalAlignment: Text.AlignVCenter
+                                    }
+                                }
+                            }
+
+                            Item {
+                                id: dotsBoard
+                                readonly property real inset: 11
+                                readonly property real step: (width - inset * 2) / 2
+                                width: Math.min(parent.width, 230)
+                                height: width
+                                anchors.horizontalCenter: parent.horizontalCenter
+
+                                Repeater {
+                                    model: 4
+                                    delegate: Rectangle {
+                                        required property int index
+                                        readonly property int rowIndex: Math.floor(index / 2)
+                                        readonly property int columnIndex: index % 2
+                                        x: dotsBoard.inset + columnIndex * dotsBoard.step + 6
+                                        y: dotsBoard.inset + rowIndex * dotsBoard.step + 6
+                                        width: dotsBoard.step - 12
+                                        height: width
+                                        radius: 9
+                                        color: root.dotsOwners[index] === "X" ? "#FBF0D9"
+                                            : (root.dotsOwners[index] === "O" ? "#E6EFFC" : popupCardStyle.fieldColor)
+                                        border.width: root.dotsOwners[index] ? 0 : 1
+                                        border.color: popupCardStyle.fieldBorderColor
+                                        Behavior on color { ColorAnimation { duration: 120; easing.type: Easing.OutCubic } }
+
+                                        Text {
+                                            anchors.centerIn: parent
+                                            text: root.dotsOwners[index]
+                                            color: root.dotsOwners[index] === "X" ? "#987020" : "#315A96"
+                                            font.pixelSize: 24
+                                            font.weight: Font.DemiBold
+                                        }
+                                    }
+                                }
+
+                                Repeater {
+                                    model: 6
+                                    delegate: Item {
+                                        required property int index
+                                        readonly property int rowIndex: Math.floor(index / 2)
+                                        readonly property int columnIndex: index % 2
+                                        x: dotsBoard.inset + columnIndex * dotsBoard.step + 5
+                                        y: dotsBoard.inset + rowIndex * dotsBoard.step - 12
+                                        width: dotsBoard.step - 10
+                                        height: 24
+
+                                        Rectangle {
+                                            anchors.centerIn: parent
+                                            width: parent.width
+                                            height: 4
+                                            radius: 2
+                                            color: root.dotsHorizontal[index] === "X" ? "#BA8B39"
+                                                : (root.dotsHorizontal[index] === "O" ? "#4B74B8"
+                                                : (horizontalEdgeMouse.containsMouse ? popupCardStyle.focusBorderColor : popupCardStyle.fieldBorderColor))
+                                            opacity: root.dotsHorizontal[index] ? 1 : 0.78
+                                        }
+
+                                        MouseArea {
+                                            id: horizontalEdgeMouse
+                                            anchors.fill: parent
+                                            enabled: root.dotsHorizontal[index] === "" && !root.dotsGameOver
+                                                && !root.botThinking && root.dotsTurn === "X"
+                                            hoverEnabled: true
+                                            cursorShape: enabled ? Qt.PointingHandCursor : Qt.ArrowCursor
+                                            onClicked: root.playDotsLine("h", index)
+                                        }
+                                        Accessible.name: "Horizontal line " + (index + 1)
+                                    }
+                                }
+
+                                Repeater {
+                                    model: 6
+                                    delegate: Item {
+                                        required property int index
+                                        readonly property int rowIndex: Math.floor(index / 3)
+                                        readonly property int columnIndex: index % 3
+                                        x: dotsBoard.inset + columnIndex * dotsBoard.step - 12
+                                        y: dotsBoard.inset + rowIndex * dotsBoard.step + 5
+                                        width: 24
+                                        height: dotsBoard.step - 10
+
+                                        Rectangle {
+                                            anchors.centerIn: parent
+                                            width: 4
+                                            height: parent.height
+                                            radius: 2
+                                            color: root.dotsVertical[index] === "X" ? "#BA8B39"
+                                                : (root.dotsVertical[index] === "O" ? "#4B74B8"
+                                                : (verticalEdgeMouse.containsMouse ? popupCardStyle.focusBorderColor : popupCardStyle.fieldBorderColor))
+                                            opacity: root.dotsVertical[index] ? 1 : 0.78
+                                        }
+
+                                        MouseArea {
+                                            id: verticalEdgeMouse
+                                            anchors.fill: parent
+                                            enabled: root.dotsVertical[index] === "" && !root.dotsGameOver
+                                                && !root.botThinking && root.dotsTurn === "X"
+                                            hoverEnabled: true
+                                            cursorShape: enabled ? Qt.PointingHandCursor : Qt.ArrowCursor
+                                            onClicked: root.playDotsLine("v", index)
+                                        }
+                                        Accessible.name: "Vertical line " + (index + 1)
+                                    }
+                                }
+
+                                Repeater {
+                                    model: 9
+                                    delegate: Rectangle {
+                                        required property int index
+                                        readonly property int rowIndex: Math.floor(index / 3)
+                                        readonly property int columnIndex: index % 3
+                                        x: dotsBoard.inset + columnIndex * dotsBoard.step - width / 2
+                                        y: dotsBoard.inset + rowIndex * dotsBoard.step - height / 2
+                                        width: 10
+                                        height: 10
+                                        radius: 5
+                                        color: popupCardStyle.textColor
+                                        border.width: 1
+                                        border.color: popupCardStyle.backgroundColor
+                                        z: 5
+                                    }
+                                }
                             }
                         }
                     }

@@ -10,7 +10,10 @@ const root = path.resolve(__dirname, "..");
 const sourcePath = path.join(root, "quickshell/a16een/ui/TicTacToe.js");
 const source = fs.readFileSync(sourcePath, "utf8").replace(/^\.pragma library\s*/, "");
 const context = {};
-vm.runInNewContext(source + "\nthis.api = { winner: winner, isFull: isFull, bestMove: bestMove };", context);
+vm.runInNewContext(
+    source + "\nthis.api = { winner: winner, isFull: isFull, bestMove: bestMove, casualMove: casualMove };",
+    context
+);
 const game = context.api;
 
 assert.equal(game.winner(["X", "X", "X", "O", "", "O", "", "", ""]), "X");
@@ -19,12 +22,11 @@ assert.equal(game.winner(["X", "O", "X", "X", "O", "O", "O", "X", "X"]), "");
 assert.equal(game.isFull(["X", "O", "X", "X", "O", "O", "O", "X", "X"]), true);
 assert.equal(game.isFull(["X", "O", "", "", "", "", "", "", ""]), false);
 
-// The bot takes a forced immediate win rather than a merely defensive move.
 assert.equal(game.bestMove(["X", "", "X", "O", "O", "", "X", "", ""], "O", "X"), 5);
-// The bot blocks a forced human win.
 assert.equal(game.bestMove(["X", "X", "", "O", "", "", "", "", ""], "O", "X"), 2);
 assert.equal(game.bestMove(["X", "O", "X", "X", "O", "O", "O", "X", "X"], "O", "X"), -1);
 
+// The minimax helper remains perfect for exhaustive correctness checks.
 function optimalOutcome(board, botTurn) {
     const winner = game.winner(board);
     if (winner === "O") return 1;
@@ -41,8 +43,6 @@ function optimalOutcome(board, botTurn) {
     return botTurn ? Math.max(...values) : Math.min(...values);
 }
 
-// Explore every human choice along the bot's actual minimax policy. No branch
-// may produce a forced human win, regardless of the opening or response.
 let checkedBotPositions = 0;
 function verifyBotPolicy(board, turn) {
     if (game.winner(board) || game.isFull(board))
@@ -59,21 +59,30 @@ function verifyBotPolicy(board, turn) {
     }
 
     const move = game.bestMove(board, "O", "X");
-    assert.ok(move >= 0 && move < 9 && !board[move], "bot must choose an empty square");
+    assert.ok(move >= 0 && move < 9 && !board[move], "optimal bot chooses an empty square");
     board[move] = "O";
     checkedBotPositions++;
-    assert.ok(optimalOutcome(board, false) >= 0, "bot policy must never allow a forced human win");
+    assert.ok(optimalOutcome(board, false) >= 0, "minimax policy must never allow a forced human win");
     verifyBotPolicy(board, "X");
     board[move] = "";
 }
 verifyBotPolicy(["", "", "", "", "", "", "", "", ""], "X");
 assert.ok(checkedBotPositions > 0);
 
+const blunderBoard = ["X", "X", "", "O", "O", "", "X", "", ""];
+assert.equal(game.bestMove(blunderBoard, "O", "X"), 5);
+const imperfectMove = game.casualMove(blunderBoard, "O", "X", 0.99, 0);
+assert.notEqual(imperfectMove, 5, "a deliberate weak roll must allow a blunder");
+assert.ok(!blunderBoard[imperfectMove], "casual bot move must still be legal");
+
 const panel = fs.readFileSync(path.join(root, "quickshell/a16een/ui/GamingPanel.qml"), "utf8");
 assert.ok(panel.includes('import "TicTacToe.js" as TicTacToe'));
-assert.ok(panel.includes('TicTacToe.bestMove(root.board, "O", "X")'));
+assert.ok(panel.includes('import "DotsAndBoxes.js" as DotsAndBoxes'));
+assert.ok(panel.includes('TicTacToe.casualMove('));
+assert.ok(panel.includes('DotsAndBoxes.casualMove('));
 assert.ok(panel.includes('text: "X & O"'));
-assert.ok(panel.includes('root.currentView === "xo" ? "X & O" : "GAMES"'));
+assert.ok(panel.includes('text: "Dots & Boxes"'));
+assert.ok(panel.includes('root.currentView === "dots"'));
 assert.ok(!panel.includes("description:"));
 
-console.log("Tic-Tac-Toe minimax and Gaming panel tests passed.");
+console.log("Tic-Tac-Toe and Gaming panel tests passed.");
