@@ -17,10 +17,10 @@ assert "Qt.callLater(() => root.ensureBatteryWarningPopup())" in shell
 
 # These roots must be declarations inside Components, not eagerly-created
 # PanelWindows at ShellRoot level.
-assert not re.search(r"(?m)^    QuickToolsWindow\\s*\\{", shell), (
+assert not re.search(r"(?m)^    QuickToolsWindow\s*\{", shell), (
     "QuickToolsWindow must not be instantiated directly by ShellRoot"
 )
-assert not re.search(r"(?m)^    BatteryWarningPopup\\s*\\{", shell), (
+assert not re.search(r"(?m)^    BatteryWarningPopup\s*\{", shell), (
     "BatteryWarningPopup must not be instantiated directly by ShellRoot"
 )
 
