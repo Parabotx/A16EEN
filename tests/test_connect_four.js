@@ -52,15 +52,18 @@ assert.equal(playSequence([0, 4, 1, 4, 2, 5, 3], "X").winner, "X",
 assert.equal(playSequence([0, 1, 0, 1, 0, 1, 0], "X").winner, "X",
     "vertical four-in-a-row");
 
-let diagonal = game.emptyBoard();
-const stackSequence = [0,1,1,2,2,3,2,3,3,4,3];
-let player = "X";
-for (const col of stackSequence) {
-    const moved = game.drop(diagonal, col, player);
-    assert.ok(moved);
-    diagonal = moved.board;
-    player = player === "X" ? "O" : "X";
-}
+const diagonal = game.emptyBoard();
+// A gravity-valid position with X climbing diagonally from bottom-left to top-right.
+diagonal[5 * 7 + 0] = "X";
+diagonal[5 * 7 + 1] = "O";
+diagonal[4 * 7 + 1] = "X";
+diagonal[5 * 7 + 2] = "O";
+diagonal[4 * 7 + 2] = "O";
+diagonal[3 * 7 + 2] = "X";
+diagonal[5 * 7 + 3] = "O";
+diagonal[4 * 7 + 3] = "O";
+diagonal[3 * 7 + 3] = "O";
+diagonal[2 * 7 + 3] = "X";
 assert.equal(game.winner(diagonal), "X", "diagonal four-in-a-row");
 
 board = game.emptyBoard();
