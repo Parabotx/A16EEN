@@ -264,7 +264,7 @@ PanelWindow {
                 resultSubtitle = "You claimed more boxes. What a finish!"
             } else if (result.scores[1] > result.scores[0]) {
                 root.dotsStatusText = "I WON"
-                resultTitle = "BOT WINS"
+                resultTitle = "I WON"
                 resultSubtitle = "I edged ahead this round. Ready to try again?"
             } else {
                 root.dotsStatusText = "DRAW"
@@ -273,7 +273,7 @@ PanelWindow {
                 "dots",
                 resultTitle,
                 resultSubtitle,
-                "YOU  " + result.scores[0] + "     ·     BOT  " + result.scores[1] + " BOXES"
+                "YOU  " + result.scores[0] + "     ·     I  " + result.scores[1] + " BOXES"
             )
             return
         }
