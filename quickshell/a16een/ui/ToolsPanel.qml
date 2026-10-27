@@ -61,6 +61,29 @@ PanelWindow {
     readonly property bool horizontalNavbar: root.navbarPosition === "top" || root.navbarPosition === "bottom"
     readonly property real screenWidth: root.modelData ? root.modelData.width : 1920
     readonly property real screenHeight: root.modelData ? root.modelData.height : 1080
+    readonly property string navbarStateDir: {
+        const stateHome = Quickshell.env("XDG_STATE_HOME")
+        const home = Quickshell.env("HOME") || ""
+        return (stateHome && stateHome.length ? stateHome : home + "/.local/state") + "/a16een"
+    }
+    property int navbarWorkspaceCount: 6
+    property var navbarAppearanceState: ({})
+    readonly property bool navbarAiTileVisible: root.navbarContainerVisible("ai")
+    readonly property bool navbarGamingTileVisible: root.navbarContainerVisible("gaming")
+    readonly property int navbarDockHeight: Math.max(
+        260,
+        root.navbarWorkspaceCount * 32 + Math.max(0, root.navbarWorkspaceCount - 1) * 4 + 18
+    )
+    readonly property int navbarShortcutCount: (root.navbarAiTileVisible ? 1 : 0)
+        + (root.navbarGamingTileVisible ? 1 : 0)
+    readonly property int navbarShortcutStackHeight: navbarShortcutCount > 0 ? 2 + 26 + 24 : 0
+    readonly property int navbarAiTileX: root.navbarPosition === "right"
+        ? root.screenWidth - 34
+        : (root.navbarGamingTileVisible ? 34 : 8)
+    readonly property int navbarAiTileY: Math.max(
+        0,
+        Math.round((root.screenHeight - (root.navbarDockHeight + root.navbarShortcutStackHeight)) / 2) + 2
+    )
     readonly property int popupWidth: root.page === "ai" ? Math.min(430, root.screenWidth - 16)
         : ((root.page === "data-meter" || root.page === "screen-time") ? 360 : 322)
     readonly property int popupHeight: root.page === "ai" ? 590
@@ -118,6 +141,31 @@ PanelWindow {
     readonly property real popupY: root.horizontalNavbar
         ? (root.navbarPosition === "top" ? 40 : root.screenHeight - root.popupHeight - 40)
         : root.screenHeight - root.popupHeight - 72
+
+    function navbarContainerVisible(id) {
+        const settings = root.navbarAppearanceState || ({})
+        const all = settings.all || ({})
+        const containers = settings.containers || ({})
+        if (all.visibilityControl === true)
+            return all.visible !== false
+        const item = containers[id] || ({})
+        return item.visible !== false
+    }
+
+    function isNavbarAiShortcutClick(x, y) {
+        if (root.horizontalNavbar || !root.navbarAiTileVisible)
+            return false
+        return Number(x) >= root.navbarAiTileX
+            && Number(x) <= root.navbarAiTileX + 26
+            && Number(y) >= root.navbarAiTileY
+            && Number(y) <= root.navbarAiTileY + 26
+    }
+
+    function parseNavbarWorkspaceCount(raw) {
+        const value = Number(String(raw || "").trim())
+        if (value >= 2 && value <= 9)
+            root.navbarWorkspaceCount = Math.floor(value)
+    }
 
     function formatBytes(value) {
         const bytes = Math.max(0, Number(value) || 0)
@@ -264,6 +312,30 @@ PanelWindow {
         monitorProcess.running = true
     }
 
+    FileView {
+        id: navbarAppearanceStateFile
+        path: root.navbarStateDir + "/navbar-appearance.json"
+        watchChanges: true
+        printErrors: false
+        onLoaded: {
+            try { root.navbarAppearanceState = JSON.parse(String(this.text || "{}")) || ({}) }
+            catch (error) { root.navbarAppearanceState = ({}) }
+        }
+        onFileChanged: {
+            try { root.navbarAppearanceState = JSON.parse(String(this.text || "{}")) || ({}) }
+            catch (error) { root.navbarAppearanceState = ({}) }
+        }
+    }
+
+    FileView {
+        id: navbarWorkspaceCountFile
+        path: root.navbarStateDir + "/workspace-count"
+        watchChanges: true
+        printErrors: false
+        onLoaded: root.parseNavbarWorkspaceCount(this.text())
+        onFileChanged: root.parseNavbarWorkspaceCount(this.text())
+    }
+
     Process {
         id: monitorProcess
         command: ["a16een-system-monitor", "snapshot"]
@@ -389,7 +461,18 @@ PanelWindow {
         z: 0
         focus: true
         acceptedButtons: Qt.AllButtons
-        onClicked: root.closeRequested()
+        onClicked: mouse => {
+            if (root.isNavbarAiShortcutClick(mouse.x, mouse.y)) {
+                // This full-screen overlay receives the click before the Dock.
+                // Route it to the AI panel instead of swallowing the shortcut.
+                if (root.page === "ai")
+                    root.closeRequested()
+                else
+                    root.toolRequested("ai")
+                return
+            }
+            root.closeRequested()
+        }
         Keys.onEscapePressed: root.closeRequested()
     }
 

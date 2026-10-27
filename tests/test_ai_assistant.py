@@ -284,6 +284,9 @@ assert 'root.opened && (root.page !== "ai" || aiPopupCardStyle.appearanceReady)'
 assert 'id: aiHeaderSpacer' in tools_panel_qml
 assert 'width: visible ? Math.max(0, parent.width - 28 - 25 - 25 - 25 - parent.spacing * 4) : 0' in tools_panel_qml
 assert 'onAiRequested: {' in (ROOT / "quickshell/a16een/shell.qml").read_text()
+assert 'function isNavbarAiShortcutClick(x, y)' in tools_panel_qml
+assert 'root.toolRequested("ai")' in tools_panel_qml
+assert 'root.isNavbarAiShortcutClick(mouse.x, mouse.y)' in tools_panel_qml
 assert 'property bool isolateAppearance: false' in popup_style
 assert 'root.isolateAppearance' in popup_style
 assert 'root.selectedContainer.applyPopupCardColor === true' in popup_style
