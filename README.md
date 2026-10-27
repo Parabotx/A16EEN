@@ -66,9 +66,9 @@ The status is refreshed automatically at most once per 24 hours and can be force
 
 ### App Locker
 
-Choose an installed desktop application, set a password, and use **Open** in App Locker to launch it after verification. Passwords are stored as salted scrypt hashes in `~/.local/state/a16een/app-locker.json`, not as plaintext; the state directory and files are restricted to the current user. Five incorrect attempts trigger a short cooldown.
+Choose an installed desktop application, set a password, and use **Open** in App Locker to launch it after verification. Launches from A16EEN's main application launcher and App Shelf also route protected applications to the password prompt. Workspace Presets and Session Snapshot restoration skip protected apps rather than silently bypassing the lock. Passwords are stored as salted scrypt hashes in `~/.local/state/a16een/app-locker.json`, not as plaintext; the state directory and files are restricted to the current user. Five incorrect attempts trigger a short cooldown.
 
-**Security boundary:** this is a password gate for launches made through A16EEN App Locker, not a system-wide sandbox or access-control boundary. It cannot prevent a user from starting the same application from a terminal or another launcher. Use it for an extra local convenience barrier, not to protect highly sensitive data from another process running as the same Linux user.
+**Security boundary:** this is an A16EEN launch guard, not a system-wide sandbox or OS account boundary. It cannot prevent the same Linux user from starting an application through a terminal or an external launcher. Use it for an extra local convenience barrier, not to protect highly sensitive data from another process running as the same user.
 
 ### Session Snapshots
 
