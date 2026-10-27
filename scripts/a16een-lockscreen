@@ -60,6 +60,7 @@ Usage:
   a16een-lockscreen get
   a16een-lockscreen set-all <idle-enabled> <idle-minutes> <sleep-lock>
   a16een-lockscreen prepare-sleep
+  a16een-lockscreen suspend
 EOF
 }
 
@@ -109,6 +110,18 @@ case "${1:-get}" in
 
         echo "A16EEN lock screen did not confirm readiness before sleep." >&2
         exit 1
+        ;;
+    suspend)
+        [[ $# -eq 1 ]] || { usage >&2; exit 2; }
+        # The navbar must use this command instead of calling systemctl directly.
+        # If the locker fails or Quickshell is unavailable, fail closed and do not
+        # suspend an unlocked session.
+        "$0" prepare-sleep
+        if ! command -v systemctl >/dev/null 2>&1; then
+            echo "systemctl is unavailable; cannot suspend the system." >&2
+            exit 1
+        fi
+        exec systemctl suspend
         ;;
     -h|--help|help)
         usage
