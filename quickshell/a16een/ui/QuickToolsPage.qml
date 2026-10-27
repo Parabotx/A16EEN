@@ -600,7 +600,7 @@ Item {
 
             Rectangle {
                 width: parent.width
-                height: root.passwordMode ? 142 : 61
+                height: root.passwordMode === "protect" ? 178 : (root.passwordMode.length > 0 ? 145 : 61)
                 radius: 11
                 color: root.subtleColor
                 border.width: 1
