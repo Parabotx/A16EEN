@@ -467,7 +467,6 @@ PanelWindow {
         onTriggered: root.refreshStash()
     }
 
-    onRequestedAppIdChanged: {
     onOpenedChanged: {
         if (!root.opened) {
             monitorProcess.running = false
