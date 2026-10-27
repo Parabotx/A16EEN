@@ -86,9 +86,9 @@ PanelWindow {
                     Layout.preferredWidth: 76
                     Layout.preferredHeight: 76
                     radius: 24
-                    color: root.accentColor + "20"
+                    color: Qt.rgba(root.accentColor.r, root.accentColor.g, root.accentColor.b, 0.12)
                     border.width: 1
-                    border.color: root.accentColor + "88"
+                    border.color: Qt.rgba(root.accentColor.r, root.accentColor.g, root.accentColor.b, 0.53)
 
                     Text {
                         anchors.centerIn: parent
