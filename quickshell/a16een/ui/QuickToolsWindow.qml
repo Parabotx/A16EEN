@@ -46,9 +46,8 @@ PanelWindow {
 
     WlrLayershell.layer: WlrLayer.Overlay
     WlrLayershell.namespace: "a16een-quick-tool-screen"
-    WlrLayershell.keyboardFocus: root.opened
-        ? WlrKeyboardFocus.OnDemand
-        : WlrKeyboardFocus.None
+    // PanelWindow.focusable already maps to WlrLayershell.keyboardFocus.
+    // Keep one source of truth for focus to avoid competing bindings.
 
     Rectangle {
         anchors.fill: parent
