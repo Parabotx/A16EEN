@@ -75,6 +75,7 @@ jobs:
           python3 tests/test_ai_assistant.py
           python3 -m py_compile scripts/a16een-quick-tools
           python3 tests/test_quick_tools.py
+          python3 tests/test_shell_overlay_lifecycle.py
           grep -Fq 'a16een-quick-tools' scripts/install.sh
           grep -Fq 'QuickToolsWindow {' quickshell/a16een/shell.qml
           grep -Fq 'QuickToolsPage.qml' quickshell/a16een/ui/QuickToolsWindow.qml
