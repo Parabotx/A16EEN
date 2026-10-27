@@ -53,7 +53,7 @@ History stays on the local machine at `~/.local/state/a16een/clipboard-history.j
 
 ## Quick Tools: Updates, App Locker, and Session Snapshots
 
-The navbar's **Quick Tools** grid includes three additional tools.
+The navbar's **Quick Tools** grid lists these three tools alongside the existing shortcuts. Selecting one opens its own full-screen workspace with the feature controls; the other Quick Tools entries are hidden while that workspace is active. Use **Quick Tools**, the close control, or `Esc` to return to the tools list. The Updates screen keeps a visible **Check now** action for an immediate refresh, independent of the once-per-day automatic check.
 
 ### Updates
 
