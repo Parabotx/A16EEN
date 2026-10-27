@@ -538,6 +538,9 @@ ShellRoot {
     property bool toolsPanelOpen: false
     property bool calculatorOpen: false
     property string toolsPanelPage: "tools"
+    property bool quickToolWindowOpen: false
+    property string quickToolWindowPage: "updates"
+    property string quickToolWindowRequestedAppId: ""
     property bool dataMeterEnabled: false
     property bool dataMeterSettingsReady: false
     property bool dataMeterSnapshotReady: false
@@ -1449,6 +1452,19 @@ ShellRoot {
         root.gamingPanelOpen = true
     }
 
+    function openQuickToolWindow(pageName, requestedAppId) {
+        root.closeTransientPanels()
+        root.quickToolWindowPage = String(pageName || "updates")
+        root.quickToolWindowRequestedAppId = String(requestedAppId || "")
+        root.quickToolWindowOpen = true
+    }
+
+    function returnToQuickTools() {
+        root.quickToolWindowOpen = false
+        root.quickToolWindowRequestedAppId = ""
+        root.openToolsPage("tools")
+    }
+
     function openToolsPage(pageName) {
         // Reuse the existing layer-shell surface to avoid overlay handoff/blink.
         root.gamingPanelOpen = false
@@ -1473,6 +1489,8 @@ ShellRoot {
     }
 
     function closeTransientPanels() {
+        root.quickToolWindowOpen = false
+        root.quickToolWindowRequestedAppId = ""
         root.gamingPanelOpen = false
         root.quickNotesOpen = false
         root.quickTasksOpen = false
@@ -1513,7 +1531,11 @@ ShellRoot {
 
     function activateHubTool(toolId) {
         const id = String(toolId || "")
-        if (["calculator", "monitor", "stash", "data-meter", "screen-time", "updates", "app-locker", "sessions", "ai"].includes(id)) {
+        if (["updates", "app-locker", "sessions"].includes(id)) {
+            root.openQuickToolWindow(id, "")
+            return
+        }
+        if (["calculator", "monitor", "stash", "data-meter", "screen-time", "ai"].includes(id)) {
             root.openToolsPage(id)
             return
         }
@@ -1699,8 +1721,7 @@ ShellRoot {
             focusedWorkspaceId: root.focusedWorkspaceId
             focusedWindowId: root.focusedWindowId
             onProtectedAppRequested: (desktopId, appName) => {
-                toolsPanel.requestedAppId = desktopId
-                root.openToolsPage("app-locker")
+                root.openQuickToolWindow("app-locker", desktopId)
             }
         }
     }
@@ -1867,8 +1888,16 @@ ShellRoot {
         onRemoveRequested: id => root.removeNotificationHistory(id)
     }
 
+    QuickToolsWindow {
+        modelData: root.primaryScreen
+        opened: root.quickToolWindowOpen
+        page: root.quickToolWindowPage
+        requestedAppId: root.quickToolWindowRequestedAppId
+        onBackRequested: root.returnToQuickTools()
+        onCloseRequested: root.quickToolWindowOpen = false
+    }
+
     ToolsPanel {
-        id: toolsPanel
         modelData: root.primaryScreen
         navbarPosition: root.navbarPosition
         opened: root.toolsPanelOpen
@@ -2156,8 +2185,7 @@ ShellRoot {
         onSearchTextChanged: root.searchText = searchText
         onCloseRequested: root.launcherOpen = false
         onProtectedAppRequested: (desktopId, appName) => {
-            toolsPanel.requestedAppId = desktopId
-            root.openToolsPage("app-locker")
+            root.openQuickToolWindow("app-locker", desktopId)
         }
     }
 
