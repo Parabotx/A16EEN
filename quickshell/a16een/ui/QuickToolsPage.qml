@@ -309,7 +309,7 @@ Item {
                                 anchors.centerIn: parent
                                 width: 16
                                 height: 16
-                                iconName: "lucide-github.svg"
+                                iconName: "github.svg"
                                 iconColor: root.iconColor
                             }
                         }
@@ -405,7 +405,7 @@ Item {
                                 anchors.centerIn: parent
                                 width: 16
                                 height: 16
-                                iconName: "lucide-package-check.svg"
+                                iconName: "package.svg"
                                 iconColor: root.iconColor
                             }
                         }
@@ -775,7 +775,7 @@ Item {
                         anchors.verticalCenter: parent.verticalCenter
                         width: 14
                         height: 14
-                        iconName: "lucide-search.svg"
+                        iconName: "search.svg"
                         iconColor: root.mutedColor
                     }
                     TextInput {
@@ -944,7 +944,7 @@ Item {
                                 anchors.centerIn: parent
                                 width: 17
                                 height: 17
-                                iconName: "lucide-panels-top-left.svg"
+                                iconName: "layers.svg"
                                 iconColor: root.iconColor
                             }
                         }
