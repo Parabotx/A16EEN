@@ -1,5 +1,6 @@
 import QtQuick
 import Quickshell
+import Quickshell.Io
 import Quickshell.Wayland
 import qs.ui
 
@@ -36,6 +37,43 @@ PanelWindow {
     ]
     readonly property var dayInfo: root.selectedEvent || calendarData.forDate(root.selectedMonth, root.selectedDay)
     property bool surfaceVisible: false
+    property string selectedMaryImage: "saint-mary.jpg"
+    readonly property string calendarAssetDirectory:
+        Quickshell.env("HOME") + "/.config/a16een/quickshell/a16een/assets/calendar"
+
+    function chooseRandomMaryImage(output) {
+        const files = String(output || "").split("\n")
+            .map(name => name.trim())
+            .filter(name => /^saint-mary[^/]*\.(jpg|jpeg)$/i.test(name))
+        if (files.length === 0) {
+            root.selectedMaryImage = "saint-mary.jpg"
+            return
+        }
+
+        let nextIndex = Math.floor(Math.random() * files.length)
+        if (files.length > 1 && files[nextIndex] === root.selectedMaryImage)
+            nextIndex = (nextIndex + 1 + Math.floor(Math.random() * (files.length - 1))) % files.length
+        root.selectedMaryImage = files[nextIndex]
+    }
+
+    function refreshMaryPortrait() {
+        if (root.dayInfo && root.dayInfo.imagePool === "maryam" && !maryImageScanner.running)
+            maryImageScanner.running = true
+    }
+
+    Process {
+        id: maryImageScanner
+        command: [
+            "find", root.calendarAssetDirectory,
+            "-maxdepth", "1", "-type", "f",
+            "(", "-iname", "saint-mary*.jpg", "-o", "-iname", "saint-mary*.jpeg", ")",
+            "-printf", "%f\n"
+        ]
+        running: false
+        stdout: StdioCollector {
+            onStreamFinished: root.chooseRandomMaryImage(text)
+        }
+    }
 
     screen: root.modelData
     visible: root.surfaceVisible && root.dockVisible && root.modelData !== null
@@ -71,9 +109,20 @@ PanelWindow {
         if (root.opened) {
             hideTimer.stop()
             root.surfaceVisible = true
+            root.refreshMaryPortrait()
         } else {
             hideTimer.restart()
         }
+    }
+
+    onSelectedDayChanged: {
+        if (root.opened)
+            root.refreshMaryPortrait()
+    }
+
+    onSelectedEventChanged: {
+        if (root.opened)
+            root.refreshMaryPortrait()
     }
 
     onDockVisibleChanged: {
@@ -242,7 +291,9 @@ PanelWindow {
                         anchors.fill: parent
                         anchors.margins: 1
                         source: portraitFrame.visible
-                            ? Qt.resolvedUrl("../assets/calendar/" + root.dayInfo.image)
+                            ? Qt.resolvedUrl("../assets/calendar/" + (
+                                root.dayInfo.imagePool === "maryam"
+                                    ? root.selectedMaryImage : root.dayInfo.image))
                             : ""
                         fillMode: Image.PreserveAspectCrop
                         asynchronous: true
