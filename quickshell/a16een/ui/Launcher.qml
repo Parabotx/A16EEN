@@ -18,9 +18,11 @@ PanelWindow {
     property var appUsage: ({})
     property var pendingAppUsage: ({})
     property bool appUsageLoaded: false
+    property var lockedAppIds: []
     readonly property string appUsagePath: Quickshell.stateDir + "/launcher-usage.json"
 
     signal closeRequested()
+    signal protectedAppRequested(string desktopId, string appName)
 
     readonly property color accent: "#66717F"
     readonly property color primaryText: "#E7E9ED"
@@ -175,11 +177,30 @@ PanelWindow {
         appUsageSaveTimer.restart()
     }
 
+    function loadLockedAppIds(raw) {
+        try {
+            const store = JSON.parse(String(raw || "{}"))
+            root.lockedAppIds = store && Array.isArray(store.apps)
+                ? store.apps.map(item => String(item.desktop_id || "").toLowerCase())
+                : []
+        } catch (error) {
+            root.lockedAppIds = []
+            console.warn("A16EEN App Locker state could not be read:", error)
+        }
+    }
+
     function launch(entry) {
         root.launchError = ""
 
         if (!entry) {
             root.launchError = "No application selected."
+            return false
+        }
+
+        const desktopId = String(entry.id || "").toLowerCase()
+        if (desktopId.length && root.lockedAppIds.includes(desktopId)) {
+            root.closeRequested()
+            root.protectedAppRequested(String(entry.id || ""), String(entry.name || "Application"))
             return false
         }
 
@@ -193,6 +214,17 @@ PanelWindow {
             console.error("A16EEN launcher:", entry.name, error)
             return false
         }
+    }
+
+    FileView {
+        id: appLockerFile
+        path: Quickshell.stateDir + "/app-locker.json"
+        preload: true
+        watchChanges: true
+        printErrors: false
+        onLoaded: root.loadLockedAppIds(appLockerFile.text())
+        onFileChanged: root.loadLockedAppIds(appLockerFile.text())
+        onLoadFailed: root.loadLockedAppIds("{}")
     }
 
     FileView {
