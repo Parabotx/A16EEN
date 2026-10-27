@@ -1464,7 +1464,7 @@ ShellRoot {
         root.quickToolWindowPage = String(pageName || "updates")
         root.quickToolWindowRequestedAppId = String(requestedAppId || "")
         root.quickToolWindowOpen = true
-        // Defer overlay construction until a Quick Tool is actually opened.
+        // Create the compact Quick Tool card only when a feature is opened.
         Qt.callLater(() => root.ensureQuickToolWindow())
     }
 
@@ -1483,8 +1483,8 @@ ShellRoot {
     }
 
     function openToolsPage(pageName) {
-        // Switching back to a compact panel closes any dedicated full-screen
-        // Quick Tools window first, so two overlays never compete for focus.
+        // Switching tools closes the current feature card first, so only one
+        // Quick Tools surface competes for focus.
         root.quickToolWindowOpen = false
         root.quickToolWindowRequestedAppId = ""
         root.gamingPanelOpen = false
@@ -1908,13 +1908,15 @@ ShellRoot {
         onRemoveRequested: id => root.removeNotificationHistory(id)
     }
 
-    // Keep optional full-screen UI uninstantiated during shell startup.
-    // The component is created on demand by ensureQuickToolWindow().
+    // Keep the optional Quick Tool card uninstantiated during shell startup.
+    // The card is created on demand by ensureQuickToolWindow().
     Component {
         id: quickToolWindowComponent
 
         QuickToolsWindow {
             modelData: root.primaryScreen
+            navbarPosition: root.navbarPosition
+            dockVisible: !root.secureLockActive
             opened: root.quickToolWindowOpen
             page: root.quickToolWindowPage
             requestedAppId: root.quickToolWindowRequestedAppId
