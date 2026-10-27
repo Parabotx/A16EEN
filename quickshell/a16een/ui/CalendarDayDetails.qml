@@ -394,11 +394,11 @@ PanelWindow {
                 id: detailsColumn
                 width: parent.width - portraitFrame.width - cardBody.spacing
                 height: parent.height
-                spacing: 10
+                spacing: 8
 
                 Row {
                     width: parent.width
-                    height: 32
+                    height: 30
                     spacing: 9
 
                     Rectangle {
@@ -426,8 +426,8 @@ PanelWindow {
                     }
 
                     Rectangle {
-                        width: 34
-                        height: 32
+                        width: 32
+                        height: 30
                         radius: 11
                         color: closeHover.containsMouse
                             ? popupCardStyle.hoverSurfaceColor
@@ -506,7 +506,7 @@ PanelWindow {
 
                     Text {
                         width: parent.width
-                        height: Math.min(112, Math.max(70, detailsColumn.height * 0.22))
+                        height: Math.min(100, Math.max(58, detailsColumn.height * 0.18))
                         text: root.dayInfo.description
                         color: popupCardStyle.secondaryTextColor
                         font.family: "Noto Sans Ethiopic"
@@ -520,7 +520,7 @@ PanelWindow {
                 Rectangle {
                     width: parent.width
                     visible: root.dayInfo.showScripture !== false
-                    height: visible ? Math.min(190, Math.max(140, detailsColumn.height * 0.35)) : 0
+                    height: visible ? Math.min(176, Math.max(112, detailsColumn.height * 0.31)) : 0
                     radius: 17
                     color: Qt.rgba(popupCardStyle.subtleSurfaceColor.r,
                         popupCardStyle.subtleSurfaceColor.g,
@@ -582,7 +582,7 @@ PanelWindow {
 
                 Text {
                     width: parent.width
-                    height: Math.max(42, parent.height * 0.12)
+                    height: Math.max(36, parent.height * 0.09)
                     text: root.dayInfo.reflection
                     color: popupCardStyle.mutedTextColor
                     font.family: "Noto Sans Ethiopic"
