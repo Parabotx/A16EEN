@@ -178,23 +178,31 @@ PanelWindow {
         }
     }
 
-    onSeverityChanged: {
-        if (!opened)
-            return
-        // Play a standard desktop warning sound when a sound-theme player is
-        // installed. The visual alert remains fully functional without it.
+    function playWarningSound() {
+        // Try the desktop sound theme first, then common PipeWire/PulseAudio
+        // players. This avoids making the audible warning depend on one
+        // optional package being installed.
         Quickshell.execDetached([
             "sh", "-c",
-            "if command -v canberra-gtk-play >/dev/null 2>&1; then canberra-gtk-play -i dialog-warning >/dev/null 2>&1; fi"
+            "if command -v canberra-gtk-play >/dev/null 2>&1; then canberra-gtk-play -i alarm-clock-elapsed >/dev/null 2>&1 && exit 0; fi; " +
+            "for player in paplay pw-play; do " +
+            "  if command -v \"$player\" >/dev/null 2>&1; then " +
+            "    for sound in /usr/share/sounds/freedesktop/stereo/alarm-clock-elapsed.oga /usr/share/sounds/freedesktop/stereo/dialog-warning.oga; do " +
+            "      if [ -r \"$sound\" ]; then \"$player\" \"$sound\" >/dev/null 2>&1 && exit 0; fi; " +
+            "    done; " +
+            "  fi; " +
+            "done; " +
+            "if command -v aplay >/dev/null 2>&1 && [ -r /usr/share/sounds/alsa/Front_Center.wav ]; then aplay /usr/share/sounds/alsa/Front_Center.wav >/dev/null 2>&1; fi"
         ])
     }
 
+    onSeverityChanged: {
+        if (opened)
+            root.playWarningSound()
+    }
+
     onOpenedChanged: {
-        if (opened) {
-            Quickshell.execDetached([
-                "sh", "-c",
-                "if command -v canberra-gtk-play >/dev/null 2>&1; then canberra-gtk-play -i dialog-warning >/dev/null 2>&1; fi"
-            ])
-        }
+        if (opened)
+            root.playWarningSound()
     }
 }
