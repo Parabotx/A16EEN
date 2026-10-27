@@ -1,29 +1,40 @@
 # Ethiopian calendar portrait artwork
 
-The navbar calendar's selected-day card supports portrait artwork for these commemorations:
+The navbar calendar's selected-day card supports these portrait collections:
 
-- `saint-michael.webp` — Saint Michael on the 12th
-- `kidane-mehret.webp` — Kidane Mehret on the 16th
-- `saint-mary.jpg`, `saint-mary-2.jpg`, `saint-mary-anything.jpg` — Maryam portraits
+- Saint Michael: the existing single portrait reference is `saint-michael.webp` in this folder.
+- Saint Mary: put images inside `saint-mary/`.
+- Kidane Mehret: put images inside `kidane-mehret/`.
 
-## Add multiple Maryam images
+## Where to upload portraits
 
-Upload your Maryam images into this same folder:
-`quickshell/a16een/assets/calendar/`
+Upload Saint Mary portraits to:
 
-Use the filename prefix `saint-mary` and the `.jpg` extension, for example:
+`quickshell/a16een/assets/calendar/saint-mary/`
 
-- `saint-mary.jpg`
-- `saint-mary-2.jpg`
-- `saint-mary-lideta.jpg`
+Upload Kidane Mehret portraits to:
 
-The detail card scans the installed calendar assets folder and randomly selects one of the matching `.jpg` or `.jpeg` files whenever a Maryam portrait card opens. If more than one image is available, it avoids choosing the same image twice in a row when possible. No code change is needed when you add more matching images.
+`quickshell/a16een/assets/calendar/kidane-mehret/`
+
+The filenames can be anything descriptive, for example:
+
+- `saint-mary/lideta.jpg`
+- `saint-mary/maryam-icon-2.webp`
+- `kidane-mehret/kidane-mehret.jpg`
+- `kidane-mehret/kidane-mehret-2.png`
+
+Supported formats are `.jpg`, `.jpeg`, `.png`, `.webp`, and `.avif`. Images should be placed directly inside the matching folder; subfolders inside a portrait folder are not scanned.
+
+Whenever a Saint Mary or Kidane Mehret detail card opens, the app randomly chooses an image from that collection. When multiple files are available, it avoids showing the exact same file twice in a row when possible. Add more files at any time; no code changes or filename prefixes are required.
 
 ## Image guidance
 
 Portrait orientation (4:5 or 3:4) works well. Keep the subject centered and leave safe margins around faces or iconography. Optimize files for fast loading and only commit artwork you have permission to redistribute.
 
-During `a16 -u`, bundled assets are copied into:
-`~/.config/a16een/quickshell/a16een/assets/calendar/`
+During `a16 -u`, bundled images are copied into the runtime calendar asset folder while preserving their subfolder paths:
 
-Existing runtime files are preserved, except that a bundled file with the same filename replaces the local copy. The card shows a placeholder if the configured image is not present.
+`~/.config/a16een/quickshell/a16een/assets/calendar/saint-mary/`
+
+`~/.config/a16een/quickshell/a16een/assets/calendar/kidane-mehret/`
+
+The installer preserves existing runtime files, except when a bundled file has the same relative path and filename. If a portrait collection has no supported images yet, the detail card falls back to its legacy single-image reference and displays a placeholder if that file is unavailable.
