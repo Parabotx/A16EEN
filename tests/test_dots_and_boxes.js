@@ -11,7 +11,7 @@ const sourcePath = path.join(root, "quickshell/a16een/ui/DotsAndBoxes.js");
 const source = fs.readFileSync(sourcePath, "utf8").replace(/^\.pragma library\s*/, "");
 const context = {};
 vm.runInNewContext(
-    source + "\nthis.api = { emptyHorizontal, emptyVertical, emptyOwners, sideCount, countThreats, applyMove, legalMoves, bestMove, casualMove };",
+    source + "\nthis.api = { emptyHorizontal, emptyVertical, emptyOwners, dotsFromBoard, sideCount, countThreats, applyMove, legalMoves, bestMove, casualMove };",
     context
 );
 const game = context.api;
@@ -22,6 +22,16 @@ const owners = () => game.emptyOwners();
 assert.equal(h().length, 6, "3x3 dots need six horizontal lines");
 assert.equal(v().length, 6, "3x3 dots need six vertical lines");
 assert.equal(owners().length, 4, "3x3 dots enclose four boxes");
+for (let dots = 3; dots <= 6; dots++) {
+    const edges = game.emptyHorizontal(dots);
+    const vertical = game.emptyVertical(dots);
+    const boxes = game.emptyOwners(dots);
+    assert.equal(edges.length, dots * (dots - 1));
+    assert.equal(vertical.length, dots * (dots - 1));
+    assert.equal(boxes.length, (dots - 1) * (dots - 1));
+    assert.equal(game.legalMoves(edges, vertical).length, 2 * dots * (dots - 1));
+    assert.equal(game.dotsFromBoard(edges, vertical, boxes), dots);
+}
 
 const opening = game.applyMove(h(), v(), owners(), [0, 0], "h", 0, "X");
 assert.equal(opening.turn, "O", "a line that closes no box hands over the turn");
@@ -66,11 +76,28 @@ assert.ok(game.legalMoves(tacticalH, tacticalV).some(
     move => move.orientation === blunder.orientation && move.index === blunder.index
 ), "bot blunders must still be legal");
 
+const largerH = game.emptyHorizontal(4);
+const largerV = game.emptyVertical(4);
+const largerOwners = game.emptyOwners(4);
+largerH[0] = "X";
+largerH[3] = "X";
+largerV[0] = "X";
+const largerCapture = game.applyMove(largerH, largerV, largerOwners, [0, 0], "v", 1, "X");
+assert.deepEqual(Array.from(largerCapture.claimed), [0], "4x4 dots also close the top-left box correctly");
+assert.deepEqual(Array.from(largerCapture.scores), [1, 0]);
+
 const panel = fs.readFileSync(path.join(root, "quickshell/a16een/ui/GamingPanel.qml"), "utf8");
 assert.ok(panel.includes('DotsAndBoxes.applyMove('));
 assert.ok(panel.includes('root.applyDotsMove(move.orientation, move.index, "O")'));
 assert.ok(panel.includes('root.dotsStatusText'));
 assert.ok(panel.includes('Accessible.name: "Dots and Boxes"'));
+assert.ok(panel.includes('text: "DOTS PER SIDE"'));
+assert.ok(panel.includes('function setDotsPerSide(value)'));
+assert.ok(panel.includes('model: (root.dotsPerSide - 1) * (root.dotsPerSide - 1)'));
+assert.ok(panel.includes('iconName: "grid-2x2.svg"'));
+assert.ok(panel.includes('visible: root.currentView === "connect4"'));
+assert.ok(panel.includes('import "ConnectFour.js" as ConnectFour'));
+assert.ok(panel.includes('root.resultTitle === "I WON"'));
 assert.ok(panel.includes('root.showResult('));
 assert.ok(panel.includes('text: "ALL GAMES"'));
 
