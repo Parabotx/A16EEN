@@ -453,13 +453,8 @@ PanelWindow {
     }
 
     Timer {
-        interval: 1000
-        repeat: false
-        running: true
-        onTriggered: if (!automaticSnapshotProcess.running) automaticSnapshotProcess.running = true
-    }
-
-    Timer {
+        // Start the first automatic capture after 30 minutes. Do not overwrite
+        // the previous session snapshot immediately on login.
         interval: 30 * 60 * 1000
         repeat: true
         running: true
