@@ -1698,6 +1698,10 @@ ShellRoot {
             workspaceItems: root.workspaces
             focusedWorkspaceId: root.focusedWorkspaceId
             focusedWindowId: root.focusedWindowId
+            onProtectedAppRequested: (desktopId, appName) => {
+                toolsPanel.requestedAppId = desktopId
+                root.openToolsPage("app-locker")
+            }
         }
     }
 
