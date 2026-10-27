@@ -12,6 +12,7 @@ Item {
     property string updateMessage: "Checking update status…"
     property var lockerApps: []
     property string lockerMessage: ""
+    property string requestedAppId: ""
     property string appSearch: ""
     property string passwordMode: ""
     property string selectedAppId: ""
@@ -60,6 +61,21 @@ Item {
     function refreshLocker() {
         if (!lockerListProcess.running)
             lockerListProcess.running = true
+    }
+
+    function consumeRequestedApp() {
+        if (root.page !== "app-locker" || !root.requestedAppId.length || !root.lockerApps.length)
+            return
+        const wanted = root.requestedAppId.toLowerCase()
+        const app = root.lockerApps.find(item => String(item.desktop_id || "").toLowerCase() === wanted)
+        root.requestedAppId = ""
+        if (app && app.locked) {
+            Qt.callLater(() => root.openPasswordDialog("launch", app))
+        } else {
+            root.lockerMessage = app
+                ? "This app is not protected. Use Protect to set a password."
+                : "The requested application was not found in the installed app list."
+        }
     }
 
     function openPasswordDialog(mode, app) {
@@ -148,6 +164,8 @@ Item {
             Qt.callLater(() => root.refreshSessions())
     }
 
+    onRequestedAppIdChanged: Qt.callLater(() => root.consumeRequestedApp())
+
     onPageChanged: {
         if (root.page === "updates") {
             root.refreshUpdates(false)
@@ -206,6 +224,7 @@ Item {
                 root.lockerApps = Array.isArray(result.apps) ? result.apps : []
                 if (result.message)
                     root.lockerMessage = String(result.message)
+                Qt.callLater(() => root.consumeRequestedApp())
             }
         }
     }
@@ -600,7 +619,7 @@ Item {
 
             Rectangle {
                 width: parent.width
-                height: root.passwordMode === "protect" ? 178 : (root.passwordMode.length > 0 ? 145 : 61)
+                height: root.passwordMode === "protect" ? 196 : (root.passwordMode.length > 0 ? 155 : 61)
                 radius: 11
                 color: root.subtleColor
                 border.width: 1
@@ -674,7 +693,6 @@ Item {
                             font.pixelSize: 10
                             clip: true
                             selectByMouse: true
-                            focus: root.passwordMode.length > 0
                             onAccepted: {
                                 if (root.passwordMode !== "protect")
                                     root.submitLockerAction()
