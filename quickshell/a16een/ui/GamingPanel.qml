@@ -4,6 +4,7 @@ import Quickshell.Wayland
 import qs.ui
 import "TicTacToe.js" as TicTacToe
 import "DotsAndBoxes.js" as DotsAndBoxes
+import "ConnectFour.js" as ConnectFour
 
 PanelWindow {
     id: root
@@ -37,6 +38,10 @@ PanelWindow {
     property string dotsStatusText: "YOUR TURN"
     property string dotsTurn: "X"
     property bool dotsGameOver: false
+    property int dotsPerSide: 3
+
+    property var connectFourBoard: ConnectFour.emptyBoard()
+    property string connectFourStatusText: "YOUR TURN"
 
     signal closeRequested()
 
@@ -44,10 +49,14 @@ PanelWindow {
         root.navbarPosition === "top" || root.navbarPosition === "bottom"
     readonly property real screenWidth: root.modelData ? root.modelData.width : 1920
     readonly property real screenHeight: root.modelData ? root.modelData.height : 1080
-    readonly property int popupWidth: 310
+    readonly property int popupWidth: root.currentView === "dots"
+        ? (root.dotsPerSide >= 5 ? 430 : 350)
+        : (root.currentView === "connect4" ? 390
+        : (root.currentView === "list" ? 350 : (root.currentView === "result" ? 350 : 310)))
     readonly property int popupHeight: root.currentView === "xo" ? 372
-        : (root.currentView === "dots" ? 420
-        : (root.currentView === "result" ? 350 : 166))
+        : (root.currentView === "dots" ? 430 + (root.dotsPerSide - 3) * 48
+        : (root.currentView === "connect4" ? 500
+        : (root.currentView === "result" ? 350 : (root.currentView === "list" ? 282 : 166))))
     readonly property real popupX: root.horizontalNavbar
         ? root.screenWidth - root.popupWidth - 102
         : (root.navbarPosition === "left"
@@ -106,9 +115,9 @@ PanelWindow {
         root.currentView = "dots"
         root.resultGame = "dots"
         root.resultEntered = false
-        root.dotsHorizontal = DotsAndBoxes.emptyHorizontal()
-        root.dotsVertical = DotsAndBoxes.emptyVertical()
-        root.dotsOwners = DotsAndBoxes.emptyOwners()
+        root.dotsHorizontal = DotsAndBoxes.emptyHorizontal(root.dotsPerSide)
+        root.dotsVertical = DotsAndBoxes.emptyVertical(root.dotsPerSide)
+        root.dotsOwners = DotsAndBoxes.emptyOwners(root.dotsPerSide)
         root.dotsScores = [0, 0]
         root.dotsTurn = "X"
         root.dotsStatusText = "YOUR TURN"
@@ -117,9 +126,32 @@ PanelWindow {
         root.botThinking = false
     }
 
+    function startConnectFour() {
+        botMoveTimer.stop()
+        root.currentView = "connect4"
+        root.resultGame = "connect4"
+        root.resultEntered = false
+        root.connectFourBoard = ConnectFour.emptyBoard()
+        root.connectFourStatusText = "YOUR TURN"
+        root.gameOver = false
+        root.dotsGameOver = false
+        root.botThinking = false
+    }
+
+    function setDotsPerSide(value) {
+        var nextSize = Math.max(3, Math.min(6, Math.floor(Number(value) || 3)))
+        if (nextSize === root.dotsPerSide)
+            return
+        root.dotsPerSide = nextSize
+        // A size change starts a clean round so no old edge indexes survive.
+        root.startDotsGame()
+    }
+
     function restartCurrentGame() {
         if (root.currentView === "dots" || root.resultGame === "dots")
             root.startDotsGame()
+        else if (root.currentView === "connect4" || root.resultGame === "connect4")
+            root.startConnectFour()
         else
             root.startGame()
     }
@@ -168,10 +200,10 @@ PanelWindow {
             return true
         }
         if (result === "O") {
-            root.statusText = "BOT WINS"
+            root.statusText = "I WON"
             root.gameOver = true
             root.botThinking = false
-            root.showResult("xo", "BOT WINS", "The bot found its opening this time.", scoreText)
+            root.showResult("xo", "I WON", "I found my opening this time. Rematch?", scoreText)
             return true
         }
         if (TicTacToe.isFull(root.board)) {
@@ -197,7 +229,7 @@ PanelWindow {
             return
 
         root.botThinking = true
-        root.statusText = "BOT THINKING"
+        root.statusText = "I AM THINKING..."
         botMoveTimer.restart()
     }
 
@@ -231,9 +263,9 @@ PanelWindow {
                 resultTitle = "YOU WIN"
                 resultSubtitle = "You claimed more boxes. What a finish!"
             } else if (result.scores[1] > result.scores[0]) {
-                root.dotsStatusText = "BOT WINS"
+                root.dotsStatusText = "I WON"
                 resultTitle = "BOT WINS"
-                resultSubtitle = "The bot edged ahead this round."
+                resultSubtitle = "I edged ahead this round. Ready to try again?"
             } else {
                 root.dotsStatusText = "DRAW"
             }
@@ -248,7 +280,7 @@ PanelWindow {
 
         if (result.turn === "O") {
             root.botThinking = true
-            root.dotsStatusText = "BOT THINKING"
+            root.dotsStatusText = "I AM THINKING..."
             botMoveTimer.restart()
         } else {
             root.botThinking = false
@@ -263,6 +295,49 @@ PanelWindow {
             || root.dotsTurn !== "X")
             return
         root.applyDotsMove(orientation, index, "X")
+    }
+
+    function finishConnectFourIfNeeded() {
+        var winner = ConnectFour.winner(root.connectFourBoard)
+        if (winner === "X") {
+            root.gameOver = true
+            root.botThinking = false
+            root.connectFourStatusText = "YOU WIN"
+            root.showResult("connect4", "YOU WIN",
+                "Four in a row. You outplayed me!", "CONNECT FOUR · YOU WIN")
+            return true
+        }
+        if (winner === "O") {
+            root.gameOver = true
+            root.botThinking = false
+            root.connectFourStatusText = "I WON"
+            root.showResult("connect4", "I WON",
+                "I spotted the winning line first. Rematch?", "CONNECT FOUR · FOUR IN A ROW")
+            return true
+        }
+        if (ConnectFour.isFull(root.connectFourBoard)) {
+            root.gameOver = true
+            root.botThinking = false
+            root.connectFourStatusText = "DRAW"
+            root.showResult("connect4", "IT'S A DRAW",
+                "No room left. Let's see who wins the rematch.", "CONNECT FOUR · DRAW")
+            return true
+        }
+        return false
+    }
+
+    function playConnectFourColumn(column) {
+        if (root.currentView !== "connect4" || root.gameOver || root.botThinking)
+            return
+        var move = ConnectFour.drop(root.connectFourBoard, column, "X")
+        if (!move)
+            return
+        root.connectFourBoard = move.board
+        if (root.finishConnectFourIfNeeded())
+            return
+        root.botThinking = true
+        root.connectFourStatusText = "I AM THINKING..."
+        botMoveTimer.restart()
     }
 
     function playBotTurn() {
@@ -299,6 +374,22 @@ PanelWindow {
             if (!move)
                 return
             root.applyDotsMove(move.orientation, move.index, "O")
+            return
+        }
+
+        if (root.currentView === "connect4" && !root.gameOver) {
+            var column = ConnectFour.bestMove(root.connectFourBoard, "O", "X", 4)
+            if (column < 0) {
+                root.finishConnectFourIfNeeded()
+                return
+            }
+            var move4 = ConnectFour.drop(root.connectFourBoard, column, "O")
+            if (!move4)
+                return
+            root.connectFourBoard = move4.board
+            root.botThinking = false
+            if (!root.finishConnectFourIfNeeded())
+                root.connectFourStatusText = "YOUR TURN"
         }
     }
 
@@ -388,7 +479,8 @@ PanelWindow {
                         anchors.verticalCenter: parent.verticalCenter
                         text: root.currentView === "xo" ? "X & O"
                             : (root.currentView === "dots" ? "DOTS & BOXES"
-                            : (root.currentView === "result" ? "ROUND RESULT" : "GAMES"))
+                            : (root.currentView === "connect4" ? "CONNECT FOUR"
+                            : (root.currentView === "result" ? "ROUND RESULT" : "GAMES")))
                         color: popupCardStyle.textColor
                         font.pixelSize: 13
                         font.weight: Font.DemiBold
@@ -552,7 +644,7 @@ PanelWindow {
                                             anchors.centerIn: parent
                                             width: 17
                                             height: 17
-                                            iconName: "lucide-grid-2x2.svg"
+                                            iconName: "grid-2x2.svg"
                                             iconColor: popupCardStyle.iconColor
                                         }
                                     }
@@ -732,7 +824,7 @@ PanelWindow {
                                     Text {
                                         anchors.fill: parent
                                         anchors.leftMargin: 8
-                                        text: "BOT   " + root.dotsScores[1]
+                                        text: "I   " + root.dotsScores[1]
                                         color: "#315A96"
                                         font.pixelSize: 10
                                         font.weight: Font.DemiBold
@@ -940,10 +1032,10 @@ PanelWindow {
                                     height: 68
                                     radius: 34
                                     color: root.resultTitle === "YOU WIN" ? "#DDF3E5"
-                                        : (root.resultTitle === "BOT WINS" ? "#F9E5E5" : "#E6EDF8")
+                                        : (root.resultTitle === "I WON" ? "#F9E5E5" : "#E6EDF8")
                                     border.width: 1
                                     border.color: root.resultTitle === "YOU WIN" ? "#A7D9B8"
-                                        : (root.resultTitle === "BOT WINS" ? "#E9B8B8" : "#C7D5EA")
+                                        : (root.resultTitle === "I WON" ? "#E9B8B8" : "#C7D5EA")
                                     scale: root.resultEntered ? 1 : 0.66
                                     rotation: root.resultEntered ? 0 : -12
                                     Behavior on scale {
@@ -955,9 +1047,9 @@ PanelWindow {
                                     Text {
                                         anchors.centerIn: parent
                                         text: root.resultTitle === "YOU WIN" ? "✦"
-                                            : (root.resultTitle === "BOT WINS" ? "↗" : "＝")
+                                            : (root.resultTitle === "I WON" ? "↗" : "＝")
                                         color: root.resultTitle === "YOU WIN" ? "#287A50"
-                                            : (root.resultTitle === "BOT WINS" ? "#B44F54" : "#4A6592")
+                                            : (root.resultTitle === "I WON" ? "#B44F54" : "#4A6592")
                                         font.pixelSize: 34
                                         font.weight: Font.DemiBold
                                     }
@@ -980,7 +1072,7 @@ PanelWindow {
                             Text {
                                 width: parent.width
                                 text: root.resultTitle === "YOU WIN" ? "NICE MOVE"
-                                    : (root.resultTitle === "BOT WINS" ? "NEXT ROUND" : "WELL MATCHED")
+                                    : (root.resultTitle === "I WON" ? "NEXT ROUND" : "WELL MATCHED")
                                 horizontalAlignment: Text.AlignHCenter
                                 color: popupCardStyle.mutedTextColor
                                 font.pixelSize: 8
