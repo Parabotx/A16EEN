@@ -72,7 +72,7 @@ Choose an installed desktop application, set a password, and use **Open** in App
 
 ### Session Snapshots
 
-A16EEN stores an automatic session snapshot at shell startup and then every **30 minutes**, plus any named snapshots you create manually. The automatic snapshot is refreshed in place; up to 30 named snapshots are retained. Snapshots include restorable desktop app IDs and their workspace names, not document contents or application-private state.
+A16EEN preserves the last automatic snapshot on login, then refreshes it every **30 minutes**, plus any named snapshots you create manually. The first new automatic capture happens after that initial 30-minute interval so startup cannot immediately overwrite a useful recovery snapshot. The automatic snapshot is refreshed in place; up to 30 named snapshots are retained. Snapshots include restorable desktop app IDs and their workspace names, not document contents or application-private state.
 
 Select **Restore** to relaunch the available applications and attempt to return newly opened windows to their saved workspaces. Apps that are no longer installed are skipped. Some applications reopen an existing instance instead of creating a new window, and unsaved documents, browser state, and exact window geometry cannot be guaranteed. Snapshot files are stored locally at `~/.local/state/a16een/session-snapshots.json` with user-only permissions.
 
