@@ -1297,7 +1297,9 @@ PanelWindow {
             root.lockRequested()
             break
         case "sleep":
-            Quickshell.execDetached(["systemctl", "suspend"])
+            // The lock helper waits until GTKLock/swaylock confirms the session
+            // is secure. Suspend is never issued if that confirmation fails.
+            Quickshell.execDetached(["a16een-lockscreen", "suspend"])
             break
         case "logout":
             Quickshell.execDetached(["niri", "msg", "action", "quit"])
