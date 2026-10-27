@@ -297,73 +297,69 @@ PanelWindow {
             z: 1
         }
 
-            Rectangle {
-                id: portraitFrame
-                visible: root.dayInfo.image !== undefined
-                    && String(root.dayInfo.image).length > 0
-                x: 1
-                y: 1
-                width: visible ? Math.min(230, Math.max(112, (parent.width - 2) * 0.40)) : 0
-                height: parent.height - 2
-                radius: 25
-                color: "transparent"
-                border.width: 0
-                clip: true
-                z: 0
+        Rectangle {
+            id: portraitFrame
+            visible: root.dayInfo.image !== undefined
+                && String(root.dayInfo.image).length > 0
+            x: 1
+            y: 1
+            width: visible ? Math.min(230, Math.max(112, (parent.width - 2) * 0.40)) : 0
+            height: parent.height - 2
+            radius: 25
+            color: "transparent"
+            border.width: 0
+            clip: true
+            z: 0
 
-                Image {
-                    id: portraitImage
-                    anchors.fill: parent
-                    source: portraitFrame.visible ? root.portraitSource() : ""
-                    sourceSize.width: Math.max(1, portraitFrame.width * 2)
-                    sourceSize.height: Math.max(1, portraitFrame.height * 2)
-                    fillMode: Image.PreserveAspectFit
-                    asynchronous: true
-                    cache: true
-                    smooth: true
-                    mipmap: true
-                    visible: status === Image.Ready
+            Image {
+                id: portraitImage
+                anchors.fill: parent
+                source: portraitFrame.visible ? root.portraitSource() : ""
+                sourceSize.width: Math.max(1, portraitFrame.width * 2)
+                sourceSize.height: Math.max(1, portraitFrame.height * 2)
+                fillMode: Image.PreserveAspectFit
+                asynchronous: true
+                cache: true
+                smooth: true
+                mipmap: true
+                visible: status === Image.Ready
+            }
+
+            Column {
+                anchors.centerIn: parent
+                width: parent.width - 18
+                spacing: 8
+                visible: portraitFrame.visible && portraitImage.status !== Image.Ready
+                z: 2
+
+                Text {
+                    width: parent.width
+                    text: "✧"
+                    color: popupCardStyle.actionColor
+                    font.pixelSize: 42
+                    horizontalAlignment: Text.AlignHCenter
                 }
 
+                Text {
+                    width: parent.width
+                    text: "ምስል"
+                    color: popupCardStyle.mutedTextColor
+                    font.family: "Noto Sans Ethiopic"
+                    font.pixelSize: 12
+                    horizontalAlignment: Text.AlignHCenter
+                    elide: Text.ElideRight
+                }
 
-
-
-
-                Column {
-                    anchors.centerIn: parent
-                    width: parent.width - 18
-                    spacing: 8
-                    visible: portraitFrame.visible && portraitImage.status !== Image.Ready
-                    z: 2
-
-                    Text {
-                        width: parent.width
-                        text: "✧"
-                        color: popupCardStyle.actionColor
-                        font.pixelSize: 42
-                        horizontalAlignment: Text.AlignHCenter
-                    }
-
-                    Text {
-                        width: parent.width
-                        text: "ምስል"
-                        color: popupCardStyle.mutedTextColor
-                        font.family: "Noto Sans Ethiopic"
-                        font.pixelSize: 12
-                        horizontalAlignment: Text.AlignHCenter
-                        elide: Text.ElideRight
-                    }
-
-                    Text {
-                        width: parent.width
-                        text: "Portrait loading"
-                        color: popupCardStyle.mutedTextColor
-                        font.pixelSize: 10
-                        horizontalAlignment: Text.AlignHCenter
-                        wrapMode: Text.WordWrap
-                    }
+                Text {
+                    width: parent.width
+                    text: "Portrait loading"
+                    color: popupCardStyle.mutedTextColor
+                    font.pixelSize: 10
+                    horizontalAlignment: Text.AlignHCenter
+                    wrapMode: Text.WordWrap
                 }
             }
+        }
 
         Row {
             id: cardBody
@@ -373,8 +369,6 @@ PanelWindow {
             anchors.topMargin: 18
             anchors.bottomMargin: 18
             spacing: 0
-
-
 
             Column {
                 id: detailsColumn
@@ -388,7 +382,7 @@ PanelWindow {
                     spacing: 0
 
                     Rectangle {
-                        width: Math.max(0, parent.width - 43)
+                        width: parent.width
                         height: parent.height
                         radius: 11
                         color: Qt.rgba(popupCardStyle.subtleSurfaceColor.r,
@@ -410,7 +404,6 @@ PanelWindow {
                             verticalAlignment: Text.AlignVCenter
                         }
                     }
-
 
                 }
 
