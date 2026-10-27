@@ -45,7 +45,7 @@ QtObject {
         "21": ({
             title: "ቅድስት ማርያም",
             category: "የእመቤታችን ወርሃዊ መታሰቢያ",
-            image: "saint-mary.webp",
+            imagePool: "maryam", image: "saint-mary.jpg",
             description: "የወሩ 21ኛው ቀን በኢትዮጵያ ኦርቶዶክስ ትውፊት ለቅድስት ማርያም የተለየ ወርሃዊ መታሰቢያ ነው።",
             verse: "ከዛሬ ጀምሮ ትውልድ ሁሉ ምስጉን ይሉኛል።",
             reference: "ሉቃስ 1፥48",
@@ -173,7 +173,7 @@ QtObject {
         },
         {
             id: "lideta-ginbot", calendar: "ethiopian", month: 9, day: 1,
-            image: "saint-mary.webp",
+            imagePool: "maryam", image: "saint-mary.jpg",
             title: "ልደታ ለማርያም", category: "የቅድስት ማርያም ዓመታዊ በዓል",
             description: "ግንቦት 1 ልደታ ለማርያም የሚታሰብበት ሌላው ዓመታዊ ቀን ነው።",
             verse: "ከዛሬ ጀምሮ ትውልድ ሁሉ ምስጉን ይሉኛል።",
@@ -191,7 +191,7 @@ QtObject {
         },
         {
             id: "filsata", calendar: "ethiopian", month: 12, day: 16,
-            image: "saint-mary.webp",
+            imagePool: "maryam", image: "saint-mary.jpg",
             title: "ፍልሰታ ለማርያም", category: "የቅድስት ማርያም መታሰቢያ",
             description: "ከነሐሴ 1 እስከ 16 የሚከበረው የፍልሰታ ጾም በነሐሴ 16 ይደርሳል።",
             verse: "ከዛሬ ጀምሮ ትውልድ ሁሉ ምስጉን ይሉኛል።",
