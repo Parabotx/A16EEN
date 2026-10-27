@@ -820,7 +820,7 @@ Item {
             Flickable {
                 id: appListFlick
                 width: parent.width
-                height: 194
+                height: 132
                 clip: true
                 boundsBehavior: Flickable.StopAtBounds
                 contentWidth: width
@@ -1066,7 +1066,7 @@ Item {
             Flickable {
                 id: sessionsFlick
                 width: parent.width
-                height: 249
+                height: 136
                 clip: true
                 boundsBehavior: Flickable.StopAtBounds
                 contentWidth: width
