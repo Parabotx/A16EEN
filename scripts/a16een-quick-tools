@@ -293,7 +293,11 @@ def check_system_updates() -> dict[str, Any]:
 def check_updates(force: bool = False) -> int:
     state_dir()
     cached = read_json(UPDATE_CACHE, {})
-    age = time.time() - float(cached.get("checked_at_epoch", 0) or 0)
+    try:
+        cached_epoch = float(cached.get("checked_at_epoch", 0) or 0)
+    except (TypeError, ValueError):
+        cached_epoch = 0
+    age = time.time() - cached_epoch
     cache_ok = (
         cached.get("version") == 1
         and isinstance(cached.get("a16een"), dict)
@@ -450,10 +454,14 @@ def public_locked_apps(payload: dict[str, Any]) -> list[dict[str, Any]]:
     for app in payload.get("apps", []):
         if not isinstance(app, dict):
             continue
+        try:
+            locked_until = float(app.get("locked_until", 0) or 0)
+        except (TypeError, ValueError):
+            locked_until = 0
         safe.append({
             "desktop_id": str(app.get("desktop_id", "")),
             "name": str(app.get("name", "")),
-            "locked_until": max(0, int(float(app.get("locked_until", 0) or 0) - time.time())),
+            "locked_until": max(0, int(locked_until - time.time())),
         })
     return safe
 
@@ -576,7 +584,11 @@ def app_locker_command(args: list[str]) -> int:
             return emit({"ok": False, "message": f"Too many failed attempts. Try again in {remaining} seconds."}, 2)
         passwords = read_stdin_passwords(1)
         if not verify_password(record, passwords[0]):
-            record["failed_attempts"] = int(record.get("failed_attempts", 0) or 0) + 1
+            try:
+                failed_attempts = int(record.get("failed_attempts", 0) or 0)
+            except (TypeError, ValueError):
+                failed_attempts = 0
+            record["failed_attempts"] = failed_attempts + 1
             if record["failed_attempts"] >= 5:
                 record["failed_attempts"] = 0
                 record["locked_until"] = time.time() + 30
