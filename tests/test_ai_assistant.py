@@ -95,6 +95,22 @@ with tempfile.TemporaryDirectory() as temp:
     assert removed["configured"] is False
     assert not key_path.exists()
 
+    # Recover an existing key from ~/.config even when the current desktop
+    # exports a different XDG_CONFIG_HOME. It must remain private after migration.
+    legacy_key_path = home / ".config" / "a16een" / "ai" / "gemini-api-key"
+    legacy_key_path.parent.mkdir(parents=True)
+    legacy_key_path.write_text("existing-gemini-key-987654321\n")
+    status_after_migration = invoke(env, "status")
+    assert status_after_migration["gemini_configured"] is True
+    assert status_after_migration["configured"] is True
+    assert key_path.read_text().strip() == "existing-gemini-key-987654321"
+    assert stat.S_IMODE(key_path.stat().st_mode) == 0o600
+    assert stat.S_IMODE(key_path.parent.stat().st_mode) == 0o700
+    assert not legacy_key_path.exists()
+    removed_after_migration = invoke(env, "key", "remove")
+    assert removed_after_migration["configured"] is False
+    assert not key_path.exists()
+
     saved_chat = {
         "id": "chat-test-001",
         "title": "Diagnose Wi-Fi disconnects",
@@ -238,16 +254,18 @@ appearance_ui = (ROOT / "quickshell/a16een/ui/NavbarAppearancePage.qml").read_te
 # shared surface, and keep the AI popup's top-right control a real close action.
 assert "readonly property int shortcutTileWidth: 26" in dock_qml
 assert "readonly property int shortcutTileHeight: 26" in dock_qml
-assert "readonly property int shortcutRailGap: 24" in dock_qml
+assert "readonly property int shortcutSurfaceWidth: root.horizontalNavbar" in dock_qml
+assert "readonly property int shortcutSurfaceHeight: root.horizontalNavbar" in dock_qml
+assert "readonly property int shortcutStackHeight: root.shortcutCount > 0" in dock_qml
 assert "id: gamingAiNavbarContainer" in dock_qml
 assert "id: gamingShortcutItem" in dock_qml
 assert "id: aiShortcutItem" in dock_qml
-assert "readonly property int shortcutSurfaceWidth: root.shortcutCount * root.shortcutTileWidth" in dock_qml
+assert "y: root.gamingContainerVisible ? root.shortcutTileHeight : 0" in dock_qml
 assert 'iconName: "gamepad-2.svg"' in dock_qml
 assert "width: visible ? root.shortcutTileWidth : 0" in dock_qml
 assert 'containerColorFor(root.shortcutSurfaceStyleId)' in dock_qml
 assert 'x: root.navbarPosition === "right" ? parent.width - width - 8 : 8' in dock_qml
-assert "shortcutTileGap" not in dock_qml
+assert "shortcutRailGap" not in dock_qml
 assert "id: gamingNavbarContainer" not in dock_qml
 assert 'text: "AI"' not in dock_qml
 assert 'fallbackPath: root.fallbackIconPath("a16een-ai-sigil.svg")' in dock_qml
@@ -315,6 +333,8 @@ assert 'def request_gemini_with_fallback' in (ROOT / "scripts/a16een-ai").read_t
 assert 'RequestTimeoutError' in (ROOT / "scripts/a16een-ai").read_text()
 assert 'MODEL = os.environ.get("A16EEN_GEMINI_MODEL", "gemini-3.5-flash-lite")' in (ROOT / "scripts/a16een-ai").read_text()
 assert 'groq-api-key' in (ROOT / "scripts/a16een-ai").read_text()
+assert 'def provider_key_candidates(provider: str)' in (ROOT / "scripts/a16een-ai").read_text()
+assert 'legacy_path.unlink()' in (ROOT / "scripts/a16een-ai").read_text()
 assert 'api.groq.com/openai/v1/chat/completions' in (ROOT / "scripts/a16een-ai").read_text()
 assert 'width: 1.5' in tools_panel_qml and 'height: 12' in tools_panel_qml
 assert 'visible: root.page !== "ai"' in tools_panel_qml
