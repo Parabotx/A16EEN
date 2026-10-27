@@ -104,7 +104,9 @@ PanelWindow {
                     width: 18
                     height: 18
                     anchors.centerIn: parent
-                    rotation: root.showingDownload ? 180 : 0
+                    // The arrowhead geometry points down at 0 degrees, so invert
+                    // the rotation mapping: upload points up, download points down.
+                    rotation: root.showingDownload ? 0 : 180
                     Behavior on rotation {
                         NumberAnimation { duration: 190; easing.type: Easing.OutCubic }
                     }
