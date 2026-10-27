@@ -257,6 +257,8 @@ assert "readonly property int shortcutTileHeight: 26" in dock_qml
 assert "readonly property int shortcutSurfaceWidth: root.horizontalNavbar" in dock_qml
 assert "readonly property int shortcutSurfaceHeight: root.horizontalNavbar" in dock_qml
 assert "readonly property int shortcutStackHeight: root.shortcutCount > 0" in dock_qml
+assert "readonly property int shortcutDockGap: 10" in dock_qml
+assert "root.shortcutSurfaceHeight + root.shortcutDockGap" in dock_qml
 assert "id: gamingAiNavbarContainer" in dock_qml
 assert "id: gamingShortcutItem" in dock_qml
 assert "id: aiShortcutItem" in dock_qml
