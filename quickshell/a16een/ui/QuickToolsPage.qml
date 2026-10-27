@@ -22,6 +22,8 @@ Item {
     property var sessionSnapshots: []
     property bool actionBusy: false
 
+    signal requestedAppConsumed()
+
     readonly property color textColor: root.palette && root.palette.textColor ? root.palette.textColor : "#171717"
     readonly property color secondaryColor: root.palette && root.palette.secondaryTextColor ? root.palette.secondaryTextColor : "#393939"
     readonly property color mutedColor: root.palette && root.palette.mutedTextColor ? root.palette.mutedTextColor : "#777777"
@@ -69,6 +71,7 @@ Item {
         const wanted = root.requestedAppId.toLowerCase()
         const app = root.lockerApps.find(item => String(item.desktop_id || "").toLowerCase() === wanted)
         root.requestedAppId = ""
+        root.requestedAppConsumed()
         if (app && app.locked) {
             Qt.callLater(() => root.openPasswordDialog("launch", app))
         } else {
