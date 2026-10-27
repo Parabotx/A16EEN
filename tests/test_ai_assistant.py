@@ -227,7 +227,7 @@ assert "id: gamingShortcutItem" in dock_qml
 assert "id: aiShortcutItem" in dock_qml
 assert "readonly property int shortcutSurfaceWidth: root.shortcutCount * root.shortcutTileWidth" in dock_qml
 assert 'iconName: "gamepad-2.svg"' in dock_qml
-assert "width: root.shortcutTileWidth" in dock_qml
+assert "width: visible ? root.shortcutTileWidth : 0" in dock_qml
 assert 'containerColorFor(root.shortcutSurfaceStyleId)' in dock_qml
 assert 'x: root.navbarPosition === "right" ? parent.width - width - 8 : 8' in dock_qml
 assert "shortcutTileGap" not in dock_qml
