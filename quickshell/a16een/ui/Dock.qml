@@ -264,20 +264,19 @@ PanelWindow {
 
     readonly property bool aiContainerVisible: root.containerIsVisible("ai")
     readonly property bool gamingContainerVisible: root.containerIsVisible("gaming")
+    readonly property int shortcutTileWidth: 26
     readonly property int shortcutTileHeight: 26
-    readonly property int shortcutTileGap: 4
     readonly property int shortcutTileTopInset: 2
     readonly property int shortcutRailGap: 24
     readonly property int shortcutCount:
         (root.aiContainerVisible ? 1 : 0) + (root.gamingContainerVisible ? 1 : 0)
-    // Preserve the existing breathing room above the workspace rail while
-    // packing Gaming and AI together when both independent tiles are visible.
+    // The Gaming and AI shortcuts share one container row, not separate stacked tiles.
     readonly property int shortcutStackHeight: root.shortcutCount > 0
-        ? root.shortcutTileTopInset
-            + root.shortcutCount * root.shortcutTileHeight
-            + Math.max(0, root.shortcutCount - 1) * root.shortcutTileGap
-            + root.shortcutRailGap
+        ? root.shortcutTileTopInset + root.shortcutTileHeight + root.shortcutRailGap
         : 0
+    readonly property int shortcutSurfaceWidth: root.shortcutCount * root.shortcutTileWidth
+    readonly property string shortcutSurfaceStyleId:
+        root.aiContainerVisible ? "ai" : "gaming"
 
     readonly property int surfaceHeight:
         root.horizontalNavbar
@@ -1847,91 +1846,78 @@ PanelWindow {
     }
 
     Rectangle {
-        id: gamingNavbarContainer
-        visible: !root.horizontalNavbar && root.dockVisible && root.gamingContainerVisible
-        // Keep the gamepad as an independent icon-only tile directly above AI.
+        id: gamingAiNavbarContainer
+        visible: !root.horizontalNavbar && root.dockVisible && root.shortcutCount > 0
         x: root.navbarPosition === "right" ? parent.width - width - 8 : 8
         y: Math.max(0,
             Math.round((parent.height - (root.dockHeight + root.shortcutStackHeight)) / 2)
                 + root.shortcutTileTopInset)
-        width: 24
-        height: 26
+        width: root.shortcutSurfaceWidth
+        height: root.shortcutTileHeight
         radius: 9
-        color: root.containerColorFor("gaming")
+        color: root.containerColorFor(root.shortcutSurfaceStyleId)
         border.width: 1
-        border.color: root.containerBorderColorFor("gaming")
+        border.color: root.containerBorderColorFor(root.shortcutSurfaceStyleId)
         z: 10
 
         Behavior on color { ColorAnimation { duration: 140; easing.type: Easing.OutCubic } }
         Behavior on border.color { ColorAnimation { duration: 140; easing.type: Easing.OutCubic } }
         Behavior on y { NumberAnimation { duration: 160; easing.type: Easing.OutCubic } }
+        Behavior on width { NumberAnimation { duration: 150; easing.type: Easing.OutCubic } }
 
-        NavbarIcon {
-            anchors.centerIn: parent
-            width: 16
-            height: 16
-            iconName: "gamepad-2.svg"
-            iconColor: root.iconColorFor("gaming")
+        Item {
+            id: gamingShortcutItem
+            visible: root.gamingContainerVisible
+            x: 0
+            width: visible ? root.shortcutTileWidth : 0
+            height: parent.height
+
+            NavbarIcon {
+                anchors.centerIn: parent
+                width: 16
+                height: 16
+                iconName: "gamepad-2.svg"
+                iconColor: root.iconColorFor("gaming")
+            }
+            MouseArea {
+                anchors.fill: parent
+                hoverEnabled: true
+                cursorShape: Qt.PointingHandCursor
+                onEntered: root.revealDock()
+                onExited: root.scheduleHide()
+                onClicked: root.gamingRequested()
+            }
+            Accessible.name: "Gaming"
         }
 
-        MouseArea {
-            id: gamingNavbarMouse
-            anchors.fill: parent
-            hoverEnabled: true
-            cursorShape: Qt.PointingHandCursor
-            onEntered: root.revealDock()
-            onExited: root.scheduleHide()
-            onClicked: root.gamingRequested()
+        Item {
+            id: aiShortcutItem
+            visible: root.aiContainerVisible
+            x: root.gamingContainerVisible ? root.shortcutTileWidth : 0
+            width: visible ? root.shortcutTileWidth : 0
+            height: parent.height
+
+            NavbarImage {
+                anchors.centerIn: parent
+                width: 16
+                height: 16
+                slot: "ai"
+                generatedPath: root.generatedIconPath("ai")
+                fallbackPath: root.fallbackIconPath("a16een-ai-sigil.svg")
+                refreshRevision: root.navbarRevision
+                active: false
+                hovered: false
+            }
+            MouseArea {
+                anchors.fill: parent
+                hoverEnabled: true
+                cursorShape: Qt.PointingHandCursor
+                onEntered: root.revealDock()
+                onExited: root.scheduleHide()
+                onClicked: root.aiRequested()
+            }
+            Accessible.name: "A16EEN AI desktop assistant"
         }
-
-        Accessible.name: "Gaming"
-    }
-
-    Rectangle {
-        id: aiNavbarContainer
-        visible: !root.horizontalNavbar && root.dockVisible && root.aiContainerVisible
-        // Keep the original AI tile size. Add only a compact gap below Gaming
-        // when both containers are visible.
-        x: root.navbarPosition === "right" ? parent.width - width - 8 : 8
-        y: Math.max(0,
-            Math.round((parent.height - (root.dockHeight + root.shortcutStackHeight)) / 2)
-                + root.shortcutTileTopInset
-                + (root.gamingContainerVisible ? root.shortcutTileHeight + root.shortcutTileGap : 0))
-        width: 24
-        height: 26
-        radius: 9
-        color: root.containerColorFor("ai")
-        border.width: 1
-        border.color: root.containerBorderColorFor("ai")
-        z: 10
-
-        Behavior on color { ColorAnimation { duration: 140; easing.type: Easing.OutCubic } }
-        Behavior on border.color { ColorAnimation { duration: 140; easing.type: Easing.OutCubic } }
-        Behavior on y { NumberAnimation { duration: 160; easing.type: Easing.OutCubic } }
-
-        NavbarImage {
-            anchors.centerIn: parent
-            width: 16
-            height: 16
-            slot: "ai"
-            generatedPath: root.generatedIconPath("ai")
-            fallbackPath: root.fallbackIconPath("a16een-ai-sigil.svg")
-            refreshRevision: root.navbarRevision
-            active: false
-            hovered: false
-        }
-
-        MouseArea {
-            id: aiNavbarMouse
-            anchors.fill: parent
-            hoverEnabled: true
-            cursorShape: Qt.PointingHandCursor
-            onEntered: root.revealDock()
-            onExited: root.scheduleHide()
-            onClicked: root.aiRequested()
-        }
-
-        Accessible.name: "A16EEN AI desktop assistant"
     }
 
     component BatteryGlyph: Item {

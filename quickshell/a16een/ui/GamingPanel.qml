@@ -11,6 +11,7 @@ PanelWindow {
     PopupCardStyle {
         id: popupCardStyle
         containerId: "gaming"
+        useContainerColor: true
     }
 
     required property var modelData
@@ -18,6 +19,11 @@ PanelWindow {
     property bool opened: false
     property bool dockVisible: true
     property string currentView: "list"
+    property string resultGame: "xo"
+    property string resultTitle: "YOU WIN"
+    property string resultSubtitle: ""
+    property string resultScoreText: ""
+    property bool resultEntered: false
 
     property var board: ["", "", "", "", "", "", "", "", ""]
     property string statusText: "YOUR TURN"
@@ -40,7 +46,8 @@ PanelWindow {
     readonly property real screenHeight: root.modelData ? root.modelData.height : 1080
     readonly property int popupWidth: 310
     readonly property int popupHeight: root.currentView === "xo" ? 372
-        : (root.currentView === "dots" ? 420 : 166)
+        : (root.currentView === "dots" ? 420
+        : (root.currentView === "result" ? 350 : 166))
     readonly property real popupX: root.horizontalNavbar
         ? root.screenWidth - root.popupWidth - 102
         : (root.navbarPosition === "left"
@@ -85,6 +92,8 @@ PanelWindow {
     function startGame() {
         botMoveTimer.stop()
         root.currentView = "xo"
+        root.resultGame = "xo"
+        root.resultEntered = false
         root.board = ["", "", "", "", "", "", "", "", ""]
         root.gameOver = false
         root.dotsGameOver = false
@@ -95,6 +104,8 @@ PanelWindow {
     function startDotsGame() {
         botMoveTimer.stop()
         root.currentView = "dots"
+        root.resultGame = "dots"
+        root.resultEntered = false
         root.dotsHorizontal = DotsAndBoxes.emptyHorizontal()
         root.dotsVertical = DotsAndBoxes.emptyVertical()
         root.dotsOwners = DotsAndBoxes.emptyOwners()
@@ -107,7 +118,7 @@ PanelWindow {
     }
 
     function restartCurrentGame() {
-        if (root.currentView === "dots")
+        if (root.currentView === "dots" || root.resultGame === "dots")
             root.startDotsGame()
         else
             root.startGame()
@@ -116,6 +127,7 @@ PanelWindow {
     function returnToList() {
         botMoveTimer.stop()
         root.currentView = "list"
+        root.resultEntered = false
         root.botThinking = false
         root.gameOver = false
         root.dotsGameOver = false
@@ -123,24 +135,50 @@ PanelWindow {
         root.dotsStatusText = "YOUR TURN"
     }
 
+    function markCount(mark) {
+        var count = 0
+        for (var i = 0; i < root.board.length; i++) {
+            if (root.board[i] === mark)
+                count++
+        }
+        return count
+    }
+
+    function showResult(gameId, title, subtitle, scoreText) {
+        root.resultGame = gameId
+        root.resultTitle = title
+        root.resultSubtitle = subtitle
+        root.resultScoreText = scoreText
+        root.resultEntered = false
+        root.currentView = "result"
+        Qt.callLater(function() {
+            if (root.currentView === "result")
+                root.resultEntered = true
+        })
+    }
+
     function finishIfNeeded() {
         var result = TicTacToe.winner(root.board)
+        var scoreText = "X  " + root.markCount("X") + "     ·     O  " + root.markCount("O")
         if (result === "X") {
             root.statusText = "YOU WIN"
             root.gameOver = true
             root.botThinking = false
+            root.showResult("xo", "YOU WIN", "You found the winning line. Beautifully played.", scoreText)
             return true
         }
         if (result === "O") {
             root.statusText = "BOT WINS"
             root.gameOver = true
             root.botThinking = false
+            root.showResult("xo", "BOT WINS", "The bot found its opening this time.", scoreText)
             return true
         }
         if (TicTacToe.isFull(root.board)) {
             root.statusText = "DRAW"
             root.gameOver = true
             root.botThinking = false
+            root.showResult("xo", "IT'S A DRAW", "Neither side found a winning line.", scoreText)
             return true
         }
         return false
@@ -186,12 +224,25 @@ PanelWindow {
             root.dotsGameOver = true
             root.botThinking = false
             botMoveTimer.stop()
-            if (result.scores[0] > result.scores[1])
+            var resultTitle = "IT'S A DRAW"
+            var resultSubtitle = "Every box claimed. It's a close match."
+            if (result.scores[0] > result.scores[1]) {
                 root.dotsStatusText = "YOU WIN"
-            else if (result.scores[1] > result.scores[0])
+                resultTitle = "YOU WIN"
+                resultSubtitle = "You claimed more boxes. What a finish!"
+            } else if (result.scores[1] > result.scores[0]) {
                 root.dotsStatusText = "BOT WINS"
-            else
+                resultTitle = "BOT WINS"
+                resultSubtitle = "The bot edged ahead this round."
+            } else {
                 root.dotsStatusText = "DRAW"
+            }
+            root.showResult(
+                "dots",
+                resultTitle,
+                resultSubtitle,
+                "YOU  " + result.scores[0] + "     ·     BOT  " + result.scores[1] + " BOXES"
+            )
             return
         }
 
@@ -336,7 +387,8 @@ PanelWindow {
                             - 28 - (root.currentView !== "list" ? 28 : 0) - parent.spacing * 3
                         anchors.verticalCenter: parent.verticalCenter
                         text: root.currentView === "xo" ? "X & O"
-                            : (root.currentView === "dots" ? "DOTS & BOXES" : "GAMES")
+                            : (root.currentView === "dots" ? "DOTS & BOXES"
+                            : (root.currentView === "result" ? "ROUND RESULT" : "GAMES"))
                         color: popupCardStyle.textColor
                         font.pixelSize: 13
                         font.weight: Font.DemiBold
@@ -814,6 +866,218 @@ PanelWindow {
                             }
                         }
                     }
+                    Item {
+                        id: resultStage
+                        anchors.fill: parent
+                        visible: root.currentView === "result"
+                        opacity: root.resultEntered ? 1 : 0
+                        scale: root.resultEntered ? 1 : 0.94
+                        transformOrigin: Item.Center
+                        Behavior on opacity {
+                            NumberAnimation { duration: 220; easing.type: Easing.OutCubic }
+                        }
+                        Behavior on scale {
+                            NumberAnimation { duration: 300; easing.type: Easing.OutBack }
+                        }
+
+                        Rectangle {
+                            anchors.fill: parent
+                            radius: 16
+                            color: popupCardStyle.fieldColor
+                            border.width: 1
+                            border.color: root.resultTitle === "YOU WIN"
+                                ? popupCardStyle.successColor : popupCardStyle.fieldBorderColor
+                        }
+
+                        Repeater {
+                            model: 16
+                            delegate: Rectangle {
+                                id: confettiParticle
+                                required property int index
+                                width: index % 3 === 0 ? 5 : 3
+                                height: index % 3 === 0 ? 8 : 3
+                                radius: 2
+                                x: 12 + ((index * 37) % Math.max(1, resultStage.width - 24))
+                                y: -10
+                                rotation: index * 23
+                                color: index % 4 === 0 ? popupCardStyle.successColor
+                                    : (index % 4 === 1 ? "#D6AD60"
+                                    : (index % 4 === 2 ? "#6F94CF" : "#D5A3BC"))
+                                opacity: root.resultEntered && root.resultTitle === "YOU WIN" ? 1 : 0
+                                z: 1
+                                NumberAnimation on y {
+                                    from: -10
+                                    to: resultStage.height + 10
+                                    duration: 880 + index * 34
+                                    easing.type: Easing.OutCubic
+                                    running: root.resultEntered && root.resultTitle === "YOU WIN"
+                                }
+                                NumberAnimation on rotation {
+                                    from: index * 23
+                                    to: index * 23 + 250
+                                    duration: 880 + index * 34
+                                    running: root.resultEntered && root.resultTitle === "YOU WIN"
+                                }
+                            }
+                        }
+
+                        Column {
+                            anchors.fill: parent
+                            anchors.leftMargin: 9
+                            anchors.rightMargin: 9
+                            anchors.topMargin: 10
+                            anchors.bottomMargin: 8
+                            spacing: 5
+                            z: 2
+
+                            Item {
+                                width: parent.width
+                                height: 76
+                                Rectangle {
+                                    id: resultHalo
+                                    anchors.centerIn: parent
+                                    width: 68
+                                    height: 68
+                                    radius: 34
+                                    color: root.resultTitle === "YOU WIN" ? "#DDF3E5"
+                                        : (root.resultTitle === "BOT WINS" ? "#F9E5E5" : "#E6EDF8")
+                                    border.width: 1
+                                    border.color: root.resultTitle === "YOU WIN" ? "#A7D9B8"
+                                        : (root.resultTitle === "BOT WINS" ? "#E9B8B8" : "#C7D5EA")
+                                    scale: root.resultEntered ? 1 : 0.66
+                                    rotation: root.resultEntered ? 0 : -12
+                                    Behavior on scale {
+                                        NumberAnimation { duration: 360; easing.type: Easing.OutBack }
+                                    }
+                                    Behavior on rotation {
+                                        NumberAnimation { duration: 360; easing.type: Easing.OutCubic }
+                                    }
+                                    Text {
+                                        anchors.centerIn: parent
+                                        text: root.resultTitle === "YOU WIN" ? "✦"
+                                            : (root.resultTitle === "BOT WINS" ? "↗" : "＝")
+                                        color: root.resultTitle === "YOU WIN" ? "#287A50"
+                                            : (root.resultTitle === "BOT WINS" ? "#B44F54" : "#4A6592")
+                                        font.pixelSize: 34
+                                        font.weight: Font.DemiBold
+                                    }
+                                }
+                                Rectangle {
+                                    anchors.centerIn: resultHalo
+                                    width: 82
+                                    height: 82
+                                    radius: 41
+                                    color: "transparent"
+                                    border.width: 1
+                                    border.color: root.resultTitle === "YOU WIN" ? "#657A52" : popupCardStyle.fieldBorderColor
+                                    opacity: root.resultEntered ? 0 : 0.8
+                                    scale: root.resultEntered ? 1.2 : 0.82
+                                    Behavior on opacity { NumberAnimation { duration: 430; easing.type: Easing.OutCubic } }
+                                    Behavior on scale { NumberAnimation { duration: 430; easing.type: Easing.OutCubic } }
+                                }
+                            }
+
+                            Text {
+                                width: parent.width
+                                text: root.resultTitle === "YOU WIN" ? "NICE MOVE"
+                                    : (root.resultTitle === "BOT WINS" ? "NEXT ROUND" : "WELL MATCHED")
+                                horizontalAlignment: Text.AlignHCenter
+                                color: popupCardStyle.mutedTextColor
+                                font.pixelSize: 8
+                                font.weight: Font.DemiBold
+                                font.letterSpacing: 1.8
+                            }
+                            Text {
+                                width: parent.width
+                                text: root.resultTitle
+                                horizontalAlignment: Text.AlignHCenter
+                                color: popupCardStyle.textColor
+                                font.pixelSize: 23
+                                font.weight: Font.Black
+                            }
+                            Text {
+                                width: parent.width
+                                height: 30
+                                text: root.resultSubtitle
+                                horizontalAlignment: Text.AlignHCenter
+                                verticalAlignment: Text.AlignVCenter
+                                wrapMode: Text.WordWrap
+                                color: popupCardStyle.secondaryTextColor
+                                font.pixelSize: 9
+                            }
+                            Rectangle {
+                                width: parent.width
+                                height: 27
+                                radius: 9
+                                color: popupCardStyle.subtleSurfaceColor
+                                border.width: 1
+                                border.color: popupCardStyle.fieldBorderColor
+                                Text {
+                                    anchors.fill: parent
+                                    text: root.resultScoreText
+                                    color: popupCardStyle.textColor
+                                    font.pixelSize: 10
+                                    font.weight: Font.DemiBold
+                                    horizontalAlignment: Text.AlignHCenter
+                                    verticalAlignment: Text.AlignVCenter
+                                }
+                            }
+                            Row {
+                                width: parent.width
+                                height: 34
+                                spacing: 7
+                                Rectangle {
+                                    width: (parent.width - parent.spacing) / 2
+                                    height: parent.height
+                                    radius: 10
+                                    color: replayMouse.containsMouse
+                                        ? popupCardStyle.actionHoverColor : popupCardStyle.actionColor
+                                    Text {
+                                        anchors.centerIn: parent
+                                        text: "PLAY AGAIN"
+                                        color: popupCardStyle.actionTextColor
+                                        font.pixelSize: 8
+                                        font.weight: Font.DemiBold
+                                        font.letterSpacing: 0.5
+                                    }
+                                    MouseArea {
+                                        id: replayMouse
+                                        anchors.fill: parent
+                                        hoverEnabled: true
+                                        cursorShape: Qt.PointingHandCursor
+                                        onClicked: root.restartCurrentGame()
+                                    }
+                                    Accessible.name: "Play again"
+                                }
+                                Rectangle {
+                                    width: (parent.width - parent.spacing) / 2
+                                    height: parent.height
+                                    radius: 10
+                                    color: gamesMouse.containsMouse
+                                        ? popupCardStyle.hoverSurfaceColor : popupCardStyle.subtleSurfaceColor
+                                    border.width: 1
+                                    border.color: popupCardStyle.fieldBorderColor
+                                    Text {
+                                        anchors.centerIn: parent
+                                        text: "ALL GAMES"
+                                        color: popupCardStyle.textColor
+                                        font.pixelSize: 8
+                                        font.weight: Font.DemiBold
+                                        font.letterSpacing: 0.5
+                                    }
+                                    MouseArea {
+                                        id: gamesMouse
+                                        anchors.fill: parent
+                                        hoverEnabled: true
+                                        cursorShape: Qt.PointingHandCursor
+                                        onClicked: root.returnToList()
+                                    }
+                                    Accessible.name: "Return to all games"
+                                }
+                            }
+                        }
+                    }
+
                 }
             }
         }
