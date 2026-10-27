@@ -1897,7 +1897,10 @@ ShellRoot {
         page: root.quickToolWindowPage
         requestedAppId: root.quickToolWindowRequestedAppId
         onBackRequested: root.returnToQuickTools()
-        onCloseRequested: root.quickToolWindowOpen = false
+        onCloseRequested: {
+            root.quickToolWindowOpen = false
+            root.quickToolWindowRequestedAppId = ""
+        }
     }
 
     ToolsPanel {
