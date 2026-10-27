@@ -76,7 +76,7 @@ jobs:
           python3 -m py_compile scripts/a16een-quick-tools
           python3 tests/test_quick_tools.py
           grep -Fq 'a16een-quick-tools' scripts/install.sh
-          grep -Fq 'QuickToolsWindow.qml' quickshell/a16een/shell.qml
+          grep -Fq 'QuickToolsWindow {' quickshell/a16een/shell.qml
           grep -Fq 'QuickToolsPage.qml' quickshell/a16een/ui/QuickToolsWindow.qml
           grep -Fq 'id: "updates"' quickshell/a16een/ui/ToolsPanel.qml
           grep -Fq 'CHECK NOW' quickshell/a16een/ui/QuickToolsPage.qml
