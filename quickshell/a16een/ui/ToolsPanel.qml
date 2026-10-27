@@ -87,7 +87,7 @@ PanelWindow {
     readonly property int popupWidth: root.page === "ai" ? Math.min(430, root.screenWidth - 16)
         : ((root.page === "data-meter" || root.page === "screen-time") ? 360 : 322)
     readonly property int popupHeight: root.page === "ai" ? 590
-        : (root.page === "tools" ? 390
+        : (root.page === "tools" ? 460
         : (root.page === "stash" ? 388
         : (root.page === "monitor" ? 310
         : (root.page === "calculator" ? 420
@@ -132,6 +132,9 @@ PanelWindow {
         { id: "stash", label: "Nest", detail: "Keep windows out of the way", icon: "lucide-archive.svg" },
         { id: "screen-time", label: "Screen Time", detail: "Daily active time by app", icon: "lucide-activity.svg" },
         { id: "data-meter", label: "Data Meter", detail: "Daily internet usage and speed", icon: "lucide-activity.svg" },
+        { id: "updates", label: "Updates", detail: "A16EEN + system updates", icon: "download.svg" },
+        { id: "app-locker", label: "App Locker", detail: "Password-gated app launches", icon: "lock.svg" },
+        { id: "sessions", label: "Session Snapshots", detail: "Restore your open apps", icon: "layers.svg" },
         { id: "ai", label: "A16EEN AI", detail: "Tell your desktop what to do", icon: "bot.svg" }
     ]
 
@@ -403,6 +406,59 @@ PanelWindow {
         }
     }
 
+    // These timers live with the shell, not the visible popup, so daily checks
+    // and session snapshots continue while Quick Tools is closed.
+    Process {
+        id: dailyUpdateCheckProcess
+        command: ["a16een-quick-tools", "updates"]
+        running: false
+        stdout: StdioCollector {}
+        stderr: StdioCollector {
+            onStreamFinished: {
+                const message = String(text || "").trim()
+                if (message.length)
+                    console.warn("A16EEN daily update check:", message)
+            }
+        }
+    }
+
+    Timer {
+        interval: 1000
+        repeat: false
+        running: true
+        onTriggered: if (!dailyUpdateCheckProcess.running) dailyUpdateCheckProcess.running = true
+    }
+
+    Timer {
+        interval: 24 * 60 * 60 * 1000
+        repeat: true
+        running: true
+        onTriggered: if (!dailyUpdateCheckProcess.running) dailyUpdateCheckProcess.running = true
+    }
+
+    Process {
+        id: automaticSnapshotProcess
+        command: ["a16een-quick-tools", "snapshot", "auto"]
+        running: false
+        stdout: StdioCollector {}
+        stderr: StdioCollector {
+            onStreamFinished: {
+                const message = String(text || "").trim()
+                if (message.length)
+                    console.warn("A16EEN automatic session snapshot:", message)
+            }
+        }
+    }
+
+    Timer {
+        // Start the first automatic capture after 30 minutes. Do not overwrite
+        // the previous session snapshot immediately on login.
+        interval: 30 * 60 * 1000
+        repeat: true
+        running: true
+        onTriggered: if (!automaticSnapshotProcess.running) automaticSnapshotProcess.running = true
+    }
+
     Timer {
         id: stashRefreshTimer
         interval: 1600
@@ -544,9 +600,15 @@ PanelWindow {
                                     ? "../assets/icons/lucide-activity.svg"
                                     : (root.page === "calculator"
                                         ? "../assets/icons/lucide-calculator.svg"
-                                        : ((root.page === "data-meter" || root.page === "screen-time")
-                                            ? "../assets/icons/lucide-activity.svg"
-                                            : "../assets/icons/lucide-toolbox.svg"))))
+                                        : (root.page === "updates"
+                                            ? "../assets/icons/download.svg"
+                                            : (root.page === "app-locker"
+                                                ? "../assets/icons/lock.svg"
+                                                : (root.page === "sessions"
+                                                    ? "../assets/icons/layers.svg"
+                                                    : ((root.page === "data-meter" || root.page === "screen-time")
+                                                        ? "../assets/icons/lucide-activity.svg"
+                                                        : "../assets/icons/lucide-toolbox.svg")))))))
                             iconColor: activePopupCardStyle.iconColor
                         }
 
@@ -597,7 +659,10 @@ PanelWindow {
                                 : (root.page === "monitor" ? "SYSTEM MONITOR"
                                 : (root.page === "calculator" ? "CALCULATOR"
                                 : (root.page === "screen-time" ? "SCREEN TIME"
-                                : (root.page === "ai" ? "A16EEN AI" : (root.page === "data-meter" ? "DATA METER" : "QUICK TOOLS")))))
+                                : (root.page === "updates" ? "UPDATES"
+                                : (root.page === "app-locker" ? "APP LOCKER"
+                                : (root.page === "sessions" ? "SESSION SNAPSHOTS"
+                                : (root.page === "ai" ? "A16EEN AI" : (root.page === "data-meter" ? "DATA METER" : "QUICK TOOLS"))))))))
                             color: activePopupCardStyle.textColor
                             font.pixelSize: 10
                             font.weight: Font.DemiBold
@@ -612,7 +677,10 @@ PanelWindow {
                                 : (root.page === "monitor" ? "Live usage while this card is open"
                                 : (root.page === "calculator" ? "Quick calculations, no waiting"
                                 : (root.page === "screen-time" ? "Today, week and month · active window time"
-                                : (root.page === "ai" ? "Gemini-powered desktop operator" : "Useful actions, one click away"))))
+                                : (root.page === "updates" ? "Daily checks for A16EEN and Arch packages"
+                                : (root.page === "app-locker" ? "Password gate for selected app launches"
+                                : (root.page === "sessions" ? "Restore an earlier app workspace"
+                                : (root.page === "ai" ? "Gemini-powered desktop operator" : "Useful actions, one click away")))))))
                             color: activePopupCardStyle.mutedTextColor
                             font.pixelSize: 8
                             elide: Text.ElideRight

@@ -17,6 +17,9 @@ PanelWindow {
     property int focusedWorkspaceId: -1
     property int focusedWindowId: -1
     property string hoveredDesktopId: ""
+    property var lockedAppIds: []
+
+    signal protectedAppRequested(string desktopId, string appName)
     property real innerOrbitAngle: 0
     property real middleOrbitAngle: 0
     property real outerOrbitAngle: 0
@@ -127,12 +130,40 @@ PanelWindow {
         return angle + root.outerOrbitAngle
     }
 
+    function loadLockedApps(raw) {
+        try {
+            const store = JSON.parse(String(raw || "{}"))
+            root.lockedAppIds = store && Array.isArray(store.apps)
+                ? store.apps.map(item => String(item.desktop_id || "").toLowerCase())
+                : []
+        } catch (error) {
+            root.lockedAppIds = []
+            console.warn("A16EEN App Shelf could not read App Locker state:", error)
+        }
+    }
+
     function launchApp(app) {
+        const desktopId = String(app.desktopId || app.entry.id || "")
+        if (desktopId.length && root.lockedAppIds.includes(desktopId.toLowerCase())) {
+            root.protectedAppRequested(desktopId, String(app.name || "Application"))
+            return
+        }
         try {
             app.entry.execute()
         } catch (error) {
             console.error("A16EEN App Shelf could not launch " + app.name + ":", error)
         }
+    }
+
+    FileView {
+        id: appLockerStateFile
+        path: Quickshell.stateDir + "/app-locker.json"
+        preload: true
+        watchChanges: true
+        printErrors: false
+        onLoaded: root.loadLockedApps(appLockerStateFile.text())
+        onFileChanged: root.loadLockedApps(appLockerStateFile.text())
+        onLoadFailed: root.loadLockedApps("{}")
     }
 
     screen: modelData

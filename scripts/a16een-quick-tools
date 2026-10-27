@@ -1,0 +1,901 @@
+#!/usr/bin/env python3
+"""A16EEN Quick Tools: read-only updates, password-gated launches, and session snapshots."""
+
+from __future__ import annotations
+
+import configparser
+import hashlib
+import hmac
+import json
+import os
+import re
+import secrets
+import shlex
+import shutil
+import subprocess
+import sys
+import time
+import urllib.error
+import urllib.request
+from datetime import datetime, timezone
+from pathlib import Path
+from typing import Any
+
+HOME = Path.home()
+STATE_HOME = Path(os.environ.get("XDG_STATE_HOME", str(HOME / ".local/state"))).expanduser()
+DATA_HOME = Path(os.environ.get("XDG_DATA_HOME", str(HOME / ".local/share"))).expanduser()
+STATE_DIR = STATE_HOME / "a16een"
+UPDATE_CACHE = STATE_DIR / "quick-tools-updates.json"
+LOCKER_FILE = STATE_DIR / "app-locker.json"
+SNAPSHOTS_FILE = STATE_DIR / "session-snapshots.json"
+CACHE_SECONDS = 24 * 60 * 60
+MAX_MANUAL_SNAPSHOTS = 30
+PASSWORD_MIN_LENGTH = 6
+APP_ID_RE = re.compile(r"^[A-Za-z0-9._+-]+\.desktop$")
+
+
+def now_iso() -> str:
+    return datetime.now(timezone.utc).replace(microsecond=0).isoformat().replace("+00:00", "Z")
+
+
+def emit(payload: dict[str, Any], code: int = 0) -> int:
+    print(json.dumps(payload, ensure_ascii=False, separators=(",", ":")))
+    return code
+
+
+def state_dir() -> None:
+    STATE_DIR.mkdir(parents=True, exist_ok=True, mode=0o700)
+    try:
+        os.chmod(STATE_DIR, 0o700)
+    except OSError:
+        pass
+
+
+def read_json(path: Path, fallback: dict[str, Any]) -> dict[str, Any]:
+    try:
+        value = json.loads(path.read_text(encoding="utf-8"))
+        return value if isinstance(value, dict) else fallback.copy()
+    except (OSError, ValueError, TypeError):
+        return fallback.copy()
+
+
+def atomic_json(path: Path, payload: dict[str, Any], mode: int = 0o600) -> None:
+    path.parent.mkdir(parents=True, exist_ok=True, mode=0o700)
+    try:
+        os.chmod(path.parent, 0o700)
+    except OSError:
+        pass
+    temp = path.with_name(path.name + ".tmp-" + secrets.token_hex(4))
+    descriptor = os.open(temp, os.O_WRONLY | os.O_CREAT | os.O_EXCL, mode)
+    try:
+        with os.fdopen(descriptor, "w", encoding="utf-8") as stream:
+            json.dump(payload, stream, ensure_ascii=False, indent=2)
+            stream.write("\n")
+            stream.flush()
+            os.fsync(stream.fileno())
+        os.replace(temp, path)
+        os.chmod(path, mode)
+    finally:
+        try:
+            temp.unlink()
+        except OSError:
+            pass
+
+
+def run_command(args: list[str], timeout: float = 12.0) -> subprocess.CompletedProcess[str]:
+    env = os.environ.copy()
+    env["LC_ALL"] = "C"
+    env["LANG"] = "C"
+    return subprocess.run(
+        args,
+        stdout=subprocess.PIPE,
+        stderr=subprocess.PIPE,
+        text=True,
+        timeout=timeout,
+        check=False,
+        env=env,
+    )
+
+
+def format_size(size: int | None) -> str:
+    if size is None:
+        return "Size unavailable"
+    value = max(0, int(size))
+    if value < 1024 * 1024:
+        return f"{value / 1024:.0f} KB"
+    if value < 1024 * 1024 * 1024:
+        return f"{value / (1024 * 1024):.1f} MB"
+    return f"{value / (1024 * 1024 * 1024):.2f} GB"
+
+
+def installed_a16een_commit() -> str:
+    recorded = STATE_DIR / "installed-commit"
+    if recorded.is_file():
+        value = recorded.read_text(encoding="utf-8").strip()
+        if re.fullmatch(r"[0-9a-fA-F]{7,40}", value):
+            return value
+    source_dir = DATA_HOME / "a16een/source"
+    if (source_dir / ".git").is_dir() and shutil.which("git"):
+        try:
+            result = run_command(["git", "-C", str(source_dir), "rev-parse", "HEAD"], timeout=3)
+            value = result.stdout.strip()
+            if result.returncode == 0 and re.fullmatch(r"[0-9a-fA-F]{7,40}", value):
+                return value
+        except (OSError, subprocess.TimeoutExpired):
+            pass
+    return ""
+
+
+def check_a16een_updates() -> dict[str, Any]:
+    base = installed_a16een_commit()
+    if not base:
+        return {
+            "state": "not-installed",
+            "available": False,
+            "commit_count": 0,
+            "changed_files": 0,
+            "current_commit": "",
+            "latest_commit": "",
+            "message": "A16EEN installation revision not found",
+        }
+    url = f"https://api.github.com/repos/Parabotx/A16EEN/compare/{base}...main"
+    request = urllib.request.Request(
+        url,
+        headers={
+            "Accept": "application/vnd.github+json",
+            "User-Agent": "A16EEN-Quick-Tools",
+            "X-GitHub-Api-Version": "2022-11-28",
+        },
+    )
+    try:
+        with urllib.request.urlopen(request, timeout=8) as response:
+            data = json.loads(response.read(1_500_000).decode("utf-8"))
+        ahead = max(0, int(data.get("ahead_by", 0)))
+        state = str(data.get("status", "unknown")).lower()
+        latest = str((data.get("head") or {}).get("sha", ""))
+        files = data.get("files") if isinstance(data.get("files"), list) else []
+        if state == "diverged":
+            message = "Local and upstream history differ; review before updating"
+            available = False
+        elif ahead:
+            message = f"{ahead} newer A16EEN commit{'s' if ahead != 1 else ''} available"
+            available = True
+        else:
+            message = "A16EEN is up to date"
+            available = False
+        return {
+            "state": "diverged" if state == "diverged" else ("available" if available else "current"),
+            "available": available,
+            "commit_count": ahead,
+            "changed_files": len(files),
+            "current_commit": base,
+            "latest_commit": latest,
+            "message": message,
+        }
+    except urllib.error.HTTPError as error:
+        return {
+            "state": "unavailable",
+            "available": False,
+            "commit_count": 0,
+            "changed_files": 0,
+            "current_commit": base,
+            "latest_commit": "",
+            "message": f"GitHub could not compare this revision (HTTP {error.code})",
+            "error": True,
+        }
+    except (OSError, ValueError, TimeoutError, json.JSONDecodeError) as error:
+        return {
+            "state": "unavailable",
+            "available": False,
+            "commit_count": 0,
+            "changed_files": 0,
+            "current_commit": base,
+            "latest_commit": "",
+            "message": f"Could not reach GitHub: {type(error).__name__}",
+            "error": True,
+        }
+
+
+def parse_update_lines(output: str) -> list[dict[str, Any]]:
+    parsed: list[dict[str, Any]] = []
+    seen: set[str] = set()
+    pattern = re.compile(r"^(\S+)\s+(\S+)\s+->\s+(\S+)\s*$")
+    for line in output.splitlines():
+        match = pattern.match(line.strip())
+        if not match:
+            continue
+        name, current, latest = match.groups()
+        if name not in seen:
+            parsed.append({"name": name, "current": current, "latest": latest})
+            seen.add(name)
+    return parsed
+
+
+def check_system_updates() -> dict[str, Any]:
+    checker = shutil.which("checkupdates")
+    if not checker:
+        return {
+            "state": "unavailable",
+            "available": False,
+            "count": 0,
+            "estimated_download_bytes": None,
+            "estimated_size": "Size unavailable",
+            "packages": [],
+            "message": "Install pacman-contrib to enable safe update checks",
+            "error": True,
+        }
+    try:
+        result = run_command([checker], timeout=90)
+    except (OSError, subprocess.TimeoutExpired) as error:
+        return {
+            "state": "unavailable",
+            "available": False,
+            "count": 0,
+            "estimated_download_bytes": None,
+            "estimated_size": "Size unavailable",
+            "packages": [],
+            "message": f"Package check failed: {type(error).__name__}",
+            "error": True,
+        }
+    packages = parse_update_lines(result.stdout)
+    if result.returncode not in (0, 2) and not packages:
+        detail = result.stderr.strip().splitlines()
+        message = detail[-1][:180] if detail else "Package database could not be checked"
+        return {
+            "state": "unavailable",
+            "available": False,
+            "count": 0,
+            "estimated_download_bytes": None,
+            "estimated_size": "Size unavailable",
+            "packages": [],
+            "message": message,
+            "error": True,
+        }
+
+    names = [item["name"] for item in packages]
+    sizes: dict[str, int] = {}
+    pacman = shutil.which("pacman")
+    if names and pacman:
+        try:
+            fmt = "%n\t%v\t%s"
+            size_result = run_command(
+                [pacman, "-Sp", "--print-format", fmt, *names],
+                timeout=25,
+            )
+            for line in size_result.stdout.splitlines():
+                fields = line.split("\t")
+                if len(fields) == 3 and fields[0] and fields[2].isdigit():
+                    sizes[fields[0]] = int(fields[2])
+        except (OSError, subprocess.TimeoutExpired):
+            pass
+
+    for item in packages:
+        item["size_bytes"] = sizes.get(item["name"])
+    known_sizes = [value for value in sizes.values() if value >= 0]
+    total_size = sum(known_sizes) if known_sizes else None
+    full_size = len(known_sizes) == len(packages) and bool(packages)
+    return {
+        "state": "available" if packages else "current",
+        "available": bool(packages),
+        "count": len(packages),
+        "estimated_download_bytes": total_size,
+        "estimated_size": format_size(total_size) + ("" if full_size else " (partial estimate)" if total_size is not None else ""),
+        "size_complete": full_size,
+        "packages": packages,
+        "message": (
+            f"{len(packages)} system update{'s' if len(packages) != 1 else ''} available"
+            if packages
+            else "Arch Linux is up to date"
+        ),
+    }
+
+
+def check_updates(force: bool = False) -> int:
+    state_dir()
+    cached = read_json(UPDATE_CACHE, {})
+    try:
+        cached_epoch = float(cached.get("checked_at_epoch", 0) or 0)
+    except (TypeError, ValueError):
+        cached_epoch = 0
+    age = time.time() - cached_epoch
+    cache_ok = (
+        cached.get("version") == 1
+        and isinstance(cached.get("a16een"), dict)
+        and isinstance(cached.get("system"), dict)
+        and not cached["a16een"].get("error")
+        and not cached["system"].get("error")
+    )
+    if not force and cache_ok and 0 <= age < CACHE_SECONDS:
+        cached["cached"] = True
+        cached["next_check_seconds"] = max(0, int(CACHE_SECONDS - age))
+        return emit(cached)
+
+    a16een = check_a16een_updates()
+    system = check_system_updates()
+    checked_at_epoch = time.time()
+    payload: dict[str, Any] = {
+        "version": 1,
+        "checked_at": now_iso(),
+        "checked_at_epoch": checked_at_epoch,
+        "cached": False,
+        "next_check_seconds": CACHE_SECONDS,
+        "a16een": a16een,
+        "system": system,
+    }
+    if not a16een.get("error") and not system.get("error"):
+        atomic_json(UPDATE_CACHE, payload)
+    else:
+        # Preserve the prior successful cache after a transient offline failure.
+        payload["cached"] = False
+    return emit(payload, 1 if a16een.get("error") and system.get("error") else 0)
+
+
+def data_roots() -> list[Path]:
+    roots = [DATA_HOME]
+    data_dirs = os.environ.get("XDG_DATA_DIRS", "/usr/local/share:/usr/share")
+    roots.extend(Path(part).expanduser() for part in data_dirs.split(":") if part)
+    unique: list[Path] = []
+    seen: set[str] = set()
+    for root in roots:
+        key = str(root.resolve(strict=False))
+        if key not in seen:
+            unique.append(root)
+            seen.add(key)
+    return unique
+
+
+def desktop_entry_files() -> list[tuple[str, Path]]:
+    entries: list[tuple[str, Path]] = []
+    seen: set[str] = set()
+    for root in data_roots():
+        applications = root / "applications"
+        if not applications.is_dir():
+            continue
+        try:
+            paths = sorted(applications.rglob("*.desktop"))
+        except OSError:
+            continue
+        for path in paths:
+            try:
+                relative = str(path.relative_to(applications))
+            except ValueError:
+                continue
+            desktop_id = relative.replace(os.sep, "-")
+            if not APP_ID_RE.fullmatch(desktop_id):
+                continue
+            key = desktop_id.casefold()
+            if key in seen:
+                continue
+            seen.add(key)
+            entries.append((desktop_id, path))
+    return entries
+
+
+def parse_desktop_file(desktop_id: str, path: Path) -> dict[str, Any] | None:
+    parser = configparser.ConfigParser(interpolation=None, strict=False)
+    parser.optionxform = str
+    try:
+        parser.read(path, encoding="utf-8")
+        item = parser["Desktop Entry"]
+        if item.get("Type", "Application") != "Application":
+            return None
+        if item.get("Hidden", "false").lower() == "true" or item.get("NoDisplay", "false").lower() == "true":
+            return None
+        name = item.get("Name", path.stem).strip()
+        exec_line = item.get("Exec", "").strip()
+        if not name or not exec_line:
+            return None
+        return {
+            "desktop_id": desktop_id,
+            "name": name,
+            "icon": item.get("Icon", "application-x-executable"),
+            "exec": exec_line,
+            "startup_wm_class": item.get("StartupWMClass", "").strip(),
+            "path": str(path),
+            "comment": item.get("Comment", "").strip(),
+        }
+    except (OSError, KeyError, configparser.Error, UnicodeError):
+        return None
+
+
+def app_catalogue() -> list[dict[str, Any]]:
+    result: list[dict[str, Any]] = []
+    for desktop_id, path in desktop_entry_files():
+        app = parse_desktop_file(desktop_id, path)
+        if app:
+            result.append(app)
+    result.sort(key=lambda app: (str(app["name"]).casefold(), str(app["desktop_id"]).casefold()))
+    return result
+
+
+def find_desktop_entry(desktop_id: str, catalogue: list[dict[str, Any]] | None = None) -> dict[str, Any] | None:
+    if not APP_ID_RE.fullmatch(str(desktop_id or "")):
+        return None
+    items = catalogue if catalogue is not None else app_catalogue()
+    needle = desktop_id.casefold()
+    for item in items:
+        if item["desktop_id"].casefold() == needle:
+            return item
+    return None
+
+
+def match_desktop_for_app_id(app_id: str, catalogue: list[dict[str, Any]]) -> dict[str, Any] | None:
+    needle = str(app_id or "").strip().casefold()
+    if not needle or needle in {"quickshell", "a16een", "niri"}:
+        return None
+    for item in catalogue:
+        desktop = item["desktop_id"].removesuffix(".desktop").casefold()
+        if needle == desktop or needle == item["desktop_id"].casefold():
+            return item
+    for item in catalogue:
+        wm_class = str(item.get("startup_wm_class", "")).casefold()
+        if wm_class and needle == wm_class:
+            return item
+    # Some native Wayland apps expose their executable rather than the desktop ID.
+    for item in catalogue:
+        try:
+            parts = shlex.split(item["exec"])
+        except ValueError:
+            continue
+        if parts and Path(parts[0]).name.casefold() == needle:
+            return item
+    return None
+
+
+def locker_store() -> dict[str, Any]:
+    payload = read_json(LOCKER_FILE, {"version": 1, "apps": []})
+    if payload.get("version") != 1 or not isinstance(payload.get("apps"), list):
+        return {"version": 1, "apps": []}
+    return payload
+
+
+def public_locked_apps(payload: dict[str, Any]) -> list[dict[str, Any]]:
+    safe: list[dict[str, Any]] = []
+    for app in payload.get("apps", []):
+        if not isinstance(app, dict):
+            continue
+        try:
+            locked_until = float(app.get("locked_until", 0) or 0)
+        except (TypeError, ValueError):
+            locked_until = 0
+        safe.append({
+            "desktop_id": str(app.get("desktop_id", "")),
+            "name": str(app.get("name", "")),
+            "locked_until": max(0, int(locked_until - time.time())),
+        })
+    return safe
+
+
+def password_hash(password: str, salt: bytes) -> bytes:
+    return hashlib.scrypt(password.encode("utf-8"), salt=salt, n=2**14, r=8, p=1, dklen=32)
+
+
+def verify_password(record: dict[str, Any], password: str) -> bool:
+    try:
+        salt = bytes.fromhex(str(record["salt"]))
+        expected = bytes.fromhex(str(record["password_hash"]))
+        actual = password_hash(password, salt)
+        return hmac.compare_digest(actual, expected)
+    except (KeyError, ValueError, TypeError):
+        return False
+
+
+def read_stdin_passwords(count: int) -> list[str]:
+    values = []
+    for _ in range(count):
+        line = sys.stdin.readline()
+        values.append(line.rstrip("\r\n"))
+    return values
+
+
+def launch_desktop_app(app: dict[str, Any]) -> None:
+    """Start a trusted installed .desktop Exec command without a shell."""
+    try:
+        fields = shlex.split(str(app.get("exec", "")))
+    except ValueError as error:
+        raise RuntimeError("This application's launch command is malformed.") from error
+    if not fields:
+        raise RuntimeError("This application has no launch command.")
+    cleaned: list[str] = []
+    for value in fields:
+        if value in {"%f", "%F", "%u", "%U", "%i", "%c", "%k", "%v", "%m"}:
+            continue
+        value = re.sub(r"%[fFuUickvm]", "", value)
+        if value:
+            cleaned.append(value)
+    if not cleaned:
+        raise RuntimeError("This application's launch command is empty.")
+    executable = cleaned[0]
+    if not (os.path.isabs(executable) and os.access(executable, os.X_OK)) and not shutil.which(executable):
+        raise RuntimeError(f"Launch command not found: {Path(executable).name}")
+    env = os.environ.copy()
+    env.setdefault("GIO_LAUNCHED_DESKTOP_FILE", str(app.get("path", "")))
+    subprocess.Popen(
+        cleaned,
+        stdin=subprocess.DEVNULL,
+        stdout=subprocess.DEVNULL,
+        stderr=subprocess.DEVNULL,
+        env=env,
+        start_new_session=True,
+        close_fds=True,
+    )
+
+
+def app_locker_command(args: list[str]) -> int:
+    state_dir()
+    action = args[0] if args else "apps"
+    catalogue = app_catalogue()
+    store = locker_store()
+    records = [item for item in store["apps"] if isinstance(item, dict)]
+    by_id = {str(item.get("desktop_id", "")).casefold(): item for item in records}
+    if action == "apps":
+        apps = []
+        for item in catalogue:
+            locked = by_id.get(item["desktop_id"].casefold())
+            apps.append({
+                "desktop_id": item["desktop_id"],
+                "name": item["name"],
+                "icon": item["icon"],
+                "comment": item.get("comment", ""),
+                "locked": bool(locked),
+            })
+        return emit({"ok": True, "apps": apps, "protected_count": len(records)})
+    if action == "list":
+        return emit({"ok": True, "apps": public_locked_apps(store)})
+    if action == "protect":
+        if len(args) < 3:
+            return emit({"ok": False, "message": "Usage: app-locker protect <desktop-id> <name>"}, 2)
+        desktop_id, name = args[1], args[2]
+        entry = find_desktop_entry(desktop_id, catalogue)
+        if not entry:
+            return emit({"ok": False, "message": "Choose an installed application from the list."}, 2)
+        passwords = read_stdin_passwords(2)
+        if passwords[0] != passwords[1]:
+            return emit({"ok": False, "message": "The passwords do not match."}, 2)
+        if len(passwords[0]) < PASSWORD_MIN_LENGTH:
+            return emit({"ok": False, "message": f"Use at least {PASSWORD_MIN_LENGTH} characters."}, 2)
+        salt = secrets.token_bytes(16)
+        digest = password_hash(passwords[0], salt).hex()
+        record = {
+            "desktop_id": entry["desktop_id"],
+            "name": name[:120] or entry["name"],
+            "salt": salt.hex(),
+            "password_hash": digest,
+            "failed_attempts": 0,
+            "locked_until": 0,
+        }
+        store["apps"] = [item for item in records if str(item.get("desktop_id", "")).casefold() != desktop_id.casefold()]
+        store["apps"].append(record)
+        atomic_json(LOCKER_FILE, store)
+        return emit({"ok": True, "message": f"{entry['name']} is protected for launches from A16EEN App Locker."})
+    if action in {"launch", "unprotect"}:
+        if len(args) < 2:
+            return emit({"ok": False, "message": f"Usage: app-locker {action} <desktop-id>"}, 2)
+        desktop_id = args[1]
+        record = by_id.get(desktop_id.casefold())
+        if not record:
+            return emit({"ok": False, "message": "This app is not protected."}, 2)
+        try:
+            locked_until = float(record.get("locked_until", 0) or 0)
+        except (ValueError, TypeError):
+            locked_until = 0
+        if locked_until > time.time():
+            remaining = max(1, int(locked_until - time.time()))
+            return emit({"ok": False, "message": f"Too many failed attempts. Try again in {remaining} seconds."}, 2)
+        passwords = read_stdin_passwords(1)
+        if not verify_password(record, passwords[0]):
+            try:
+                failed_attempts = int(record.get("failed_attempts", 0) or 0)
+            except (TypeError, ValueError):
+                failed_attempts = 0
+            record["failed_attempts"] = failed_attempts + 1
+            if record["failed_attempts"] >= 5:
+                record["failed_attempts"] = 0
+                record["locked_until"] = time.time() + 30
+            store["apps"] = records
+            atomic_json(LOCKER_FILE, store)
+            return emit({"ok": False, "message": "Incorrect password."}, 2)
+        if action == "unprotect":
+            store["apps"] = [item for item in records if str(item.get("desktop_id", "")).casefold() != desktop_id.casefold()]
+            atomic_json(LOCKER_FILE, store)
+            return emit({"ok": True, "message": f"{record.get('name', desktop_id)} is no longer protected."})
+        entry = find_desktop_entry(desktop_id, catalogue)
+        if not entry:
+            return emit({"ok": False, "message": "The application is no longer installed."}, 2)
+        try:
+            launch_desktop_app(entry)
+        except (OSError, RuntimeError, subprocess.SubprocessError) as error:
+            return emit({"ok": False, "message": str(error)[:200]}, 2)
+        record["failed_attempts"] = 0
+        record["locked_until"] = 0
+        store["apps"] = records
+        atomic_json(LOCKER_FILE, store)
+        return emit({"ok": True, "message": f"Unlocked and launched {entry['name']}."})
+    return emit({"ok": False, "message": "Usage: app-locker {apps|list|protect|launch|unprotect}"}, 2)
+
+
+def niri_json(topic: str) -> Any:
+    if not shutil.which("niri"):
+        raise RuntimeError("Niri is not available in this session.")
+    result = run_command(["niri", "msg", "--json", topic], timeout=8)
+    if result.returncode != 0:
+        raise RuntimeError((result.stderr.strip() or f"niri msg {topic} failed")[:200])
+    try:
+        payload: Any = json.loads(result.stdout)
+    except json.JSONDecodeError as error:
+        raise RuntimeError("Niri returned invalid JSON.") from error
+    if isinstance(payload, dict):
+        for key in ("Ok", "ok"):
+            if isinstance(payload.get(key), dict):
+                payload = payload[key]
+                break
+        for key in ("Windows", "windows", "Workspaces", "workspaces"):
+            if isinstance(payload, dict) and isinstance(payload.get(key), list):
+                return payload[key]
+    if isinstance(payload, list):
+        return payload
+    raise RuntimeError(f"Niri did not return a {topic} list.")
+
+
+def current_workspace_name() -> str:
+    try:
+        workspaces = niri_json("workspaces")
+        for workspace in workspaces:
+            if isinstance(workspace, dict) and workspace.get("is_focused"):
+                return str(workspace.get("name", "") or "")
+    except RuntimeError:
+        pass
+    return ""
+
+
+def capture_open_apps() -> list[dict[str, Any]]:
+    windows = niri_json("windows")
+    try:
+        workspaces = niri_json("workspaces")
+    except RuntimeError:
+        workspaces = []
+    workspace_names = {
+        int(item["id"]): str(item.get("name", "") or "")
+        for item in workspaces
+        if isinstance(item, dict) and str(item.get("id", "")).isdigit()
+    }
+    catalogue = app_catalogue()
+    by_desktop: dict[str, dict[str, Any]] = {}
+    for window in windows:
+        if not isinstance(window, dict):
+            continue
+        app_id = str(window.get("app_id", "") or "")
+        desktop = match_desktop_for_app_id(app_id, catalogue)
+        if not desktop:
+            continue
+        key = str(desktop["desktop_id"]).casefold()
+        workspace_id = window.get("workspace_id")
+        workspace = workspace_names.get(int(workspace_id), "") if str(workspace_id or "").isdigit() else ""
+        if key not in by_desktop:
+            by_desktop[key] = {
+                "desktop_id": desktop["desktop_id"],
+                "app_id": app_id,
+                "name": desktop["name"],
+                "workspace": workspace,
+            }
+        elif not by_desktop[key].get("workspace") and workspace:
+            by_desktop[key]["workspace"] = workspace
+    return sorted(by_desktop.values(), key=lambda item: str(item["name"]).casefold())
+
+
+def snapshots_store() -> dict[str, Any]:
+    payload = read_json(SNAPSHOTS_FILE, {"version": 1, "automatic": None, "manual": []})
+    if payload.get("version") != 1 or not isinstance(payload.get("manual"), list):
+        return {"version": 1, "automatic": None, "manual": []}
+    if not isinstance(payload.get("automatic"), (dict, type(None))):
+        payload["automatic"] = None
+    return payload
+
+
+def make_snapshot(name: str, snapshot_id: str, apps: list[dict[str, Any]]) -> dict[str, Any]:
+    return {
+        "id": snapshot_id,
+        "name": name[:64],
+        "created_at": now_iso(),
+        "created_at_epoch": time.time(),
+        "app_count": len(apps),
+        "apps": apps,
+    }
+
+
+def snapshot_command(args: list[str]) -> int:
+    state_dir()
+    action = args[0] if args else "list"
+    store = snapshots_store()
+    if action == "list":
+        snapshots: list[dict[str, Any]] = []
+        if store.get("automatic"):
+            snapshots.append(store["automatic"])
+        snapshots.extend(
+            sorted(
+                [item for item in store.get("manual", []) if isinstance(item, dict)],
+                key=lambda item: float(item.get("created_at_epoch", 0) or 0),
+                reverse=True,
+            )
+        )
+        return emit({"ok": True, "snapshots": snapshots})
+    if action in {"auto", "save"}:
+        if action == "save":
+            name = " ".join(args[1:]).strip()
+            if not name:
+                return emit({"ok": False, "message": "Give this snapshot a name first."}, 2)
+        else:
+            name = "Latest automatic session"
+        try:
+            apps = capture_open_apps()
+        except (RuntimeError, OSError, subprocess.SubprocessError) as error:
+            return emit({"ok": False, "message": str(error)[:200]}, 2)
+        if not apps:
+            return emit({"ok": False, "message": "No restorable application windows were found."}, 2)
+        if action == "auto":
+            item = make_snapshot(name, "auto", apps)
+            store["automatic"] = item
+        else:
+            item = make_snapshot(name, secrets.token_hex(6), apps)
+            manual = [entry for entry in store.get("manual", []) if isinstance(entry, dict)]
+            manual.append(item)
+            store["manual"] = sorted(manual, key=lambda entry: float(entry.get("created_at_epoch", 0) or 0))[-MAX_MANUAL_SNAPSHOTS:]
+        atomic_json(SNAPSHOTS_FILE, store)
+        return emit({
+            "ok": True,
+            "message": f"Saved {len(apps)} application{'s' if len(apps) != 1 else ''}.",
+            "snapshot": item,
+        })
+    if action == "delete":
+        if len(args) < 2:
+            return emit({"ok": False, "message": "Choose a saved snapshot first."}, 2)
+        snapshot_id = args[1]
+        if snapshot_id == "auto":
+            return emit({"ok": False, "message": "The automatic snapshot cannot be deleted here."}, 2)
+        before = len(store.get("manual", []))
+        store["manual"] = [
+            entry for entry in store.get("manual", [])
+            if isinstance(entry, dict) and str(entry.get("id", "")) != snapshot_id
+        ]
+        if len(store["manual"]) == before:
+            return emit({"ok": False, "message": "Snapshot not found."}, 2)
+        atomic_json(SNAPSHOTS_FILE, store)
+        return emit({"ok": True, "message": "Snapshot deleted."})
+    if action == "restore":
+        if len(args) < 2:
+            return emit({"ok": False, "message": "Choose a saved snapshot first."}, 2)
+        snapshot_id = args[1]
+        if snapshot_id == "auto":
+            item = store.get("automatic")
+        else:
+            item = next((entry for entry in store.get("manual", []) if isinstance(entry, dict) and str(entry.get("id", "")) == snapshot_id), None)
+        if not isinstance(item, dict):
+            return emit({"ok": False, "message": "Snapshot not found."}, 2)
+        saved_apps = item.get("apps", [])
+        if not isinstance(saved_apps, list) or not saved_apps:
+            return emit({"ok": False, "message": "This snapshot contains no restorable applications."}, 2)
+        catalogue = app_catalogue()
+        # Restoring a session must never bypass an App Locker password.
+        locked_ids = {
+            str(entry.get("desktop_id", "")).casefold()
+            for entry in locker_store().get("apps", [])
+            if isinstance(entry, dict)
+        }
+        original_workspace = current_workspace_name()
+        before_windows: set[int] = set()
+        try:
+            for window in niri_json("windows"):
+                if isinstance(window, dict) and str(window.get("id", "")).isdigit():
+                    before_windows.add(int(window["id"]))
+        except RuntimeError:
+            pass
+        launched = 0
+        skipped: list[str] = []
+        for saved_app in saved_apps:
+            if not isinstance(saved_app, dict):
+                continue
+            desktop_id = str(saved_app.get("desktop_id", ""))
+            if desktop_id.casefold() in locked_ids:
+                skipped.append(str(saved_app.get("name", desktop_id))[:80] + " (protected; unlock in App Locker)")
+                continue
+            entry = find_desktop_entry(desktop_id, catalogue)
+            if not entry:
+                skipped.append(str(saved_app.get("name", desktop_id))[:80])
+                continue
+            workspace = str(saved_app.get("workspace", "") or "")
+            if workspace:
+                try:
+                    run_command(["niri", "msg", "action", "focus-workspace", workspace], timeout=3)
+                except (OSError, subprocess.SubprocessError):
+                    pass
+            try:
+                launch_desktop_app(entry)
+                launched += 1
+            except (OSError, RuntimeError, subprocess.SubprocessError):
+                skipped.append(str(saved_app.get("name", desktop_id))[:80])
+                continue
+            # Allow each app to create a window before moving on; keep the wait bounded.
+            target_id: int | None = None
+            target_app = str(saved_app.get("app_id", "") or "").casefold()
+            for _ in range(10):
+                time.sleep(0.18)
+                try:
+                    for window in niri_json("windows"):
+                        if not isinstance(window, dict) or not str(window.get("id", "")).isdigit():
+                            continue
+                        window_id = int(window["id"])
+                        window_app = str(window.get("app_id", "") or "").casefold()
+                        if window_id not in before_windows and (
+                            window_app == target_app
+                            or window_app in {
+                                desktop_id.casefold(),
+                                desktop_id.removesuffix(".desktop").casefold(),
+                            }
+                        ):
+                            target_id = window_id
+                            before_windows.add(window_id)
+                            break
+                    if target_id is not None:
+                        break
+                except RuntimeError:
+                    break
+            if target_id is not None and workspace:
+                request = json.dumps({
+                    "Action": {
+                        "MoveWindowToWorkspace": {
+                            "window_id": target_id,
+                            "reference": {"Name": workspace},
+                            "focus": False,
+                        }
+                    }
+                })
+                try:
+                    subprocess.run(
+                        ["niri", "msg", "raw-request"],
+                        input=request + "\n",
+                        stdout=subprocess.DEVNULL,
+                        stderr=subprocess.DEVNULL,
+                        text=True,
+                        timeout=3,
+                        check=False,
+                    )
+                except (OSError, subprocess.SubprocessError):
+                    pass
+        if original_workspace:
+            try:
+                run_command(["niri", "msg", "action", "focus-workspace", original_workspace], timeout=3)
+            except (OSError, subprocess.SubprocessError):
+                pass
+        message = f"Opened {launched} application{'s' if launched != 1 else ''} from {item.get('name', 'snapshot')}."
+        if skipped:
+            message += f" {len(skipped)} unavailable app(s) were skipped."
+        return emit({"ok": launched > 0, "message": message, "launched": launched, "skipped": skipped}, 0 if launched else 2)
+    return emit({"ok": False, "message": "Usage: snapshot {list|auto|save <name>|restore <id>|delete <id>}"}, 2)
+
+
+def main() -> int:
+    args = sys.argv[1:]
+    if not args or args[0] in {"-h", "--help", "help"}:
+        print(
+            "Usage:\n"
+            "  a16een-quick-tools updates [--force]\n"
+            "  a16een-quick-tools app-locker {apps|list|protect|launch|unprotect} ...\n"
+            "  a16een-quick-tools snapshot {list|auto|save <name>|restore <id>|delete <id>}"
+        )
+        return 0
+    if args[0] == "updates":
+        return check_updates("--force" in args[1:])
+    if args[0] == "app-locker":
+        return app_locker_command(args[1:])
+    if args[0] == "snapshot":
+        return snapshot_command(args[1:])
+    return emit({"ok": False, "message": "Unknown Quick Tools action. Use --help."}, 2)
+
+
+if __name__ == "__main__":
+    try:
+        raise SystemExit(main())
+    except BrokenPipeError:
+        raise SystemExit(0)
+    except Exception as error:
+        raise SystemExit(emit({"ok": False, "message": f"{type(error).__name__}: {str(error)[:180]} "}, 1))

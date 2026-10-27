@@ -73,6 +73,16 @@ jobs:
           python3 tests/test_music_elements.py
           python3 tests/test_widget_settings.py
           python3 tests/test_ai_assistant.py
+          python3 -m py_compile scripts/a16een-quick-tools
+          python3 tests/test_quick_tools.py
+          grep -Fq 'a16een-quick-tools' scripts/install.sh
+          grep -Fq 'QuickToolsWindow {' quickshell/a16een/shell.qml
+          grep -Fq 'QuickToolsPage.qml' quickshell/a16een/ui/QuickToolsWindow.qml
+          grep -Fq 'id: "updates"' quickshell/a16een/ui/ToolsPanel.qml
+          grep -Fq 'CHECK NOW' quickshell/a16een/ui/QuickToolsPage.qml
+          grep -Fq '"--force"' quickshell/a16een/ui/QuickToolsPage.qml
+          grep -Fq 'protectedAppRequested' quickshell/a16een/ui/Launcher.qml
+          grep -Fq 'App Locker' README.md
           grep -Fq 'a16een-workspace-preset' scripts/install.sh
           grep -Fq 'a16een-mpv-theme' scripts/install.sh
           grep -Fq 'mpv theme status' scripts/a16een

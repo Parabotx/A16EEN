@@ -51,6 +51,40 @@ The navbar utilities panel includes a searchable clipboard history for copied te
 
 History stays on the local machine at `~/.local/state/a16een/clipboard-history.json`. The file is stored with user-only permissions. Clipboard history is text-only; copied text may include sensitive information, so it remains available for up to 24 hours unless you remove it earlier.
 
+## Quick Tools: Updates, App Locker, and Session Snapshots
+
+The navbar's **Quick Tools** grid lists these three tools alongside the existing shortcuts. Selecting one opens its own full-screen workspace with the feature controls; the other Quick Tools entries are hidden while that workspace is active. Use **Quick Tools**, the close control, or `Esc` to return to the tools list. The Updates screen keeps a visible **Check now** action for an immediate refresh, independent of the once-per-day automatic check.
+
+### Updates
+
+The updater checks two separate sources:
+
+- **A16EEN** — compares the installed revision with the public `main` branch on GitHub and reports newer commits and changed files.
+- **Arch Linux system packages** — uses `checkupdates` from `pacman-contrib`, which checks available upgrades without modifying the system package databases. Package count, current and target versions, and a best-effort estimated download size are shown when package metadata is available.
+
+The status is refreshed automatically at most once per 24 hours and can be forced from the UI with **Check now**. This tool only reports updates; it never installs packages automatically. Update A16EEN through `a16 -u`, and update Arch Linux through the normal full system upgrade workflow (for example, `sudo pacman -Syu`). The estimated download size is informational and can be incomplete when package metadata is unavailable or out of date.
+
+### App Locker
+
+Choose an installed desktop application, set a password, and use **Open** in App Locker to launch it after verification. Launches from A16EEN's main application launcher and App Shelf also route protected applications to the password prompt. Workspace Presets and Session Snapshot restoration skip protected apps rather than silently bypassing the lock. Passwords are stored as salted scrypt hashes in `~/.local/state/a16een/app-locker.json`, not as plaintext; the state directory and files are restricted to the current user. Five incorrect attempts trigger a short cooldown.
+
+**Security boundary:** this is an A16EEN launch guard, not a system-wide sandbox or OS account boundary. It cannot prevent the same Linux user from starting an application through a terminal or an external launcher. Use it for an extra local convenience barrier, not to protect highly sensitive data from another process running as the same user.
+
+### Session Snapshots
+
+A16EEN preserves the last automatic snapshot on login, then refreshes it every **30 minutes**, plus any named snapshots you create manually. The first new automatic capture happens after that initial 30-minute interval so startup cannot immediately overwrite a useful recovery snapshot. The automatic snapshot is refreshed in place; up to 30 named snapshots are retained. Snapshots include restorable desktop app IDs and their workspace names, not document contents or application-private state.
+
+Select **Restore** to relaunch the available applications and attempt to return newly opened windows to their saved workspaces. Apps that are no longer installed are skipped. Some applications reopen an existing instance instead of creating a new window, and unsaved documents, browser state, and exact window geometry cannot be guaranteed. Snapshot files are stored locally at `~/.local/state/a16een/session-snapshots.json` with user-only permissions.
+
+The Quick Tools helper can also be used directly:
+
+```sh
+a16een-quick-tools updates
+a16een-quick-tools updates --force
+a16een-quick-tools app-locker apps
+a16een-quick-tools snapshot list
+```
+
 ## Icon Themes
 
 A16EEN includes a graphical icon-theme switcher available from the Command Center with:
@@ -231,6 +265,7 @@ nm-connection-editor
 curl
 xdg-desktop-portal
 xdg-utils
+pacman-contrib
 qt6-imageformats
 qt6-multimedia
 qt6-svg
