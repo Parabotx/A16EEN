@@ -114,7 +114,9 @@ jobs:
           grep -Fq 'id: gamingAiNavbarContainer' quickshell/a16een/ui/Dock.qml
           grep -Fq 'id: aiShortcutItem' quickshell/a16een/ui/Dock.qml
           grep -Fq 'id: gamingShortcutItem' quickshell/a16een/ui/Dock.qml
-          grep -Fq 'readonly property int shortcutSurfaceWidth: root.shortcutCount * root.shortcutTileWidth' quickshell/a16een/ui/Dock.qml
+          grep -Fq 'readonly property int shortcutSurfaceWidth: root.horizontalNavbar' quickshell/a16een/ui/Dock.qml
+          grep -Fq 'readonly property int shortcutSurfaceHeight: root.horizontalNavbar' quickshell/a16een/ui/Dock.qml
+          grep -Fq 'y: root.gamingContainerVisible ? root.shortcutTileHeight : 0' quickshell/a16een/ui/Dock.qml
           grep -Fq 'onGamingRequested: root.openGamingPanel()' quickshell/a16een/shell.qml
           grep -Fq 'GamingPanel {' quickshell/a16een/shell.qml
           grep -Fq 'function bestMove(board, botMark, humanMark)' quickshell/a16een/ui/TicTacToe.js
