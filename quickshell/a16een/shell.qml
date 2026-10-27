@@ -1466,7 +1466,10 @@ ShellRoot {
     }
 
     function openToolsPage(pageName) {
-        // Reuse the existing layer-shell surface to avoid overlay handoff/blink.
+        // Switching back to a compact panel closes any dedicated full-screen
+        // Quick Tools window first, so two overlays never compete for focus.
+        root.quickToolWindowOpen = false
+        root.quickToolWindowRequestedAppId = ""
         root.gamingPanelOpen = false
         root.quickNotesOpen = false
         root.quickTasksOpen = false
