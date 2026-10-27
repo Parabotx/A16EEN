@@ -738,6 +738,24 @@ PanelWindow {
             calendarDetailsWasHovered = false
         }
 
+        function openCalendarAtToday() {
+            // Open both panels as one state transition so the first hover never
+            // leaves the user with only the month grid and no detail preview.
+            calendarHideTimer.stop()
+            calendarDetailsGraceTimer.stop()
+            calendarDetailsClearTimer.stop()
+            calendarView = "calendar"
+            selectedCalendarDay = ethiopianToday.day
+            selectedCalendarMonth = ethiopianToday.month
+            selectedCalendarYear = ethiopianToday.year
+            selectedCalendarEvent = null
+            calendarDetailsWasHovered = false
+            calendarDetailsHovering = false
+            calendarOpen = true
+            calendarWindowVisible = true
+            calendarDetailsOpen = true
+        }
+
         readonly property var ethiopianMonths: [
             "መስከረም", "ጥቅምት", "ሕዳር", "ታህሳስ",
             "ጥር", "የካቲት", "መጋቢት", "ሚያዝያ",
@@ -916,11 +934,7 @@ PanelWindow {
                 acceptedButtons: Qt.NoButton
                 cursorShape: Qt.ArrowCursor
                 z: 10
-                onEntered: {
-                    calendarHideTimer.stop()
-                    navbarClockPanel.calendarView = "calendar"
-                    navbarClockPanel.calendarOpen = true
-                }
+                onEntered: navbarClockPanel.openCalendarAtToday()
                 onExited: {
                     if (navbarClockPanel.calendarDetailsOpen)
                         calendarDetailsGraceTimer.restart()
@@ -1658,10 +1672,19 @@ PanelWindow {
                             hoverEnabled: true
                             cursorShape: Qt.PointingHandCursor
                             onClicked: {
+                                // Cancel delayed dismiss/selection cleanup before changing
+                                // the detail. This keeps a first click from racing the timers.
+                                calendarHideTimer.stop()
+                                calendarDetailsGraceTimer.stop()
+                                calendarDetailsClearTimer.stop()
                                 navbarClockPanel.selectedCalendarDay = dateCellModel.modelData.day
                                 navbarClockPanel.selectedCalendarMonth = navbarClockPanel.ethiopianToday.month
                                 navbarClockPanel.selectedCalendarYear = navbarClockPanel.ethiopianToday.year
                                 navbarClockPanel.selectedCalendarEvent = null
+                                navbarClockPanel.calendarView = "calendar"
+                                navbarClockPanel.calendarOpen = true
+                                navbarClockPanel.calendarWindowVisible = true
+                                navbarClockPanel.calendarDetailsWasHovered = false
                                 navbarClockPanel.calendarDetailsOpen = true
                             }
                         }
@@ -1755,10 +1778,16 @@ PanelWindow {
                             hoverEnabled: true
                             cursorShape: Qt.PointingHandCursor
                             onClicked: {
+                                calendarHideTimer.stop()
+                                calendarDetailsGraceTimer.stop()
+                                calendarDetailsClearTimer.stop()
                                 navbarClockPanel.selectedCalendarDay = upcomingEventRow.modelData.ethiopianDay
                                 navbarClockPanel.selectedCalendarMonth = upcomingEventRow.modelData.ethiopianMonth
                                 navbarClockPanel.selectedCalendarYear = upcomingEventRow.modelData.ethiopianYear
                                 navbarClockPanel.selectedCalendarEvent = upcomingEventRow.modelData
+                                navbarClockPanel.calendarWindowVisible = true
+                                navbarClockPanel.calendarOpen = true
+                                navbarClockPanel.calendarDetailsWasHovered = false
                                 navbarClockPanel.calendarDetailsOpen = true
                             }
                         }
