@@ -259,7 +259,7 @@ def check_system_updates() -> dict[str, Any]:
         try:
             fmt = "%n\t%v\t%s"
             size_result = run_command(
-                [pacman, "-Sp", "--print-format", fmt, "--needed", *names],
+                [pacman, "-Sp", "--print-format", fmt, *names],
                 timeout=25,
             )
             for line in size_result.stdout.splitlines():
