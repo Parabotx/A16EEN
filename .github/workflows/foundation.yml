@@ -61,6 +61,7 @@ jobs:
           node tests/test_window_geometry.js
           node tests/test_tic_tac_toe.js
           node tests/test_dots_and_boxes.js
+          node tests/test_connect_four.js
           bash tests/test_screenshot_capture.sh
           bash tests/test_navbar_appearance.sh
           bash tests/test_calendar_day_details.sh
@@ -228,8 +229,10 @@ jobs:
           test -f quickshell/a16een/ui/GamingPanel.qml
           test -f quickshell/a16een/ui/TicTacToe.js
           test -f quickshell/a16een/ui/DotsAndBoxes.js
+          test -f quickshell/a16een/ui/ConnectFour.js
           test -f tests/test_tic_tac_toe.js
           test -f tests/test_dots_and_boxes.js
+          test -f tests/test_connect_four.js
           test -f quickshell/a16een/ui/CommandCenter.qml
           test ! -e quickshell/a16een/ui/Dashboard.qml
           ! grep -Fq 'dashboardOpen' quickshell/a16een/shell.qml
