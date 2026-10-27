@@ -117,6 +117,8 @@ jobs:
           grep -Fq 'id: gamingShortcutItem' quickshell/a16een/ui/Dock.qml
           grep -Fq 'readonly property int shortcutSurfaceWidth: root.horizontalNavbar' quickshell/a16een/ui/Dock.qml
           grep -Fq 'readonly property int shortcutSurfaceHeight: root.horizontalNavbar' quickshell/a16een/ui/Dock.qml
+          grep -Fq 'readonly property int shortcutDockGap: 10' quickshell/a16een/ui/Dock.qml
+          grep -Fq 'root.shortcutSurfaceHeight + root.shortcutDockGap' quickshell/a16een/ui/Dock.qml
           grep -Fq 'y: root.gamingContainerVisible ? root.shortcutTileHeight : 0' quickshell/a16een/ui/Dock.qml
           grep -Fq 'onGamingRequested: root.openGamingPanel()' quickshell/a16een/shell.qml
           grep -Fq 'GamingPanel {' quickshell/a16een/shell.qml
