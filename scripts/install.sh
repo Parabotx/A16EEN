@@ -41,6 +41,7 @@ grim
 imagemagick
 wl-clipboard
 jq
+pacman-contrib
 bluez
 bluez-utils
 nm-connection-editor
@@ -420,6 +421,7 @@ sudo install -Dm755 "$ROOT_DIR/scripts/a16een-lockscreen" /usr/local/bin/a16een-
 sudo install -Dm755 "$ROOT_DIR/scripts/a16een-control" /usr/local/bin/a16een-control
 sudo install -Dm755 "$ROOT_DIR/scripts/a16een-clipboard" /usr/local/bin/a16een-clipboard
 sudo install -Dm755 "$ROOT_DIR/scripts/a16een-app-stash" /usr/local/bin/a16een-app-stash
+sudo install -Dm755 "$ROOT_DIR/scripts/a16een-quick-tools" /usr/local/bin/a16een-quick-tools
 sudo install -Dm755 "$ROOT_DIR/scripts/a16een-system-monitor" /usr/local/bin/a16een-system-monitor
 sudo install -Dm755 "$ROOT_DIR/scripts/a16een-data-meter" /usr/local/bin/a16een-data-meter
 sudo install -Dm755 "$ROOT_DIR/scripts/a16een-music" /usr/local/bin/a16een-music
