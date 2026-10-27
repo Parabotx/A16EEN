@@ -35,6 +35,8 @@ readonly ICONS=(
     "orbit.svg"
     "rocket.svg"
     "gamepad-2.svg"
+    "grid-2x2.svg"
+    "circle-dot.svg"
     "dice-5.svg"
     "coffee.svg"
     "camera.svg"
