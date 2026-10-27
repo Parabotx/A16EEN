@@ -134,9 +134,9 @@ PanelWindow {
         { id: "stash", label: "Nest", detail: "Keep windows out of the way", icon: "lucide-archive.svg" },
         { id: "screen-time", label: "Screen Time", detail: "Daily active time by app", icon: "lucide-activity.svg" },
         { id: "data-meter", label: "Data Meter", detail: "Daily internet usage and speed", icon: "lucide-activity.svg" },
-        { id: "updates", label: "Updates", detail: "A16EEN + system updates", icon: "lucide-download.svg" },
-        { id: "app-locker", label: "App Locker", detail: "Password-gated app launches", icon: "lucide-lock.svg" },
-        { id: "sessions", label: "Session Snapshots", detail: "Restore your open apps", icon: "lucide-layers.svg" },
+        { id: "updates", label: "Updates", detail: "A16EEN + system updates", icon: "download.svg" },
+        { id: "app-locker", label: "App Locker", detail: "Password-gated app launches", icon: "lock.svg" },
+        { id: "sessions", label: "Session Snapshots", detail: "Restore your open apps", icon: "layers.svg" },
         { id: "ai", label: "A16EEN AI", detail: "Tell your desktop what to do", icon: "bot.svg" }
     ]
 
@@ -612,11 +612,11 @@ PanelWindow {
                                     : (root.page === "calculator"
                                         ? "../assets/icons/lucide-calculator.svg"
                                         : (root.page === "updates"
-                                            ? "../assets/icons/lucide-download.svg"
+                                            ? "../assets/icons/download.svg"
                                             : (root.page === "app-locker"
-                                                ? "../assets/icons/lucide-lock.svg"
+                                                ? "../assets/icons/lock.svg"
                                                 : (root.page === "sessions"
-                                                    ? "../assets/icons/lucide-layers.svg"
+                                                    ? "../assets/icons/layers.svg"
                                                     : ((root.page === "data-meter" || root.page === "screen-time")
                                                         ? "../assets/icons/lucide-activity.svg"
                                                         : "../assets/icons/lucide-toolbox.svg")))))))
