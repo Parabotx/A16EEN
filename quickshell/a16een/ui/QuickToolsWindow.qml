@@ -209,7 +209,7 @@ PanelWindow {
                             anchors.fill: parent
                             hoverEnabled: true
                             cursorShape: Qt.PointingHandCursor
-                            onClicked: root.backRequested()
+                            onClicked: root.closeRequested()
                         }
                     }
                 }
