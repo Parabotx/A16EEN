@@ -1864,6 +1864,7 @@ ShellRoot {
     }
 
     ToolsPanel {
+        id: toolsPanel
         modelData: root.primaryScreen
         navbarPosition: root.navbarPosition
         opened: root.toolsPanelOpen
@@ -2150,6 +2151,10 @@ ShellRoot {
         iconThemeRevision: root.iconThemeRevision
         onSearchTextChanged: root.searchText = searchText
         onCloseRequested: root.launcherOpen = false
+        onProtectedAppRequested: (desktopId, appName) => {
+            toolsPanel.requestedAppId = desktopId
+            root.openToolsPage("app-locker")
+        }
     }
 
     Variants {
