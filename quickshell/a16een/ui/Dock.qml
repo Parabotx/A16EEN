@@ -267,14 +267,19 @@ PanelWindow {
     readonly property int shortcutTileWidth: 26
     readonly property int shortcutTileHeight: 26
     readonly property int shortcutTileTopInset: 2
-    readonly property int shortcutRailGap: 24
     readonly property int shortcutCount:
         (root.aiContainerVisible ? 1 : 0) + (root.gamingContainerVisible ? 1 : 0)
-    // The Gaming and AI shortcuts share one container row, not separate stacked tiles.
+    // Keep the shortcuts in one shared surface. Vertical navbars stack Gaming
+    // over AI; horizontal layouts retain a row geometry for future placement.
+    readonly property int shortcutSurfaceWidth: root.horizontalNavbar
+        ? root.shortcutCount * root.shortcutTileWidth
+        : (root.shortcutCount > 0 ? root.shortcutTileWidth : 0)
+    readonly property int shortcutSurfaceHeight: root.horizontalNavbar
+        ? root.shortcutTileHeight
+        : root.shortcutCount * root.shortcutTileHeight
     readonly property int shortcutStackHeight: root.shortcutCount > 0
-        ? root.shortcutTileTopInset + root.shortcutTileHeight + root.shortcutRailGap
+        ? root.shortcutTileTopInset + root.shortcutSurfaceHeight
         : 0
-    readonly property int shortcutSurfaceWidth: root.shortcutCount * root.shortcutTileWidth
     readonly property string shortcutSurfaceStyleId:
         root.aiContainerVisible ? "ai" : "gaming"
 
@@ -1939,7 +1944,7 @@ PanelWindow {
             Math.round((parent.height - (root.dockHeight + root.shortcutStackHeight)) / 2)
                 + root.shortcutTileTopInset)
         width: root.shortcutSurfaceWidth
-        height: root.shortcutTileHeight
+        height: root.shortcutSurfaceHeight
         radius: 9
         color: root.containerColorFor(root.shortcutSurfaceStyleId)
         border.width: 1
@@ -1950,13 +1955,15 @@ PanelWindow {
         Behavior on border.color { ColorAnimation { duration: 140; easing.type: Easing.OutCubic } }
         Behavior on y { NumberAnimation { duration: 160; easing.type: Easing.OutCubic } }
         Behavior on width { NumberAnimation { duration: 150; easing.type: Easing.OutCubic } }
+        Behavior on height { NumberAnimation { duration: 150; easing.type: Easing.OutCubic } }
 
         Item {
             id: gamingShortcutItem
             visible: root.gamingContainerVisible
             x: 0
+            y: 0
             width: visible ? root.shortcutTileWidth : 0
-            height: parent.height
+            height: visible ? root.shortcutTileHeight : 0
 
             NavbarIcon {
                 anchors.centerIn: parent
@@ -1979,9 +1986,10 @@ PanelWindow {
         Item {
             id: aiShortcutItem
             visible: root.aiContainerVisible
-            x: root.gamingContainerVisible ? root.shortcutTileWidth : 0
+            x: 0
+            y: root.gamingContainerVisible ? root.shortcutTileHeight : 0
             width: visible ? root.shortcutTileWidth : 0
-            height: parent.height
+            height: visible ? root.shortcutTileHeight : 0
 
             NavbarImage {
                 anchors.centerIn: parent
