@@ -541,6 +541,7 @@ ShellRoot {
     property bool quickToolWindowOpen: false
     property string quickToolWindowPage: "updates"
     property string quickToolWindowRequestedAppId: ""
+    property var quickToolWindowInstance: null
     property bool dataMeterEnabled: false
     property bool dataMeterSettingsReady: false
     property bool dataMeterSnapshotReady: false
@@ -559,6 +560,7 @@ ShellRoot {
     property bool batteryPopupOpen: false
     property int batteryPopupPercent: 0
     property string batteryPopupLevel: "warning"
+    property var batteryWarningPopupInstance: null
     readonly property string batteryWarningSettingsPath: Quickshell.stateDir + "/battery-warning-settings.json"
     property var notificationHistory: []
     property bool notificationHistoryReady: false
@@ -1329,6 +1331,17 @@ ShellRoot {
         root.batteryPopupLevel = level.id
         root.batteryPopupPercent = percent
         root.batteryPopupOpen = true
+        // Create the full-screen layer only when a warning must be shown.
+        // A broken optional overlay must not prevent the main shell starting.
+        Qt.callLater(() => root.ensureBatteryWarningPopup())
+    }
+
+    function ensureBatteryWarningPopup() {
+        if (root.batteryWarningPopupInstance)
+            return
+        root.batteryWarningPopupInstance = batteryWarningPopupComponent.createObject(root)
+        if (!root.batteryWarningPopupInstance)
+            console.error("A16EEN could not create the battery warning overlay")
     }
 
     function checkBatteryWarnings() {
@@ -1451,6 +1464,16 @@ ShellRoot {
         root.quickToolWindowPage = String(pageName || "updates")
         root.quickToolWindowRequestedAppId = String(requestedAppId || "")
         root.quickToolWindowOpen = true
+        // Defer overlay construction until a Quick Tool is actually opened.
+        Qt.callLater(() => root.ensureQuickToolWindow())
+    }
+
+    function ensureQuickToolWindow() {
+        if (root.quickToolWindowInstance)
+            return
+        root.quickToolWindowInstance = quickToolWindowComponent.createObject(root)
+        if (!root.quickToolWindowInstance)
+            console.error("A16EEN could not create the Quick Tools window")
     }
 
     function returnToQuickTools() {
@@ -1885,15 +1908,21 @@ ShellRoot {
         onRemoveRequested: id => root.removeNotificationHistory(id)
     }
 
-    QuickToolsWindow {
-        modelData: root.primaryScreen
-        opened: root.quickToolWindowOpen
-        page: root.quickToolWindowPage
-        requestedAppId: root.quickToolWindowRequestedAppId
-        onBackRequested: root.returnToQuickTools()
-        onCloseRequested: {
-            root.quickToolWindowOpen = false
-            root.quickToolWindowRequestedAppId = ""
+    // Keep optional full-screen UI uninstantiated during shell startup.
+    // The component is created on demand by ensureQuickToolWindow().
+    Component {
+        id: quickToolWindowComponent
+
+        QuickToolsWindow {
+            modelData: root.primaryScreen
+            opened: root.quickToolWindowOpen
+            page: root.quickToolWindowPage
+            requestedAppId: root.quickToolWindowRequestedAppId
+            onBackRequested: root.returnToQuickTools()
+            onCloseRequested: {
+                root.quickToolWindowOpen = false
+                root.quickToolWindowRequestedAppId = ""
+            }
         }
     }
 
@@ -2205,11 +2234,16 @@ ShellRoot {
         notification: root.secureLockActive ? null : root.latestNotification
     }
 
-    BatteryWarningPopup {
-        modelData: root.primaryScreen
-        opened: root.batteryPopupOpen && !root.secureLockActive
-        percent: root.batteryPopupPercent
-        severity: root.batteryPopupLevel
-        onCloseRequested: root.batteryPopupOpen = false
+    // Battery alerts are also instantiated only when the first alert is due.
+    Component {
+        id: batteryWarningPopupComponent
+
+        BatteryWarningPopup {
+            modelData: root.primaryScreen
+            opened: root.batteryPopupOpen && !root.secureLockActive
+            percent: root.batteryPopupPercent
+            severity: root.batteryPopupLevel
+            onCloseRequested: root.batteryPopupOpen = false
+        }
     }
 }
