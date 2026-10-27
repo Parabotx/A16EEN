@@ -86,6 +86,7 @@ assert.ok(panel.includes('text: "PLAY AGAIN"'));
 assert.ok(panel.includes('useContainerColor: true'));
 assert.ok(panel.includes('text: "X & O"'));
 assert.ok(panel.includes('text: "Dots & Boxes"'));
+assert.ok(panel.includes('root.showResult("xo", "I WON"'));
 assert.ok(panel.includes('root.currentView === "dots"'));
 assert.ok(!panel.includes("description:"));
 
