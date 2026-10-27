@@ -217,16 +217,21 @@ navbar_script = (ROOT / "scripts/a16een-navbar").read_text()
 popup_style = (ROOT / "quickshell/a16een/ui/PopupCardStyle.qml").read_text()
 appearance_ui = (ROOT / "quickshell/a16een/ui/NavbarAppearancePage.qml").read_text()
 
-# UI regressions: keep navbar shortcuts compact/icon-only, keep the AI tile
-# separate from Gaming, and keep the AI popup's top-right control a real close action.
+# UI regressions: keep the Gaming and AI shortcuts compact/icon-only in one
+# shared surface, and keep the AI popup's top-right control a real close action.
+assert "readonly property int shortcutTileWidth: 26" in dock_qml
 assert "readonly property int shortcutTileHeight: 26" in dock_qml
-assert "readonly property int shortcutTileGap: 4" in dock_qml
 assert "readonly property int shortcutRailGap: 24" in dock_qml
-assert "id: gamingNavbarContainer" in dock_qml
+assert "id: gamingAiNavbarContainer" in dock_qml
+assert "id: gamingShortcutItem" in dock_qml
+assert "id: aiShortcutItem" in dock_qml
+assert "readonly property int shortcutSurfaceWidth: root.shortcutCount * root.shortcutTileWidth" in dock_qml
 assert 'iconName: "gamepad-2.svg"' in dock_qml
-assert 'containerColorFor("gaming")' in dock_qml
-assert "width: 24" in dock_qml and "height: 26" in dock_qml
+assert "width: visible ? root.shortcutTileWidth : 0" in dock_qml
+assert 'containerColorFor(root.shortcutSurfaceStyleId)' in dock_qml
 assert 'x: root.navbarPosition === "right" ? parent.width - width - 8 : 8' in dock_qml
+assert "shortcutTileGap" not in dock_qml
+assert "id: gamingNavbarContainer" not in dock_qml
 assert 'text: "AI"' not in dock_qml
 assert 'fallbackPath: root.fallbackIconPath("a16een-ai-sigil.svg")' in dock_qml
 assert 'aiNavbarMouse.containsMouse' not in dock_qml

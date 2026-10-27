@@ -71,5 +71,7 @@ assert.ok(panel.includes('DotsAndBoxes.applyMove('));
 assert.ok(panel.includes('root.applyDotsMove(move.orientation, move.index, "O")'));
 assert.ok(panel.includes('root.dotsStatusText'));
 assert.ok(panel.includes('Accessible.name: "Dots and Boxes"'));
+assert.ok(panel.includes('root.showResult('));
+assert.ok(panel.includes('text: "ALL GAMES"'));
 
 console.log("Dots and Boxes game logic and UI tests passed.");

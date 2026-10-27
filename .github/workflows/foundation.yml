@@ -111,14 +111,20 @@ jobs:
           test "$(grep -c 'sourceSize.width: 64' quickshell/a16een/ui/QuickHubTray.qml)" -eq 2
           grep -Fq 'signal toolRequested(string toolId)' quickshell/a16een/ui/ToolsPanel.qml
           grep -Fq 'label: "System Monitor"' quickshell/a16een/ui/ToolsPanel.qml
-          grep -Fq 'id: aiNavbarContainer' quickshell/a16een/ui/Dock.qml
-          grep -Fq 'id: gamingNavbarContainer' quickshell/a16een/ui/Dock.qml
+          grep -Fq 'id: gamingAiNavbarContainer' quickshell/a16een/ui/Dock.qml
+          grep -Fq 'id: aiShortcutItem' quickshell/a16een/ui/Dock.qml
+          grep -Fq 'id: gamingShortcutItem' quickshell/a16een/ui/Dock.qml
+          grep -Fq 'readonly property int shortcutSurfaceWidth: root.shortcutCount * root.shortcutTileWidth' quickshell/a16een/ui/Dock.qml
           grep -Fq 'onGamingRequested: root.openGamingPanel()' quickshell/a16een/shell.qml
           grep -Fq 'GamingPanel {' quickshell/a16een/shell.qml
           grep -Fq 'function bestMove(board, botMark, humanMark)' quickshell/a16een/ui/TicTacToe.js
           grep -Fq 'function casualMove(board, botMark, humanMark, roll, choiceRoll)' quickshell/a16een/ui/TicTacToe.js
           grep -Fq 'function applyMove(horizontal, vertical, owners, scores, orientation, index, player)' quickshell/a16een/ui/DotsAndBoxes.js
           grep -Fq 'DotsAndBoxes.casualMove(' quickshell/a16een/ui/GamingPanel.qml
+          grep -Fq 'id: resultStage' quickshell/a16een/ui/GamingPanel.qml
+          grep -Fq 'function showResult(gameId, title, subtitle, scoreText)' quickshell/a16een/ui/GamingPanel.qml
+          grep -Fq 'useContainerColor: true' quickshell/a16een/ui/GamingPanel.qml
+          grep -Fq 'property bool useContainerColor: false' quickshell/a16een/ui/PopupCardStyle.qml
           grep -Fq 'onAiRequested: root.openToolsPage("ai")' quickshell/a16een/shell.qml
           grep -Fq '{ id: "ai", name: "A16EEN AI"' quickshell/a16een/ui/NavbarAppearancePage.qml
           grep -Fq '{ id: "gaming", name: "Gaming"' quickshell/a16een/ui/NavbarAppearancePage.qml

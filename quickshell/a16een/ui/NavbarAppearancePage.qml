@@ -28,8 +28,8 @@ Item {
     readonly property var containerChoices: [
         { id: "all", name: "All Containers", detail: "Shared settings" },
         { id: "workspaces", name: "Workspaces", detail: "Workspace icon rail" },
-        { id: "gaming", name: "Gaming", detail: "Gamepad icon above the AI container" },
-        { id: "ai", name: "A16EEN AI", detail: "AI assistant shortcut above workspaces" },
+        { id: "gaming", name: "Gaming", detail: "Gamepad shortcut beside AI in the shared container" },
+        { id: "ai", name: "A16EEN AI", detail: "AI shortcut beside Gaming in the shared container" },
         { id: "ai-assistant", name: "AI Assistant Card", detail: "Independent appearance for the AI chat popup" },
         { id: "battery", name: "Battery", detail: "Battery capsule" },
         { id: "time", name: "Clock / Time", detail: "Clock display" },

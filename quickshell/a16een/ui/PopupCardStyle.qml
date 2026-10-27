@@ -10,6 +10,8 @@ Item {
 
     property string containerId: "utilities"
     property bool isolateAppearance: false
+    // Opt-in for a popup that must follow its own navbar container color.
+    property bool useContainerColor: false
     property var appearanceSettings: ({})
 
     readonly property string stateDir: {
@@ -24,7 +26,8 @@ Item {
     readonly property var containers: root.appearanceSettings && root.appearanceSettings.containers
         ? root.appearanceSettings.containers : ({})
     readonly property var selectedContainer: root.containers[root.containerId] || ({})
-    readonly property bool popupCardColorEnabled: root.containerId === "data-meter"
+    readonly property bool popupCardColorEnabled: root.useContainerColor
+        || root.containerId === "data-meter"
         || (root.isolateAppearance
             ? root.selectedContainer.applyPopupCardColor === true
             : root.allSettings.applyPopupCardColor === true
@@ -79,6 +82,14 @@ Item {
     // The global switch enables every popup. Otherwise each section can opt in
     // independently; the speed capsule keeps its existing per-container behavior.
     property color backgroundColor: {
+        // Gaming follows its own selected container color, never the global
+        // color or a stale/default system surface.
+        if (root.useContainerColor) {
+            if (root.selectedContainer.containerEnabled === true
+                && root.validHexColor(root.selectedContainer.containerColor))
+                return String(root.selectedContainer.containerColor)
+            return "#FFFFFF"
+        }
         if (!root.popupCardColorEnabled)
             return "#FFFFFF"
         // The AI chat is deliberately independent from legacy/global navbar
