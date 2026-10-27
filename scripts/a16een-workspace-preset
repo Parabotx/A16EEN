@@ -28,6 +28,14 @@ is_workspace_valid() {
     esac
 }
 
+is_app_locked() {
+    local desktop_id="$1"
+    [[ -n "$desktop_id" && -f "$STATE_DIR/app-locker.json" ]] || return 1
+    jq -e --arg id "$desktop_id" \
+        'any(.apps[]?; ((.desktop_id // "") | ascii_downcase) == ($id | ascii_downcase))' \
+        "$STATE_DIR/app-locker.json" >/dev/null 2>&1
+}
+
 slugify() {
     local value="$1"
     value="$(printf '%s' "$value" |
@@ -129,6 +137,14 @@ open_preset() {
         workspace="$(jq -r ".apps[$index].workspace" <<<"$preset")"
         working_directory="$(jq -r ".apps[$index].workingDirectory // \"\"" <<<"$preset")"
         is_workspace_valid "$workspace" || die "invalid workspace '$workspace'."
+
+        local desktop_id
+        desktop_id="$(jq -r ".apps[$index].desktopId // \"\"" <<<"$preset")"
+        if is_app_locked "$desktop_id"; then
+            printf 'Workspace preset: skipped %s because it is password-protected in App Locker.\n' "$desktop_id" >&2
+            index=$((index + 1))
+            continue
+        fi
 
         local -a command app_ids
         mapfile -t command < <(jq -r ".apps[$index].command[]" <<<"$preset")
