@@ -15,13 +15,14 @@ the subject centered and enough safe margin around faces or iconography to toler
 cropping. Keep image files optimized for quick loading.
 
 For personal artwork, the easiest place is the installed runtime directory:
-`~/.config/quickshell/a16een/assets/calendar/`
+`~/.config/a16een/quickshell/a16een/assets/calendar/`
 
 You can copy the three files there directly; the detail card reads them from that
-location. The installer only copies bundled image files into the runtime folder and
-does not delete other local files, so personal artwork survives updates. To bundle
-the images in the repository as shared defaults instead, add them under the source
-directory above and include them in a commit before updating A16EEN.
+location. During install/update, bundled image files are copied from the repository directory
+above into this runtime folder. Existing files in the runtime calendar folder are
+preserved, except that a bundled file with the same name replaces the local copy.
+To publish shared defaults for all users, add the images to the repository directory
+above and commit them to `main` before users run `a16 -u`.
 
 The detail card shows a subtle placeholder until each expected image is available.
 
