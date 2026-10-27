@@ -159,6 +159,23 @@ try:
 except ValueError:
     pass
 
+assert ai_module.MODEL == "gemini-3.5-flash-lite"
+assert ai_module.GEMINI_FALLBACK_MODEL == "gemini-3.8-flash"
+assert ai_module.GEMINI_REQUEST_TIMEOUT_SECONDS < 45
+fallback_calls = []
+def fake_gemini_request(body, model=None, timeout=None):
+    if model is None:
+        fallback_calls.append(("primary", timeout))
+        raise ai_module.RequestTimeoutError("simulated timeout")
+    fallback_calls.append((model, timeout))
+    return {"parts": [{"text": "fast fallback worked"}]}
+with mock.patch.object(ai_module, "request_gemini", side_effect=fake_gemini_request):
+    fallback_content, fallback_model = ai_module.request_gemini_with_fallback({"contents": []})
+assert fallback_content["parts"][0]["text"] == "fast fallback worked"
+assert fallback_model == ai_module.GEMINI_FALLBACK_MODEL
+assert fallback_calls[1][0] == "gemini-3.8-flash"
+assert fallback_calls[1][1] == ai_module.GEMINI_FALLBACK_TIMEOUT_SECONDS
+
 # Groq compatibility: translate local typed functions into OpenAI-style tools
 # and round-trip tool calls/results through A16EEN's provider-neutral history.
 openai_tools = ai_module.groq_tool_definitions()
@@ -241,7 +258,7 @@ assert 'return (id === "ai" || id === "gaming") ? "#15171A" : "#FFFFFF"' in dock
 assert '{ id: "gaming", name: "Gaming"' in appearance_ui
 assert 'stroke="#FFFFFF"' in ai_icon
 assert 'args == ["history", "list"]' in (ROOT / "scripts/a16een-ai").read_text()
-assert 'command: ["a16een-ai", "history", "list"]' in assistant_qml
+assert 'command: ["/usr/local/bin/a16een-ai", "history", "list"]' in assistant_qml
 assert 'function openConversation' in assistant_qml
 assert 'const firstPending = historySaveProcess.running ? 1 : 0' in assistant_qml
 assert 'id: historyOverlay' in assistant_qml
@@ -258,10 +275,18 @@ assert 'text: "A16EEN AI"' not in assistant_qml
 assert 'text: root.busy ? "WORKING" : "SEND  ↑"' not in assistant_qml
 assert 'iconName: "lucide-settings.svg"' not in assistant_qml
 assert 'Open chat history' in tools_panel_qml
-assert 'containerId: root.page === "ai" ? "ai-assistant" : "quick-hub"' in tools_panel_qml
-assert 'isolateAppearance: root.page === "ai"' in tools_panel_qml
+assert 'containerId: "quick-hub"' in tools_panel_qml
+assert 'containerId: "ai-assistant"' in tools_panel_qml
+assert 'isolateAppearance: true' in tools_panel_qml
+assert 'activePopupCardStyle: root.page === "ai" ? aiPopupCardStyle : popupCardStyle' in tools_panel_qml
+assert 'appearanceReady' in popup_style
+assert 'root.opened && (root.page !== "ai" || aiPopupCardStyle.appearanceReady)' in tools_panel_qml
 assert 'id: aiHeaderSpacer' in tools_panel_qml
 assert 'width: visible ? Math.max(0, parent.width - 28 - 25 - 25 - 25 - parent.spacing * 4) : 0' in tools_panel_qml
+assert 'onAiRequested: {' in (ROOT / "quickshell/a16een/shell.qml").read_text()
+assert 'function isNavbarAiShortcutClick(x, y)' in tools_panel_qml
+assert 'root.toolRequested("ai")' in tools_panel_qml
+assert 'root.isNavbarAiShortcutClick(mouse.x, mouse.y)' in tools_panel_qml
 assert 'property bool isolateAppearance: false' in popup_style
 assert 'root.isolateAppearance' in popup_style
 assert 'root.selectedContainer.applyPopupCardColor === true' in popup_style
@@ -276,8 +301,19 @@ assert 'function selectProvider(provider, fromChat)' in assistant_qml
 assert 'providerSelector' in assistant_qml
 assert 'id: typingIndicator' in assistant_qml
 assert 'SequentialAnimation on opacity' in assistant_qml
+assert 'providerShortLabel + " is thinking"' not in assistant_qml
 assert 'TextMetrics {' in assistant_qml
-assert 'REQUEST_TIMEOUT_SECONDS = 120' in (ROOT / "scripts/a16een-ai").read_text()
+assert 'providerSelectionEnabled' in assistant_qml
+assert 'property string connectionTestProvider: "gemini"' in assistant_qml
+assert 'if (root.selectedProvider !== root.connectionTestProvider)' in assistant_qml
+assert 'else if (root.activeConversationId.length && root.pageMode === "settings")' not in assistant_qml
+assert 'command: ["/usr/local/bin/a16een-ai", "ask"]' in assistant_qml
+assert 'command: ["/usr/local/bin/a16een-ai", "test", root.connectionTestProvider]' in assistant_qml
+assert 'command: ["/usr/local/bin/a16een-ai", "provider", "set", root.pendingProvider]' in assistant_qml
+assert 'GEMINI_REQUEST_TIMEOUT_SECONDS = 24' in (ROOT / "scripts/a16een-ai").read_text()
+assert 'def request_gemini_with_fallback' in (ROOT / "scripts/a16een-ai").read_text()
+assert 'RequestTimeoutError' in (ROOT / "scripts/a16een-ai").read_text()
+assert 'MODEL = os.environ.get("A16EEN_GEMINI_MODEL", "gemini-3.5-flash-lite")' in (ROOT / "scripts/a16een-ai").read_text()
 assert 'groq-api-key' in (ROOT / "scripts/a16een-ai").read_text()
 assert 'api.groq.com/openai/v1/chat/completions' in (ROOT / "scripts/a16een-ai").read_text()
 assert 'width: 1.5' in tools_panel_qml and 'height: 12' in tools_panel_qml

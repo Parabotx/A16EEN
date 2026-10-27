@@ -11,6 +11,15 @@ Item {
     property bool geminiConfigured: false
     property bool groqConfigured: false
     property string selectedProvider: "gemini"
+    property string pendingProvider: "gemini"
+    property string providerBeforeSwitch: "gemini"
+    property string connectionTestProvider: "gemini"
+    readonly property bool providerSelectionEnabled: !root.awaitingApproval
+        && !providerSetProcess.running
+        && !keySetProcess.running
+        && !keyRemoveProcess.running
+        && !aiExecuteProcess.running
+        && !statusProcess.running
     readonly property string providerLabel: root.selectedProvider === "groq" ? "Groq" : "Google AI Studio / Gemini"
     readonly property string providerShortLabel: root.selectedProvider === "groq" ? "GROQ" : "AI STUDIO"
     readonly property var providerChoices: [
@@ -255,8 +264,16 @@ Item {
 
     function selectProvider(provider, fromChat) {
         const normalized = String(provider || "").toLowerCase()
-        if (!["gemini", "groq"].includes(normalized) || root.busy || providerSetProcess.running)
+        if (!["gemini", "groq"].includes(normalized) || !root.providerSelectionEnabled)
             return
+        if (normalized === root.selectedProvider) {
+            if (fromChat)
+                root.pageMode = root.providerConfigured(normalized) ? "chat" : "settings"
+            return
+        }
+
+        root.providerBeforeSwitch = root.selectedProvider
+        root.pendingProvider = normalized
         root.selectedProvider = normalized
         root.hasApiKey = root.providerConfigured(normalized)
         root.connected = false
@@ -264,10 +281,9 @@ Item {
         root.keyDraft = ""
         if (fromChat)
             root.pageMode = root.hasApiKey ? "chat" : "settings"
-        if (!root.hasApiKey)
-            root.statusLine = "Add your " + root.providerLabel + " API key"
-        else
-            root.statusLine = root.providerLabel + " selected"
+        root.statusLine = root.hasApiKey
+            ? root.providerLabel + " selected"
+            : "Add your " + root.providerLabel + " API key"
         providerSetProcess.running = true
     }
 
@@ -543,6 +559,7 @@ Item {
         else
             root.geminiConfigured = true
         root.hasApiKey = true
+        root.connectionTestProvider = root.selectedProvider
         root.statusLine = "Testing " + root.providerLabel + " connection"
         connectionTestProcess.running = true
     }
@@ -550,6 +567,17 @@ Item {
     function handleConnectionTest(raw) {
         let result = null
         try { result = JSON.parse(String(raw || "{}")) } catch (error) { result = null }
+        // A connection test can finish after the user has selected another
+        // provider. Update only the provider that the request actually tested.
+        if (root.connectionTestProvider === "groq")
+            root.groqConfigured = root.groqConfigured && result && result.ok !== false
+        else
+            root.geminiConfigured = root.geminiConfigured && result && result.ok !== false
+        root.hasApiKey = root.providerConfigured(root.selectedProvider)
+        if (root.selectedProvider !== root.connectionTestProvider) {
+            root.busy = false
+            return
+        }
         root.busy = false
         if (result && result.ok === true) {
             root.hasApiKey = true
@@ -588,7 +616,7 @@ Item {
 
     Process {
         id: historyLoadProcess
-        command: ["a16een-ai", "history", "list"]
+        command: ["/usr/local/bin/a16een-ai", "history", "list"]
         running: false
         stdout: StdioCollector {
             onStreamFinished: root.restoreSavedConversations(String(text || "{}"))
@@ -604,7 +632,7 @@ Item {
 
     Process {
         id: historySaveProcess
-        command: ["a16een-ai", "history", "save-stdin"]
+        command: ["/usr/local/bin/a16een-ai", "history", "save-stdin"]
         stdinEnabled: true
         running: false
         onStarted: write(root.pendingHistoryPayload + "\n")
@@ -626,14 +654,15 @@ Item {
 
     Process {
         id: providerSetProcess
-        command: ["a16een-ai", "provider", "set", root.selectedProvider]
+        command: ["/usr/local/bin/a16een-ai", "provider", "set", root.pendingProvider]
         running: false
         onExited: (exitCode, exitStatus) => {
-            if (exitCode === 0)
-                root.refreshStatus()
-            else {
+            if (exitCode === 0) {
+                root.hasApiKey = root.providerConfigured(root.selectedProvider)
+            } else {
+                root.selectedProvider = root.providerBeforeSwitch
+                root.hasApiKey = root.providerConfigured(root.providerBeforeSwitch)
                 root.lastError = "Could not save the selected AI provider."
-                root.refreshStatus()
             }
         }
         stderr: StdioCollector {
@@ -647,7 +676,7 @@ Item {
 
     Process {
         id: statusProcess
-        command: ["a16een-ai", "status"]
+        command: ["/usr/local/bin/a16een-ai", "status"]
         running: false
         stdout: StdioCollector {
             onStreamFinished: {
@@ -665,15 +694,13 @@ Item {
                 }
                 if (!root.hasApiKey)
                     root.pageMode = "settings"
-                else if (root.activeConversationId.length && root.pageMode === "settings")
-                    root.pageMode = "chat"
             }
         }
     }
 
     Process {
         id: keySetProcess
-        command: ["a16een-ai", "key", "set-stdin", root.selectedProvider]
+        command: ["/usr/local/bin/a16een-ai", "key", "set-stdin", root.selectedProvider]
         stdinEnabled: true
         running: false
         onStarted: write(String(root.keyDraft || "").trim() + "\n")
@@ -689,7 +716,7 @@ Item {
 
     Process {
         id: keyRemoveProcess
-        command: ["a16een-ai", "key", "remove", root.selectedProvider]
+        command: ["/usr/local/bin/a16een-ai", "key", "remove", root.selectedProvider]
         running: false
         onExited: (exitCode, exitStatus) => {
             if (root.selectedProvider === "groq")
@@ -707,7 +734,7 @@ Item {
 
     Process {
         id: connectionTestProcess
-        command: ["a16een-ai", "test"]
+        command: ["/usr/local/bin/a16een-ai", "test", root.connectionTestProvider]
         running: false
         stdout: StdioCollector {
             onStreamFinished: root.handleConnectionTest(String(text || "{}"))
@@ -723,7 +750,7 @@ Item {
 
     Process {
         id: aiAskProcess
-        command: ["a16een-ai", "ask"]
+        command: ["/usr/local/bin/a16een-ai", "ask"]
         stdinEnabled: true
         running: false
         onStarted: write(JSON.stringify({ history: root.history, mode: root.assistantMode, provider: root.selectedProvider }) + "\n")
@@ -741,7 +768,7 @@ Item {
 
     Process {
         id: aiExecuteProcess
-        command: ["a16een-ai", "execute"]
+        command: ["/usr/local/bin/a16een-ai", "execute"]
         stdinEnabled: true
         running: false
         onStarted: write(JSON.stringify(root.executionRequest) + "\n")
@@ -810,7 +837,7 @@ Item {
                         MouseArea {
                             id: settingsProviderChoiceMouse
                             anchors.fill: parent
-                            enabled: !root.busy && !providerSetProcess.running
+                            enabled: root.providerSelectionEnabled
                             cursorShape: Qt.PointingHandCursor
                             onClicked: root.selectProvider(settingsProviderChoice.modelData.id, false)
                         }
@@ -1060,7 +1087,7 @@ Item {
 
                         MouseArea {
                             anchors.fill: parent
-                            enabled: !root.busy && !root.awaitingApproval && !providerSetProcess.running
+                            enabled: root.providerSelectionEnabled
                             hoverEnabled: true
                             cursorShape: Qt.PointingHandCursor
                             onClicked: root.selectProvider(chatProviderChoice.modelData.id, true)
@@ -1146,17 +1173,15 @@ Item {
                     clip: true
 
                     Rectangle {
-                        width: 156
-                        height: 34
+                        width: 48
+                        height: 32
                         radius: 12
                         color: root.fieldColor
                         border.width: 1
                         border.color: root.borderColor
 
                         Row {
-                            anchors.left: parent.left
-                            anchors.leftMargin: 12
-                            anchors.verticalCenter: parent.verticalCenter
+                            anchors.centerIn: parent
                             spacing: 4
 
                             Repeater {
@@ -1182,12 +1207,6 @@ Item {
                                 }
                             }
 
-                            Text {
-                                anchors.verticalCenter: parent.verticalCenter
-                                text: root.providerShortLabel + " is thinking"
-                                color: root.secondaryTextColor
-                                font.pixelSize: 8
-                            }
                         }
                     }
                 }

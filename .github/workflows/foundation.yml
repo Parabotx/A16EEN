@@ -125,7 +125,7 @@ jobs:
           grep -Fq 'function showResult(gameId, title, subtitle, scoreText)' quickshell/a16een/ui/GamingPanel.qml
           grep -Fq 'useContainerColor: true' quickshell/a16een/ui/GamingPanel.qml
           grep -Fq 'property bool useContainerColor: false' quickshell/a16een/ui/PopupCardStyle.qml
-          grep -Fq 'onAiRequested: root.openToolsPage("ai")' quickshell/a16een/shell.qml
+          grep -Fq 'onAiRequested: {' quickshell/a16een/shell.qml
           grep -Fq '{ id: "ai", name: "A16EEN AI"' quickshell/a16een/ui/NavbarAppearancePage.qml
           grep -Fq '{ id: "gaming", name: "Gaming"' quickshell/a16een/ui/NavbarAppearancePage.qml
           grep -Fq 'label: "Data Meter"' quickshell/a16een/ui/ToolsPanel.qml
@@ -133,7 +133,7 @@ jobs:
           grep -Fq 'popupCardStyle.fieldColor' quickshell/a16een/ui/QuickNotes.qml
           grep -Fq 'popupCardStyle.fieldColor' quickshell/a16een/ui/QuickTasks.qml
           grep -Fq 'popupCardStyle.fieldColor' quickshell/a16een/ui/QuickPresets.qml
-          grep -Fq 'popupCardStyle.fieldColor' quickshell/a16een/ui/ToolsPanel.qml
+          grep -Fq 'activePopupCardStyle.fieldColor' quickshell/a16een/ui/ToolsPanel.qml
           grep -Fq 'popupCardStyle.fieldColor' quickshell/a16een/ui/NotificationCenter.qml
           grep -Fq 'data-meter-settings.json' quickshell/a16een/shell.qml
           grep -Fq 'dataMeterBootstrapTimer' quickshell/a16een/shell.qml
