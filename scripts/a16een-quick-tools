@@ -763,6 +763,12 @@ def snapshot_command(args: list[str]) -> int:
         if not isinstance(saved_apps, list) or not saved_apps:
             return emit({"ok": False, "message": "This snapshot contains no restorable applications."}, 2)
         catalogue = app_catalogue()
+        # Restoring a session must never bypass an App Locker password.
+        locked_ids = {
+            str(entry.get("desktop_id", "")).casefold()
+            for entry in locker_store().get("apps", [])
+            if isinstance(entry, dict)
+        }
         original_workspace = current_workspace_name()
         before_windows: set[int] = set()
         try:
@@ -777,6 +783,9 @@ def snapshot_command(args: list[str]) -> int:
             if not isinstance(saved_app, dict):
                 continue
             desktop_id = str(saved_app.get("desktop_id", ""))
+            if desktop_id.casefold() in locked_ids:
+                skipped.append(str(saved_app.get("name", desktop_id))[:80] + " (protected; unlock in App Locker)")
+                continue
             entry = find_desktop_entry(desktop_id, catalogue)
             if not entry:
                 skipped.append(str(saved_app.get("name", desktop_id))[:80])
