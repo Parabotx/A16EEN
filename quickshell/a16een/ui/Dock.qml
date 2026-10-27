@@ -700,6 +700,7 @@ PanelWindow {
         property var selectedCalendarEvent: null
         property string calendarView: "calendar"
         property bool calendarDetailsHovering: false
+        property bool calendarDetailsWasHovered: false
 
         onCalendarOpenChanged: {
             if (calendarOpen) {
@@ -708,6 +709,26 @@ PanelWindow {
             } else {
                 calendarPopupHideTimer.restart()
             }
+        }
+
+        onCalendarDetailsOpenChanged: {
+            if (calendarDetailsOpen) {
+                calendarDetailsClearTimer.stop()
+                calendarHideTimer.stop()
+                calendarDetailsWasHovered = false
+            } else {
+                calendarDetailsClearTimer.restart()
+                calendarDetailsWasHovered = false
+            }
+        }
+
+        function clearCalendarSelection() {
+            selectedCalendarDay = 0
+            selectedCalendarMonth = 0
+            selectedCalendarYear = 0
+            selectedCalendarEvent = null
+            calendarDetailsHovering = false
+            calendarDetailsWasHovered = false
         }
 
         readonly property var ethiopianMonths: [
@@ -893,7 +914,10 @@ PanelWindow {
                     navbarClockPanel.calendarView = "calendar"
                     navbarClockPanel.calendarOpen = true
                 }
-                onExited: calendarHideTimer.restart()
+                onExited: {
+                    if (!navbarClockPanel.calendarDetailsOpen)
+                        calendarHideTimer.restart()
+                }
             }
         }
 
@@ -903,6 +927,8 @@ PanelWindow {
                 navbarClockPanel.calendarWindowVisible = false
                 navbarClockPanel.calendarDetailsOpen = false
                 navbarClockPanel.calendarDetailsHovering = false
+                navbarClockPanel.clearCalendarSelection()
+                calendarDetailsClearTimer.stop()
                 calendarHideTimer.stop()
                 calendarPopupHideTimer.stop()
             }
@@ -1272,8 +1298,17 @@ PanelWindow {
                     && !navbarClockPanel.calendarDetailsHovering) {
                 navbarClockPanel.calendarOpen = false
                 navbarClockPanel.calendarDetailsOpen = false
-                navbarClockPanel.selectedCalendarEvent = null
             }
+        }
+    }
+
+    Timer {
+        id: calendarDetailsClearTimer
+        interval: 250
+        repeat: false
+        onTriggered: {
+            if (!navbarClockPanel.calendarDetailsOpen)
+                navbarClockPanel.clearCalendarSelection()
         }
     }
 
@@ -1468,11 +1503,33 @@ PanelWindow {
                         width: 32
                         height: 29
                         radius: 9
-                        color: modelData.selected || modelData.today
+                        color: modelData.today
                             ? clockPopupStyle.actionColor
-                            : (modelData.day > 0 ? clockPopupStyle.subtleSurfaceColor : "transparent")
+                            : (modelData.selected
+                                ? Qt.rgba(clockPopupStyle.actionColor.r,
+                                    clockPopupStyle.actionColor.g,
+                                    clockPopupStyle.actionColor.b, 0.12)
+                                : (modelData.day > 0
+                                    ? clockPopupStyle.subtleSurfaceColor : "transparent"))
                         border.width: modelData.selected || modelData.today ? 1 : 0
-                        border.color: clockPopupStyle.actionColor
+                        border.color: modelData.selected && !modelData.today
+                            ? Qt.rgba(clockPopupStyle.actionColor.r,
+                                clockPopupStyle.actionColor.g,
+                                clockPopupStyle.actionColor.b, 0.62)
+                            : clockPopupStyle.actionColor
+
+                        // The previewed day has its own translucent glass treatment,
+                        // separate from the solid fill reserved for today's date.
+                        Rectangle {
+                            anchors.fill: parent
+                            anchors.margins: 2
+                            radius: 7
+                            visible: dateCellModel.modelData.selected && !dateCellModel.modelData.today
+                            color: clockPopupStyle.darkMode ? "#18FFFFFF" : "#48FFFFFF"
+                            border.width: 1
+                            border.color: clockPopupStyle.darkMode ? "#55FFFFFF" : "#95FFFFFF"
+                            z: 1
+                        }
 
                         // Subtle breathing halo around today's date.
                         Rectangle {
@@ -1560,8 +1617,10 @@ PanelWindow {
                             anchors.fill: parent
                             z: 3
                             text: modelData.day > 0 ? String(modelData.day) : ""
-                            color: modelData.selected || modelData.today
-                                ? clockPopupStyle.actionTextColor : clockPopupStyle.textColor
+                            color: modelData.today
+                                ? clockPopupStyle.actionTextColor
+                                : (modelData.selected
+                                    ? clockPopupStyle.actionColor : clockPopupStyle.textColor)
                             font.family: "Monospace"
                             font.pixelSize: 11
                             font.weight: modelData.selected || modelData.today ? Font.DemiBold : Font.Normal
@@ -1695,7 +1754,10 @@ PanelWindow {
                 cursorShape: Qt.ArrowCursor
                 z: 20
                 onEntered: calendarHideTimer.stop()
-                onExited: calendarHideTimer.restart()
+                onExited: {
+                    if (!navbarClockPanel.calendarDetailsOpen)
+                        calendarHideTimer.restart()
+                }
             }
         }
     }
@@ -1717,10 +1779,12 @@ PanelWindow {
         }
         onHoveringChanged: {
             navbarClockPanel.calendarDetailsHovering = hovering
-            if (hovering)
+            if (hovering) {
+                navbarClockPanel.calendarDetailsWasHovered = true
                 calendarHideTimer.stop()
-            else
+            } else if (navbarClockPanel.calendarDetailsWasHovered) {
                 calendarHideTimer.restart()
+            }
         }
     }
 
