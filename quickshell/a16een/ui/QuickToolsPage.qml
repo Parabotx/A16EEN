@@ -179,15 +179,6 @@ Item {
         }
     }
 
-    Component.onCompleted: {
-        if (root.page === "updates")
-            Qt.callLater(() => root.refreshUpdates(false))
-        else if (root.page === "app-locker")
-            Qt.callLater(() => root.refreshLocker())
-        else if (root.page === "sessions")
-            Qt.callLater(() => root.refreshSessions())
-    }
-
     Process {
         id: updateProcess
         command: ["a16een-quick-tools", "updates"]
