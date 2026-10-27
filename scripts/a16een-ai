@@ -31,11 +31,16 @@ PROVIDER_FILE = AI_DIR / "provider.json"
 STATE_HOME = Path(os.environ.get("XDG_STATE_HOME", str(HOME / ".local/state")))
 AI_STATE_DIR = STATE_HOME / "a16een" / "ai"
 CONVERSATIONS_FILE = AI_STATE_DIR / "conversations.json"
-MODEL = os.environ.get("A16EEN_GEMINI_MODEL", "gemini-3.8-flash")
+# Keep ordinary desktop chat on Google's low-latency function-calling model.
+# If it still stalls, retry once with the stronger Flash model.
+MODEL = os.environ.get("A16EEN_GEMINI_MODEL", "gemini-3.5-flash-lite")
+GEMINI_FALLBACK_MODEL = os.environ.get("A16EEN_GEMINI_FALLBACK_MODEL", "gemini-3.8-flash")
 GROQ_MODEL = os.environ.get("A16EEN_GROQ_MODEL", "openai/gpt-oss-20b")
 API_ROOT = "https://generativelanguage.googleapis.com/v1beta/models/"
 GROQ_API_URL = "https://api.groq.com/openai/v1/chat/completions"
-REQUEST_TIMEOUT_SECONDS = 120
+REQUEST_TIMEOUT_SECONDS = 45
+GEMINI_REQUEST_TIMEOUT_SECONDS = 24
+GEMINI_FALLBACK_TIMEOUT_SECONDS = 28
 PROVIDERS = ("gemini", "groq")
 MAX_HISTORY_ITEMS = 48
 MAX_PROMPT_CHARS = 8000
@@ -255,11 +260,19 @@ def remove_key(provider: str = "gemini") -> dict[str, Any]:
     label = "Groq" if normalized == "groq" else "Gemini"
     return {"ok": True, "configured": False, "provider": normalized, "message": label + " API key removed."}
 
-def send_json_request(request: urllib.request.Request, provider_label: str) -> dict[str, Any]:
+class RequestTimeoutError(RuntimeError):
+    """A request deadline or provider gateway timeout was reached."""
+
+
+def send_json_request(
+    request: urllib.request.Request,
+    provider_label: str,
+    timeout: int = REQUEST_TIMEOUT_SECONDS,
+) -> dict[str, Any]:
     transient_codes = {408, 429, 500, 502, 503, 504}
     for attempt in range(3):
         try:
-            with urllib.request.urlopen(request, timeout=REQUEST_TIMEOUT_SECONDS) as response:
+            with urllib.request.urlopen(request, timeout=timeout) as response:
                 raw = response.read(2 * 1024 * 1024 + 1)
             if len(raw) > 2 * 1024 * 1024:
                 raise RuntimeError(provider_label + " returned an unexpectedly large response.")
@@ -281,32 +294,60 @@ def send_json_request(request: urllib.request.Request, provider_label: str) -> d
             if error.code == 429:
                 raise RuntimeError(provider_label + " rate limit or quota reached. Check your provider dashboard and try again.")
             if error.code in (408, 500, 502, 503, 504):
-                raise RuntimeError(provider_label + " is taking too long or is temporarily unavailable (HTTP " + str(error.code) + "). Try again or switch providers.")
+                raise RequestTimeoutError(provider_label + " gateway timed out (HTTP " + str(error.code) + ").")
             raise RuntimeError(provider_label + " API error (" + str(error.code) + "): " + (detail or "request failed"))
         except urllib.error.URLError as error:
             if isinstance(error.reason, (TimeoutError, socket.timeout)):
-                raise RuntimeError(provider_label + " timed out after " + str(REQUEST_TIMEOUT_SECONDS) + " seconds. Your request was not lost; try again or switch providers.")
+                raise RequestTimeoutError(provider_label + " timed out after " + str(timeout) + " seconds. Your request was not lost.")
             raise RuntimeError("Could not reach " + provider_label + ". Check your internet connection: " + str(error.reason))
         except (TimeoutError, socket.timeout):
-            raise RuntimeError(provider_label + " timed out after " + str(REQUEST_TIMEOUT_SECONDS) + " seconds. Try again or switch providers.")
+            raise RequestTimeoutError(provider_label + " timed out after " + str(timeout) + " seconds.")
         except json.JSONDecodeError:
             raise RuntimeError(provider_label + " returned unreadable JSON.")
 
-def request_gemini(body: dict[str, Any]) -> dict[str, Any]:
+def request_gemini(
+    body: dict[str, Any],
+    model: str | None = None,
+    timeout: int = GEMINI_REQUEST_TIMEOUT_SECONDS,
+) -> dict[str, Any]:
     key = read_key("gemini")
     if not key:
         raise RuntimeError("Add your Google AI Studio (Gemini) API key in A16EEN AI settings first.")
-    url = API_ROOT + urllib.parse.quote(MODEL, safe="-._") + ":generateContent"
+    model_id = str(model or MODEL)
+    url = API_ROOT + urllib.parse.quote(model_id, safe="-._") + ":generateContent"
     request = urllib.request.Request(url, data=json.dumps(body).encode("utf-8"), headers={
         "Content-Type": "application/json", "x-goog-api-key": key, "User-Agent": "A16EEN-AI/1.0",
     }, method="POST")
-    parsed = send_json_request(request, "Gemini")
+    parsed = send_json_request(request, "Gemini", timeout=timeout)
     candidates = parsed.get("candidates") or []
     if not candidates or not isinstance(candidates[0].get("content"), dict):
         feedback = parsed.get("promptFeedback", {})
         reason = feedback.get("blockReason")
         raise RuntimeError("Gemini returned no response" + (": " + str(reason) if reason else "."))
     return candidates[0]["content"]
+
+
+def request_gemini_with_fallback(body: dict[str, Any]) -> tuple[dict[str, Any], str]:
+    try:
+        return request_gemini(body), MODEL
+    except RequestTimeoutError as primary_error:
+        if not GEMINI_FALLBACK_MODEL or GEMINI_FALLBACK_MODEL == MODEL:
+            raise RuntimeError(
+                "Gemini did not respond within " + str(GEMINI_REQUEST_TIMEOUT_SECONDS)
+                + " seconds. Try again or switch to Groq. (" + str(primary_error) + ")"
+            )
+        try:
+            content = request_gemini(
+                body,
+                model=GEMINI_FALLBACK_MODEL,
+                timeout=GEMINI_FALLBACK_TIMEOUT_SECONDS,
+            )
+            return content, GEMINI_FALLBACK_MODEL
+        except RequestTimeoutError as fallback_error:
+            raise RuntimeError(
+                "Gemini timed out on both the fast and fallback models. Try Groq, then check "
+                "your Google AI Studio quota and connection. (" + str(fallback_error) + ")"
+            )
 
 def lower_openai_schema(value: Any) -> Any:
     if isinstance(value, dict):
@@ -445,9 +486,9 @@ def ask_gemini(payload: dict[str, Any]) -> dict[str, Any]:
         "contents": cleaned,
         "tools": TOOLS,
         "toolConfig": {"functionCallingConfig": {"mode": "AUTO"}},
-        "generationConfig": {"temperature": 0.2, "maxOutputTokens": 1800, "thinkingConfig": {"thinkingLevel": "LOW"}},
+        "generationConfig": {"temperature": 0.2, "maxOutputTokens": 1200, "thinkingConfig": {"thinkingLevel": "LOW"}},
     }
-    content = request_gemini(body)
+    content, model_used = request_gemini_with_fallback(body)
     parts = content.get("parts") or []
     calls = []
     text_parts = []
@@ -464,7 +505,7 @@ def ask_gemini(payload: dict[str, Any]) -> dict[str, Any]:
     return {
         "ok": True,
         "provider": "gemini",
-        "model": MODEL,
+        "model": model_used,
         "mode": mode,
         "content": content,
         "calls": calls,
@@ -874,12 +915,12 @@ def run_test(provider: str | None = None) -> dict[str, Any]:
     if selected not in PROVIDERS:
         raise ValueError("Choose Google AI Studio (Gemini) or Groq.")
     if selected == "gemini":
-        content = request_gemini({
+        content, model = request_gemini_with_fallback({
             "contents": [{"role": "user", "parts": [{"text": "Reply with exactly: A16EEN connected"}]}],
             "generationConfig": {"temperature": 0, "maxOutputTokens": 24},
         })
         text_parts = [part.get("text", "") for part in content.get("parts", []) if isinstance(part, dict)]
-        answer, model, label = " ".join(text_parts).strip(), MODEL, "Gemini"
+        answer, label = " ".join(text_parts).strip(), "Gemini"
     else:
         message = request_groq_completion([
             {"role": "system", "content": "Reply with exactly: A16EEN connected"},
@@ -1123,8 +1164,8 @@ def main() -> None:
             emit(delete_saved_conversation(args[2]))
         if args == ["tools"]:
             emit({"ok": True, "actions": [{"name": item["name"], "requires_confirmation": item["name"] in CONFIRM_ACTIONS} for item in FUNCTIONS]})
-        if args == ["test"]:
-            emit(run_test())
+        if args == ["test"] or (len(args) == 2 and args[0] == "test"):
+            emit(run_test(args[1] if len(args) == 2 else None))
         if args == ["ask"]:
             payload = read_json_stdin()
             payload.setdefault("provider", get_provider())

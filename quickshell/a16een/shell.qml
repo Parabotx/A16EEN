@@ -1728,7 +1728,14 @@ ShellRoot {
 
             onLockRequested: root.requestLockScreen()
             onUtilitiesRequested: root.handleUtilitiesRequest(mode)
-            onAiRequested: root.openToolsPage("ai")
+            onAiRequested: {
+                if (root.toolsPanelOpen && root.toolsPanelPage === "ai") {
+                    root.toolsPanelOpen = false
+                    root.toolsPanelPage = "tools"
+                } else {
+                    root.openToolsPage("ai")
+                }
+            }
             onGamingRequested: root.openGamingPanel()
         }
     }

@@ -10,6 +10,7 @@ Item {
 
     property string containerId: "utilities"
     property bool isolateAppearance: false
+    property bool appearanceReady: false
     // Opt-in for a popup that must follow its own navbar container color.
     property bool useContainerColor: false
     property var appearanceSettings: ({})
@@ -40,6 +41,7 @@ Item {
         } catch (error) {
             root.appearanceSettings = ({})
         }
+        root.appearanceReady = true
     }
     function validColor(value) {
         return /^#[0-9A-Fa-f]{6}$/.test(String(value || ""))
@@ -82,6 +84,10 @@ Item {
     // The global switch enables every popup. Otherwise each section can opt in
     // independently; the speed capsule keeps its existing per-container behavior.
     property color backgroundColor: {
+        // Never seed the AI card with another popup's previous color while its
+        // independent appearance scope is still loading.
+        if (root.isolateAppearance && !root.appearanceReady)
+            return "#FFFFFF"
         // Gaming follows its own selected container color, never the global
         // color or a stale/default system surface.
         if (root.useContainerColor) {
@@ -157,6 +163,13 @@ Item {
     Behavior on actionTextColor { ColorAnimation { duration: 130; easing.type: Easing.OutCubic } }
     Behavior on iconColor { ColorAnimation { duration: 130; easing.type: Easing.OutCubic } }
     Behavior on borderColor { ColorAnimation { duration: 130; easing.type: Easing.OutCubic } }
+
+    Timer {
+        interval: 450
+        repeat: false
+        running: !root.appearanceReady
+        onTriggered: root.appearanceReady = true
+    }
 
     FileView {
         id: appearanceFile
