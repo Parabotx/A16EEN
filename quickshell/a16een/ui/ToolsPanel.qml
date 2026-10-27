@@ -25,6 +25,7 @@ PanelWindow {
     required property string navbarPosition
     property bool opened: false
     property string page: "tools"
+    property string requestedAppId: ""
     property var stashedApps: []
     property bool dataMeterEnabled: false
     property var dataMeterSnapshot: ({})
@@ -469,6 +470,11 @@ PanelWindow {
         onTriggered: root.refreshStash()
     }
 
+    onRequestedAppIdChanged: {
+        if (quickToolsFeaturesLoader.item)
+            quickToolsFeaturesLoader.item.requestedAppId = root.requestedAppId
+    }
+
     onOpenedChanged: {
         if (!root.opened) {
             monitorProcess.running = false
@@ -486,6 +492,7 @@ PanelWindow {
         if (quickToolsFeaturesLoader.item) {
             quickToolsFeaturesLoader.item.page = root.page
             quickToolsFeaturesLoader.item.palette = root.activePopupCardStyle
+            quickToolsFeaturesLoader.item.requestedAppId = root.requestedAppId
         }
         if (root.page === "calculator") {
             root.expression = "0"
@@ -936,12 +943,14 @@ PanelWindow {
                         if (item) {
                             item.page = root.page
                             item.palette = root.activePopupCardStyle
+                            item.requestedAppId = root.requestedAppId
                         }
                     }
                     onActiveChanged: {
                         if (active && item) {
                             item.page = root.page
                             item.palette = root.activePopupCardStyle
+                            item.requestedAppId = root.requestedAppId
                         }
                     }
                 }
