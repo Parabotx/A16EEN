@@ -25,7 +25,6 @@ PanelWindow {
     required property string navbarPosition
     property bool opened: false
     property string page: "tools"
-    property string requestedAppId: ""
     property var stashedApps: []
     property bool dataMeterEnabled: false
     property var dataMeterSnapshot: ({})
@@ -86,16 +85,14 @@ PanelWindow {
         Math.round((root.screenHeight - (root.navbarDockHeight + root.navbarShortcutStackHeight)) / 2) + 2
     )
     readonly property int popupWidth: root.page === "ai" ? Math.min(430, root.screenWidth - 16)
-        : (["updates", "app-locker", "sessions"].includes(root.page) ? Math.min(430, root.screenWidth - 16)
-        : ((root.page === "data-meter" || root.page === "screen-time") ? 360 : 322))
+        : ((root.page === "data-meter" || root.page === "screen-time") ? 360 : 322)
     readonly property int popupHeight: root.page === "ai" ? 590
         : (root.page === "tools" ? 460
-        : (["updates", "app-locker", "sessions"].includes(root.page) ? 510
         : (root.page === "stash" ? 388
         : (root.page === "monitor" ? 310
         : (root.page === "calculator" ? 420
         : (root.page === "screen-time" ? 420
-        : (root.page === "data-meter" ? 390 : 316)))))))
+        : (root.page === "data-meter" ? 390 : 316))))))
     property var monitorStats: null
     property string monitorError: ""
     readonly property var monitorMetrics: [
@@ -471,10 +468,6 @@ PanelWindow {
     }
 
     onRequestedAppIdChanged: {
-        if (quickToolsFeaturesLoader.item)
-            quickToolsFeaturesLoader.item.requestedAppId = root.requestedAppId
-    }
-
     onOpenedChanged: {
         if (!root.opened) {
             monitorProcess.running = false
@@ -489,11 +482,6 @@ PanelWindow {
     onPageChanged: {
         if (aiAssistantLoader.item)
             aiAssistantLoader.item.palette = root.activePopupCardStyle
-        if (quickToolsFeaturesLoader.item) {
-            quickToolsFeaturesLoader.item.page = root.page
-            quickToolsFeaturesLoader.item.palette = root.activePopupCardStyle
-            quickToolsFeaturesLoader.item.requestedAppId = root.requestedAppId
-        }
         if (root.page === "calculator") {
             root.expression = "0"
             root.calculatorError = ""
@@ -929,36 +917,6 @@ PanelWindow {
                                 }
                             }
                         }
-                    }
-                }
-
-                Loader {
-                    id: quickToolsFeaturesLoader
-                    active: ["updates", "app-locker", "sessions"].includes(root.page)
-                    visible: active
-                    width: parent.width
-                    height: visible ? Math.max(220, Math.min(424, root.screenHeight - 120)) : 0
-                    source: Qt.resolvedUrl("QuickToolsPage.qml")
-                    onLoaded: {
-                        if (item) {
-                            item.page = root.page
-                            item.palette = root.activePopupCardStyle
-                            item.requestedAppId = root.requestedAppId
-                        }
-                    }
-                    onActiveChanged: {
-                        if (active && item) {
-                            item.page = root.page
-                            item.palette = root.activePopupCardStyle
-                            item.requestedAppId = root.requestedAppId
-                        }
-                    }
-                }
-
-                Connections {
-                    target: quickToolsFeaturesLoader.item
-                    function onRequestedAppConsumed() {
-                        root.requestedAppId = ""
                     }
                 }
 
