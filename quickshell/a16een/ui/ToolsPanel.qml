@@ -937,7 +937,7 @@ PanelWindow {
                     active: ["updates", "app-locker", "sessions"].includes(root.page)
                     visible: active
                     width: parent.width
-                    height: visible ? Math.max(360, Math.min(424, root.screenHeight - 120)) : 0
+                    height: visible ? Math.max(220, Math.min(424, root.screenHeight - 120)) : 0
                     source: Qt.resolvedUrl("QuickToolsPage.qml")
                     onLoaded: {
                         if (item) {
@@ -952,6 +952,13 @@ PanelWindow {
                             item.palette = root.activePopupCardStyle
                             item.requestedAppId = root.requestedAppId
                         }
+                    }
+                }
+
+                Connections {
+                    target: quickToolsFeaturesLoader.item
+                    function onRequestedAppConsumed() {
+                        root.requestedAppId = ""
                     }
                 }
 
