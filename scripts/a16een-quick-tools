@@ -829,7 +829,6 @@ def snapshot_command(args: list[str]) -> int:
                     }
                 })
                 try:
-                    run_command(["niri", "msg", "raw-request"], timeout=3)
                     subprocess.run(
                         ["niri", "msg", "raw-request"],
                         input=request + "\n",
