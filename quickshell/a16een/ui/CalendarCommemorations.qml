@@ -28,7 +28,7 @@ QtObject {
         "16": ({
             title: "ኪዳነ ምሕረት",
             category: "ቅድስት ማርያም · የምሕረት ቃል ኪዳን",
-            image: "kidane-mehret.webp",
+            imagePool: "kidane-mehret", image: "kidane-mehret.webp",
             description: "ይህ ዕለት ቅድስት ማርያምን ከምሕረት እና ከምልጃ ጋር በተያያዘ የሚያስታውስ ወርሃዊ መታሰቢያ ነው።",
             verse: "ምሕረቱም ለሚፈሩት ከትውልድ እስከ ትውልድ ይኖራል።",
             reference: "ሉቃስ 1፥50",
@@ -45,7 +45,7 @@ QtObject {
         "21": ({
             title: "ቅድስት ማርያም",
             category: "የእመቤታችን ወርሃዊ መታሰቢያ",
-            imagePool: "maryam", image: "saint-mary.jpg",
+            imagePool: "saint-mary", image: "saint-mary.webp",
             description: "የወሩ 21ኛው ቀን በኢትዮጵያ ኦርቶዶክስ ትውፊት ለቅድስት ማርያም የተለየ ወርሃዊ መታሰቢያ ነው።",
             verse: "ከዛሬ ጀምሮ ትውልድ ሁሉ ምስጉን ይሉኛል።",
             reference: "ሉቃስ 1፥48",
@@ -148,7 +148,7 @@ QtObject {
         },
         {
             id: "kidane-mihret-yekatit", calendar: "ethiopian", month: 6, day: 16,
-            image: "kidane-mehret.webp",
+            imagePool: "kidane-mehret", image: "kidane-mehret.webp",
             title: "የካቲት ኪዳነ ምሕረት", category: "የቅድስት ማርያም ዓመታዊ መታሰቢያ",
             description: "የካቲት 16 ከኪዳነ ምሕረት ዋና መታሰቢያዎች አንዱ ነው።",
             verse: "ምሕረቱም ለሚፈሩት ከትውልድ እስከ ትውልድ ይኖራል።",
@@ -173,7 +173,7 @@ QtObject {
         },
         {
             id: "lideta-ginbot", calendar: "ethiopian", month: 9, day: 1,
-            imagePool: "maryam", image: "saint-mary.jpg",
+            imagePool: "saint-mary", image: "saint-mary.webp",
             title: "ልደታ ለማርያም", category: "የቅድስት ማርያም ዓመታዊ በዓል",
             description: "ግንቦት 1 ልደታ ለማርያም የሚታሰብበት ሌላው ዓመታዊ ቀን ነው።",
             verse: "ከዛሬ ጀምሮ ትውልድ ሁሉ ምስጉን ይሉኛል።",
@@ -191,7 +191,7 @@ QtObject {
         },
         {
             id: "filsata", calendar: "ethiopian", month: 12, day: 16,
-            imagePool: "maryam", image: "saint-mary.jpg",
+            imagePool: "saint-mary", image: "saint-mary.webp",
             title: "ፍልሰታ ለማርያም", category: "የቅድስት ማርያም መታሰቢያ",
             description: "ከነሐሴ 1 እስከ 16 የሚከበረው የፍልሰታ ጾም በነሐሴ 16 ይደርሳል።",
             verse: "ከዛሬ ጀምሮ ትውልድ ሁሉ ምስጉን ይሉኛል።",
@@ -333,16 +333,30 @@ QtObject {
         return ""
     }
 
+    function imagePoolForDay(day) {
+        if (day === 16)
+            return "kidane-mehret"
+        if (day === 21)
+            return "saint-mary"
+        return ""
+    }
+
     function forDay(day) {
         const commemoration = root.monthlyCommemorations[String(day)] || root.fallbackCommemoration
-        return Object.assign({}, commemoration, { image: commemoration.image || root.imageForDay(day) })
+        return Object.assign({}, commemoration, {
+            image: commemoration.image || root.imageForDay(day),
+            imagePool: commemoration.imagePool || root.imagePoolForDay(day)
+        })
     }
 
     function forDate(month, day) {
         const annual = root.annualFeasts.find(event =>
             event.calendar === "ethiopian" && event.month === month && event.day === day)
         if (annual)
-            return Object.assign({}, annual, { image: annual.image || root.imageForDay(day) })
+            return Object.assign({}, annual, {
+                image: annual.image || root.imageForDay(day),
+                imagePool: annual.imagePool || root.imagePoolForDay(day)
+            })
         return root.forDay(day)
     }
 
