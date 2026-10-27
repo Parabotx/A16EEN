@@ -37,41 +37,83 @@ PanelWindow {
     ]
     readonly property var dayInfo: root.selectedEvent || calendarData.forDate(root.selectedMonth, root.selectedDay)
     property bool surfaceVisible: false
-    property string selectedMaryImage: "saint-mary.jpg"
+    property string selectedSaintMaryImage: ""
+    property string selectedKidaneMehretImage: ""
     readonly property string calendarAssetDirectory:
         Quickshell.env("HOME") + "/.config/a16een/quickshell/a16een/assets/calendar"
 
-    function chooseRandomMaryImage(output) {
+    function chooseRandomPortrait(pool, output) {
         const files = String(output || "").split("\n")
             .map(name => name.trim())
-            .filter(name => /^saint-mary[^/]*\.(jpg|jpeg)$/i.test(name))
+            .filter(name => /\.(jpg|jpeg|png|webp|avif)$/i.test(name))
+        const current = pool === "saint-mary"
+            ? root.selectedSaintMaryImage : root.selectedKidaneMehretImage
+
         if (files.length === 0) {
-            root.selectedMaryImage = "saint-mary.jpg"
+            if (pool === "saint-mary")
+                root.selectedSaintMaryImage = ""
+            else if (pool === "kidane-mehret")
+                root.selectedKidaneMehretImage = ""
             return
         }
 
         let nextIndex = Math.floor(Math.random() * files.length)
-        if (files.length > 1 && files[nextIndex] === root.selectedMaryImage)
+        if (files.length > 1 && files[nextIndex] === current)
             nextIndex = (nextIndex + 1 + Math.floor(Math.random() * (files.length - 1))) % files.length
-        root.selectedMaryImage = files[nextIndex]
+
+        if (pool === "saint-mary")
+            root.selectedSaintMaryImage = files[nextIndex]
+        else if (pool === "kidane-mehret")
+            root.selectedKidaneMehretImage = files[nextIndex]
     }
 
-    function refreshMaryPortrait() {
-        if (root.dayInfo && root.dayInfo.imagePool === "maryam" && !maryImageScanner.running)
+    function refreshCurrentPortrait() {
+        const pool = root.dayInfo ? String(root.dayInfo.imagePool || "") : ""
+        if (pool === "saint-mary" && !maryImageScanner.running)
             maryImageScanner.running = true
+        else if (pool === "kidane-mehret" && !kidaneMehretImageScanner.running)
+            kidaneMehretImageScanner.running = true
+    }
+
+    function portraitSource() {
+        const pool = root.dayInfo ? String(root.dayInfo.imagePool || "") : ""
+        if (pool === "saint-mary" && root.selectedSaintMaryImage.length > 0)
+            return Qt.resolvedUrl("../assets/calendar/saint-mary/" + root.selectedSaintMaryImage)
+        if (pool === "kidane-mehret" && root.selectedKidaneMehretImage.length > 0)
+            return Qt.resolvedUrl("../assets/calendar/kidane-mehret/" + root.selectedKidaneMehretImage)
+        return root.dayInfo && root.dayInfo.image
+            ? Qt.resolvedUrl("../assets/calendar/" + root.dayInfo.image) : ""
     }
 
     Process {
         id: maryImageScanner
         command: [
-            "find", root.calendarAssetDirectory,
-            "-maxdepth", "1", "-type", "f",
-            "(", "-iname", "saint-mary*.jpg", "-o", "-iname", "saint-mary*.jpeg", ")",
-            "-printf", "%f\n"
+            "find", root.calendarAssetDirectory + "/saint-mary",
+            "-mindepth", "1", "-maxdepth", "1", "-type", "f",
+            "(", "-iname", "*.jpg", "-o", "-iname", "*.jpeg",
+            "-o", "-iname", "*.png", "-o", "-iname", "*.webp",
+            "-o", "-iname", "*.avif", ")",
+            "-printf", "%f\\n"
         ]
         running: false
         stdout: StdioCollector {
-            onStreamFinished: root.chooseRandomMaryImage(text)
+            onStreamFinished: root.chooseRandomPortrait("saint-mary", text)
+        }
+    }
+
+    Process {
+        id: kidaneMehretImageScanner
+        command: [
+            "find", root.calendarAssetDirectory + "/kidane-mehret",
+            "-mindepth", "1", "-maxdepth", "1", "-type", "f",
+            "(", "-iname", "*.jpg", "-o", "-iname", "*.jpeg",
+            "-o", "-iname", "*.png", "-o", "-iname", "*.webp",
+            "-o", "-iname", "*.avif", ")",
+            "-printf", "%f\\n"
+        ]
+        running: false
+        stdout: StdioCollector {
+            onStreamFinished: root.chooseRandomPortrait("kidane-mehret", text)
         }
     }
 
@@ -109,7 +151,7 @@ PanelWindow {
         if (root.opened) {
             hideTimer.stop()
             root.surfaceVisible = true
-            root.refreshMaryPortrait()
+            root.refreshCurrentPortrait()
         } else {
             hideTimer.restart()
         }
@@ -117,12 +159,12 @@ PanelWindow {
 
     onSelectedDayChanged: {
         if (root.opened)
-            root.refreshMaryPortrait()
+            root.refreshCurrentPortrait()
     }
 
     onSelectedEventChanged: {
         if (root.opened)
-            root.refreshMaryPortrait()
+            root.refreshCurrentPortrait()
     }
 
     onDockVisibleChanged: {
@@ -290,11 +332,7 @@ PanelWindow {
                         id: portraitImage
                         anchors.fill: parent
                         anchors.margins: 1
-                        source: portraitFrame.visible
-                            ? Qt.resolvedUrl("../assets/calendar/" + (
-                                root.dayInfo.imagePool === "maryam"
-                                    ? root.selectedMaryImage : root.dayInfo.image))
-                            : ""
+                        source: portraitFrame.visible ? root.portraitSource() : ""
                         fillMode: Image.PreserveAspectCrop
                         asynchronous: true
                         cache: true
