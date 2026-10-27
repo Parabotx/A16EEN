@@ -267,6 +267,8 @@ PanelWindow {
     readonly property int shortcutTileWidth: 26
     readonly property int shortcutTileHeight: 26
     readonly property int shortcutTileTopInset: 2
+    // Keep Gaming + AI visibly separated from the workspace rail.
+    readonly property int shortcutDockGap: 10
     readonly property int shortcutCount:
         (root.aiContainerVisible ? 1 : 0) + (root.gamingContainerVisible ? 1 : 0)
     // Keep the shortcuts in one shared surface. Vertical navbars stack Gaming
@@ -278,7 +280,7 @@ PanelWindow {
         ? root.shortcutTileHeight
         : root.shortcutCount * root.shortcutTileHeight
     readonly property int shortcutStackHeight: root.shortcutCount > 0
-        ? root.shortcutTileTopInset + root.shortcutSurfaceHeight
+        ? root.shortcutTileTopInset + root.shortcutSurfaceHeight + root.shortcutDockGap
         : 0
     readonly property string shortcutSurfaceStyleId:
         root.aiContainerVisible ? "ai" : "gaming"
