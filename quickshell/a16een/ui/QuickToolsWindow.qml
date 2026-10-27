@@ -141,7 +141,7 @@ PanelWindow {
                                 anchors.verticalCenter: parent.verticalCenter
                                 width: 15
                                 height: 15
-                                iconName: "toolbox.svg"
+                                iconName: "wrench.svg"
                                 iconColor: palette.iconColor
                             }
                             Text {
@@ -222,8 +222,10 @@ PanelWindow {
 
                 Loader {
                     id: featureLoader
+                    active: root.opened
+                    visible: root.opened
                     width: parent.width
-                    height: parent.height - 71
+                    height: active ? parent.height - 71 : 0
                     source: Qt.resolvedUrl("QuickToolsPage.qml")
                     onLoaded: {
                         if (item) {
