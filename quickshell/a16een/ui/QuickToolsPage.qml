@@ -154,7 +154,7 @@ Item {
         } else if (root.page === "app-locker") {
             root.refreshLocker()
         } else if (root.page === "sessions") {
-            root.runSessionAction(["auto"])
+            root.refreshSessions()
         }
     }
 
@@ -164,7 +164,7 @@ Item {
         else if (root.page === "app-locker")
             Qt.callLater(() => root.refreshLocker())
         else if (root.page === "sessions")
-            Qt.callLater(() => root.runSessionAction(["auto"]))
+            Qt.callLater(() => root.refreshSessions())
     }
 
     Process {
