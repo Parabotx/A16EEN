@@ -223,20 +223,27 @@ PanelWindow {
                 Loader {
                     id: featureLoader
                     width: parent.width
-                    height: parent.height - 57
+                    height: parent.height - 71
                     source: Qt.resolvedUrl("QuickToolsPage.qml")
                     onLoaded: {
                         if (item) {
                             item.page = root.page
                             item.palette = palette
                             item.requestedAppId = root.requestedAppId
+                            if (root.page === "updates")
+                                Qt.callLater(() => item.refreshUpdates(false))
+                            else if (root.page === "app-locker")
+                                Qt.callLater(() => item.refreshLocker())
+                            else if (root.page === "sessions")
+                                Qt.callLater(() => item.refreshSessions())
                         }
                     }
-                    Connections {
-                        target: featureLoader.item
-                        function onRequestedAppConsumed() {
-                            root.requestedAppId = ""
-                        }
+                }
+
+                Connections {
+                    target: featureLoader.item
+                    function onRequestedAppConsumed() {
+                        root.requestedAppId = ""
                     }
                 }
             }
