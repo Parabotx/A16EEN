@@ -4,6 +4,7 @@ import Quickshell.Wayland
 import qs.ui
 import "TicTacToe.js" as TicTacToe
 import "DotsAndBoxes.js" as DotsAndBoxes
+import "ConnectFour.js" as ConnectFour
 
 PanelWindow {
     id: root
@@ -37,6 +38,10 @@ PanelWindow {
     property string dotsStatusText: "YOUR TURN"
     property string dotsTurn: "X"
     property bool dotsGameOver: false
+    property int dotsPerSide: 3
+
+    property var connectFourBoard: ConnectFour.emptyBoard()
+    property string connectFourStatusText: "YOUR TURN"
 
     signal closeRequested()
 
@@ -44,10 +49,14 @@ PanelWindow {
         root.navbarPosition === "top" || root.navbarPosition === "bottom"
     readonly property real screenWidth: root.modelData ? root.modelData.width : 1920
     readonly property real screenHeight: root.modelData ? root.modelData.height : 1080
-    readonly property int popupWidth: 310
+    readonly property int popupWidth: root.currentView === "dots"
+        ? (root.dotsPerSide >= 5 ? 430 : 350)
+        : (root.currentView === "connect4" ? 390
+        : (root.currentView === "list" ? 350 : (root.currentView === "result" ? 350 : 310)))
     readonly property int popupHeight: root.currentView === "xo" ? 372
-        : (root.currentView === "dots" ? 420
-        : (root.currentView === "result" ? 350 : 166))
+        : (root.currentView === "dots" ? 430 + (root.dotsPerSide - 3) * 48
+        : (root.currentView === "connect4" ? 500
+        : (root.currentView === "result" ? 350 : (root.currentView === "list" ? 282 : 166))))
     readonly property real popupX: root.horizontalNavbar
         ? root.screenWidth - root.popupWidth - 102
         : (root.navbarPosition === "left"
@@ -106,9 +115,9 @@ PanelWindow {
         root.currentView = "dots"
         root.resultGame = "dots"
         root.resultEntered = false
-        root.dotsHorizontal = DotsAndBoxes.emptyHorizontal()
-        root.dotsVertical = DotsAndBoxes.emptyVertical()
-        root.dotsOwners = DotsAndBoxes.emptyOwners()
+        root.dotsHorizontal = DotsAndBoxes.emptyHorizontal(root.dotsPerSide)
+        root.dotsVertical = DotsAndBoxes.emptyVertical(root.dotsPerSide)
+        root.dotsOwners = DotsAndBoxes.emptyOwners(root.dotsPerSide)
         root.dotsScores = [0, 0]
         root.dotsTurn = "X"
         root.dotsStatusText = "YOUR TURN"
@@ -117,9 +126,32 @@ PanelWindow {
         root.botThinking = false
     }
 
+    function startConnectFour() {
+        botMoveTimer.stop()
+        root.currentView = "connect4"
+        root.resultGame = "connect4"
+        root.resultEntered = false
+        root.connectFourBoard = ConnectFour.emptyBoard()
+        root.connectFourStatusText = "YOUR TURN"
+        root.gameOver = false
+        root.dotsGameOver = false
+        root.botThinking = false
+    }
+
+    function setDotsPerSide(value) {
+        var nextSize = Math.max(3, Math.min(6, Math.floor(Number(value) || 3)))
+        if (nextSize === root.dotsPerSide)
+            return
+        root.dotsPerSide = nextSize
+        // A size change starts a clean round so no old edge indexes survive.
+        root.startDotsGame()
+    }
+
     function restartCurrentGame() {
         if (root.currentView === "dots" || root.resultGame === "dots")
             root.startDotsGame()
+        else if (root.currentView === "connect4" || root.resultGame === "connect4")
+            root.startConnectFour()
         else
             root.startGame()
     }
@@ -168,10 +200,10 @@ PanelWindow {
             return true
         }
         if (result === "O") {
-            root.statusText = "BOT WINS"
+            root.statusText = "I WON"
             root.gameOver = true
             root.botThinking = false
-            root.showResult("xo", "BOT WINS", "The bot found its opening this time.", scoreText)
+            root.showResult("xo", "I WON", "I found my opening this time. Rematch?", scoreText)
             return true
         }
         if (TicTacToe.isFull(root.board)) {
@@ -197,7 +229,7 @@ PanelWindow {
             return
 
         root.botThinking = true
-        root.statusText = "BOT THINKING"
+        root.statusText = "I AM THINKING..."
         botMoveTimer.restart()
     }
 
@@ -231,9 +263,9 @@ PanelWindow {
                 resultTitle = "YOU WIN"
                 resultSubtitle = "You claimed more boxes. What a finish!"
             } else if (result.scores[1] > result.scores[0]) {
-                root.dotsStatusText = "BOT WINS"
-                resultTitle = "BOT WINS"
-                resultSubtitle = "The bot edged ahead this round."
+                root.dotsStatusText = "I WON"
+                resultTitle = "I WON"
+                resultSubtitle = "I edged ahead this round. Ready to try again?"
             } else {
                 root.dotsStatusText = "DRAW"
             }
@@ -241,14 +273,14 @@ PanelWindow {
                 "dots",
                 resultTitle,
                 resultSubtitle,
-                "YOU  " + result.scores[0] + "     ·     BOT  " + result.scores[1] + " BOXES"
+                "YOU  " + result.scores[0] + "     ·     I  " + result.scores[1] + " BOXES"
             )
             return
         }
 
         if (result.turn === "O") {
             root.botThinking = true
-            root.dotsStatusText = "BOT THINKING"
+            root.dotsStatusText = "I AM THINKING..."
             botMoveTimer.restart()
         } else {
             root.botThinking = false
@@ -263,6 +295,49 @@ PanelWindow {
             || root.dotsTurn !== "X")
             return
         root.applyDotsMove(orientation, index, "X")
+    }
+
+    function finishConnectFourIfNeeded() {
+        var winner = ConnectFour.winner(root.connectFourBoard)
+        if (winner === "X") {
+            root.gameOver = true
+            root.botThinking = false
+            root.connectFourStatusText = "YOU WIN"
+            root.showResult("connect4", "YOU WIN",
+                "Four in a row. You outplayed me!", "CONNECT FOUR · YOU WIN")
+            return true
+        }
+        if (winner === "O") {
+            root.gameOver = true
+            root.botThinking = false
+            root.connectFourStatusText = "I WON"
+            root.showResult("connect4", "I WON",
+                "I spotted the winning line first. Rematch?", "CONNECT FOUR · FOUR IN A ROW")
+            return true
+        }
+        if (ConnectFour.isFull(root.connectFourBoard)) {
+            root.gameOver = true
+            root.botThinking = false
+            root.connectFourStatusText = "DRAW"
+            root.showResult("connect4", "IT'S A DRAW",
+                "No room left. Let's see who wins the rematch.", "CONNECT FOUR · DRAW")
+            return true
+        }
+        return false
+    }
+
+    function playConnectFourColumn(column) {
+        if (root.currentView !== "connect4" || root.gameOver || root.botThinking)
+            return
+        var move = ConnectFour.drop(root.connectFourBoard, column, "X")
+        if (!move)
+            return
+        root.connectFourBoard = move.board
+        if (root.finishConnectFourIfNeeded())
+            return
+        root.botThinking = true
+        root.connectFourStatusText = "I AM THINKING..."
+        botMoveTimer.restart()
     }
 
     function playBotTurn() {
@@ -299,6 +374,22 @@ PanelWindow {
             if (!move)
                 return
             root.applyDotsMove(move.orientation, move.index, "O")
+            return
+        }
+
+        if (root.currentView === "connect4" && !root.gameOver) {
+            var column = ConnectFour.bestMove(root.connectFourBoard, "O", "X", 4)
+            if (column < 0) {
+                root.finishConnectFourIfNeeded()
+                return
+            }
+            var move4 = ConnectFour.drop(root.connectFourBoard, column, "O")
+            if (!move4)
+                return
+            root.connectFourBoard = move4.board
+            root.botThinking = false
+            if (!root.finishConnectFourIfNeeded())
+                root.connectFourStatusText = "YOUR TURN"
         }
     }
 
@@ -388,7 +479,8 @@ PanelWindow {
                         anchors.verticalCenter: parent.verticalCenter
                         text: root.currentView === "xo" ? "X & O"
                             : (root.currentView === "dots" ? "DOTS & BOXES"
-                            : (root.currentView === "result" ? "ROUND RESULT" : "GAMES"))
+                            : (root.currentView === "connect4" ? "CONNECT FOUR"
+                            : (root.currentView === "result" ? "ROUND RESULT" : "GAMES")))
                         color: popupCardStyle.textColor
                         font.pixelSize: 13
                         font.weight: Font.DemiBold
@@ -467,58 +559,63 @@ PanelWindow {
                             anchors.left: parent.left
                             anchors.right: parent.right
                             anchors.top: parent.top
-                            spacing: 5
+                            spacing: 8
 
                             Rectangle {
                                 width: parent.width
-                                height: 42
-                                radius: 12
-                                color: xoRowMouse.containsMouse ? popupCardStyle.hoverSurfaceColor : popupCardStyle.fieldColor
+                                height: 64
+                                radius: 13
+                                color: xoTileMouse.containsMouse ? popupCardStyle.hoverSurfaceColor : popupCardStyle.fieldColor
                                 border.width: 1
-                                border.color: xoRowMouse.containsMouse ? popupCardStyle.focusBorderColor : popupCardStyle.fieldBorderColor
+                                border.color: xoTileMouse.containsMouse ? popupCardStyle.focusBorderColor : popupCardStyle.fieldBorderColor
 
                                 Row {
                                     anchors.fill: parent
-                                    anchors.leftMargin: 10
-                                    anchors.rightMargin: 10
+                                    anchors.leftMargin: 12
+                                    anchors.rightMargin: 12
                                     spacing: 10
-
                                     Rectangle {
-                                        width: 30
-                                        height: 30
-                                        radius: 9
+                                        width: 40
+                                        height: 40
                                         anchors.verticalCenter: parent.verticalCenter
+                                        radius: 12
                                         color: popupCardStyle.subtleSurfaceColor
-
                                         NavbarIcon {
                                             anchors.centerIn: parent
-                                            width: 17
-                                            height: 17
+                                            width: 23
+                                            height: 23
                                             iconName: "gamepad-2.svg"
                                             iconColor: popupCardStyle.iconColor
                                         }
                                     }
-
-                                    Text {
+                                    Column {
                                         anchors.verticalCenter: parent.verticalCenter
-                                        text: "X & O"
-                                        color: popupCardStyle.textColor
-                                        font.pixelSize: 11
-                                        font.weight: Font.DemiBold
+                                        width: Math.max(0, parent.width - 40 - 20 - 22 - parent.spacing * 2)
+                                        spacing: 3
+                                        Text {
+                                            width: parent.width
+                                            text: "X & O"
+                                            color: popupCardStyle.textColor
+                                            font.pixelSize: 12
+                                            font.weight: Font.DemiBold
+                                        }
+                                        Text {
+                                            width: parent.width
+                                            text: "Classic strategy · play against me"
+                                            color: popupCardStyle.mutedTextColor
+                                            font.pixelSize: 8
+                                            elide: Text.ElideRight
+                                        }
                                     }
-
-                                    Item { width: Math.max(0, parent.width - 116); height: 1 }
-
                                     Text {
                                         anchors.verticalCenter: parent.verticalCenter
                                         text: "›"
                                         color: popupCardStyle.mutedTextColor
-                                        font.pixelSize: 22
+                                        font.pixelSize: 25
                                     }
                                 }
-
                                 MouseArea {
-                                    id: xoRowMouse
+                                    id: xoTileMouse
                                     anchors.fill: parent
                                     hoverEnabled: true
                                     cursorShape: Qt.PointingHandCursor
@@ -527,62 +624,98 @@ PanelWindow {
                                 Accessible.name: "X and O"
                             }
 
-                            Rectangle {
+                            Row {
                                 width: parent.width
-                                height: 42
-                                radius: 12
-                                color: dotsRowMouse.containsMouse ? popupCardStyle.hoverSurfaceColor : popupCardStyle.fieldColor
-                                border.width: 1
-                                border.color: dotsRowMouse.containsMouse ? popupCardStyle.focusBorderColor : popupCardStyle.fieldBorderColor
+                                spacing: 8
+                                height: 104
 
-                                Row {
-                                    anchors.fill: parent
-                                    anchors.leftMargin: 10
-                                    anchors.rightMargin: 10
-                                    spacing: 10
-
-                                    Rectangle {
-                                        width: 30
-                                        height: 30
-                                        radius: 9
-                                        anchors.verticalCenter: parent.verticalCenter
-                                        color: popupCardStyle.subtleSurfaceColor
-
-                                        NavbarIcon {
-                                            anchors.centerIn: parent
-                                            width: 17
-                                            height: 17
-                                            iconName: "lucide-grid-2x2.svg"
-                                            iconColor: popupCardStyle.iconColor
+                                Rectangle {
+                                    width: (parent.width - parent.spacing) / 2
+                                    height: parent.height
+                                    radius: 13
+                                    color: dotsTileMouse.containsMouse ? popupCardStyle.hoverSurfaceColor : popupCardStyle.fieldColor
+                                    border.width: 1
+                                    border.color: dotsTileMouse.containsMouse ? popupCardStyle.focusBorderColor : popupCardStyle.fieldBorderColor
+                                    Column {
+                                        anchors.fill: parent
+                                        anchors.margins: 9
+                                        spacing: 6
+                                        Rectangle {
+                                            width: 34
+                                            height: 34
+                                            radius: 10
+                                            color: popupCardStyle.subtleSurfaceColor
+                                            NavbarIcon {
+                                                anchors.centerIn: parent
+                                                width: 21
+                                                height: 21
+                                                iconName: "grid-2x2.svg"
+                                                iconColor: popupCardStyle.iconColor
+                                            }
+                                        }
+                                        Text {
+                                            width: parent.width
+                                            text: "Dots & Boxes"
+                                            color: popupCardStyle.textColor
+                                            font.pixelSize: 10
+                                            font.weight: Font.DemiBold
+                                            wrapMode: Text.WordWrap
+                                            maximumLineCount: 2
                                         }
                                     }
-
-                                    Text {
-                                        anchors.verticalCenter: parent.verticalCenter
-                                        text: "Dots & Boxes"
-                                        color: popupCardStyle.textColor
-                                        font.pixelSize: 11
-                                        font.weight: Font.DemiBold
+                                    MouseArea {
+                                        id: dotsTileMouse
+                                        anchors.fill: parent
+                                        hoverEnabled: true
+                                        cursorShape: Qt.PointingHandCursor
+                                        onClicked: root.startDotsGame()
                                     }
-
-                                    Item { width: Math.max(0, parent.width - 148); height: 1 }
-
-                                    Text {
-                                        anchors.verticalCenter: parent.verticalCenter
-                                        text: "›"
-                                        color: popupCardStyle.mutedTextColor
-                                        font.pixelSize: 22
-                                    }
+                                    Accessible.name: "Dots and Boxes"
                                 }
 
-                                MouseArea {
-                                    id: dotsRowMouse
-                                    anchors.fill: parent
-                                    hoverEnabled: true
-                                    cursorShape: Qt.PointingHandCursor
-                                    onClicked: root.startDotsGame()
+                                Rectangle {
+                                    width: (parent.width - parent.spacing) / 2
+                                    height: parent.height
+                                    radius: 13
+                                    color: connectFourTileMouse.containsMouse ? popupCardStyle.hoverSurfaceColor : popupCardStyle.fieldColor
+                                    border.width: 1
+                                    border.color: connectFourTileMouse.containsMouse ? popupCardStyle.focusBorderColor : popupCardStyle.fieldBorderColor
+                                    Column {
+                                        anchors.fill: parent
+                                        anchors.margins: 9
+                                        spacing: 6
+                                        Rectangle {
+                                            width: 34
+                                            height: 34
+                                            radius: 10
+                                            color: popupCardStyle.subtleSurfaceColor
+                                            NavbarIcon {
+                                                anchors.centerIn: parent
+                                                width: 21
+                                                height: 21
+                                                iconName: "circle-dot.svg"
+                                                iconColor: popupCardStyle.iconColor
+                                            }
+                                        }
+                                        Text {
+                                            width: parent.width
+                                            text: "Connect Four"
+                                            color: popupCardStyle.textColor
+                                            font.pixelSize: 10
+                                            font.weight: Font.DemiBold
+                                            wrapMode: Text.WordWrap
+                                            maximumLineCount: 2
+                                        }
+                                    }
+                                    MouseArea {
+                                        id: connectFourTileMouse
+                                        anchors.fill: parent
+                                        hoverEnabled: true
+                                        cursorShape: Qt.PointingHandCursor
+                                        onClicked: root.startConnectFour()
+                                    }
+                                    Accessible.name: "Connect Four"
                                 }
-                                Accessible.name: "Dots and Boxes"
                             }
                         }
                     }
@@ -732,7 +865,7 @@ PanelWindow {
                                     Text {
                                         anchors.fill: parent
                                         anchors.leftMargin: 8
-                                        text: "BOT   " + root.dotsScores[1]
+                                        text: "I   " + root.dotsScores[1]
                                         color: "#315A96"
                                         font.pixelSize: 10
                                         font.weight: Font.DemiBold
@@ -741,20 +874,107 @@ PanelWindow {
                                 }
                             }
 
+                            Row {
+                                width: parent.width
+                                height: 27
+                                spacing: 6
+
+                                Text {
+                                    width: Math.max(70, parent.width - 116)
+                                    anchors.verticalCenter: parent.verticalCenter
+                                    text: "DOTS PER SIDE"
+                                    color: popupCardStyle.mutedTextColor
+                                    font.pixelSize: 8
+                                    font.weight: Font.DemiBold
+                                    font.letterSpacing: 0.5
+                                }
+
+                                Rectangle {
+                                    width: 26
+                                    height: 26
+                                    radius: 8
+                                    color: root.dotsPerSide > 3
+                                        ? (dotsDecreaseMouse.containsMouse ? popupCardStyle.hoverSurfaceColor : popupCardStyle.subtleSurfaceColor)
+                                        : popupCardStyle.fieldColor
+                                    border.width: 1
+                                    border.color: popupCardStyle.fieldBorderColor
+                                    Text {
+                                        anchors.centerIn: parent
+                                        text: "−"
+                                        color: root.dotsPerSide > 3 ? popupCardStyle.textColor : popupCardStyle.mutedTextColor
+                                        font.pixelSize: 15
+                                    }
+                                    MouseArea {
+                                        id: dotsDecreaseMouse
+                                        anchors.fill: parent
+                                        enabled: root.dotsPerSide > 3 && !root.botThinking
+                                        hoverEnabled: true
+                                        cursorShape: enabled ? Qt.PointingHandCursor : Qt.ArrowCursor
+                                        onClicked: root.setDotsPerSide(root.dotsPerSide - 1)
+                                    }
+                                    Accessible.name: "Fewer dots"
+                                }
+
+                                Rectangle {
+                                    width: 46
+                                    height: 26
+                                    radius: 8
+                                    color: popupCardStyle.fieldColor
+                                    border.width: 1
+                                    border.color: popupCardStyle.fieldBorderColor
+                                    Text {
+                                        anchors.fill: parent
+                                        text: root.dotsPerSide + " × " + root.dotsPerSide
+                                        color: popupCardStyle.textColor
+                                        font.pixelSize: 9
+                                        font.weight: Font.DemiBold
+                                        horizontalAlignment: Text.AlignHCenter
+                                        verticalAlignment: Text.AlignVCenter
+                                    }
+                                }
+
+                                Rectangle {
+                                    width: 26
+                                    height: 26
+                                    radius: 8
+                                    color: root.dotsPerSide < 6
+                                        ? (dotsIncreaseMouse.containsMouse ? popupCardStyle.hoverSurfaceColor : popupCardStyle.subtleSurfaceColor)
+                                        : popupCardStyle.fieldColor
+                                    border.width: 1
+                                    border.color: popupCardStyle.fieldBorderColor
+                                    Text {
+                                        anchors.centerIn: parent
+                                        text: "+"
+                                        color: root.dotsPerSide < 6 ? popupCardStyle.textColor : popupCardStyle.mutedTextColor
+                                        font.pixelSize: 15
+                                    }
+                                    MouseArea {
+                                        id: dotsIncreaseMouse
+                                        anchors.fill: parent
+                                        enabled: root.dotsPerSide < 6 && !root.botThinking
+                                        hoverEnabled: true
+                                        cursorShape: enabled ? Qt.PointingHandCursor : Qt.ArrowCursor
+                                        onClicked: root.setDotsPerSide(root.dotsPerSide + 1)
+                                    }
+                                    Accessible.name: "More dots"
+                                }
+                            }
+
                             Item {
                                 id: dotsBoard
-                                readonly property real inset: 11
-                                readonly property real step: (width - inset * 2) / 2
-                                width: Math.min(parent.width, 230)
+                                readonly property real inset: 12
+                                readonly property real step: (width - inset * 2) / (root.dotsPerSide - 1)
+                                width: Math.min(parent.width, 112 + (root.dotsPerSide - 1) * 52)
                                 height: width
                                 anchors.horizontalCenter: parent.horizontalCenter
 
                                 Repeater {
-                                    model: 4
+                                    model: (root.dotsPerSide - 1) * (root.dotsPerSide - 1)
                                     delegate: Rectangle {
                                         required property int index
-                                        readonly property int rowIndex: Math.floor(index / 2)
-                                        readonly property int columnIndex: index % 2
+                                        readonly property int boxSide: root.dotsPerSide - 1
+                                        readonly property int rowIndex: Math.floor(index / boxSide)
+                                        readonly property int columnIndex: index % boxSide
                                         x: dotsBoard.inset + columnIndex * dotsBoard.step + 6
                                         y: dotsBoard.inset + rowIndex * dotsBoard.step + 6
                                         width: dotsBoard.step - 12
@@ -777,11 +997,12 @@ PanelWindow {
                                 }
 
                                 Repeater {
-                                    model: 6
+                                    model: root.dotsPerSide * (root.dotsPerSide - 1)
                                     delegate: Item {
                                         required property int index
-                                        readonly property int rowIndex: Math.floor(index / 2)
-                                        readonly property int columnIndex: index % 2
+                                        readonly property int boxSide: root.dotsPerSide - 1
+                                        readonly property int rowIndex: Math.floor(index / boxSide)
+                                        readonly property int columnIndex: index % boxSide
                                         x: dotsBoard.inset + columnIndex * dotsBoard.step + 5
                                         y: dotsBoard.inset + rowIndex * dotsBoard.step - 12
                                         width: dotsBoard.step - 10
@@ -812,11 +1033,11 @@ PanelWindow {
                                 }
 
                                 Repeater {
-                                    model: 6
+                                    model: root.dotsPerSide * (root.dotsPerSide - 1)
                                     delegate: Item {
                                         required property int index
-                                        readonly property int rowIndex: Math.floor(index / 3)
-                                        readonly property int columnIndex: index % 3
+                                        readonly property int rowIndex: Math.floor(index / root.dotsPerSide)
+                                        readonly property int columnIndex: index % root.dotsPerSide
                                         x: dotsBoard.inset + columnIndex * dotsBoard.step - 12
                                         y: dotsBoard.inset + rowIndex * dotsBoard.step + 5
                                         width: 24
@@ -847,11 +1068,11 @@ PanelWindow {
                                 }
 
                                 Repeater {
-                                    model: 9
+                                    model: root.dotsPerSide * root.dotsPerSide
                                     delegate: Rectangle {
                                         required property int index
-                                        readonly property int rowIndex: Math.floor(index / 3)
-                                        readonly property int columnIndex: index % 3
+                                        readonly property int rowIndex: Math.floor(index / root.dotsPerSide)
+                                        readonly property int columnIndex: index % root.dotsPerSide
                                         x: dotsBoard.inset + columnIndex * dotsBoard.step - width / 2
                                         y: dotsBoard.inset + rowIndex * dotsBoard.step - height / 2
                                         width: 10
@@ -866,6 +1087,107 @@ PanelWindow {
                             }
                         }
                     }
+                    Item {
+                        anchors.fill: parent
+                        visible: root.currentView === "connect4"
+
+                        Column {
+                            width: parent.width
+                            anchors.horizontalCenter: parent.horizontalCenter
+                            anchors.top: parent.top
+                            spacing: 8
+
+                            Row {
+                                width: parent.width
+                                height: 18
+                                spacing: 6
+                                Rectangle {
+                                    width: 6
+                                    height: 6
+                                    radius: 3
+                                    anchors.verticalCenter: parent.verticalCenter
+                                    color: root.gameOver
+                                        ? (root.connectFourStatusText === "YOU WIN" ? "#2C9665" : "#8993A1")
+                                        : (root.botThinking ? "#D6AD60" : "#3A9B74")
+                                }
+                                Text {
+                                    width: parent.width - 12
+                                    anchors.verticalCenter: parent.verticalCenter
+                                    text: root.connectFourStatusText
+                                    color: popupCardStyle.secondaryTextColor
+                                    font.pixelSize: 8
+                                    font.weight: Font.DemiBold
+                                    font.letterSpacing: 0.7
+                                    elide: Text.ElideRight
+                                }
+                            }
+
+                            Rectangle {
+                                id: connectFourBoardFrame
+                                width: Math.min(parent.width, 338)
+                                height: width * 6 / 7
+                                anchors.horizontalCenter: parent.horizontalCenter
+                                radius: 14
+                                color: "#284A77"
+                                border.width: 1
+                                border.color: "#1C3558"
+
+                                Grid {
+                                    id: connectFourGrid
+                                    anchors.fill: parent
+                                    anchors.margins: 8
+                                    columns: ConnectFour.COLUMNS
+                                    rows: ConnectFour.ROWS
+                                    rowSpacing: 4
+                                    columnSpacing: 4
+
+                                    Repeater {
+                                        model: ConnectFour.ROWS * ConnectFour.COLUMNS
+                                        delegate: Item {
+                                            required property int index
+                                            width: (connectFourGrid.width - connectFourGrid.columnSpacing * (ConnectFour.COLUMNS - 1))
+                                                / ConnectFour.COLUMNS
+                                            height: (connectFourGrid.height - connectFourGrid.rowSpacing * (ConnectFour.ROWS - 1))
+                                                / ConnectFour.ROWS
+
+                                            Rectangle {
+                                                anchors.centerIn: parent
+                                                width: Math.min(parent.width, parent.height) * 0.78
+                                                height: width
+                                                radius: width / 2
+                                                color: root.connectFourBoard[index] === "X" ? "#E4B654"
+                                                    : (root.connectFourBoard[index] === "O" ? "#72A0E3" : "#1C3558")
+                                                border.width: root.connectFourBoard[index] ? 1 : 0
+                                                border.color: root.connectFourBoard[index] === "X" ? "#F8D98D" : "#9DC1F6"
+                                                scale: root.connectFourBoard[index] ? 1 : 0.94
+                                                Behavior on color { ColorAnimation { duration: 120; easing.type: Easing.OutCubic } }
+                                                Behavior on scale { NumberAnimation { duration: 150; easing.type: Easing.OutBack } }
+                                            }
+
+                                            MouseArea {
+                                                anchors.fill: parent
+                                                enabled: !root.gameOver && !root.botThinking
+                                                    && root.connectFourBoard[index % ConnectFour.COLUMNS] === ""
+                                                cursorShape: enabled ? Qt.PointingHandCursor : Qt.ArrowCursor
+                                                onClicked: root.playConnectFourColumn(index % ConnectFour.COLUMNS)
+                                            }
+                                            Accessible.name: "Connect Four column " + ((index % ConnectFour.COLUMNS) + 1)
+                                        }
+                                    }
+                                }
+                            }
+
+                            Text {
+                                width: parent.width
+                                text: "YOU  ●   ·   I  ●     Tap any column to drop a token"
+                                color: popupCardStyle.mutedTextColor
+                                font.pixelSize: 8
+                                horizontalAlignment: Text.AlignHCenter
+                                wrapMode: Text.WordWrap
+                            }
+                        }
+                    }
+
                     Item {
                         id: resultStage
                         anchors.fill: parent
@@ -940,10 +1262,10 @@ PanelWindow {
                                     height: 68
                                     radius: 34
                                     color: root.resultTitle === "YOU WIN" ? "#DDF3E5"
-                                        : (root.resultTitle === "BOT WINS" ? "#F9E5E5" : "#E6EDF8")
+                                        : (root.resultTitle === "I WON" ? "#F9E5E5" : "#E6EDF8")
                                     border.width: 1
                                     border.color: root.resultTitle === "YOU WIN" ? "#A7D9B8"
-                                        : (root.resultTitle === "BOT WINS" ? "#E9B8B8" : "#C7D5EA")
+                                        : (root.resultTitle === "I WON" ? "#E9B8B8" : "#C7D5EA")
                                     scale: root.resultEntered ? 1 : 0.66
                                     rotation: root.resultEntered ? 0 : -12
                                     Behavior on scale {
@@ -955,9 +1277,9 @@ PanelWindow {
                                     Text {
                                         anchors.centerIn: parent
                                         text: root.resultTitle === "YOU WIN" ? "✦"
-                                            : (root.resultTitle === "BOT WINS" ? "↗" : "＝")
+                                            : (root.resultTitle === "I WON" ? "↗" : "＝")
                                         color: root.resultTitle === "YOU WIN" ? "#287A50"
-                                            : (root.resultTitle === "BOT WINS" ? "#B44F54" : "#4A6592")
+                                            : (root.resultTitle === "I WON" ? "#B44F54" : "#4A6592")
                                         font.pixelSize: 34
                                         font.weight: Font.DemiBold
                                     }
@@ -980,7 +1302,7 @@ PanelWindow {
                             Text {
                                 width: parent.width
                                 text: root.resultTitle === "YOU WIN" ? "NICE MOVE"
-                                    : (root.resultTitle === "BOT WINS" ? "NEXT ROUND" : "WELL MATCHED")
+                                    : (root.resultTitle === "I WON" ? "NEXT ROUND" : "WELL MATCHED")
                                 horizontalAlignment: Text.AlignHCenter
                                 color: popupCardStyle.mutedTextColor
                                 font.pixelSize: 8
