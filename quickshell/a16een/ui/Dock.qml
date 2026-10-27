@@ -714,9 +714,11 @@ PanelWindow {
         onCalendarDetailsOpenChanged: {
             if (calendarDetailsOpen) {
                 calendarDetailsClearTimer.stop()
+                calendarDetailsGraceTimer.stop()
                 calendarHideTimer.stop()
                 calendarDetailsWasHovered = false
             } else {
+                calendarDetailsGraceTimer.stop()
                 calendarDetailsClearTimer.restart()
                 calendarDetailsWasHovered = false
             }
@@ -915,7 +917,9 @@ PanelWindow {
                     navbarClockPanel.calendarOpen = true
                 }
                 onExited: {
-                    if (!navbarClockPanel.calendarDetailsOpen)
+                    if (navbarClockPanel.calendarDetailsOpen)
+                        calendarDetailsGraceTimer.restart()
+                    else
                         calendarHideTimer.restart()
                 }
             }
@@ -1298,6 +1302,21 @@ PanelWindow {
                     && !navbarClockPanel.calendarDetailsHovering) {
                 navbarClockPanel.calendarOpen = false
                 navbarClockPanel.calendarDetailsOpen = false
+            }
+        }
+    }
+
+    Timer {
+        id: calendarDetailsGraceTimer
+        interval: 1100
+        repeat: false
+        onTriggered: {
+            if (navbarClockPanel.calendarDetailsOpen
+                    && !navbarClockPanel.calendarDetailsHovering
+                    && !clockHoverSensor.containsMouse
+                    && !calendarPopupHoverSensor.containsMouse) {
+                navbarClockPanel.calendarDetailsOpen = false
+                calendarHideTimer.restart()
             }
         }
     }
@@ -1755,7 +1774,9 @@ PanelWindow {
                 z: 20
                 onEntered: calendarHideTimer.stop()
                 onExited: {
-                    if (!navbarClockPanel.calendarDetailsOpen)
+                    if (navbarClockPanel.calendarDetailsOpen)
+                        calendarDetailsGraceTimer.restart()
+                    else
                         calendarHideTimer.restart()
                 }
             }
@@ -1781,6 +1802,7 @@ PanelWindow {
             navbarClockPanel.calendarDetailsHovering = hovering
             if (hovering) {
                 navbarClockPanel.calendarDetailsWasHovered = true
+                calendarDetailsGraceTimer.stop()
                 calendarHideTimer.stop()
             } else if (navbarClockPanel.calendarDetailsWasHovered) {
                 calendarHideTimer.restart()
