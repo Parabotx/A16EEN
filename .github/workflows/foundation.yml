@@ -83,6 +83,7 @@ jobs:
           grep -Fq 'CHECK NOW' quickshell/a16een/ui/QuickToolsPage.qml
           grep -Fq '"--force"' quickshell/a16een/ui/QuickToolsPage.qml
           grep -Fq 'protectedAppRequested' quickshell/a16een/ui/Launcher.qml
+          grep -Fq 'import Quickshell.Io' quickshell/a16een/ui/AppShelfWidget.qml
           grep -Fq 'App Locker' README.md
           grep -Fq 'a16een-workspace-preset' scripts/install.sh
           grep -Fq 'a16een-mpv-theme' scripts/install.sh
