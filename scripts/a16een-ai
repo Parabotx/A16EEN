@@ -232,13 +232,52 @@ def save_provider(provider: str) -> dict[str, Any]:
     write_private_file(PROVIDER_FILE, json.dumps({"provider": normalized}), ".provider.")
     return {"ok": True, "provider": normalized, "message": "AI provider preference saved locally."}
 
+def provider_key_candidates(provider: str) -> list[Path]:
+    path = provider_key_file(provider)
+    # XDG_CONFIG_HOME can differ between a terminal and a desktop session.
+    # Keep the original conventional location as a one-time recovery source.
+    conventional = HOME / ".config" / "a16een" / "ai" / path.name
+    candidates = [path]
+    if conventional not in candidates:
+        candidates.append(conventional)
+    return candidates
+
 def read_key(provider: str = "gemini") -> str:
     path = provider_key_file(provider)
     try:
         key = path.read_text(encoding="utf-8").strip()
     except OSError:
-        return ""
-    return key if len(key) >= 10 else ""
+        key = ""
+    if len(key) >= 10:
+        return key
+
+    # Recover keys created before XDG_CONFIG_HOME was changed or before the
+    # assistant's absolute command path was standardized. The key is copied
+    # into the active private config and the old copy is removed only after
+    # the secure write succeeds.
+    for legacy_path in provider_key_candidates(provider)[1:]:
+        try:
+            legacy_key = legacy_path.read_text(encoding="utf-8").strip()
+        except OSError:
+            continue
+        if len(legacy_key) < 10:
+            continue
+        try:
+            write_private_file(
+                path,
+                legacy_key,
+                "." + str(provider or "gemini").strip().lower() + "-api-key-migrated.",
+            )
+        except OSError:
+            # Read-only recovery still lets existing users continue without
+            # re-entering their key if the source remains accessible.
+            return legacy_key
+        try:
+            legacy_path.unlink()
+        except OSError:
+            pass
+        return legacy_key
+    return ""
 
 def save_key_from_stdin(provider: str = "gemini") -> dict[str, Any]:
     normalized = str(provider or "gemini").strip().lower()
@@ -252,11 +291,11 @@ def save_key_from_stdin(provider: str = "gemini") -> dict[str, Any]:
 
 def remove_key(provider: str = "gemini") -> dict[str, Any]:
     normalized = str(provider or "gemini").strip().lower()
-    path = provider_key_file(normalized)
-    try:
-        path.unlink()
-    except FileNotFoundError:
-        pass
+    for path in provider_key_candidates(normalized):
+        try:
+            path.unlink()
+        except FileNotFoundError:
+            pass
     label = "Groq" if normalized == "groq" else "Gemini"
     return {"ok": True, "configured": False, "provider": normalized, "message": label + " API key removed."}
 
