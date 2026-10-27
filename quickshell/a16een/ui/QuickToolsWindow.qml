@@ -143,7 +143,6 @@ PanelWindow {
                             color: palette.textColor
                             font.pixelSize: 23
                             font.weight: Font.Normal
-                            y: -1
                         }
 
                         MouseArea {
