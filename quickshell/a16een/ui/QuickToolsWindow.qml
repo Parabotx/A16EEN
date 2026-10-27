@@ -44,10 +44,8 @@ PanelWindow {
     aboveWindows: true
     exclusionMode: ExclusionMode.Ignore
     exclusiveZone: 0
+    // PanelWindow.focusable maps to the layershell keyboard-focus setting.
     focusable: root.opened
-    WlrLayershell.keyboardFocus: root.opened
-        ? WlrKeyboardFocus.OnDemand
-        : WlrKeyboardFocus.None
     width: root.screenWidth
     height: root.screenHeight
 
