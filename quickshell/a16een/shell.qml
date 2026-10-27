@@ -553,6 +553,9 @@ ShellRoot {
     property bool batteryWarningSettingsReady: false
     property var batteryAlertedLevels: []
     property int batteryLastPercent: -1
+    property bool batteryPopupOpen: false
+    property int batteryPopupPercent: 0
+    property string batteryPopupLevel: "warning"
     readonly property string batteryWarningSettingsPath: Quickshell.stateDir + "/battery-warning-settings.json"
     property var notificationHistory: []
     property bool notificationHistoryReady: false
@@ -1317,22 +1320,12 @@ ShellRoot {
     }
 
     function showBatteryWarning(level, percent) {
-        const notification = {
-            appName: "A16EEN Battery",
-            summary: level.summary,
-            body: "Battery is at " + percent + "%. Connect your charger to avoid interruption.",
-            appIcon: "",
-            tracked: true
-        }
-        root.rememberNotification(notification)
-
-        if (root.doNotDisturb)
-            return
-
-        if (root.latestNotification)
-            root.latestNotification.tracked = false
-        root.latestNotification = notification
-        notificationTimer.restart()
+        // Safety warnings must never be hidden by Do Not Disturb or reduced to
+        // a short-lived toast. Keep one centered alert open and escalate its
+        // content if the battery crosses another threshold.
+        root.batteryPopupLevel = level.id
+        root.batteryPopupPercent = percent
+        root.batteryPopupOpen = true
     }
 
     function checkBatteryWarnings() {
@@ -1358,6 +1351,7 @@ ShellRoot {
         if (!onBattery) {
             root.batteryAlertedLevels = []
             root.batteryLastPercent = -1
+            root.batteryPopupOpen = false
             return
         }
 
@@ -2166,5 +2160,13 @@ ShellRoot {
     NotificationToast {
         modelData: root.primaryScreen
         notification: root.secureLockActive ? null : root.latestNotification
+    }
+
+    BatteryWarningPopup {
+        modelData: root.primaryScreen
+        opened: root.batteryPopupOpen && !root.secureLockActive
+        percent: root.batteryPopupPercent
+        severity: root.batteryPopupLevel
+        onCloseRequested: root.batteryPopupOpen = false
     }
 }
