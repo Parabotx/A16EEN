@@ -297,112 +297,92 @@ PanelWindow {
             z: 1
         }
 
-        Row {
-            id: cardBody
-            anchors.fill: parent
-            anchors.margins: 18
-            spacing: 18
+        Rectangle {
+            id: portraitFrame
+            visible: root.dayInfo.image !== undefined
+                && String(root.dayInfo.image).length > 0
+            x: 1
+            y: 1
+            width: visible ? Math.min(230, Math.max(112, (parent.width - 2) * 0.40)) : 0
+            height: parent.height - 2
+            radius: 25
+            color: "transparent"
+            border.width: 0
+            clip: true
+            z: 0
 
-            Rectangle {
-                id: portraitFrame
-                visible: root.dayInfo.image !== undefined
-                    && String(root.dayInfo.image).length > 0
-                width: visible ? Math.min(224, Math.max(124, cardBody.width * 0.40)) : 0
-                height: parent.height
-                radius: 19
-                color: popupCardStyle.subtleSurfaceColor
-                border.width: 1
-                border.color: popupCardStyle.darkMode ? "#55FFFFFF" : "#BFFFFFFF"
-                clip: true
-
-                Image {
-                    id: portraitImage
-                    anchors.fill: parent
-                    anchors.margins: 1
-                    source: portraitFrame.visible ? root.portraitSource() : ""
-                    sourceSize.width: Math.max(1, portraitFrame.width * 2)
-                    sourceSize.height: Math.max(1, portraitFrame.height * 2)
-                    fillMode: Image.PreserveAspectCrop
-                    asynchronous: true
-                    cache: true
-                    smooth: true
-                    mipmap: true
-                    visible: status === Image.Ready
-                }
-
-                Rectangle {
-                    anchors.fill: parent
-                    radius: 18
-                    color: "transparent"
-                    border.width: 1
-                    border.color: "#38FFFFFF"
-                    z: 1
-                }
-
-                Rectangle {
-                    anchors.left: parent.left
-                    anchors.right: parent.right
-                    anchors.bottom: parent.bottom
-                    height: Math.min(108, parent.height * 0.24)
-                    radius: 18
-                    color: "#180B111A"
-                    gradient: Gradient {
-                        GradientStop { position: 0.0; color: "#000B111A" }
-                        GradientStop { position: 1.0; color: "#950B111A" }
-                    }
-                    visible: portraitImage.status === Image.Ready
-                    z: 1
-                }
-
-                Column {
-                    anchors.centerIn: parent
-                    width: parent.width - 18
-                    spacing: 8
-                    visible: portraitFrame.visible && portraitImage.status !== Image.Ready
-                    z: 2
-
-                    Text {
-                        width: parent.width
-                        text: "✧"
-                        color: popupCardStyle.actionColor
-                        font.pixelSize: 42
-                        horizontalAlignment: Text.AlignHCenter
-                    }
-
-                    Text {
-                        width: parent.width
-                        text: "ምስል"
-                        color: popupCardStyle.mutedTextColor
-                        font.family: "Noto Sans Ethiopic"
-                        font.pixelSize: 12
-                        horizontalAlignment: Text.AlignHCenter
-                        elide: Text.ElideRight
-                    }
-
-                    Text {
-                        width: parent.width
-                        text: "Portrait loading"
-                        color: popupCardStyle.mutedTextColor
-                        font.pixelSize: 10
-                        horizontalAlignment: Text.AlignHCenter
-                        wrapMode: Text.WordWrap
-                    }
-                }
+            Image {
+                id: portraitImage
+                anchors.fill: parent
+                source: portraitFrame.visible ? root.portraitSource() : ""
+                sourceSize.width: Math.max(1, portraitFrame.width * 2)
+                sourceSize.height: Math.max(1, portraitFrame.height * 2)
+                fillMode: Image.PreserveAspectFit
+                asynchronous: true
+                cache: true
+                smooth: true
+                mipmap: true
+                visible: status === Image.Ready
             }
 
             Column {
+                anchors.centerIn: parent
+                width: parent.width - 18
+                spacing: 8
+                visible: portraitFrame.visible && portraitImage.status !== Image.Ready
+                z: 2
+
+                Text {
+                    width: parent.width
+                    text: "✧"
+                    color: popupCardStyle.actionColor
+                    font.pixelSize: 42
+                    horizontalAlignment: Text.AlignHCenter
+                }
+
+                Text {
+                    width: parent.width
+                    text: "ምስል"
+                    color: popupCardStyle.mutedTextColor
+                    font.family: "Noto Sans Ethiopic"
+                    font.pixelSize: 12
+                    horizontalAlignment: Text.AlignHCenter
+                    elide: Text.ElideRight
+                }
+
+                Text {
+                    width: parent.width
+                    text: "Portrait loading"
+                    color: popupCardStyle.mutedTextColor
+                    font.pixelSize: 10
+                    horizontalAlignment: Text.AlignHCenter
+                    wrapMode: Text.WordWrap
+                }
+            }
+        }
+
+        Row {
+            id: cardBody
+            anchors.fill: parent
+            anchors.leftMargin: portraitFrame.visible ? portraitFrame.width + 18 : 18
+            anchors.rightMargin: 18
+            anchors.topMargin: 18
+            anchors.bottomMargin: 18
+            spacing: 0
+
+            Column {
                 id: detailsColumn
-                width: parent.width - portraitFrame.width - cardBody.spacing
+                width: parent.width
                 height: parent.height
                 spacing: 8
 
                 Row {
                     width: parent.width
                     height: 30
-                    spacing: 9
+                    spacing: 0
 
                     Rectangle {
-                        width: Math.max(0, parent.width - 43)
+                        width: parent.width
                         height: parent.height
                         radius: 11
                         color: Qt.rgba(popupCardStyle.subtleSurfaceColor.r,
@@ -425,34 +405,6 @@ PanelWindow {
                         }
                     }
 
-                    Rectangle {
-                        width: 32
-                        height: 30
-                        radius: 11
-                        color: closeHover.containsMouse
-                            ? popupCardStyle.hoverSurfaceColor
-                            : Qt.rgba(popupCardStyle.subtleSurfaceColor.r,
-                                popupCardStyle.subtleSurfaceColor.g,
-                                popupCardStyle.subtleSurfaceColor.b, 0.72)
-                        border.width: 1
-                        border.color: popupCardStyle.fieldBorderColor
-
-                        Text {
-                            anchors.centerIn: parent
-                            text: "×"
-                            color: popupCardStyle.secondaryTextColor
-                            font.pixelSize: 22
-                            font.weight: Font.Light
-                        }
-
-                        MouseArea {
-                            id: closeHover
-                            anchors.fill: parent
-                            hoverEnabled: true
-                            cursorShape: Qt.PointingHandCursor
-                            onClicked: root.closeRequested()
-                        }
-                    }
                 }
 
                 Column {
@@ -596,6 +548,15 @@ PanelWindow {
 
         HoverHandler {
             onHoveredChanged: root.hoveringChanged(hovered)
+        }
+
+        Rectangle {
+            anchors.fill: parent
+            radius: 26
+            color: "transparent"
+            border.width: 1
+            border.color: popupCardStyle.darkMode ? "#65FFFFFF" : "#A6FFFFFF"
+            z: 10
         }
     }
 }
