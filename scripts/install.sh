@@ -167,7 +167,7 @@ if command -v git >/dev/null 2>&1 && git -C "$ROOT_DIR" rev-parse HEAD >/dev/nul
     SOURCE_COMMIT=$(git -C "$ROOT_DIR" rev-parse HEAD)
 fi
 
-mkdir -p "$NIRI_DIR" "$QS_DIR/ui" "$QS_DIR/assets/wallpapers" "$QS_DIR/assets/animated" "$QS_DIR/assets/music-elements" "$BACKUP_ROOT" "$USER_WALLPAPER_DIR" "$USER_WALLPAPER_DIR/animated" "$USER_WALLPAPER_DIR/music-elements"
+mkdir -p "$NIRI_DIR" "$QS_DIR/ui" "$QS_DIR/assets/wallpapers" "$QS_DIR/assets/animated" "$QS_DIR/assets/music-elements" "$QS_DIR/assets/calendar" "$BACKUP_ROOT" "$USER_WALLPAPER_DIR" "$USER_WALLPAPER_DIR/animated" "$USER_WALLPAPER_DIR/music-elements"
 # Event file used by the lightweight volume/brightness OSD watcher.
 # It is intentionally separate from Quickshell's private state directory.
 printf '%s\n' "" > "$STATE_DIR/control-indicator"
@@ -212,13 +212,29 @@ else
     }
     trap cleanup_deploy EXIT INT TERM
 
-    mkdir -p "$TMP_DEPLOY/ui" "$TMP_DEPLOY/assets/wallpapers" "$TMP_DEPLOY/assets/animated" "$TMP_DEPLOY/assets/music-elements" "$TMP_DEPLOY/assets/icons"
+    mkdir -p "$TMP_DEPLOY/ui" "$TMP_DEPLOY/assets/wallpapers" "$TMP_DEPLOY/assets/animated" "$TMP_DEPLOY/assets/music-elements" "$TMP_DEPLOY/assets/calendar" "$TMP_DEPLOY/assets/icons"
     cp "$ROOT_DIR/niri/config.kdl" "$TMP_DEPLOY/config.kdl"
     cp "$ROOT_DIR/quickshell/a16een/shell.qml" "$TMP_DEPLOY/shell.qml"
     cp "$ROOT_DIR/quickshell/a16een/ui/"*.qml "$TMP_DEPLOY/ui/"
     cp "$ROOT_DIR/quickshell/a16een/ui/"*.js "$TMP_DEPLOY/ui/"
     cp "$ROOT_DIR/quickshell/a16een/assets/icons/"*.svg "$TMP_DEPLOY/assets/icons/"
     cp "$ROOT_DIR/quickshell/a16een/assets/quotes.json" "$TMP_DEPLOY/assets/quotes.json"
+
+    # Ship calendar portrait artwork when bundled in the repository. Locally
+    # added files in the installed calendar folder are preserved across updates.
+    BUILTIN_CALENDAR_DIR="$ROOT_DIR/quickshell/a16een/assets/calendar"
+    if [ -d "$BUILTIN_CALENDAR_DIR" ]; then
+        while IFS= read -r -d '' calendar_image; do
+            relative="${calendar_image#"$BUILTIN_CALENDAR_DIR"/}"
+            destination="$TMP_DEPLOY/assets/calendar/$relative"
+            mkdir -p "$(dirname "$destination")"
+            cp "$calendar_image" "$destination"
+        done < <(
+            find "$BUILTIN_CALENDAR_DIR" -type f \
+                \( -iname '*.webp' -o -iname '*.png' -o -iname '*.jpg' -o -iname '*.jpeg' \
+                -o -iname '*.avif' \) -print0 | LC_ALL=C sort -z -f
+        )
+    fi
 
     # Ship every supported built-in wallpaper from the dedicated repository folder.
     BUILTIN_SOURCE_DIR="$ROOT_DIR/quickshell/a16een/assets/wallpapers"
@@ -306,9 +322,12 @@ else
     find "$QS_DIR/assets/music-elements" -type f -delete
     cp -a "$TMP_DEPLOY/assets/music-elements/." "$QS_DIR/assets/music-elements/"
 
-    mkdir -p "$QS_DIR/assets/icons" "$QS_DIR/assets"
+    mkdir -p "$QS_DIR/assets/icons" "$QS_DIR/assets" "$QS_DIR/assets/calendar"
     cp "$TMP_DEPLOY/assets/icons/"*.svg "$QS_DIR/assets/icons/"
     cp "$TMP_DEPLOY/assets/quotes.json" "$QS_DIR/assets/quotes.json"
+    # Do not delete the runtime calendar artwork directory: custom local images
+    # survive updates unless a same-named bundled image replaces them.
+    cp -a "$TMP_DEPLOY/assets/calendar/." "$QS_DIR/assets/calendar/"
 
     rm -rf "$TMP_DEPLOY"
     trap - EXIT INT TERM

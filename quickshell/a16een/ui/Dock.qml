@@ -13,6 +13,8 @@ PanelWindow {
     PopupCardStyle { id: powerPopupStyle; containerId: "power" }
     PopupCardStyle { id: clockPopupStyle; containerId: "time" }
 
+    CalendarCommemorations { id: calendarCommemorations }
+
     required property var modelData
     required property var workspaces
     required property int focusedWorkspaceId
@@ -692,6 +694,13 @@ PanelWindow {
         property date clockNow: new Date()
         property bool calendarOpen: false
         property bool calendarWindowVisible: false
+        property bool calendarDetailsOpen: false
+        property int selectedCalendarDay: 0
+        property int selectedCalendarMonth: 0
+        property int selectedCalendarYear: 0
+        property var selectedCalendarEvent: null
+        property string calendarView: "calendar"
+        property bool calendarDetailsHovering: false
 
         onCalendarOpenChanged: {
             if (calendarOpen) {
@@ -776,9 +785,14 @@ PanelWindow {
 
             for (let i = 0; i < 42; i++) {
                 const day = i - offset + 1
+                const validDay = day > 0 && day <= monthLength ? day : 0
                 cells.push({
-                    day: day > 0 && day <= monthLength ? day : 0,
-                    today: day === today.day
+                    day: validDay,
+                    today: validDay === today.day,
+                    selected: validDay > 0
+                        && validDay === navbarClockPanel.selectedCalendarDay
+                        && navbarClockPanel.selectedCalendarMonth === today.month
+                        && navbarClockPanel.selectedCalendarYear === today.year
                 })
             }
             return cells
@@ -877,6 +891,7 @@ PanelWindow {
                 z: 10
                 onEntered: {
                     calendarHideTimer.stop()
+                    navbarClockPanel.calendarView = "calendar"
                     navbarClockPanel.calendarOpen = true
                 }
                 onExited: calendarHideTimer.restart()
@@ -887,6 +902,8 @@ PanelWindow {
             if (!visible) {
                 navbarClockPanel.calendarOpen = false
                 navbarClockPanel.calendarWindowVisible = false
+                navbarClockPanel.calendarDetailsOpen = false
+                navbarClockPanel.calendarDetailsHovering = false
                 calendarHideTimer.stop()
                 calendarPopupHideTimer.stop()
             }
@@ -1251,8 +1268,13 @@ PanelWindow {
         interval: 320
         repeat: false
         onTriggered: {
-            if (!clockHoverSensor.containsMouse && !calendarPopupHoverSensor.containsMouse)
+            if (!clockHoverSensor.containsMouse
+                    && !calendarPopupHoverSensor.containsMouse
+                    && !navbarClockPanel.calendarDetailsHovering) {
                 navbarClockPanel.calendarOpen = false
+                navbarClockPanel.calendarDetailsOpen = false
+                navbarClockPanel.selectedCalendarEvent = null
+            }
         }
     }
 
@@ -1332,36 +1354,80 @@ PanelWindow {
                 z: -1
             }
 
-            Column {
+            // Compact two-view switch replaces the old "today / weekday / day" line.
+            Row {
+                id: calendarModeTabs
                 x: 16
                 y: 14
                 width: parent.width - 32
-                spacing: 3
+                height: 27
+                spacing: 5
 
-                Text {
-                    width: parent.width
-                    text: "ዛሬ  ·  " + navbarClockPanel.ethiopianWeekdays[navbarClockPanel.ethiopianToday.weekday]
-                        + " " + navbarClockPanel.ethiopianToday.day
-                    color: clockPopupStyle.secondaryTextColor
-                    font.family: "Noto Sans Ethiopic"
-                    font.pixelSize: 10
-                    font.weight: Font.Medium
-                }
+                Repeater {
+                    model: [
+                        { id: "calendar", label: "ቀን መቁጠሪያ" },
+                        { id: "events", label: "መጪ በዓላት" }
+                    ]
 
-                Text {
-                    width: parent.width
-                    text: navbarClockPanel.ethiopianMonths[navbarClockPanel.ethiopianToday.month - 1]
-                        + " " + String(navbarClockPanel.ethiopianToday.year)
-                        + " ዓ.ም."
-                    color: clockPopupStyle.textColor
-                    font.family: "Noto Sans Ethiopic"
-                    font.pixelSize: 20
-                    font.weight: Font.DemiBold
-                    elide: Text.ElideRight
+                    delegate: Rectangle {
+                        id: calendarModeTab
+                        required property var modelData
+                        width: (parent.width - parent.spacing) / 2
+                        height: parent.height
+                        radius: 9
+                        color: navbarClockPanel.calendarView === calendarModeTab.modelData.id
+                            ? clockPopupStyle.actionColor
+                            : clockPopupStyle.subtleSurfaceColor
+                        border.width: 1
+                        border.color: navbarClockPanel.calendarView === calendarModeTab.modelData.id
+                            ? clockPopupStyle.actionColor : clockPopupStyle.borderColor
+
+                        Text {
+                            anchors.fill: parent
+                            anchors.leftMargin: 4
+                            anchors.rightMargin: 4
+                            text: calendarModeTab.modelData.label
+                            color: navbarClockPanel.calendarView === calendarModeTab.modelData.id
+                                ? clockPopupStyle.actionTextColor : clockPopupStyle.secondaryTextColor
+                            font.family: "Noto Sans Ethiopic"
+                            font.pixelSize: 10
+                            font.weight: Font.DemiBold
+                            horizontalAlignment: Text.AlignHCenter
+                            verticalAlignment: Text.AlignVCenter
+                            elide: Text.ElideRight
+                        }
+
+                        MouseArea {
+                            anchors.fill: parent
+                            hoverEnabled: true
+                            cursorShape: Qt.PointingHandCursor
+                            onClicked: navbarClockPanel.calendarView = calendarModeTab.modelData.id
+                        }
+
+                        Behavior on color {
+                            ColorAnimation { duration: 125; easing.type: Easing.OutCubic }
+                        }
+                    }
                 }
             }
 
+            Text {
+                visible: navbarClockPanel.calendarView === "calendar"
+                x: 16
+                y: 48
+                width: parent.width - 32
+                height: 27
+                text: navbarClockPanel.ethiopianMonths[navbarClockPanel.ethiopianToday.month - 1]
+                    + " " + String(navbarClockPanel.ethiopianToday.year) + " ዓ.ም."
+                color: clockPopupStyle.textColor
+                font.family: "Noto Sans Ethiopic"
+                font.pixelSize: 20
+                font.weight: Font.DemiBold
+                elide: Text.ElideRight
+            }
+
             Row {
+                visible: navbarClockPanel.calendarView === "calendar"
                 x: 18
                 y: 82
                 spacing: 4
@@ -1386,6 +1452,7 @@ PanelWindow {
 
             Grid {
                 id: ethiopianMonthGrid
+                visible: navbarClockPanel.calendarView === "calendar"
                 x: 18
                 y: 105
                 columns: 7
@@ -1397,25 +1464,225 @@ PanelWindow {
                     model: navbarClockPanel.calendarCells
 
                     delegate: Rectangle {
+                        id: dateCellModel
                         required property var modelData
                         width: 32
                         height: 29
                         radius: 9
-                        color: modelData.today
+                        color: modelData.selected || modelData.today
                             ? clockPopupStyle.actionColor
                             : (modelData.day > 0 ? clockPopupStyle.subtleSurfaceColor : "transparent")
-                        border.width: modelData.day === navbarClockPanel.ethiopianToday.day ? 1 : 0
+                        border.width: modelData.selected || modelData.today ? 1 : 0
                         border.color: clockPopupStyle.actionColor
+
+                        // Subtle breathing halo around today's date.
+                        Rectangle {
+                            id: todayGlow
+                            anchors.fill: parent
+                            anchors.margins: -2
+                            radius: 11
+                            color: "transparent"
+                            border.width: 1
+                            border.color: clockPopupStyle.actionColor
+                            opacity: 0.38
+                            visible: dateCellModel.modelData.today
+                            z: 1
+
+                            SequentialAnimation {
+                                running: dateCellModel.modelData.today && navbarClockPanel.calendarOpen
+                                loops: Animation.Infinite
+                                ParallelAnimation {
+                                    NumberAnimation {
+                                        target: todayGlow
+                                        property: "opacity"
+                                        from: 0.28
+                                        to: 0.78
+                                        duration: 950
+                                        easing.type: Easing.InOutSine
+                                    }
+                                    NumberAnimation {
+                                        target: todayGlow
+                                        property: "scale"
+                                        from: 0.96
+                                        to: 1.07
+                                        duration: 950
+                                        easing.type: Easing.InOutSine
+                                    }
+                                }
+                                ParallelAnimation {
+                                    NumberAnimation {
+                                        target: todayGlow
+                                        property: "opacity"
+                                        from: 0.78
+                                        to: 0.28
+                                        duration: 950
+                                        easing.type: Easing.InOutSine
+                                    }
+                                    NumberAnimation {
+                                        target: todayGlow
+                                        property: "scale"
+                                        from: 1.07
+                                        to: 0.96
+                                        duration: 950
+                                        easing.type: Easing.InOutSine
+                                    }
+                                }
+                            }
+                        }
+
+                        // A tiny orbiting glint gives today's date a rotating accent.
+                        Item {
+                            id: todayOrbit
+                            anchors.fill: parent
+                            visible: dateCellModel.modelData.today
+                            z: 2
+
+                            RotationAnimation on rotation {
+                                from: 0
+                                to: 360
+                                duration: 3200
+                                loops: Animation.Infinite
+                                running: dateCellModel.modelData.today && navbarClockPanel.calendarOpen
+                            }
+
+                            Rectangle {
+                                width: 4
+                                height: 4
+                                radius: 2
+                                x: Math.round((parent.width - width) / 2)
+                                y: -1
+                                color: clockPopupStyle.actionTextColor
+                                border.width: 1
+                                border.color: clockPopupStyle.actionColor
+                            }
+                        }
 
                         Text {
                             anchors.fill: parent
+                            z: 3
                             text: modelData.day > 0 ? String(modelData.day) : ""
-                            color: modelData.today ? clockPopupStyle.actionTextColor : clockPopupStyle.textColor
+                            color: modelData.selected || modelData.today
+                                ? clockPopupStyle.actionTextColor : clockPopupStyle.textColor
                             font.family: "Monospace"
                             font.pixelSize: 11
-                            font.weight: modelData.today ? Font.DemiBold : Font.Normal
+                            font.weight: modelData.selected || modelData.today ? Font.DemiBold : Font.Normal
                             horizontalAlignment: Text.AlignHCenter
                             verticalAlignment: Text.AlignVCenter
+                        }
+
+                        MouseArea {
+                            anchors.fill: parent
+                            enabled: dateCellModel.modelData.day > 0
+                            hoverEnabled: true
+                            cursorShape: Qt.PointingHandCursor
+                            onClicked: {
+                                navbarClockPanel.selectedCalendarDay = dateCellModel.modelData.day
+                                navbarClockPanel.selectedCalendarMonth = navbarClockPanel.ethiopianToday.month
+                                navbarClockPanel.selectedCalendarYear = navbarClockPanel.ethiopianToday.year
+                                navbarClockPanel.selectedCalendarEvent = null
+                                navbarClockPanel.calendarDetailsOpen = true
+                            }
+                        }
+                    }
+                }
+            }
+
+            Column {
+                id: upcomingHolidayList
+                visible: navbarClockPanel.calendarView === "events"
+                x: 14
+                y: 49
+                width: parent.width - 28
+                height: parent.height - 62
+                spacing: 5
+
+                Text {
+                    width: parent.width
+                    height: 16
+                    text: "በቅርቡ የሚመጡ በዓላት"
+                    color: clockPopupStyle.mutedTextColor
+                    font.family: "Noto Sans Ethiopic"
+                    font.pixelSize: 9
+                    font.weight: Font.DemiBold
+                }
+
+                Repeater {
+                    model: calendarCommemorations.upcomingEvents(navbarClockPanel.clockNow, 5)
+
+                    delegate: Rectangle {
+                        id: upcomingEventRow
+                        required property var modelData
+                        width: upcomingHolidayList.width
+                        height: 40
+                        radius: 10
+                        color: eventHover.containsMouse
+                            ? clockPopupStyle.hoverSurfaceColor : clockPopupStyle.subtleSurfaceColor
+                        border.width: 1
+                        border.color: eventHover.containsMouse
+                            ? clockPopupStyle.actionColor : clockPopupStyle.borderColor
+
+                        Column {
+                            anchors.left: parent.left
+                            anchors.leftMargin: 9
+                            anchors.right: eventCountdown.left
+                            anchors.rightMargin: 3
+                            anchors.verticalCenter: parent.verticalCenter
+                            spacing: 2
+
+                            Text {
+                                width: parent.width
+                                text: upcomingEventRow.modelData.title
+                                color: clockPopupStyle.textColor
+                                font.family: "Noto Sans Ethiopic"
+                                font.pixelSize: 10
+                                font.weight: Font.DemiBold
+                                elide: Text.ElideRight
+                                maximumLineCount: 1
+                            }
+
+                            Text {
+                                width: parent.width
+                                text: calendarCommemorations.ethiopianMonths[upcomingEventRow.modelData.ethiopianMonth - 1]
+                                    + " " + upcomingEventRow.modelData.ethiopianDay
+                                    + " · " + upcomingEventRow.modelData.ethiopianYear + " ዓ.ም."
+                                color: clockPopupStyle.mutedTextColor
+                                font.family: "Noto Sans Ethiopic"
+                                font.pixelSize: 8
+                                elide: Text.ElideRight
+                            }
+                        }
+
+                        Text {
+                            id: eventCountdown
+                            anchors.right: parent.right
+                            anchors.rightMargin: 7
+                            anchors.verticalCenter: parent.verticalCenter
+                            width: 43
+                            text: upcomingEventRow.modelData.daysUntil === 0
+                                ? "ዛሬ" : upcomingEventRow.modelData.daysUntil + " ቀን"
+                            color: clockPopupStyle.actionColor
+                            font.family: "Noto Sans Ethiopic"
+                            font.pixelSize: 9
+                            font.weight: Font.DemiBold
+                            horizontalAlignment: Text.AlignRight
+                        }
+
+                        MouseArea {
+                            id: eventHover
+                            anchors.fill: parent
+                            hoverEnabled: true
+                            cursorShape: Qt.PointingHandCursor
+                            onClicked: {
+                                navbarClockPanel.selectedCalendarDay = upcomingEventRow.modelData.ethiopianDay
+                                navbarClockPanel.selectedCalendarMonth = upcomingEventRow.modelData.ethiopianMonth
+                                navbarClockPanel.selectedCalendarYear = upcomingEventRow.modelData.ethiopianYear
+                                navbarClockPanel.selectedCalendarEvent = upcomingEventRow.modelData
+                                navbarClockPanel.calendarDetailsOpen = true
+                            }
+                        }
+
+                        Behavior on color {
+                            ColorAnimation { duration: 120; easing.type: Easing.OutCubic }
                         }
                     }
                 }
@@ -1431,6 +1698,30 @@ PanelWindow {
                 onEntered: calendarHideTimer.stop()
                 onExited: calendarHideTimer.restart()
             }
+        }
+    }
+
+    CalendarDayDetails {
+        id: calendarDayDetails
+        modelData: root.modelData
+        navbarPosition: root.navbarPosition
+        dockVisible: root.dockVisible
+        opened: navbarClockPanel.calendarOpen && navbarClockPanel.calendarDetailsOpen
+        selectedDay: navbarClockPanel.selectedCalendarDay
+        selectedMonth: navbarClockPanel.selectedCalendarMonth || navbarClockPanel.ethiopianToday.month
+        selectedYear: navbarClockPanel.selectedCalendarYear || navbarClockPanel.ethiopianToday.year
+        selectedEvent: navbarClockPanel.selectedCalendarEvent
+        onCloseRequested: {
+            navbarClockPanel.calendarDetailsOpen = false
+            navbarClockPanel.calendarDetailsHovering = false
+            calendarHideTimer.restart()
+        }
+        onHoveringChanged: {
+            navbarClockPanel.calendarDetailsHovering = hovering
+            if (hovering)
+                calendarHideTimer.stop()
+            else
+                calendarHideTimer.restart()
         }
     }
 
