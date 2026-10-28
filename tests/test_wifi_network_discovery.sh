@@ -14,6 +14,7 @@ cat > "$TMP/bin/nmcli" <<'MOCK'
 #!/usr/bin/env bash
 set -euo pipefail
 original_args="$*"
+printf '%s\n' "$original_args" >> "$NMCLI_LOG"
 # Real nmcli has no --separator option. Fail loudly if the production helper
 # regresses to the invalid command that caused the list to stay empty.
 for arg in "$@"; do
@@ -36,7 +37,6 @@ while (($#)); do
         shift
     fi
 done
-printf '%s\n' "$original_args" >> "$NMCLI_LOG"
 case "$rescan" in
     yes) printf '%s' "${NMCLI_YES_OUTPUT:-}" ;;
     no)  printf '%s' "${NMCLI_NO_OUTPUT:-}" ;;
