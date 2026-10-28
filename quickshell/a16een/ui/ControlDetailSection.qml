@@ -187,7 +187,10 @@ Item {
         switch (root.mode) {
         case "wifi":
             root.wifiState = root.normalizeState(root.parseKeyValue(data, "state"))
-            root.wifiRadioState = root.normalizeState(root.parseKeyValue(data, "radio"))
+            // Keep the user's immediate toggle feedback stable until NetworkManager
+            // completes. The post-action refresh then reconciles this with reality.
+            if (!root.wifiTogglePending)
+                root.wifiRadioState = root.normalizeState(root.parseKeyValue(data, "radio"))
             root.wifiName = root.parseKeyValue(data, "connection") || "Not connected"
             root.wifiDevice = root.parseKeyValue(data, "device") || "—"
             break
@@ -822,9 +825,7 @@ Item {
 
                         Text {
                             anchors.centerIn: parent
-                            text: root.wifiTogglePending
-                                ? (root.wifiRadioState === "on" ? "Turning on…" : "Turning off…")
-                                : (root.wifiRadioState === "on" ? "Turn off" : "Turn on")
+                            text: root.wifiRadioState === "on" ? "Turn off" : "Turn on"
                             color: root.themeActionText
                             font.pixelSize: root.embedded ? 8 : 9
                             font.weight: Font.DemiBold
