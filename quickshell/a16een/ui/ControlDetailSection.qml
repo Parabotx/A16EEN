@@ -164,6 +164,8 @@ Item {
         root.wifiSelectedSsid = ""
         root.wifiSelectedSecurity = ""
         root.wifiPassword = ""
+        root.wifiSelectedSaved = false
+        root.wifiActionMenuSsid = ""
         if (root.active)
             Qt.callLater(() => root.refreshVisibleMode())
     }
