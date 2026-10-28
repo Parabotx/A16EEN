@@ -436,7 +436,7 @@ Item {
                             visible: root.selectedScope === "time"
                             Layout.fillWidth: true
                             title: "Show day details on hover"
-                            detail: "Open today's commemoration beside the calendar when you hover the clock. Turn this off to open details only after selecting a date."
+                            detail: "Off by default: hovering shows only the calendar. Turn this on to also show today's detail card; selecting a date always opens its details."
                             checked: root.containerSetting("time", "calendarDetailsOnHover", false)
                             enabledControl: !root.writing
                             onToggleRequested: root.setSetting("container", "time", "calendarDetailsOnHover",

@@ -49,7 +49,7 @@ PanelWindow {
         const screenWidth = root.modelData && root.modelData.width > 0
             ? Number(root.modelData.width) : 1366
         const available = screenWidth - (root.horizontalNavbar ? 324 : 378)
-        return Math.max(300, Math.min(470, available))
+        return Math.max(300, Math.min(420, available))
     }
     readonly property int detailCardHeight: {
         const screenHeight = root.modelData && root.modelData.height > 0
