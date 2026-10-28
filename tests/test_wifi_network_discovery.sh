@@ -57,7 +57,7 @@ assert_equal() {
 # nmcli terse output is colon-delimited; literal colons are escaped.
 export NMCLI_SAVED_PROFILES="$(printf '%s\n' \
     'Home Wi-Fi:802-11-wireless:Home Wi-Fi' \
-    'Office Saved Profile:802-11-wireless:Office\:Guest')
+    'Office Saved Profile:802-11-wireless:Office\:Guest')"
 export NMCLI_NO_OUTPUT="$(printf '%s\n' \
     '*:Home Wi-Fi:90:WPA2' \
     ':Open Guest:62:' \
