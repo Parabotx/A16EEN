@@ -7,7 +7,7 @@ STATE_FILE="$STATE_DIR/navbar-appearance.json"
 NAVBAR_CMD="$(printenv A16EEN_NAVBAR_CMD 2>/dev/null || printf '%s' /usr/local/bin/a16een-navbar)"
 
 default_all='{"visibilityControl":false,"visible":true,"applyContainerColor":false,"containerColor":"#15171A","applyIconColor":false,"iconColor":"auto","applyPopupCardColor":false,"surfaceColor":"#FFFFFF"}'
-default_container='{"visible":true,"containerEnabled":false,"containerColor":"transparent","iconColor":"inherit","applyPopupCardColor":false}'
+default_container='{"visible":true,"containerEnabled":false,"containerColor":"transparent","iconColor":"inherit","applyPopupCardColor":false,"calendarDetailsOnHover":false}'
 container_ids='["workspaces","gaming","ai","ai-assistant","battery","time","utilities","power","quick-actions","quick-hub","data-meter"]'
 
 ensure_settings() {
@@ -142,6 +142,18 @@ write_container() {
             tmp="$(mktemp "$STATE_DIR/navbar-appearance.json.XXXXXX")"
             jq --arg id "$id" --arg value "$value" '.containers[$id].iconColor = $value' "$STATE_FILE" > "$tmp"
             ;;
+        calendarDetailsOnHover)
+            [[ "$id" == "time" ]] || {
+                echo "A16EEN appearance: calendarDetailsOnHover is only valid for the time container." >&2
+                return 2
+            }
+            value="$(normalize_bool "$value")" || {
+                echo "A16EEN appearance: calendarDetailsOnHover must be on or off." >&2
+                return 2
+            }
+            tmp="$(mktemp "$STATE_DIR/navbar-appearance.json.XXXXXX")"
+            jq --argjson value "$value" '.containers.time.calendarDetailsOnHover = $value' "$STATE_FILE" > "$tmp"
+            ;;
         applyPopupCardColor)
             if [[ "$id" != "ai-assistant" ]] && jq -e '.all.applyPopupCardColor == true' "$STATE_FILE" >/dev/null 2>&1; then
                 echo "A16EEN appearance: turn off All popup-card override first." >&2
@@ -200,7 +212,7 @@ main() {
             # JSON directly and should never rebuild the entire navbar.
             local appearance_target="none"
             case "$key" in
-                visible|visibilityControl|applyPopupCardColor)
+                visible|visibilityControl|applyPopupCardColor|calendarDetailsOnHover)
                     appearance_target="none"
                     ;;
                 applyContainerColor|containerColor|applyIconColor|iconColor)
