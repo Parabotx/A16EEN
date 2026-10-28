@@ -172,34 +172,111 @@ wifi_detail() {
     printf 'device=%s\n' "$device"
 }
 
+wifi_saved_ssids() {
+    command -v nmcli >/dev/null 2>&1 || return 0
+
+    # Match the wireless SSID property, not the profile name: users can rename
+    # a saved profile without changing the network it belongs to.
+    nmcli -t -e yes -f NAME,TYPE,802-11-wireless.ssid connection show 2>/dev/null |
+        awk '
+            function split_nmcli(line, fields,    i, ch, escaped, count) {
+                count = 1
+                fields[count] = ""
+                escaped = 0
+                for (i = 1; i <= length(line); i++) {
+                    ch = substr(line, i, 1)
+                    if (escaped) {
+                        fields[count] = fields[count] ch
+                        escaped = 0
+                    } else if (ch == "\\") {
+                        escaped = 1
+                    } else if (ch == ":") {
+                        count++
+                        fields[count] = ""
+                    } else {
+                        fields[count] = fields[count] ch
+                    }
+                }
+                if (escaped)
+                    fields[count] = fields[count] "\\"
+                return count
+            }
+            {
+                count = split_nmcli($0, fields)
+                if (count >= 3 && fields[2] == "802-11-wireless" && fields[3] != "")
+                    print fields[3]
+            }
+        ' | awk '!seen[$0]++'
+}
+
+wifi_profile_for_ssid() {
+    local ssid="${1:-}"
+    [ -n "$ssid" ] || return 0
+
+    nmcli -t -e yes -f NAME,TYPE,802-11-wireless.ssid connection show 2>/dev/null |
+        awk -v wanted="$ssid" '
+            function split_nmcli(line, fields,    i, ch, escaped, count) {
+                count = 1
+                fields[count] = ""
+                escaped = 0
+                for (i = 1; i <= length(line); i++) {
+                    ch = substr(line, i, 1)
+                    if (escaped) {
+                        fields[count] = fields[count] ch
+                        escaped = 0
+                    } else if (ch == "\\") {
+                        escaped = 1
+                    } else if (ch == ":") {
+                        count++
+                        fields[count] = ""
+                    } else {
+                        fields[count] = fields[count] ch
+                    }
+                }
+                if (escaped)
+                    fields[count] = fields[count] "\\"
+                return count
+            }
+            {
+                count = split_nmcli($0, fields)
+                if (count >= 3 && fields[2] == "802-11-wireless" && fields[3] == wanted) {
+                    print fields[1]
+                    exit
+                }
+            }
+        '
+}
+
 wifi_networks() {
     command -v nmcli >/dev/null 2>&1 || return 1
 
-    # nmcli does not support --separator. Its terse output uses ':' and
-    # escapes literal separators in values (for example, an SSID containing
-    # a colon is printed as \\:). Parse that format rather than asking nmcli
-    # for an unsupported option, which silently produced an empty UI list.
-    local rescan="no" output
+    local rescan="no" output saved_ssids
     [[ "${3:-}" == "--scan" ]] && rescan="yes"
 
     output=$(nmcli -t -e yes -f IN-USE,SSID,SIGNAL,SECURITY \
         device wifi list --rescan "$rescan" 2>/dev/null) || output=""
+    saved_ssids=$(wifi_saved_ssids)
 
-    # If a scan is rejected or returns no results, preserve cached results.
+    # Preserve cached results if a forced scan is rejected or comes back empty.
     if [[ -z "$output" && "$rescan" == "yes" ]]; then
         output=$(nmcli -t -e yes -f IN-USE,SSID,SIGNAL,SECURITY \
             device wifi list --rescan no 2>/dev/null) || output=""
     elif [[ -z "$output" ]]; then
-        # On first open the cache can be empty. Trigger a real scan as a
-        # fallback so the panel is not limited to cached access points.
         output=$(nmcli -t -e yes -f IN-USE,SSID,SIGNAL,SECURITY \
             device wifi list --rescan yes 2>/dev/null) || output=""
     fi
 
-    # In nmcli terse mode ':' is the delimiter. Only unescaped colons split
-    # fields; escaped colons and backslashes belong to the SSID value.
+    # Decode nmcli's escaped colon format and then escape the UI's pipe delimiter.
+    # The final field ("yes"/"no") marks whether the network has a saved profile.
     printf '%s\n' "$output" |
-        awk '
+        awk -v saved_ssids="$saved_ssids" '
+            BEGIN {
+                saved_count = split(saved_ssids, saved_lines, "\n")
+                for (i = 1; i <= saved_count; i++) {
+                    if (saved_lines[i] != "")
+                        saved[saved_lines[i]] = 1
+                }
+            }
             function split_nmcli(line, fields,    i, ch, escaped, count) {
                 count = 1
                 fields[count] = ""
@@ -229,11 +306,10 @@ wifi_networks() {
                 security = fields[4]
                 if (security == "")
                     security = "--"
-                # The UI uses "|" between columns; escape it in an SSID so
-                # one unusual network name cannot corrupt the other fields.
+                saved_status = (fields[2] in saved) ? "yes" : "no"
                 gsub(/\\/, "\\\\", fields[2])
                 gsub(/\|/, "\\|", fields[2])
-                print fields[2] "|" fields[3] "|" security "|" fields[1]
+                print fields[2] "|" fields[3] "|" security "|" fields[1] "|" saved_status
             }
         ' |
         awk '!seen[$0]++'
@@ -242,12 +318,15 @@ wifi_networks() {
 wifi_connect() {
     local ssid="${3:-}"
     local password="${4:-}"
+    local profile
 
     [ -n "$ssid" ] || return 1
 
-    if nmcli -t -f NAME connection show 2>/dev/null | grep -Fxq "$ssid"; then
-        nmcli connection up "$ssid" >/dev/null 2>&1
-        return
+    # Reuse a saved profile by SSID even when its connection profile ID was renamed.
+    profile=$(wifi_profile_for_ssid "$ssid")
+    if [ -n "$profile" ]; then
+        nmcli connection up id "$profile" >/dev/null 2>&1
+        return $?
     fi
 
     if [ -n "$password" ]; then
@@ -262,6 +341,16 @@ wifi_disconnect() {
     device=$(wifi_device)
     [ -n "$device" ] || return 1
     nmcli device disconnect "$device" >/dev/null 2>&1
+}
+
+wifi_forget() {
+    local ssid="${3:-}"
+    local profile
+
+    [ -n "$ssid" ] || return 1
+    profile=$(wifi_profile_for_ssid "$ssid")
+    [ -n "$profile" ] || return 1
+    nmcli connection delete id "$profile" >/dev/null 2>&1
 }
 
 wifi_rescan() {
@@ -514,6 +603,7 @@ case "${1:-snapshot}" in
             saved) wifi_saved ;;
             connect) wifi_connect "$@" ;;
             disconnect) wifi_disconnect ;;
+            forget) wifi_forget "$@" ;;
         esac
         ;;
     bluetooth)

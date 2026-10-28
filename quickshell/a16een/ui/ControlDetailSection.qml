@@ -28,6 +28,9 @@ Item {
     property string wifiPassword: ""
     property bool wifiPasswordVisible: false
     property bool wifiConnecting: false
+    property bool wifiSelectedSaved: false
+    property string wifiActionMenuSsid: ""
+    property bool wifiTogglePending: false
 
     property string bluetoothState: "unavailable"
     property var bluetoothDevices: []
@@ -161,6 +164,8 @@ Item {
         root.wifiSelectedSsid = ""
         root.wifiSelectedSecurity = ""
         root.wifiPassword = ""
+        root.wifiSelectedSaved = false
+        root.wifiActionMenuSsid = ""
         if (root.active)
             Qt.callLater(() => root.refreshVisibleMode())
     }
@@ -182,7 +187,10 @@ Item {
         switch (root.mode) {
         case "wifi":
             root.wifiState = root.normalizeState(root.parseKeyValue(data, "state"))
-            root.wifiRadioState = root.normalizeState(root.parseKeyValue(data, "radio"))
+            // Keep the user's immediate toggle feedback stable until NetworkManager
+            // completes. The post-action refresh then reconciles this with reality.
+            if (!root.wifiTogglePending)
+                root.wifiRadioState = root.normalizeState(root.parseKeyValue(data, "radio"))
             root.wifiName = root.parseKeyValue(data, "connection") || "Not connected"
             root.wifiDevice = root.parseKeyValue(data, "device") || "—"
             break
@@ -260,7 +268,8 @@ Item {
                 ssid: parts[0],
                 signal: Number(parts[1]) || 0,
                 security: parts[2] || "--",
-                inUse: parts.length > 3 && parts[3] === "*"
+                inUse: parts.length > 3 && parts[3] === "*",
+                saved: parts.length > 4 && parts[4] === "yes"
             })
         }
         root.wifiNetworks = result
@@ -371,10 +380,13 @@ Item {
 
     function connectWifi() {
         const requiresPassword = root.wifiSelectedSecurity !== "--" && root.wifiSelectedSecurity !== ""
-        if (!root.wifiSelectedSsid.length || (requiresPassword && !root.wifiPassword.length))
+        if (actionProcess.running || !root.wifiSelectedSsid.length
+            || (requiresPassword && !root.wifiPassword.length && !root.wifiSelectedSaved))
             return
+
         root.wifiConnecting = true
-        const password = root.wifiSelectedSecurity === "--" || root.wifiSelectedSecurity === "" ? "" : root.wifiPassword
+        root.wifiActionMenuSsid = ""
+        const password = root.wifiSelectedSaved || !requiresPassword ? "" : root.wifiPassword
         root.run(["wifi", "connect", root.wifiSelectedSsid, password])
     }
 
@@ -383,9 +395,11 @@ Item {
         root.wifiSelectedSecurity = ""
         root.wifiPassword = ""
         root.wifiPasswordVisible = false
+        root.wifiSelectedSaved = false
     }
 
     function selectWifiNetwork(network) {
+        root.wifiActionMenuSsid = ""
         if (network.inUse) {
             root.clearWifiSelection()
             return
@@ -393,12 +407,25 @@ Item {
 
         root.wifiSelectedSsid = network.ssid
         root.wifiSelectedSecurity = network.security
+        root.wifiSelectedSaved = !!network.saved
         root.wifiPassword = ""
         root.wifiPasswordVisible = false
-        if (network.security === "--" || network.security === "")
+        if (network.saved || network.security === "--" || network.security === "")
             root.connectWifi()
         else
             Qt.callLater(() => wifiPasswordInput.forceActiveFocus())
+    }
+
+    function toggleWifiRadio() {
+        if (actionProcess.running || root.wifiTogglePending)
+            return
+
+        const wasOn = root.wifiRadioState === "on"
+        root.wifiTogglePending = true
+        root.wifiRadioState = wasOn ? "off" : "on"
+        if (wasOn)
+            root.wifiName = "Not connected"
+        root.run(["wifi", "toggle"])
     }
 
     function setAudio(value) {
@@ -563,8 +590,37 @@ Item {
                 && root.actionArgs[0] === "wifi"
                 && root.actionArgs[1] === "connect") {
                 root.wifiConnecting = false
-                if (exitCode === 0)
+                if (exitCode === 0) {
                     root.clearWifiSelection()
+                    root.wifiActionMenuSsid = ""
+                } else if (root.wifiSelectedSaved) {
+                    // If a saved profile cannot reconnect, offer a password
+                    // fallback rather than leaving the user without a path forward.
+                    root.wifiSelectedSaved = false
+                    root.statusMessage = "CONNECTION FAILED"
+                }
+            }
+
+            if (root.actionArgs.length >= 2
+                && root.actionArgs[0] === "wifi"
+                && root.actionArgs[1] === "toggle") {
+                root.wifiTogglePending = false
+                if (exitCode !== 0) {
+                    root.wifiRadioState = root.wifiRadioState === "on" ? "off" : "on"
+                    root.statusMessage = "WI-FI TOGGLE FAILED"
+                }
+            }
+
+            if (root.actionArgs.length >= 2
+                && root.actionArgs[0] === "wifi"
+                && root.actionArgs[1] === "forget") {
+                if (exitCode === 0) {
+                    root.wifiActionMenuSsid = ""
+                    if (root.wifiSelectedSsid === root.actionArgs[2])
+                        root.clearWifiSelection()
+                } else {
+                    root.statusMessage = "FORGET FAILED"
+                }
             }
 
             if (root.actionArgs.length >= 3
@@ -779,43 +835,12 @@ Item {
                             id: wifiPowerMouse
                             anchors.fill: parent
                             hoverEnabled: true
+                            enabled: !root.wifiTogglePending
                             cursorShape: Qt.PointingHandCursor
-                            onClicked: {
-                                root.run(["wifi", "toggle"])
-                            }
+                            onClicked: root.toggleWifiRadio()
                         }
                     }
 
-                    Rectangle {
-                        id: wifiDisconnectButton
-                        anchors.right: parent.right
-                        anchors.rightMargin: 9
-                        anchors.bottom: parent.bottom
-                        anchors.bottomMargin: root.embedded ? 6 : 10
-                        width: root.embedded ? 74 : 82
-                        height: root.embedded ? 20 : 24
-                        radius: 8
-                        visible: root.wifiState === "on" && root.wifiRadioState === "on"
-                        color: disconnectWifiMouse.containsMouse ? root.themeHover : root.themeSurface
-                        border.width: 1
-                        border.color: root.themeBorder
-
-                        Text {
-                            anchors.centerIn: parent
-                            text: "Disconnect"
-                            color: root.themeText
-                            font.pixelSize: root.embedded ? 7 : 8
-                            font.weight: Font.DemiBold
-                        }
-
-                        MouseArea {
-                            id: disconnectWifiMouse
-                            anchors.fill: parent
-                            hoverEnabled: true
-                            cursorShape: Qt.PointingHandCursor
-                            onClicked: root.run(["wifi", "disconnect"])
-                        }
-                    }
                 }
 
                 Row {
@@ -854,9 +879,9 @@ Item {
                         height: root.embedded ? 30 : 34
                         radius: 10
                         anchors.verticalCenter: parent.verticalCenter
-                        color: refreshWifiMouse.containsMouse ? Qt.darker(root.themeAction, 1.08) : root.themeAction
+                        color: refreshWifiMouse.containsMouse ? "#E9EDF2" : "#FFFFFF"
                         border.width: 1
-                        border.color: root.themeAction
+                        border.color: "#D8DEE6"
 
                         Image {
                             id: wifiRefreshIcon
@@ -870,7 +895,7 @@ Item {
                             layer.enabled: true
                             layer.effect: MultiEffect {
                                 colorization: 1
-                                colorizationColor: root.themeActionText
+                                colorizationColor: "#18212B"
                             }
 
                             RotationAnimation on rotation {
@@ -897,6 +922,7 @@ Item {
                     id: wifiConnectionCard
                     width: parent.width
                     height: root.wifiSelectedSsid.length > 0
+                        && !root.wifiSelectedSaved
                         && root.wifiSelectedSecurity !== "--"
                         && root.wifiSelectedSecurity !== ""
                         ? (root.embedded ? 94 : 108) : 0
@@ -1136,26 +1162,45 @@ Item {
                         Repeater {
                             model: root.wifiNetworks
 
-                            delegate: Rectangle {
+                            delegate: Item {
                                 id: wifiNetworkTile
                                 required property var modelData
+                                readonly property int tileHeight: root.embedded ? 54 : 62
+                                readonly property bool menuOpen: root.wifiActionMenuSsid === modelData.ssid
+                                readonly property int menuHeight: modelData.saved ? 68 : 40
                                 width: wifiColumn.width
-                                height: root.embedded ? 54 : 62
-                                radius: 12
-                                color: modelData.inUse
-                                    ? root.themeSelected
-                                    : (networkMouse.containsMouse || modelData.ssid === root.wifiSelectedSsid
-                                        ? root.themeHover : root.themeSurface)
-                                border.width: modelData.inUse || modelData.ssid === root.wifiSelectedSsid ? 1.3 : 1
-                                border.color: modelData.inUse || modelData.ssid === root.wifiSelectedSsid
-                                    ? root.themeAction : root.themeBorder
+                                height: tileHeight + (menuOpen ? menuHeight + 5 : 0)
+
+                                Rectangle {
+                                    id: wifiNetworkTileBody
+                                    width: parent.width
+                                    height: wifiNetworkTile.tileHeight
+                                    radius: 12
+                                    color: wifiNetworkTile.modelData.inUse
+                                        ? root.themeSelected
+                                        : (networkMouse.containsMouse || wifiNetworkTile.modelData.ssid === root.wifiSelectedSsid
+                                            ? root.themeHover : root.themeSurface)
+                                    border.width: wifiNetworkTile.modelData.inUse
+                                        || wifiNetworkTile.modelData.ssid === root.wifiSelectedSsid ? 1.3 : 1
+                                    border.color: wifiNetworkTile.modelData.inUse
+                                        || wifiNetworkTile.modelData.ssid === root.wifiSelectedSsid
+                                        ? root.themeAction : root.themeBorder
+                                }
+
+                                MouseArea {
+                                    id: networkMouse
+                                    anchors.fill: wifiNetworkTileBody
+                                    hoverEnabled: true
+                                    cursorShape: Qt.PointingHandCursor
+                                    onClicked: root.selectWifiNetwork(wifiNetworkTile.modelData)
+                                }
 
                                 Column {
-                                    anchors.left: parent.left
-                                    anchors.leftMargin: 17
+                                    anchors.left: wifiNetworkTileBody.left
+                                    anchors.leftMargin: 14
                                     anchors.right: wifiSignalInfo.left
-                                    anchors.rightMargin: 8
-                                    anchors.verticalCenter: parent.verticalCenter
+                                    anchors.rightMargin: 7
+                                    anchors.verticalCenter: wifiNetworkTileBody.verticalCenter
                                     spacing: 4
 
                                     Text {
@@ -1171,7 +1216,10 @@ Item {
                                         width: parent.width
                                         text: wifiNetworkTile.modelData.inUse
                                             ? "CONNECTED"
-                                            : (wifiNetworkTile.modelData.security === "--" ? "OPEN NETWORK" : "SECURED NETWORK")
+                                            : (wifiNetworkTile.modelData.saved
+                                                ? "SAVED NETWORK"
+                                                : (wifiNetworkTile.modelData.security === "--"
+                                                    ? "OPEN NETWORK" : "SECURED NETWORK"))
                                         color: wifiNetworkTile.modelData.inUse ? root.themeText : root.themeMutedText
                                         font.pixelSize: 7
                                         font.weight: Font.DemiBold
@@ -1181,10 +1229,10 @@ Item {
 
                                 Column {
                                     id: wifiSignalInfo
-                                    anchors.right: parent.right
-                                    anchors.rightMargin: 11
-                                    anchors.verticalCenter: parent.verticalCenter
-                                    width: 38
+                                    anchors.right: wifiOptionsButton.left
+                                    anchors.rightMargin: 6
+                                    anchors.verticalCenter: wifiNetworkTileBody.verticalCenter
+                                    width: 34
                                     spacing: 3
 
                                     Text {
@@ -1217,12 +1265,117 @@ Item {
                                     }
                                 }
 
-                                MouseArea {
-                                    id: networkMouse
-                                    anchors.fill: parent
-                                    hoverEnabled: true
-                                    cursorShape: Qt.PointingHandCursor
-                                    onClicked: root.selectWifiNetwork(wifiNetworkTile.modelData)
+                                Rectangle {
+                                    id: wifiOptionsButton
+                                    width: 25
+                                    height: 27
+                                    radius: 8
+                                    anchors.right: wifiNetworkTileBody.right
+                                    anchors.rightMargin: 6
+                                    anchors.verticalCenter: wifiNetworkTileBody.verticalCenter
+                                    color: wifiOptionsMouse.containsMouse ? root.themeHover : "transparent"
+
+                                    Text {
+                                        anchors.centerIn: parent
+                                        text: "⋮"
+                                        color: root.themeSecondaryText
+                                        font.pixelSize: 18
+                                        font.weight: Font.DemiBold
+                                    }
+
+                                    MouseArea {
+                                        id: wifiOptionsMouse
+                                        anchors.fill: parent
+                                        hoverEnabled: true
+                                        cursorShape: Qt.PointingHandCursor
+                                        onClicked: root.wifiActionMenuSsid =
+                                            wifiNetworkTile.menuOpen ? "" : wifiNetworkTile.modelData.ssid
+                                    }
+                                }
+
+                                Rectangle {
+                                    id: wifiNetworkActionMenu
+                                    visible: wifiNetworkTile.menuOpen
+                                    x: parent.width - width
+                                    y: wifiNetworkTile.tileHeight + 4
+                                    width: 140
+                                    height: wifiNetworkTile.menuHeight
+                                    z: 20
+                                    radius: 11
+                                    color: root.themeSurface
+                                    border.width: 1
+                                    border.color: root.themeBorder
+
+                                    Column {
+                                        anchors.fill: parent
+                                        anchors.margins: 4
+                                        spacing: 2
+
+                                        Rectangle {
+                                            id: wifiDisconnectButton
+                                            width: parent.width
+                                            height: 28
+                                            radius: 7
+                                            color: wifiNetworkActionMouse.containsMouse ? root.themeHover : "transparent"
+
+                                            Text {
+                                                anchors.left: parent.left
+                                                anchors.leftMargin: 9
+                                                anchors.verticalCenter: parent.verticalCenter
+                                                text: wifiNetworkTile.modelData.inUse ? "Disconnect" : "Connect"
+                                                color: root.themeText
+                                                font.pixelSize: 9
+                                                font.weight: Font.Medium
+                                            }
+
+                                            MouseArea {
+                                                id: wifiNetworkActionMouse
+                                                anchors.fill: parent
+                                                hoverEnabled: true
+                                                cursorShape: Qt.PointingHandCursor
+                                                onClicked: {
+                                                    const network = wifiNetworkTile.modelData
+                                                    root.wifiActionMenuSsid = ""
+                                                    if (network.inUse) {
+                                                        root.run(["wifi", "disconnect"])
+                                                    } else {
+                                                        root.selectWifiNetwork(network)
+                                                    }
+                                                }
+                                            }
+                                        }
+
+                                        Rectangle {
+                                            visible: wifiNetworkTile.modelData.saved
+                                            width: parent.width
+                                            height: visible ? 28 : 0
+                                            radius: 7
+                                            color: wifiForgetMouse.containsMouse ? root.themeHover : "transparent"
+
+                                            Text {
+                                                anchors.left: parent.left
+                                                anchors.leftMargin: 9
+                                                anchors.verticalCenter: parent.verticalCenter
+                                                text: "Forget network"
+                                                color: root.themeText
+                                                font.pixelSize: 9
+                                                font.weight: Font.Medium
+                                            }
+
+                                            MouseArea {
+                                                id: wifiForgetMouse
+                                                anchors.fill: parent
+                                                hoverEnabled: true
+                                                enabled: wifiNetworkTile.modelData.saved
+                                                cursorShape: Qt.PointingHandCursor
+                                                onClicked: {
+                                                    const ssid = wifiNetworkTile.modelData.ssid
+                                                    root.wifiActionMenuSsid = ""
+                                                    root.run(["wifi", "forget", ssid])
+                                                }
+                                            }
+                                        }
+                                    }
                                 }
                             }
                         }
