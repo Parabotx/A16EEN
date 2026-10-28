@@ -32,7 +32,7 @@ Item {
         { id: "ai", name: "A16EEN AI", detail: "AI shortcut beside Gaming in the shared container" },
         { id: "ai-assistant", name: "AI Assistant Card", detail: "Independent appearance for the AI chat popup" },
         { id: "battery", name: "Battery", detail: "Battery capsule" },
-        { id: "time", name: "Clock / Time", detail: "Clock display" },
+        { id: "time", name: "Clock & Time", detail: "Clock, date, and calendar behavior" },
         { id: "utilities", name: "Utilities", detail: "Wi-Fi and Bluetooth" },
         { id: "power", name: "Power", detail: "Power button" },
         { id: "quick-actions", name: "Tasks, Notes & Presets", detail: "Productivity shortcut group" },
@@ -139,7 +139,7 @@ Item {
         } catch (error) {
             next = {}
         }
-        const boolKeys = ["visible", "visibilityControl", "applyContainerColor", "applyIconColor", "applyPopupCardColor"]
+        const boolKeys = ["visible", "visibilityControl", "applyContainerColor", "applyIconColor", "applyPopupCardColor", "calendarDetailsOnHover"]
         const parsedValue = boolKeys.includes(key)
             ? ["on", "true"].includes(String(value).toLowerCase()) : value
         if (scope === "all") {
@@ -431,6 +431,16 @@ Item {
                             enabledControl: !root.writing && !root.visibilityLocked
                             onToggleRequested: root.setSetting("container", root.selectedScope, "visible",
                                 root.containerSetting(root.selectedScope, "visible", true) ? "off" : "on")
+                        }
+                        ToggleRow {
+                            visible: root.selectedScope === "time"
+                            Layout.fillWidth: true
+                            title: "Show day details on hover"
+                            detail: "Open today's commemoration beside the calendar when you hover the clock. Turn this off to open details only after selecting a date."
+                            checked: root.containerSetting("time", "calendarDetailsOnHover", false)
+                            enabledControl: !root.writing
+                            onToggleRequested: root.setSetting("container", "time", "calendarDetailsOnHover",
+                                root.containerSetting("time", "calendarDetailsOnHover", false) ? "off" : "on")
                         }
                         Text {
                             visible: !root.isAllScope && root.visibilityLocked
