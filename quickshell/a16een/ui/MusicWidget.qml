@@ -71,6 +71,13 @@ PanelWindow {
     property real progressWavePhase: 0
     readonly property real progressWaveGap: root.isPlaying && !root.seekDragging ? 1.35 : 0
     readonly property int libraryPopupRightMargin: root.navbarPosition === "right" ? 88 : 12
+
+    // Canvas does not repaint automatically when arbitrary JS values change.
+    // Repaint the tiny progress surface as the phase flows and the playback
+    // state toggles the nearly invisible separation at its leading edge.
+    onProgressWavePhaseChanged: waveCanvas.requestPaint()
+    onProgressWaveGapChanged: waveCanvas.requestPaint()
+
     // Keep the song library beside the player so it never covers the Quotes card above it.
     readonly property bool libraryPopupOpensRight: root.modelData !== null
         && root.modelData.width - card.x - card.width - 8 - root.libraryPopupRightMargin >= 300
