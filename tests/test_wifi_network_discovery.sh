@@ -57,7 +57,7 @@ assert_equal() {
 # nmcli terse output is colon-delimited; literal colons are escaped.
 export NMCLI_SAVED_PROFILES="$(printf '%s\n' \
     'Home Wi-Fi:802-11-wireless:Home Wi-Fi' \
-    'Office Saved Profile:802-11-wireless:Office\\:Guest')"
+    'Office Saved Profile:802-11-wireless:Office\:Guest')
 export NMCLI_NO_OUTPUT="$(printf '%s\n' \
     '*:Home Wi-Fi:90:WPA2' \
     ':Open Guest:62:' \
@@ -73,11 +73,11 @@ export NMCLI_YES_OUTPUT="$(printf '%s\n' \
 # Cached results, duplicate removal, open networks, and special SSID characters.
 actual="$(bash "$ROOT/scripts/a16een-control" wifi networks)"
 expected="$(printf '%s\n' \
-    'Home Wi-Fi|90|WPA2|*' \
-    'Open Guest|62|--|' \
-    'Office:Guest|77|WPA2|' \
-    'Lobby\|Guest|47|WPA2|' \
-    'Cafe\\WiFi|55|WPA2|')"
+    'Home Wi-Fi|90|WPA2|*|yes' \
+    'Open Guest|62|--||no' \
+    'Office:Guest|77|WPA2||yes' \
+    'Lobby\|Guest|47|WPA2||no' \
+    'Cafe\\WiFi|55|WPA2||no')
 assert_equal "cached Wi-Fi network formatting" "$expected" "$actual"
 grep -Fq -- '-t -e yes -f IN-USE,SSID,SIGNAL,SECURITY' "$NMCLI_LOG"
 if grep -Fq -- '--separator' "$NMCLI_LOG"; then
