@@ -612,6 +612,15 @@ jobs:
           grep -Fq 'root.run(["wifi", "toggle"])' quickshell/a16een/ui/ControlDetailSection.qml
           ! grep -Fq 'wifiNetworkTile.modelData.inUse ? root.accent : "transparent"' quickshell/a16een/ui/ControlDetailSection.qml
           grep -Fq 'id: wifiDisconnectButton' quickshell/a16een/ui/ControlDetailSection.qml
+          grep -Fq 'function wifi_profile_for_ssid()' scripts/a16een-control
+          grep -Fq 'wifi_forget() {' scripts/a16een-control
+          grep -Fq 'forget) wifi_forget "$@"' scripts/a16een-control
+          grep -Fq 'wifiNetworkActionMenu' quickshell/a16een/ui/ControlDetailSection.qml
+          grep -Fq 'wifiNetworkTile.modelData.saved' quickshell/a16een/ui/ControlDetailSection.qml
+          grep -Fq 'root.run(["wifi", "forget", ssid])' quickshell/a16een/ui/ControlDetailSection.qml
+          grep -Fq 'root.wifiTogglePending' quickshell/a16een/ui/ControlDetailSection.qml
+          grep -Fq 'color: refreshWifiMouse.containsMouse ? "#E9EDF2" : "#FFFFFF"' quickshell/a16een/ui/ControlDetailSection.qml
+          grep -Fq 'colorizationColor: "#18212B"' quickshell/a16een/ui/ControlDetailSection.qml
           grep -Fq 'bluetoothctl --timeout 12 scan on' scripts/a16een-control
           grep -Fq 'bluetoothctl devices Paired' scripts/a16een-control
           grep -Fq 'scan-stop) bluetooth_scan_stop' scripts/a16een-control
