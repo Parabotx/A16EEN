@@ -305,7 +305,7 @@ PanelWindow {
             y: 1
             width: visible ? Math.min(164, Math.max(118, (parent.width - 2) * 0.39)) : 0
             height: parent.height - 2
-            radius: 20
+            radius: 17
             color: "transparent"
             border.width: 0
             clip: true
