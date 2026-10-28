@@ -69,10 +69,12 @@ PanelWindow {
         ? root.seekFraction : root.progress
     // Only the played ribbon waves; the unplayed timeline stays straight.
     property real progressWavePhase: 0
+    readonly property real progressWaveGap: root.isPlaying && !root.seekDragging ? 3.0 : 0
     readonly property int libraryPopupRightMargin: root.navbarPosition === "right" ? 88 : 12
 
     // Canvas does not repaint automatically when arbitrary JS values change.
     onProgressWavePhaseChanged: waveCanvas.requestPaint()
+    onProgressWaveGapChanged: waveCanvas.requestPaint()
 
     // Keep the song library beside the player so it never covers the Quotes card above it.
     readonly property bool libraryPopupOpensRight: root.modelData !== null
@@ -662,7 +664,7 @@ PanelWindow {
                 Item {
                     id: progressTrack
                     width: parent.width
-                    height: 24
+                    height: 20
                     // Animate normal playback updates, but keep pointer seeking exact.
                     property real fillProgress: root.displayedProgress
                     Behavior on fillProgress {
@@ -688,60 +690,52 @@ PanelWindow {
                             ctx.clearRect(0, 0, width, height)
 
                             const centerY = height / 2
-                            const amplitude = 5.3
-                            const wavelength = 34
+                            const amplitude = 3.55
+                            const wavelength = 23
                             const phase = root.progressWavePhase
+
+                            // The unplayed portion is a clean, stationary line.
+                            ctx.beginPath()
+                            ctx.moveTo(0, centerY)
+                            ctx.lineTo(width, centerY)
+                            ctx.strokeStyle = "#C7D7E8"
+                            ctx.lineWidth = 1.8
+                            ctx.lineCap = "round"
+                            ctx.stroke()
+
                             const playedWidth = Math.max(0, Math.min(
                                 width,
-                                width * progressTrack.fillProgress
+                                width * progressTrack.fillProgress - root.progressWaveGap
                             ))
-
-                            ctx.lineCap = "round"
-                            ctx.lineJoin = "round"
-
-                            // Draw the straight rail only ahead of the playhead.
-                            // There is deliberately no straight line underneath
-                            // the played section, so the two states read distinctly.
-                            if (playedWidth < width) {
-                                ctx.beginPath()
-                                ctx.moveTo(playedWidth, centerY)
-                                ctx.lineTo(width, centerY)
-                                ctx.strokeStyle = "#C7D7E8"
-                                ctx.lineWidth = 1.8
-                                ctx.stroke()
-                            }
-
                             if (playedWidth < 1)
                                 return
 
-                            // A small tapered tail at the start grows into a full
-                            // wave. At the moving playhead the wave eases back to
-                            // the rail, making the transition feel like the line
-                            // is turning into a wave as playback advances.
-                            const startTailLength = Math.min(9, playedWidth * 0.42)
-                            const playheadTailLength = Math.min(10, playedWidth * 0.42)
-                            const smoothstep = value => {
-                                const t = Math.max(0, Math.min(1, value))
+                            // Ease both ends of the ribbon to a fine point. Fading
+                            // the wave height as well as its thickness creates soft
+                            // tails instead of abruptly clipped wave peaks.
+                            const tailLength = Math.min(12, playedWidth / 2)
+                            const envelopeAt = x => {
+                                const distanceToEnd = Math.min(x, playedWidth - x)
+                                const t = Math.max(0, Math.min(
+                                    1,
+                                    distanceToEnd / Math.max(1, tailLength)
+                                ))
                                 return t * t * (3 - 2 * t)
                             }
-                            const envelopeAt = x => Math.min(
-                                smoothstep(x / Math.max(1, startTailLength)),
-                                smoothstep((playedWidth - x) / Math.max(1, playheadTailLength))
-                            )
                             const waveY = x => centerY
                                 + Math.sin((x / wavelength) * Math.PI * 2 + phase)
                                     * amplitude * envelopeAt(x)
-                            const halfThicknessAt = x => 2.45 * envelopeAt(x)
+                            const halfThicknessAt = x => 2.3 * envelopeAt(x)
 
                             const gradient = ctx.createLinearGradient(
                                 0, 0, Math.max(1, playedWidth), 0
                             )
                             gradient.addColorStop(0.0, "#8AB8D8")
-                            gradient.addColorStop(0.46, "#A9A5DF")
+                            gradient.addColorStop(0.48, "#A9A5DF")
                             gradient.addColorStop(1.0, "#82CBC5")
 
-                            // Build a continuous, filled wave ribbon rather than
-                            // a little animated accent over a stationary progress bar.
+                            // Fill a variable-width ribbon so its leading and
+                            // trailing ends taper naturally into the slim rail.
                             const samples = Math.max(2, Math.ceil(playedWidth))
                             const sampleX = index => playedWidth * index / samples
                             ctx.beginPath()
@@ -832,26 +826,12 @@ PanelWindow {
 
             Item {
                 width: parent.width
-                height: 27
-
-                // One lightweight capsule groups the controls without adding
-                // bulky button backgrounds when the widget itself is transparent.
-                Rectangle {
-                    id: controlsCapsule
-                    anchors.centerIn: parent
-                    width: controls.implicitWidth + 10
-                    height: 25
-                    radius: 12.5
-                    color: "#52EDF4FA"
-                    border.width: 1
-                    border.color: "#70B8C9DB"
-                }
+                height: 31
 
                 Row {
                     id: controls
                     anchors.centerIn: parent
-                    spacing: 2
-                    z: 1
+                    spacing: 7
 
                     ControlButton {
                         iconName: "music-shuffle"
@@ -1092,20 +1072,20 @@ PanelWindow {
         property int repeatIndicatorMode: 0
         signal clicked()
 
-        width: primary ? 27 : 20
-        height: primary ? 23 : 20
-        radius: primary ? 11.5 : 10
+        width: primary ? 39 : 29
+        height: 30
+        radius: primary ? 11 : 9
         color: primary
             ? "#2D3A4D"
-            : selected ? "#DDE8F4" : buttonHover.containsMouse ? "#C6F2F6FA" : "transparent"
-        border.width: selected && !primary ? 1 : 0
-        border.color: "#AABDD0E1"
+            : selected ? "#DBE7F4" : buttonHover.containsMouse ? "#EDF3F9" : "#F6FAFD"
+        border.width: primary ? 0 : 1
+        border.color: selected ? "#B6C8DB" : "#DDE6F0"
         opacity: enabledControl ? 1 : 0.48
 
         Image {
             anchors.centerIn: parent
-            width: parent.primary ? 13 : 11
-            height: parent.primary ? 13 : 11
+            width: parent.primary ? 16 : 15
+            height: parent.primary ? 16 : 15
             source: Qt.resolvedUrl("../assets/icons/" + parent.iconName
                 + (parent.primary ? "-light.svg" : ".svg"))
             fillMode: Image.PreserveAspectFit
@@ -1118,10 +1098,10 @@ PanelWindow {
             visible: parent.repeatIndicatorMode !== 0
             anchors.right: parent.right
             anchors.bottom: parent.bottom
-            anchors.rightMargin: 0
-            anchors.bottomMargin: 0
-            width: parent.repeatIndicatorMode === 2 ? 10 : 9
-            height: parent.repeatIndicatorMode === 2 ? 10 : 9
+            anchors.rightMargin: 1
+            anchors.bottomMargin: 1
+            width: parent.repeatIndicatorMode === 2 ? 14 : 11
+            height: parent.repeatIndicatorMode === 2 ? 14 : 11
             radius: width / 2
             color: "#F9FCFF"
             border.width: 1
@@ -1132,7 +1112,7 @@ PanelWindow {
                 anchors.centerIn: parent
                 text: parent.parent.repeatIndicatorMode === 1 ? "1" : "∞"
                 color: "#2D3A4D"
-                font.pixelSize: parent.parent.repeatIndicatorMode === 2 ? 7 : 6
+                font.pixelSize: parent.parent.repeatIndicatorMode === 2 ? 11 : 7
                 font.weight: Font.Bold
             }
         }
