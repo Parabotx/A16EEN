@@ -701,6 +701,12 @@ PanelWindow {
         property bool calendarOpen: false
         property bool calendarWindowVisible: false
         property bool calendarDetailsOpen: false
+        readonly property bool calendarDetailsOnHover: {
+            const containers = root.appearanceSettings && root.appearanceSettings.containers
+                ? root.appearanceSettings.containers : ({})
+            const clockSettings = containers.time || ({})
+            return clockSettings.calendarDetailsOnHover === true
+        }
         property int selectedCalendarDay: 0
         property int selectedCalendarMonth: 0
         property int selectedCalendarYear: 0
@@ -741,8 +747,8 @@ PanelWindow {
         }
 
         function openCalendarAtToday() {
-            // Open both panels as one state transition so the first hover never
-            // leaves the user with only the month grid and no detail preview.
+            // Hover always opens the month grid. The optional Clock & Time setting
+            // can additionally reveal today's detail card beside the calendar.
             calendarHideTimer.stop()
             calendarDetailsGraceTimer.stop()
             calendarDetailsClearTimer.stop()
@@ -755,7 +761,7 @@ PanelWindow {
             calendarDetailsHovering = false
             calendarOpen = true
             calendarWindowVisible = true
-            calendarDetailsOpen = true
+            calendarDetailsOpen = calendarDetailsOnHover
         }
 
         readonly property var ethiopianMonths: [
