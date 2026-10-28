@@ -49,12 +49,12 @@ PanelWindow {
         const screenWidth = root.modelData && root.modelData.width > 0
             ? Number(root.modelData.width) : 1366
         const available = screenWidth - (root.horizontalNavbar ? 324 : 378)
-        return Math.max(300, Math.min(470, available))
+        return Math.max(300, Math.min(420, available))
     }
     readonly property int detailCardHeight: {
         const screenHeight = root.modelData && root.modelData.height > 0
             ? Number(root.modelData.height) : 768
-        return Math.max(300, Math.min(430, screenHeight - 96))
+        return Math.max(250, Math.min(318, screenHeight - 92))
     }
 
     function imageFileList(output) {
@@ -257,7 +257,7 @@ PanelWindow {
     Rectangle {
         id: card
         anchors.fill: parent
-        radius: 21
+        radius: 17
         color: Qt.rgba(popupCardStyle.backgroundColor.r,
             popupCardStyle.backgroundColor.g, popupCardStyle.backgroundColor.b, 0.91)
         border.width: 1
@@ -281,7 +281,7 @@ PanelWindow {
         Rectangle {
             anchors.fill: parent
             anchors.margins: -5
-            radius: 31
+            radius: 26
             color: "#1C000000"
             z: -1
         }
@@ -303,9 +303,9 @@ PanelWindow {
                 && String(root.dayInfo.image).length > 0
             x: 1
             y: 1
-            width: visible ? Math.min(184, Math.max(126, (parent.width - 2) * 0.39)) : 0
+            width: visible ? Math.min(164, Math.max(118, (parent.width - 2) * 0.39)) : 0
             height: parent.height - 2
-            radius: 20
+            radius: 17
             color: "transparent"
             border.width: 0
             clip: true
@@ -366,19 +366,19 @@ PanelWindow {
             anchors.fill: parent
             anchors.leftMargin: portraitFrame.visible ? portraitFrame.width + 14 : 14
             anchors.rightMargin: 14
-            anchors.topMargin: 12
-            anchors.bottomMargin: 12
+            anchors.topMargin: 9
+            anchors.bottomMargin: 9
             spacing: 0
 
             Column {
                 id: detailsColumn
                 width: parent.width
                 height: parent.height
-                spacing: 5
+                spacing: 4
 
                 Row {
                     width: parent.width
-                    height: 26
+                    height: 23
                     spacing: 0
 
                     Rectangle {
@@ -416,7 +416,7 @@ PanelWindow {
                         text: root.dayInfo.title
                         color: popupCardStyle.textColor
                         font.family: "Noto Sans Ethiopic"
-                        font.pixelSize: 20
+                        font.pixelSize: 18
                         font.weight: Font.DemiBold
                         maximumLineCount: 2
                         wrapMode: Text.WordWrap
@@ -429,7 +429,7 @@ PanelWindow {
                             + " · " + root.selectedYear + " ዓ.ም."
                         color: popupCardStyle.mutedTextColor
                         font.family: "Noto Sans Ethiopic"
-                        font.pixelSize: 10
+                        font.pixelSize: 9
                         font.weight: Font.Medium
                     }
                 }
@@ -447,7 +447,7 @@ PanelWindow {
 
                     Text {
                         width: parent.width
-                        height: 14
+                        height: 12
                         text: "የዕለቱ መታሰቢያ"
                         color: popupCardStyle.actionColor
                         font.family: "Noto Sans Ethiopic"
@@ -458,13 +458,13 @@ PanelWindow {
 
                     Text {
                         width: parent.width
-                        height: Math.min(76, Math.max(44, detailsColumn.height * 0.16))
+                        height: Math.min(54, Math.max(36, detailsColumn.height * 0.15))
                         text: root.dayInfo.description
                         color: popupCardStyle.secondaryTextColor
                         font.family: "Noto Sans Ethiopic"
-                        font.pixelSize: 13
+                        font.pixelSize: 12
                         wrapMode: Text.WordWrap
-                        maximumLineCount: 5
+                        maximumLineCount: 4
                         elide: Text.ElideRight
                     }
                 }
@@ -472,7 +472,7 @@ PanelWindow {
                 Rectangle {
                     width: parent.width
                     visible: root.dayInfo.showScripture !== false
-                    height: visible ? Math.min(122, Math.max(88, detailsColumn.height * 0.27)) : 0
+                    height: visible ? Math.min(98, Math.max(72, detailsColumn.height * 0.25)) : 0
                     radius: 13
                     color: Qt.rgba(popupCardStyle.subtleSurfaceColor.r,
                         popupCardStyle.subtleSurfaceColor.g,
@@ -482,12 +482,12 @@ PanelWindow {
 
                     Column {
                         anchors.fill: parent
-                        anchors.margins: 9
-                        spacing: 5
+                        anchors.margins: 8
+                        spacing: 4
 
                         Row {
                             width: parent.width
-                            height: 16
+                            height: 14
                             spacing: 6
 
                             Text {
@@ -509,14 +509,14 @@ PanelWindow {
 
                         Text {
                             width: parent.width
-                            height: parent.height - 46
+                            height: parent.height - 40
                             text: "“" + root.dayInfo.verse + "”"
                             color: popupCardStyle.textColor
                             font.family: "Noto Sans Ethiopic"
-                            font.pixelSize: 12
+                            font.pixelSize: 11
                             font.weight: Font.Medium
                             wrapMode: Text.WordWrap
-                            maximumLineCount: 5
+                            maximumLineCount: 4
                             elide: Text.ElideRight
                         }
 
@@ -534,11 +534,11 @@ PanelWindow {
 
                 Text {
                     width: parent.width
-                    height: Math.max(24, parent.height * 0.07)
+                    height: Math.max(18, parent.height * 0.06)
                     text: root.dayInfo.reflection
                     color: popupCardStyle.mutedTextColor
                     font.family: "Noto Sans Ethiopic"
-                    font.pixelSize: 10
+                    font.pixelSize: 9
                     wrapMode: Text.WordWrap
                     maximumLineCount: 2
                     elide: Text.ElideRight
@@ -552,7 +552,7 @@ PanelWindow {
 
         Rectangle {
             anchors.fill: parent
-            radius: 21
+            radius: 17
             color: "transparent"
             border.width: 1
             border.color: popupCardStyle.darkMode ? "#65FFFFFF" : "#A6FFFFFF"
