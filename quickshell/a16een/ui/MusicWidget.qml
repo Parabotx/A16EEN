@@ -67,8 +67,7 @@ PanelWindow {
         : 0
     readonly property real displayedProgress: root.seekDragging
         ? root.seekFraction : root.progress
-    // Both the slim rail and played segment share this phase, so the whole
-    // timeline moves as one continuous wave instead of a line with a wave inside.
+    // Only the played ribbon waves; the unplayed timeline stays straight.
     property real progressWavePhase: 0
     readonly property real progressWaveGap: root.isPlaying && !root.seekDragging ? 3.0 : 0
     readonly property int libraryPopupRightMargin: root.navbarPosition === "right" ? 88 : 12
@@ -691,46 +690,70 @@ PanelWindow {
                             ctx.clearRect(0, 0, width, height)
 
                             const centerY = height / 2
-                            const amplitude = 3.25
+                            const amplitude = 3.55
                             const wavelength = 23
                             const phase = root.progressWavePhase
-                            const waveY = x => centerY
-                                + Math.sin((x / wavelength) * Math.PI * 2 + phase) * amplitude
 
-                            ctx.lineCap = "round"
-                            ctx.lineJoin = "round"
-
-                            // A fine, moving guide makes the container itself a
-                            // visible wave, not a static capsule behind the fill.
+                            // The unplayed portion is a clean, stationary line.
                             ctx.beginPath()
-                            ctx.moveTo(0, waveY(0))
-                            for (let x = 1; x < width; x += 1)
-                                ctx.lineTo(x, waveY(x))
-                            ctx.lineTo(width, waveY(width))
+                            ctx.moveTo(0, centerY)
+                            ctx.lineTo(width, centerY)
                             ctx.strokeStyle = "#C7D7E8"
                             ctx.lineWidth = 1.8
+                            ctx.lineCap = "round"
                             ctx.stroke()
 
                             const playedWidth = Math.max(0, Math.min(
                                 width,
                                 width * progressTrack.fillProgress - root.progressWaveGap
                             ))
-                            if (playedWidth < 0.75)
+                            if (playedWidth < 1)
                                 return
 
-                            const gradient = ctx.createLinearGradient(0, 0, Math.max(1, playedWidth), 0)
+                            // Ease both ends of the ribbon to a fine point. Fading
+                            // the wave height as well as its thickness creates soft
+                            // tails instead of abruptly clipped wave peaks.
+                            const tailLength = Math.min(12, playedWidth / 2)
+                            const envelopeAt = x => {
+                                const distanceToEnd = Math.min(x, playedWidth - x)
+                                const t = Math.max(0, Math.min(
+                                    1,
+                                    distanceToEnd / Math.max(1, tailLength)
+                                ))
+                                return t * t * (3 - 2 * t)
+                            }
+                            const waveY = x => centerY
+                                + Math.sin((x / wavelength) * Math.PI * 2 + phase)
+                                    * amplitude * envelopeAt(x)
+                            const halfThicknessAt = x => 2.3 * envelopeAt(x)
+
+                            const gradient = ctx.createLinearGradient(
+                                0, 0, Math.max(1, playedWidth), 0
+                            )
                             gradient.addColorStop(0.0, "#8AB8D8")
                             gradient.addColorStop(0.48, "#A9A5DF")
                             gradient.addColorStop(1.0, "#82CBC5")
 
+                            // Fill a variable-width ribbon so its leading and
+                            // trailing ends taper naturally into the slim rail.
+                            const samples = Math.max(2, Math.ceil(playedWidth))
+                            const sampleX = index => playedWidth * index / samples
                             ctx.beginPath()
-                            ctx.moveTo(0, waveY(0))
-                            for (let x = 1; x < playedWidth; x += 1)
-                                ctx.lineTo(x, waveY(x))
-                            ctx.lineTo(playedWidth, waveY(playedWidth))
-                            ctx.strokeStyle = gradient
-                            ctx.lineWidth = 4.6
-                            ctx.stroke()
+                            for (let i = 0; i <= samples; i++) {
+                                const x = sampleX(i)
+                                const y = waveY(x) - halfThicknessAt(x)
+                                if (i === 0)
+                                    ctx.moveTo(x, y)
+                                else
+                                    ctx.lineTo(x, y)
+                            }
+                            for (let i = samples; i >= 0; i--) {
+                                const x = sampleX(i)
+                                ctx.lineTo(x, waveY(x) + halfThicknessAt(x))
+                            }
+                            ctx.closePath()
+                            ctx.fillStyle = gradient
+                            ctx.fill()
                         }
 
                         Component.onCompleted: requestPaint()
