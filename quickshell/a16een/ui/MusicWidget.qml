@@ -67,14 +67,13 @@ PanelWindow {
         : 0
     readonly property real displayedProgress: root.seekDragging
         ? root.seekFraction : root.progress
-    // The phase drives a low-amplitude wave; it animates only during playback.
+    // Both the slim rail and played segment share this phase, so the whole
+    // timeline moves as one continuous wave instead of a line with a wave inside.
     property real progressWavePhase: 0
-    readonly property real progressWaveGap: root.isPlaying && !root.seekDragging ? 1.35 : 0
+    readonly property real progressWaveGap: root.isPlaying && !root.seekDragging ? 3.0 : 0
     readonly property int libraryPopupRightMargin: root.navbarPosition === "right" ? 88 : 12
 
     // Canvas does not repaint automatically when arbitrary JS values change.
-    // Repaint the tiny progress surface as the phase flows and the playback
-    // state toggles the nearly invisible separation at its leading edge.
     onProgressWavePhaseChanged: waveCanvas.requestPaint()
     onProgressWaveGapChanged: waveCanvas.requestPaint()
 
@@ -666,7 +665,7 @@ PanelWindow {
                 Item {
                     id: progressTrack
                     width: parent.width
-                    height: 16
+                    height: 20
                     // Animate normal playback updates, but keep pointer seeking exact.
                     property real fillProgress: root.displayedProgress
                     Behavior on fillProgress {
@@ -677,74 +676,77 @@ PanelWindow {
                     }
                     onFillProgressChanged: waveCanvas.requestPaint()
 
-                    Rectangle {
-                        id: progressRail
+                    // The rail and played stroke are drawn in one pass with the
+                    // same wave geometry and phase. The rail stays slim; the
+                    // colored ribbon rises above it enough to read at a glance.
+                    Canvas {
+                        id: waveCanvas
                         x: 1
-                        y: 4
                         width: Math.max(0, parent.width - 2)
-                        height: 8
-                        radius: 4
-                        color: "#DCE6F0"
-                        border.width: 0
-                        clip: true
+                        height: parent.height
+                        antialiasing: true
 
-                        Canvas {
-                            id: waveCanvas
-                            anchors.fill: parent
-                            antialiasing: true
+                        onPaint: {
+                            const ctx = getContext("2d")
+                            ctx.clearRect(0, 0, width, height)
 
-                            onPaint: {
-                                const ctx = getContext("2d")
-                                ctx.clearRect(0, 0, width, height)
+                            const centerY = height / 2
+                            const amplitude = 3.25
+                            const wavelength = 23
+                            const phase = root.progressWavePhase
+                            const waveY = x => centerY
+                                + Math.sin((x / wavelength) * Math.PI * 2 + phase) * amplitude
 
-                                const playedWidth = Math.max(0, Math.min(
-                                    width,
-                                    width * progressTrack.fillProgress - root.progressWaveGap
-                                ))
-                                if (playedWidth < 0.75)
-                                    return
+                            ctx.lineCap = "round"
+                            ctx.lineJoin = "round"
 
-                                const centerY = height / 2
-                                const amplitude = 1.15
-                                const wavelength = 20
-                                const phase = root.progressWavePhase
-                                const gradient = ctx.createLinearGradient(0, 0, Math.max(1, playedWidth), 0)
-                                gradient.addColorStop(0.0, "#8AB8D8")
-                                gradient.addColorStop(0.48, "#A9A5DF")
-                                gradient.addColorStop(1.0, "#82CBC5")
+                            // A fine, moving guide makes the container itself a
+                            // visible wave, not a static capsule behind the fill.
+                            ctx.beginPath()
+                            ctx.moveTo(0, waveY(0))
+                            for (let x = 1; x < width; x += 1)
+                                ctx.lineTo(x, waveY(x))
+                            ctx.lineTo(width, waveY(width))
+                            ctx.strokeStyle = "#C7D7E8"
+                            ctx.lineWidth = 1.8
+                            ctx.stroke()
 
-                                ctx.beginPath()
-                                ctx.moveTo(0, centerY + Math.sin(phase) * amplitude)
-                                for (let x = 1; x < playedWidth; x += 1) {
-                                    const y = centerY
-                                        + Math.sin((x / wavelength) * Math.PI * 2 + phase) * amplitude
-                                    ctx.lineTo(x, y)
-                                }
-                                ctx.lineTo(playedWidth,
-                                    centerY + Math.sin((playedWidth / wavelength) * Math.PI * 2 + phase) * amplitude)
-                                ctx.strokeStyle = gradient
-                                ctx.lineWidth = 4.1
-                                ctx.lineCap = "round"
-                                ctx.lineJoin = "round"
-                                ctx.stroke()
-                            }
+                            const playedWidth = Math.max(0, Math.min(
+                                width,
+                                width * progressTrack.fillProgress - root.progressWaveGap
+                            ))
+                            if (playedWidth < 0.75)
+                                return
 
-                            Component.onCompleted: requestPaint()
-                            onWidthChanged: requestPaint()
-                            onHeightChanged: requestPaint()
+                            const gradient = ctx.createLinearGradient(0, 0, Math.max(1, playedWidth), 0)
+                            gradient.addColorStop(0.0, "#8AB8D8")
+                            gradient.addColorStop(0.48, "#A9A5DF")
+                            gradient.addColorStop(1.0, "#82CBC5")
+
+                            ctx.beginPath()
+                            ctx.moveTo(0, waveY(0))
+                            for (let x = 1; x < playedWidth; x += 1)
+                                ctx.lineTo(x, waveY(x))
+                            ctx.lineTo(playedWidth, waveY(playedWidth))
+                            ctx.strokeStyle = gradient
+                            ctx.lineWidth = 4.6
+                            ctx.stroke()
                         }
+
+                        Component.onCompleted: requestPaint()
+                        onWidthChanged: requestPaint()
+                        onHeightChanged: requestPaint()
                     }
 
-                    // Keep the handle out of the way during playback so the tiny
-                    // end gap and flowing wave stay visible. It returns on hover,
-                    // while paused, or whenever the user seeks.
+                    // Keep the handle out of the way during playback so the wave
+                    // stays clean. It returns on hover, while paused, or while seeking.
                     Rectangle {
                         id: progressThumb
                         width: 8
                         height: 8
                         x: Math.max(0, Math.min(parent.width - width,
                             1 + (parent.width - 2) * root.displayedProgress - width / 2))
-                        y: 4
+                        y: (parent.height - height) / 2
                         radius: 5
                         color: "#FAFCFF"
                         border.width: 1
