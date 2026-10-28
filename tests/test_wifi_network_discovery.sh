@@ -90,7 +90,7 @@ actual="$(bash "$ROOT/scripts/a16een-control" wifi networks --scan)"
 expected="$(printf '%s\n' \
     'Home Wi-Fi|93|WPA2|*|yes' \
     'Open Guest|68|--||no' \
-    'Coffee Shop|54|WPA1 WPA2||no')""
+    'Coffee Shop|54|WPA1 WPA2||no')"
 assert_equal "fresh Wi-Fi scan formatting" "$expected" "$actual"
 grep -Fq -- '--rescan yes' "$NMCLI_LOG"
 
