@@ -1167,7 +1167,7 @@ Item {
                                 required property var modelData
                                 readonly property int tileHeight: root.embedded ? 54 : 62
                                 readonly property bool menuOpen: root.wifiActionMenuSsid === modelData.ssid
-                                readonly property int menuHeight: modelData.saved ? 68 : 36
+                                readonly property int menuHeight: modelData.saved ? 68 : 40
                                 width: wifiColumn.width
                                 height: tileHeight + (menuOpen ? menuHeight + 5 : 0)
 
