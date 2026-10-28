@@ -77,7 +77,7 @@ expected="$(printf '%s\n' \
     'Open Guest|62|--||no' \
     'Office:Guest|77|WPA2||yes' \
     'Lobby\|Guest|47|WPA2||no' \
-    'Cafe\\WiFi|55|WPA2||no')
+    'Cafe\\WiFi|55|WPA2||no')"
 assert_equal "cached Wi-Fi network formatting" "$expected" "$actual"
 grep -Fq -- '-t -e yes -f IN-USE,SSID,SIGNAL,SECURITY' "$NMCLI_LOG"
 if grep -Fq -- '--separator' "$NMCLI_LOG"; then
@@ -90,7 +90,7 @@ actual="$(bash "$ROOT/scripts/a16een-control" wifi networks --scan)"
 expected="$(printf '%s\n' \
     'Home Wi-Fi|93|WPA2|*|yes' \
     'Open Guest|68|--||no' \
-    'Coffee Shop|54|WPA1 WPA2||no')"
+    'Coffee Shop|54|WPA1 WPA2||no')""
 assert_equal "fresh Wi-Fi scan formatting" "$expected" "$actual"
 grep -Fq -- '--rescan yes' "$NMCLI_LOG"
 
