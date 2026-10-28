@@ -552,7 +552,7 @@ PanelWindow {
 
         Rectangle {
             anchors.fill: parent
-            radius: 26
+            radius: 21
             color: "transparent"
             border.width: 1
             border.color: popupCardStyle.darkMode ? "#65FFFFFF" : "#A6FFFFFF"
