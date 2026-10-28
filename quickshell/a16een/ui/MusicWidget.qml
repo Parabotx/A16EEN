@@ -67,7 +67,17 @@ PanelWindow {
         : 0
     readonly property real displayedProgress: root.seekDragging
         ? root.seekFraction : root.progress
+    // The phase drives a low-amplitude wave; it animates only during playback.
+    property real progressWavePhase: 0
+    readonly property real progressWaveGap: root.isPlaying && !root.seekDragging ? 1.35 : 0
     readonly property int libraryPopupRightMargin: root.navbarPosition === "right" ? 88 : 12
+
+    // Canvas does not repaint automatically when arbitrary JS values change.
+    // Repaint the tiny progress surface as the phase flows and the playback
+    // state toggles the nearly invisible separation at its leading edge.
+    onProgressWavePhaseChanged: waveCanvas.requestPaint()
+    onProgressWaveGapChanged: waveCanvas.requestPaint()
+
     // Keep the song library beside the player so it never covers the Quotes card above it.
     readonly property bool libraryPopupOpensRight: root.modelData !== null
         && root.modelData.width - card.x - card.width - 8 - root.libraryPopupRightMargin >= 300
@@ -358,6 +368,18 @@ PanelWindow {
         onTriggered: root.refreshPlayback()
     }
 
+    // A slow, continuous phase shift makes the played segment flow like a
+    // tiny silk ribbon instead of a rigid straight bar.
+    NumberAnimation {
+        target: root
+        property: "progressWavePhase"
+        from: 0
+        to: Math.PI * 2
+        duration: 1850
+        loops: Animation.Infinite
+        running: root.widgetEnabled && root.isPlaying && !root.seekDragging
+    }
+
     // Two low-opacity layers give the compact card a soft, lifted shadow
     // without continuously running a blur effect.
     Rectangle {
@@ -645,36 +667,77 @@ PanelWindow {
                     id: progressTrack
                     width: parent.width
                     height: 16
+                    // Animate normal playback updates, but keep pointer seeking exact.
+                    property real fillProgress: root.displayedProgress
+                    Behavior on fillProgress {
+                        NumberAnimation {
+                            duration: root.seekDragging ? 0 : 180
+                            easing.type: Easing.OutCubic
+                        }
+                    }
+                    onFillProgressChanged: waveCanvas.requestPaint()
 
                     Rectangle {
                         id: progressRail
                         x: 1
-                        y: 6
+                        y: 4
                         width: Math.max(0, parent.width - 2)
-                        height: 4
-                        radius: 2
+                        height: 8
+                        radius: 4
                         color: "#DCE6F0"
                         border.width: 0
                         clip: true
 
-                        Rectangle {
-                            width: Math.max(0, progressRail.width * root.displayedProgress)
-                            height: progressRail.height
-                            radius: 2
-                            gradient: Gradient {
-                                GradientStop { position: 0.0; color: "#8AB8D8" }
-                                GradientStop { position: 0.48; color: "#A9A5DF" }
-                                GradientStop { position: 1.0; color: "#82CBC5" }
+                        Canvas {
+                            id: waveCanvas
+                            anchors.fill: parent
+                            antialiasing: true
+
+                            onPaint: {
+                                const ctx = getContext("2d")
+                                ctx.clearRect(0, 0, width, height)
+
+                                const playedWidth = Math.max(0, Math.min(
+                                    width,
+                                    width * progressTrack.fillProgress - root.progressWaveGap
+                                ))
+                                if (playedWidth < 0.75)
+                                    return
+
+                                const centerY = height / 2
+                                const amplitude = 1.15
+                                const wavelength = 20
+                                const phase = root.progressWavePhase
+                                const gradient = ctx.createLinearGradient(0, 0, Math.max(1, playedWidth), 0)
+                                gradient.addColorStop(0.0, "#8AB8D8")
+                                gradient.addColorStop(0.48, "#A9A5DF")
+                                gradient.addColorStop(1.0, "#82CBC5")
+
+                                ctx.beginPath()
+                                ctx.moveTo(0, centerY + Math.sin(phase) * amplitude)
+                                for (let x = 1; x < playedWidth; x += 1) {
+                                    const y = centerY
+                                        + Math.sin((x / wavelength) * Math.PI * 2 + phase) * amplitude
+                                    ctx.lineTo(x, y)
+                                }
+                                ctx.lineTo(playedWidth,
+                                    centerY + Math.sin((playedWidth / wavelength) * Math.PI * 2 + phase) * amplitude)
+                                ctx.strokeStyle = gradient
+                                ctx.lineWidth = 4.1
+                                ctx.lineCap = "round"
+                                ctx.lineJoin = "round"
+                                ctx.stroke()
                             }
 
-                            Behavior on width {
-                                NumberAnimation { duration: 180; easing.type: Easing.OutCubic }
-                            }
+                            Component.onCompleted: requestPaint()
+                            onWidthChanged: requestPaint()
+                            onHeightChanged: requestPaint()
                         }
                     }
 
-                    // A pearl-white thumb with a fine outline makes the seek position
-                    // feel like a precise, draggable control instead of a hard dot.
+                    // Keep the handle out of the way during playback so the tiny
+                    // end gap and flowing wave stay visible. It returns on hover,
+                    // while paused, or whenever the user seeks.
                     Rectangle {
                         id: progressThumb
                         width: 8
@@ -687,6 +750,7 @@ PanelWindow {
                         border.width: 1
                         border.color: "#95A9C2"
                         visible: root.playback.duration > 0
+                            && (seekArea.containsMouse || root.seekDragging || !root.isPlaying)
                         z: 2
 
                         Rectangle {
@@ -698,13 +762,14 @@ PanelWindow {
                         }
 
                         Behavior on x {
-                            NumberAnimation { duration: 180; easing.type: Easing.OutCubic }
+                            NumberAnimation { duration: root.seekDragging ? 0 : 180; easing.type: Easing.OutCubic }
                         }
                     }
 
                     MouseArea {
                         id: seekArea
                         anchors.fill: parent
+                        hoverEnabled: true
                         cursorShape: root.playback.duration > 0 ? Qt.PointingHandCursor : Qt.ArrowCursor
                         onPressed: function(mouse) {
                             if (root.playback.duration <= 0)
