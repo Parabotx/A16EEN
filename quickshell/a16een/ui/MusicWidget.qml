@@ -662,7 +662,7 @@ PanelWindow {
                 Item {
                     id: progressTrack
                     width: parent.width
-                    height: 26
+                    height: 24
                     // Animate normal playback updates, but keep pointer seeking exact.
                     property real fillProgress: root.displayedProgress
                     Behavior on fillProgress {
@@ -688,7 +688,7 @@ PanelWindow {
                             ctx.clearRect(0, 0, width, height)
 
                             const centerY = height / 2
-                            const amplitude = 5.8
+                            const amplitude = 5.3
                             const wavelength = 34
                             const phase = root.progressWavePhase
                             const playedWidth = Math.max(0, Math.min(
@@ -832,7 +832,7 @@ PanelWindow {
 
             Item {
                 width: parent.width
-                height: 28
+                height: 27
 
                 // One lightweight capsule groups the controls without adding
                 // bulky button backgrounds when the widget itself is transparent.
@@ -840,8 +840,8 @@ PanelWindow {
                     id: controlsCapsule
                     anchors.centerIn: parent
                     width: controls.implicitWidth + 10
-                    height: 26
-                    radius: 13
+                    height: 25
+                    radius: 12.5
                     color: "#52EDF4FA"
                     border.width: 1
                     border.color: "#70B8C9DB"
@@ -1093,8 +1093,8 @@ PanelWindow {
         signal clicked()
 
         width: primary ? 27 : 20
-        height: primary ? 24 : 20
-        radius: primary ? 12 : 10
+        height: primary ? 23 : 20
+        radius: primary ? 11.5 : 10
         color: primary
             ? "#2D3A4D"
             : selected ? "#DDE8F4" : buttonHover.containsMouse ? "#C6F2F6FA" : "transparent"
