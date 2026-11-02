@@ -82,22 +82,62 @@ class TransparencyTests(unittest.TestCase):
         self.assertIn('exclude namespace="^a16een-wallpaper"', rules)
         self.assertIn("opacity 0.88", rules)
 
-    def test_focused_window_shortcut_toggles_and_can_override_global(self):
+    def test_focused_shortcuts_change_transparency_in_five_percent_steps(self):
         self.run_helper("set-global", "on", "35")
-        self.run_helper("set-focused-percent", "28")
-        self.run_helper("toggle-focused")
+        self.run_helper("increase-focused")
         rules = self.rules_file.read_text(encoding="utf-8")
         self.assertIn('title="^Firefox — A16EEN$"', rules)
         self.assertIn("is-focused=true", rules)
-        self.assertIn("opacity 0.72", rules)
-        self.run_helper("toggle-focused")
-        rules = self.rules_file.read_text(encoding="utf-8")
-        self.assertIn("is-focused=true", rules)
-        self.assertIn("opacity 1.00", rules)
-        self.run_helper("toggle-focused")
-        rules = self.rules_file.read_text(encoding="utf-8")
-        self.assertIn("is-focused=true", rules)
-        self.assertIn("opacity 0.72", rules)
+        self.assertIn("opacity 0.60", rules)
+
+        state = json.loads(self.state_file.read_text(encoding="utf-8"))
+        self.assertEqual(state["focusedOverrides"][0]["percent"], 40)
+
+        self.run_helper("increase-focused")
+        state = json.loads(self.state_file.read_text(encoding="utf-8"))
+        self.assertEqual(state["focusedOverrides"][0]["percent"], 45)
+
+        self.run_helper("decrease-focused")
+        state = json.loads(self.state_file.read_text(encoding="utf-8"))
+        self.assertEqual(state["focusedOverrides"][0]["percent"], 40)
+        self.assertIn("opacity 0.60", self.rules_file.read_text(encoding="utf-8"))
+
+    def test_focused_shortcuts_inherit_per_app_rule(self):
+        self.run_helper("set-app", "org.mozilla.firefox", "50")
+        self.run_helper("decrease-focused")
+        state = json.loads(self.state_file.read_text(encoding="utf-8"))
+        self.assertEqual(state["focusedOverrides"][0]["percent"], 45)
+        self.assertIn("opacity 0.55", self.rules_file.read_text(encoding="utf-8"))
+
+    def test_focused_shortcuts_clamp_at_ninety(self):
+        self.run_helper("set-global", "on", "90")
+        self.run_helper("increase-focused")
+        state = json.loads(self.state_file.read_text(encoding="utf-8"))
+        self.assertEqual(state["focusedOverrides"], [])
+
+        self.run_helper("decrease-focused")
+        state = json.loads(self.state_file.read_text(encoding="utf-8"))
+        self.assertEqual(state["focusedOverrides"][0]["percent"], 85)
+
+    def test_focused_decrease_at_zero_stays_opaque(self):
+        self.run_helper("decrease-focused")
+        state = json.loads(self.state_file.read_text(encoding="utf-8"))
+        self.assertEqual(state["focusedOverrides"], [])
+        self.assertNotIn("is-focused=true", self.rules_file.read_text(encoding="utf-8"))
+
+    def test_existing_focused_rules_load_without_legacy_percentage_setting(self):
+        self.state_file.parent.mkdir(parents=True, exist_ok=True)
+        self.state_file.write_text(json.dumps({
+            "version": 1,
+            "focusedOverrides": [{
+                "app_id": "org.mozilla.firefox",
+                "title": "Firefox — A16EEN",
+                "percent": 30,
+            }],
+        }), encoding="utf-8")
+        self.run_helper("increase-focused")
+        state = json.loads(self.state_file.read_text(encoding="utf-8"))
+        self.assertEqual(state["focusedOverrides"][0]["percent"], 35)
 
     def test_get_returns_running_applications(self):
         result = json.loads(self.run_helper("get").stdout)

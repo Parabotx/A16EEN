@@ -18,7 +18,6 @@ DEFAULT_STATE: dict[str, Any] = {
     "version": 1,
     "global": {"enabled": False, "percent": 20},
     "navbar": {"enabled": False, "percent": 10},
-    "focusedPercent": 25,
     "apps": {},
     "focusedOverrides": [],
 }
@@ -104,7 +103,7 @@ def load_state(state_file: Path) -> dict[str, Any]:
             "percent": clamp_percent(value.get("percent", DEFAULT_STATE[section]["percent"])),
         }
 
-    state["focusedPercent"] = clamp_percent(state.get("focusedPercent", 25))
+    state.pop("focusedPercent", None)
     apps = state.get("apps")
     if not isinstance(apps, dict):
         apps = {}
@@ -128,7 +127,7 @@ def load_state(state_file: Path) -> dict[str, Any]:
         cleaned.append({
             "app_id": app_id,
             "title": title,
-            "percent": clamp_percent(item.get("percent", state["focusedPercent"])),
+            "percent": clamp_percent(item.get("percent", 25)),
         })
     state["focusedOverrides"] = cleaned
     state["version"] = 1
@@ -267,7 +266,7 @@ def main(argv: list[str]) -> int:
     if not argv or argv[0] in {"help", "--help", "-h"}:
         print(
             "Usage: a16een-transparency get|list|set-global|set-navbar|"
-            "set-app|clear-app|set-focused-percent|toggle-focused"
+            "set-app|clear-app|increase-focused|decrease-focused"
         )
         return 0
 
@@ -310,13 +309,12 @@ def main(argv: list[str]) -> int:
         state["apps"][app_id] = clamp_percent(args[1])
     elif action == "clear-app" and len(args) == 1:
         state["apps"].pop(args[0], None)
-    elif action == "set-focused-percent" and len(args) == 1:
-        state["focusedPercent"] = clamp_percent(args[0])
-    elif action == "toggle-focused" and not args:
+    elif action in {"increase-focused", "decrease-focused"} and not args:
         windows, available = niri_windows()
         focused = next((window for window in windows if window["is_focused"]), None)
         if not available or not focused:
             raise RuntimeError("no focused application window is available")
+
         app_id = focused["app_id"]
         title = focused["title"]
         existing = next(
@@ -326,24 +324,36 @@ def main(argv: list[str]) -> int:
             ),
             None,
         )
+
+        # Start from the window's effective saved setting: an existing focused
+        # override, then an app-specific rule, then the global rule, then opaque.
+        if existing is not None:
+            current_percent = clamp_percent(state["focusedOverrides"][existing]["percent"])
+        elif app_id in state["apps"]:
+            current_percent = clamp_percent(state["apps"][app_id])
+        elif state["global"]["enabled"]:
+            current_percent = clamp_percent(state["global"]["percent"])
+        else:
+            current_percent = 0
+
+        delta = 5 if action == "increase-focused" else -5
+        next_percent = max(0, min(MAX_TRANSPARENCY, current_percent + delta))
+        if next_percent == current_percent:
+            boundary = "maximum" if delta > 0 else "minimum"
+            print(f"{app_id} is already at the {boundary} transparency ({current_percent}%).")
+            return 0
+
         if existing is None:
             state["focusedOverrides"].append({
                 "app_id": app_id,
                 "title": title,
-                "percent": state["focusedPercent"],
+                "percent": next_percent,
             })
-            message = f"Transparency enabled for {app_id}"
         else:
-            current_percent = int(state["focusedOverrides"][existing]["percent"])
-            next_percent = state["focusedPercent"] if current_percent == 0 else 0
             state["focusedOverrides"][existing]["percent"] = next_percent
-            message = (
-                f"Transparency enabled for {app_id}"
-                if next_percent > 0
-                else f"Transparency paused for {app_id}"
-            )
+
         save_and_render(state_file, rules_file, state)
-        print(message)
+        print(f"{app_id}: {next_percent}% transparent.")
         return 0
     else:
         raise ValueError("invalid command or arguments; run a16een-transparency help")

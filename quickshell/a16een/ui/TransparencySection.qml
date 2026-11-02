@@ -11,7 +11,6 @@ Item {
     property int globalPercent: 20
     property bool navbarEnabled: false
     property int navbarPercent: 10
-    property int focusedPercent: 25
     property var appOverrides: ({})
     property var windows: []
     property string statusMessage: "READY"
@@ -86,7 +85,6 @@ Item {
             root.globalPercent = Math.max(0, Math.min(90, Math.round(Number(globalSettings.percent) || 0)))
             root.navbarEnabled = navbarSettings.enabled === true
             root.navbarPercent = Math.max(0, Math.min(90, Math.round(Number(navbarSettings.percent) || 0)))
-            root.focusedPercent = Math.max(0, Math.min(90, Math.round(Number(parsed.focusedPercent) || 0)))
             root.appOverrides = parsed.apps && typeof parsed.apps === "object" ? parsed.apps : ({})
             root.windows = Array.isArray(parsed.windows) ? parsed.windows : []
             root.statusMessage = parsed.niriAvailable === false
@@ -562,7 +560,7 @@ Item {
 
                 Rectangle {
                     width: parent.width
-                    height: 132
+                    height: 126
                     radius: 17
                     color: root.tile
                     border.width: 1
@@ -571,91 +569,83 @@ Item {
                     Column {
                         anchors.fill: parent
                         anchors.margins: 17
-                        spacing: 8
+                        spacing: 9
+
+                        Text {
+                            text: "FOCUSED WINDOW SHORTCUTS"
+                            color: root.textPrimary
+                            font.pixelSize: 11
+                            font.weight: Font.DemiBold
+                            font.letterSpacing: 0.5
+                        }
 
                         Row {
                             width: parent.width
-                            spacing: 12
+                            spacing: 10
 
-                            Column {
-                                spacing: 3
-                                Text {
-                                    text: "FOCUSED WINDOW SHORTCUT"
-                                    color: root.textPrimary
-                                    font.pixelSize: 11
-                                    font.weight: Font.DemiBold
-                                    font.letterSpacing: 0.5
-                                }
-                                Text {
-                                    text: "Press Super + Shift + T to toggle transparency on the focused window."
-                                    color: root.textSecondary
-                                    font.pixelSize: 8
-                                }
-                            }
-                            Item { width: 1; height: 1 }
                             Rectangle {
-                                width: 112
-                                height: 28
-                                radius: 8
-                                color: "#ECEFF2"
+                                width: (parent.width - 10) / 2
+                                height: 44
+                                radius: 10
+                                color: "#FFFFFF"
                                 border.width: 1
                                 border.color: root.border
-                                Text {
+
+                                Column {
                                     anchors.centerIn: parent
-                                    text: "SUPER  +  SHIFT  +  T"
-                                    color: root.textPrimary
-                                    font.pixelSize: 8
-                                    font.weight: Font.DemiBold
+                                    spacing: 4
+                                    Text {
+                                        anchors.horizontalCenter: parent.horizontalCenter
+                                        text: "INCREASE  +5%"
+                                        color: root.accent
+                                        font.pixelSize: 9
+                                        font.weight: Font.DemiBold
+                                    }
+                                    Text {
+                                        anchors.horizontalCenter: parent.horizontalCenter
+                                        text: "CTRL + ALT + SHIFT + ="
+                                        color: root.textPrimary
+                                        font.pixelSize: 8
+                                        font.weight: Font.Medium
+                                    }
+                                }
+                            }
+
+                            Rectangle {
+                                width: (parent.width - 10) / 2
+                                height: 44
+                                radius: 10
+                                color: "#FFFFFF"
+                                border.width: 1
+                                border.color: root.border
+
+                                Column {
+                                    anchors.centerIn: parent
+                                    spacing: 4
+                                    Text {
+                                        anchors.horizontalCenter: parent.horizontalCenter
+                                        text: "DECREASE  −5%"
+                                        color: root.accent
+                                        font.pixelSize: 9
+                                        font.weight: Font.DemiBold
+                                    }
+                                    Text {
+                                        anchors.horizontalCenter: parent.horizontalCenter
+                                        text: "CTRL + ALT + -"
+                                        color: root.textPrimary
+                                        font.pixelSize: 8
+                                        font.weight: Font.Medium
+                                    }
                                 }
                             }
                         }
 
                         Text {
-                            text: root.focusedPercent + "% TRANSPARENT WHEN ENABLED"
-                            color: root.accent
-                            font.pixelSize: 10
-                            font.weight: Font.DemiBold
-                        }
-
-                        Slider {
-                            id: focusedSlider
                             width: parent.width
-                            height: 24
-                            from: 0
-                            to: 90
-                            stepSize: 1
-                            value: root.focusedPercent
-                            background: Rectangle {
-                                x: focusedSlider.leftPadding
-                                y: focusedSlider.topPadding + focusedSlider.availableHeight / 2 - height / 2
-                                width: focusedSlider.availableWidth
-                                height: 4
-                                radius: 2
-                                color: "#DCE1E6"
-                                Rectangle {
-                                    width: focusedSlider.visualPosition * parent.width
-                                    height: parent.height
-                                    radius: 2
-                                    color: root.accent
-                                }
-                            }
-                            handle: Rectangle {
-                                x: focusedSlider.leftPadding + focusedSlider.visualPosition * (focusedSlider.availableWidth - width)
-                                y: focusedSlider.topPadding + focusedSlider.availableHeight / 2 - height / 2
-                                width: 16
-                                height: 16
-                                radius: 8
-                                color: "#FFFFFF"
-                                border.width: 2
-                                border.color: root.accent
-                            }
-                            onMoved: {
-                                root.focusedPercent = Math.round(value)
-                                root.queueAction("focused", [
-                                    "set-focused-percent",
-                                    String(root.focusedPercent)
-                                ])
-                            }
+                            text: "Each press changes only the focused window. Transparency is limited to 90%; 0% is fully opaque."
+                            color: root.textSecondary
+                            font.pixelSize: 8
+                            wrapMode: Text.WordWrap
                         }
                     }
                 }

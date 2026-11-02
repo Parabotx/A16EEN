@@ -93,8 +93,9 @@ binds {
     // Super+Space opens the A16EEN application launcher.
     // Super+/ opens the A16EEN command center.
     Super+Space repeat=false hotkey-overlay-title="A16EEN Application Launcher" { spawn-sh "qs -c \"$HOME/.config/a16een/quickshell/a16een\" ipc call launcher open"; }
-    // Toggle transparency for the currently focused application window.
-    Super+Shift+T repeat=false hotkey-overlay-title="Toggle Focused Window Transparency" { spawn "a16een-transparency" "toggle-focused"; }
+    // Adjust the focused window's transparency in precise 5% steps.
+    Ctrl+Alt+Shift+Plus repeat=false hotkey-overlay-title="Increase Focused Window Transparency" { spawn "a16een-transparency" "increase-focused"; }
+    Ctrl+Alt+Minus repeat=false hotkey-overlay-title="Decrease Focused Window Transparency" { spawn "a16een-transparency" "decrease-focused"; }
     Super+Slash repeat=false hotkey-overlay-title="A16EEN Command Center" { spawn-sh "qs -c \"$HOME/.config/a16een/quickshell/a16een\" ipc call command-center toggle"; }
     Mod+O repeat=false { toggle-overview; }
 
