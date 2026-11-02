@@ -31,6 +31,8 @@ wireplumber
 upower
 swaylock
 gtklock
+gtklock-playerctl-module
+gtklock-powerbar-module
 swayidle
 ffmpeg
 xwayland-satellite
@@ -466,6 +468,7 @@ sudo install -Dm755 "$ROOT_DIR/scripts/a16een-wallpaper" /usr/local/bin/a16een-w
 sudo install -Dm755 "$ROOT_DIR/scripts/a16een-screenshot" /usr/local/bin/a16een-screenshot
 sudo install -Dm755 "$ROOT_DIR/scripts/a16een-lock" /usr/local/bin/a16een-lock
 sudo install -Dm755 "$ROOT_DIR/scripts/a16een-lockscreen" /usr/local/bin/a16een-lockscreen
+sudo install -Dm755 "$ROOT_DIR/scripts/a16een-lockscreen-action" /usr/local/bin/a16een-lockscreen-action
 sudo install -Dm755 "$ROOT_DIR/scripts/a16een-control" /usr/local/bin/a16een-control
 sudo install -Dm755 "$ROOT_DIR/scripts/a16een-clipboard" /usr/local/bin/a16een-clipboard
 sudo install -Dm755 "$ROOT_DIR/scripts/a16een-app-stash" /usr/local/bin/a16een-app-stash
