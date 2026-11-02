@@ -5,7 +5,6 @@ from __future__ import annotations
 
 import json
 import os
-import re
 import shutil
 import subprocess
 import sys
@@ -144,12 +143,20 @@ def kdl_string(value: str) -> str:
     return json.dumps(value, ensure_ascii=False)
 
 
+def regex_literal(value: str) -> str:
+    # Escape only Rust-regex metacharacters. Python re.escape also escapes
+    # spaces and punctuation that Rust's regex engine does not accept as
+    # identity escapes (for example "\\ " or "\\—").
+    metacharacters = set(r"\\.^$|?*+()[]{}")
+    return "".join("\\" + character if character in metacharacters else character for character in value)
+
+
 def app_pattern(app_id: str) -> str:
-    return "^" + re.escape(app_id) + "$"
+    return "^" + regex_literal(app_id) + "$"
 
 
 def title_pattern(title: str) -> str:
-    return "^" + re.escape(title) + "$"
+    return "^" + regex_literal(title) + "$"
 
 
 def opacity_for(transparency_percent: int) -> str:
