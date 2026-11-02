@@ -151,6 +151,7 @@ binds {
     XF86AudioNext allow-when-locked=true { spawn "playerctl" "next"; }
     XF86AudioPlay allow-when-locked=true { spawn "playerctl" "play-pause"; }
     XF86AudioStop allow-when-locked=true { spawn "a16een-lockscreen-action" "media-stop"; }
+    Super+Alt+M allow-when-locked=true repeat=false hotkey-overlay-title="Stop Media" { spawn "a16een-lockscreen-action" "media-stop"; }
 
     XF86AudioMute allow-when-locked=true {
         spawn "wpctl" "set-mute" "@DEFAULT_AUDIO_SINK@" "toggle"; }
