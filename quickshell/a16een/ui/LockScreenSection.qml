@@ -1092,6 +1092,33 @@ Item {
                                 }
                             }
                         }
+
+                        Rectangle {
+                            width: 64
+                            height: 30
+                            radius: 8
+                            color: "#FFFFFF"
+                            border.width: 1
+                            border.color: root.newCodeUses > 10 ? root.accent : root.border
+
+                            TextInput {
+                                anchors.fill: parent
+                                anchors.margins: 4
+                                verticalAlignment: TextInput.AlignVCenter
+                                horizontalAlignment: TextInput.AlignHCenter
+                                text: String(root.newCodeUses)
+                                color: root.textPrimary
+                                font.pixelSize: 9
+                                maximumLength: 3
+                                inputMethodHints: Qt.ImhDigitsOnly
+                                validator: IntValidator { bottom: 1; top: 100 }
+                                onEditingFinished: {
+                                    const value = Number(text)
+                                    if (Number.isInteger(value) && value >= 1 && value <= 100)
+                                        root.newCodeUses = value
+                                }
+                            }
+                        }
                     }
 
                     Row {
