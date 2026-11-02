@@ -83,6 +83,19 @@ ShellRoot {
         }
     }
 
+    // Keep the sleep/idle watcher alive independently of individual lock-screen
+    // actions. A transient swayidle/DBus failure must not silently disable lid
+    // and resume protection for the rest of the session.
+    Timer {
+        id: lockWatcherRecoveryTimer
+        interval: 3000
+        repeat: false
+        onTriggered: {
+            if (root.lockSettingsLoaded && (root.lockIdleEnabled || root.lockOnSleepEnabled))
+                root.lockWatcherRunning = true
+        }
+    }
+
     Timer {
         id: lockSettingsSaveTimer
         interval: 180
@@ -155,6 +168,9 @@ ShellRoot {
                 root.lockWatcherRunning = false
                 if (exitCode !== 0)
                     console.warn("A16EEN idle lock watcher exited with status", exitCode)
+                lockWatcherRecoveryTimer.restart()
+            } else {
+                lockWatcherRecoveryTimer.stop()
             }
         }
     }
