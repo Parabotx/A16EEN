@@ -50,7 +50,9 @@ def identity():
 
 def store_paths():
     account = identity()
-    state_home = os.environ.get("XDG_STATE_HOME") or os.path.join(account.pw_dir, ".local", "state")
+    # Use one stable per-account location for both the desktop UI and PAM.
+    # PAM environments do not necessarily inherit XDG_STATE_HOME from Quickshell.
+    state_home = os.environ.get("A16EEN_LOCKSCREEN_STATE_HOME") or os.path.join(account.pw_dir, ".local", "state")
     directory = Path(state_home) / "a16een"
     directory.mkdir(mode=0o700, parents=True, exist_ok=True)
     info = directory.lstat()
