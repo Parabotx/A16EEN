@@ -27,6 +27,7 @@ def run(env, *args, input_text=None, expect=0):
 
 with tempfile.TemporaryDirectory() as temp:
     env = os.environ.copy()
+    env["A16EEN_LOCKSCREEN_TESTING"] = "1"
     env["A16EEN_LOCKSCREEN_STATE_HOME"] = str(Path(temp) / "state")
     env["PAM_USER"] = pwd.getpwuid(os.getuid()).pw_name
 
