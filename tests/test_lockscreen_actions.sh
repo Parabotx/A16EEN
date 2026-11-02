@@ -25,11 +25,11 @@ export PATH="$TMP_DIR/bin:$PATH"
 export A16EEN_ACTION_LOG="$TMP_DIR/actions.log"
 : >"$A16EEN_ACTION_LOG"
 
-"$ACTION" logout
-"$ACTION" reboot
-"$ACTION" poweroff
-"$ACTION" suspend
-"$ACTION" media-stop
+bash "$ACTION" logout
+bash "$ACTION" reboot
+bash "$ACTION" poweroff
+bash "$ACTION" suspend
+bash "$ACTION" media-stop
 
 grep -Fxq 'niri:msg action quit' "$A16EEN_ACTION_LOG"
 grep -Fxq 'systemctl:reboot' "$A16EEN_ACTION_LOG"
@@ -38,7 +38,7 @@ grep -Fxq 'systemctl:suspend' "$A16EEN_ACTION_LOG"
 grep -Fxq 'playerctl:stop' "$A16EEN_ACTION_LOG"
 
 before="$(wc -l <"$A16EEN_ACTION_LOG")"
-if "$ACTION" 'systemctl reboot' >/dev/null 2>&1; then
+if bash "$ACTION" 'systemctl reboot' >/dev/null 2>&1; then
     echo "The lockscreen action helper accepted an arbitrary command." >&2
     exit 1
 fi
