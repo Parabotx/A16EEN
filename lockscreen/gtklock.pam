@@ -1,9 +1,5 @@
 #%PAM-1.0
 # A16EEN optional time-based and limited-use codes.
-# A failed A16EEN code falls through to the normal Arch system-auth stack.
+# A failed A16EEN code falls through to GTKLock's normal Arch login PAM stack.
 auth      sufficient  pam_exec.so expose_authtok quiet type=auth /usr/local/bin/a16een-lockscreen-auth verify
-
-auth      include     system-auth
-account   include     system-auth
-password  include     system-auth
-session   include     system-auth
+auth      include     login
