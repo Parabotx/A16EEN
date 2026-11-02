@@ -16,7 +16,7 @@ assert 'title: "Dynamic key"' in ui
 assert 'title: "Temporary"' in ui
 assert "property bool timePasswordEnabled: false" in ui
 assert "auth-add-temp" not in ui  # secrets are sent through Process stdin, not argv
-assert 'command = ["a16een-lockscreen-auth", "add"]' in ui
+assert 'command: ["a16een-lockscreen-auth", "add"]' in ui
 assert "stdinEnabled: true" in ui
 assert "Math.abs(root.timeOffsetMinutes)" in ui
 
