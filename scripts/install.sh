@@ -292,7 +292,7 @@ else
             cp "$sound_file" "$destination"
         done < <(
             find "$BUILTIN_SOUNDS_SOURCE_DIR" -type f \
-                \( -iname '*.ogg' -o -iname '*.oga' -o -iname '*.wav' \) \
+                \( -iname '*.mp3' -o -iname '*.ogg' -o -iname '*.oga' -o -iname '*.wav' \) \
                 -print0 | LC_ALL=C sort -z -f
         )
     fi

@@ -13,7 +13,7 @@ PanelWindow {
     property string currentMessage: ""
     property var remainingMessageIndices: []
     readonly property string customWarningSoundPath:
-        (Quickshell.env("HOME") || "") + "/.config/a16een/quickshell/a16een/assets/sounds/low-power-alert.ogg"
+        (Quickshell.env("HOME") || "") + "/.config/a16een/quickshell/a16een/assets/sounds/low-power-alert.mp3"
 
     readonly property var warningMessages: [
         "I'm dying while you watch another video. Priorities, genius. 💀",
@@ -326,17 +326,12 @@ PanelWindow {
     }
 
     function playWarningSound() {
-        // The stock desktop alarm sounded wrong for A16EEN. Stay silent until
-        // the user-supplied alert is installed; never fall back to another
-        // unrelated system sound.
+        // MP3 is decoded by the system's installed MPV player. Do not fall
+        // back to unrelated desktop alert sounds when the custom asset is absent.
         Quickshell.execDetached([
             "sh", "-c",
-            "if [ -r \"$1\" ]; then " +
-            "  for player in pw-play paplay; do " +
-            "    if command -v \"$player\" >/dev/null 2>&1; then " +
-            "      \"$player\" \"$1\" >/dev/null 2>&1 && exit 0; " +
-            "    fi; " +
-            "  done; " +
+            "if [ -r \"$1\" ] && command -v mpv >/dev/null 2>&1; then " +
+            "  mpv --no-video --really-quiet -- \"$1\" >/dev/null 2>&1; " +
             "fi",
             "a16een-low-power-alert",
             root.customWarningSoundPath
