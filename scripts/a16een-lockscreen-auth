@@ -1,0 +1,375 @@
+#!/usr/bin/env python3
+"""Additional, per-user GTKLock authentication methods for A16EEN.
+
+The normal PAM account-password stack remains authoritative and untouched.
+This helper is called by pam_exec before the existing system-auth stack.
+"""
+from __future__ import annotations
+
+import base64
+import datetime as dt
+import fcntl
+import getpass
+import hashlib
+import hmac
+import json
+import os
+import pwd
+import secrets
+import stat
+import sys
+import tempfile
+import time
+from contextlib import contextmanager
+from pathlib import Path
+
+MAX_CODES = 10
+MIN_SECRET_LENGTH = 6
+MAX_SECRET_LENGTH = 64
+MAX_LABEL_LENGTH = 28
+SCRYPT_N = 1 << 14
+SCRYPT_R = 8
+SCRYPT_P = 1
+SCRYPT_LENGTH = 32
+
+
+class AuthError(Exception):
+    pass
+
+
+def identity():
+    requested = os.environ.get("PAM_USER") or getpass.getuser()
+    try:
+        account = pwd.getpwnam(requested)
+    except KeyError as exc:
+        raise AuthError("Unknown PAM user.") from exc
+    if os.getuid() != account.pw_uid:
+        raise AuthError("The lockscreen helper must run as the authenticated user.")
+    return account
+
+
+def store_paths():
+    account = identity()
+    state_home = os.environ.get("XDG_STATE_HOME") or os.path.join(account.pw_dir, ".local", "state")
+    directory = Path(state_home) / "a16een"
+    directory.mkdir(mode=0o700, parents=True, exist_ok=True)
+    info = directory.lstat()
+    if not stat.S_ISDIR(info.st_mode) or info.st_uid != account.pw_uid:
+        raise AuthError("A16EEN lockscreen state directory is not owned by this user.")
+    os.chmod(directory, 0o700)
+    return directory, directory / "lockscreen-auth.json", directory / ".lockscreen-auth.lock"
+
+
+@contextmanager
+def locked_store():
+    directory, data_path, lock_path = store_paths()
+    flags = os.O_CREAT | os.O_RDWR
+    if hasattr(os, "O_NOFOLLOW"):
+        flags |= os.O_NOFOLLOW
+    lock_fd = os.open(lock_path, flags, 0o600)
+    try:
+        lock_info = os.fstat(lock_fd)
+        if lock_info.st_uid != os.getuid() or not stat.S_ISREG(lock_info.st_mode):
+            raise AuthError("Invalid lockscreen state lock file.")
+        os.fchmod(lock_fd, 0o600)
+        fcntl.flock(lock_fd, fcntl.LOCK_EX)
+        yield directory, data_path
+    finally:
+        try:
+            fcntl.flock(lock_fd, fcntl.LOCK_UN)
+        finally:
+            os.close(lock_fd)
+
+
+def default_state():
+    return {
+        "version": 1,
+        "time_password": {"enabled": False, "offset_minutes": -20},
+        "temporary_codes": [],
+        "failed_attempts": 0,
+        "locked_until": 0,
+    }
+
+
+def read_state(path: Path):
+    if not path.exists():
+        return default_state()
+    flags = os.O_RDONLY
+    if hasattr(os, "O_NOFOLLOW"):
+        flags |= os.O_NOFOLLOW
+    try:
+        fd = os.open(path, flags)
+    except FileNotFoundError:
+        return default_state()
+    with os.fdopen(fd, "r", encoding="utf-8") as stream:
+        info = os.fstat(stream.fileno())
+        if info.st_uid != os.getuid() or not stat.S_ISREG(info.st_mode) or info.st_size > 65536:
+            raise AuthError("Invalid lockscreen authentication store.")
+        os.fchmod(stream.fileno(), 0o600)
+        try:
+            state = json.load(stream)
+        except (json.JSONDecodeError, UnicodeDecodeError) as exc:
+            raise AuthError("Lockscreen authentication store is damaged.") from exc
+    if not isinstance(state, dict) or state.get("version") != 1:
+        raise AuthError("Unsupported lockscreen authentication store.")
+    defaults = default_state()
+    time_settings = state.get("time_password")
+    if not isinstance(time_settings, dict):
+        time_settings = defaults["time_password"]
+    enabled = time_settings.get("enabled") is True
+    offset = time_settings.get("offset_minutes", -20)
+    if not isinstance(offset, int) or isinstance(offset, bool) or not -720 <= offset <= 720:
+        offset = -20
+    codes = state.get("temporary_codes", [])
+    if not isinstance(codes, list):
+        codes = []
+    cleaned = []
+    for code in codes[:MAX_CODES]:
+        if not isinstance(code, dict):
+            continue
+        if not all(isinstance(code.get(key), str) for key in ("id", "label", "salt", "digest")):
+            continue
+        total, remaining = code.get("uses_total"), code.get("uses_left")
+        if not isinstance(total, int) or not isinstance(remaining, int):
+            continue
+        if total < 1 or not 0 <= remaining <= total:
+            continue
+        cleaned.append({
+            "id": code["id"],
+            "label": code["label"][:MAX_LABEL_LENGTH],
+            "salt": code["salt"],
+            "digest": code["digest"],
+            "uses_total": total,
+            "uses_left": remaining,
+            "created_at": str(code.get("created_at", ""))[:32],
+        })
+    failures = state.get("failed_attempts", 0)
+    locked_until = state.get("locked_until", 0)
+    if not isinstance(failures, int) or failures < 0:
+        failures = 0
+    if not isinstance(locked_until, (int, float)):
+        locked_until = 0
+    return {
+        "version": 1,
+        "time_password": {"enabled": enabled, "offset_minutes": offset},
+        "temporary_codes": cleaned,
+        "failed_attempts": min(failures, 100),
+        "locked_until": max(0, float(locked_until)),
+    }
+
+
+def write_state(directory: Path, path: Path, state):
+    fd, temporary = tempfile.mkstemp(prefix=".lockscreen-auth.", dir=directory)
+    try:
+        os.fchmod(fd, 0o600)
+        with os.fdopen(fd, "w", encoding="utf-8") as stream:
+            json.dump(state, stream, separators=(",", ":"), ensure_ascii=True)
+            stream.write("\n")
+            stream.flush()
+            os.fsync(stream.fileno())
+        os.replace(temporary, path)
+        dir_fd = os.open(directory, os.O_RDONLY)
+        try:
+            os.fsync(dir_fd)
+        finally:
+            os.close(dir_fd)
+    finally:
+        try:
+            os.unlink(temporary)
+        except FileNotFoundError:
+            pass
+
+
+def time_code(offset_minutes: int, now: dt.datetime | None = None):
+    """Return the local 12-hour HHMM code after applying the configured offset."""
+    current = now if now is not None else dt.datetime.now().astimezone()
+    adjusted = current + dt.timedelta(minutes=offset_minutes)
+    return adjusted.strftime("%I%M")
+
+
+def hash_secret(secret: str, salt: bytes):
+    return hashlib.scrypt(
+        secret.encode("utf-8"),
+        salt=salt,
+        n=SCRYPT_N,
+        r=SCRYPT_R,
+        p=SCRYPT_P,
+        dklen=SCRYPT_LENGTH,
+    )
+
+
+def public_state(state):
+    settings = state["time_password"]
+    return {
+        "timeEnabled": settings["enabled"],
+        "timeOffsetMinutes": settings["offset_minutes"],
+        "temporaryCodes": [
+            {
+                "id": code["id"],
+                "label": code["label"],
+                "usesTotal": code["uses_total"],
+                "usesLeft": code["uses_left"],
+                "createdAt": code["created_at"],
+            }
+            for code in state["temporary_codes"]
+        ],
+    }
+
+
+def output_state(state):
+    print(json.dumps(public_state(state), separators=(",", ":")))
+
+
+def cmd_get():
+    with locked_store() as (directory, path):
+        state = read_state(path)
+        output_state(state)
+
+
+def cmd_set_time(enabled_text: str, offset_text: str):
+    if enabled_text not in ("true", "false"):
+        raise AuthError("Dynamic password enabled must be true or false.")
+    try:
+        offset = int(offset_text)
+    except ValueError as exc:
+        raise AuthError("Time adjustment must be a whole number of minutes.") from exc
+    if not -720 <= offset <= 720:
+        raise AuthError("Time adjustment must be between -720 and +720 minutes.")
+    with locked_store() as (directory, path):
+        state = read_state(path)
+        state["time_password"] = {"enabled": enabled_text == "true", "offset_minutes": offset}
+        write_state(directory, path, state)
+        output_state(state)
+
+
+def cmd_add():
+    try:
+        payload = json.loads(sys.stdin.readline(4096))
+    except (json.JSONDecodeError, UnicodeDecodeError) as exc:
+        raise AuthError("Could not read the temporary-code form.") from exc
+    if not isinstance(payload, dict):
+        raise AuthError("Invalid temporary-code form.")
+    label = str(payload.get("label", "")).strip()
+    secret = payload.get("password")
+    uses = payload.get("uses")
+    if not label or len(label) > MAX_LABEL_LENGTH:
+        raise AuthError(f"Give this code a name (1–{MAX_LABEL_LENGTH} characters).")
+    if not isinstance(secret, str) or not MIN_SECRET_LENGTH <= len(secret) <= MAX_SECRET_LENGTH:
+        raise AuthError(f"Temporary passwords must be {MIN_SECRET_LENGTH}–{MAX_SECRET_LENGTH} characters.")
+    if not secret.isascii() or any(ch.isspace() or ord(ch) < 33 or ord(ch) > 126 for ch in secret):
+        raise AuthError("Use printable characters without spaces in a temporary password.")
+    if not isinstance(uses, int) or isinstance(uses, bool) or not 1 <= uses <= 100:
+        raise AuthError("Choose between 1 and 100 successful uses.")
+    with locked_store() as (directory, path):
+        state = read_state(path)
+        if len(state["temporary_codes"]) >= MAX_CODES:
+            raise AuthError(f"You can keep up to {MAX_CODES} temporary codes. Remove an old one first.")
+        salt = secrets.token_bytes(16)
+        state["temporary_codes"].append({
+            "id": secrets.token_hex(8),
+            "label": label,
+            "salt": base64.b64encode(salt).decode("ascii"),
+            "digest": base64.b64encode(hash_secret(secret, salt)).decode("ascii"),
+            "uses_total": uses,
+            "uses_left": uses,
+            "created_at": dt.datetime.now().astimezone().isoformat(timespec="minutes"),
+        })
+        write_state(directory, path, state)
+        output_state(state)
+
+
+def cmd_remove(code_id: str):
+    if not code_id or len(code_id) > 32 or any(ch not in "0123456789abcdef" for ch in code_id):
+        raise AuthError("Invalid temporary-code identifier.")
+    with locked_store() as (directory, path):
+        state = read_state(path)
+        before = len(state["temporary_codes"])
+        state["temporary_codes"] = [code for code in state["temporary_codes"] if code["id"] != code_id]
+        if len(state["temporary_codes"]) == before:
+            raise AuthError("That temporary code no longer exists.")
+        write_state(directory, path, state)
+        output_state(state)
+
+
+def cmd_verify():
+    # pam_exec provides PAM_AUTHTOK on stdin; never put the entered value in argv or logs.
+    supplied = sys.stdin.readline(512)
+    if not supplied:
+        return 1
+    token = supplied.rstrip("\r\n")
+    if not 1 <= len(token) <= MAX_SECRET_LENGTH or not token.isascii():
+        return 1
+    try:
+        with locked_store() as (directory, path):
+            state = read_state(path)
+            now = time.time()
+            alternatives_enabled = (
+                state["time_password"]["enabled"] or
+                any(code["uses_left"] > 0 for code in state["temporary_codes"])
+            )
+            if not alternatives_enabled or state["locked_until"] > now:
+                return 1
+
+            accepted = False
+            if state["time_password"]["enabled"]:
+                expected = time_code(state["time_password"]["offset_minutes"])
+                accepted = hmac.compare_digest(token, expected)
+
+            if not accepted:
+                for code in state["temporary_codes"]:
+                    if code["uses_left"] <= 0:
+                        continue
+                    try:
+                        salt = base64.b64decode(code["salt"], validate=True)
+                        expected_digest = base64.b64decode(code["digest"], validate=True)
+                    except (ValueError, TypeError):
+                        continue
+                    candidate = hash_secret(token, salt)
+                    if hmac.compare_digest(candidate, expected_digest):
+                        code["uses_left"] -= 1
+                        accepted = True
+                        break
+
+            if accepted:
+                state["failed_attempts"] = 0
+                state["locked_until"] = 0
+                write_state(directory, path, state)
+                return 0
+
+            state["failed_attempts"] += 1
+            if state["failed_attempts"] >= 5:
+                state["failed_attempts"] = 0
+                state["locked_until"] = now + 60
+            write_state(directory, path, state)
+    except (AuthError, OSError, ValueError):
+        # Authentication must fall through to the unchanged system password stack.
+        return 1
+    return 1
+
+
+def main(argv):
+    try:
+        if not argv or argv[0] in ("-h", "--help", "help"):
+            print("Usage: a16een-lockscreen-auth {get|set-time <true|false> <signed-minutes>|add|remove <id>|verify}")
+            return 0
+        action = argv[0]
+        if action == "verify":
+            return cmd_verify()
+        if action == "get" and len(argv) == 1:
+            cmd_get()
+        elif action == "set-time" and len(argv) == 3:
+            cmd_set_time(argv[1], argv[2])
+        elif action == "add" and len(argv) == 1:
+            cmd_add()
+        elif action == "remove" and len(argv) == 2:
+            cmd_remove(argv[1])
+        else:
+            raise AuthError("Invalid lockscreen authentication command.")
+        return 0
+    except (AuthError, OSError) as exc:
+        print(str(exc), file=sys.stderr)
+        return 1
+
+
+if __name__ == "__main__":
+    raise SystemExit(main(sys.argv[1:]))
