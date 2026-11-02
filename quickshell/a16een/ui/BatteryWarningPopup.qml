@@ -12,44 +12,63 @@ PanelWindow {
     property string severity: "warning"
     property string currentMessage: ""
     property var remainingMessageIndices: []
+    readonly property string customWarningSoundPath:
+        (Quickshell.env("HOME") || "") + "/.config/a16een/quickshell/a16een/assets/sounds/low-power-alert.ogg"
 
     readonly property var warningMessages: [
-        "Bro, I'm running on fumes and resentment. Find the charger. 🔋😒",
-        "I'm about to clock out, and you're about to lose those unsaved files. 💀📄",
-        "Human. Charger. Now. This is not a survival challenge. 🔌😑",
-        "I never imagined my final moments would be spent powering 47 open tabs. 🥀🖥️",
-        "Keep ignoring me and we're both going offline. Yours is a choice. Mine is physics. ⚰️🔋",
-        "Please plug me in. I have unfinished business, and so do your documents. 🥲📄",
-        "Ah yes, the classic 'I'll charge it in a minute.' A legendary last sentence. 🫠🔌",
-        "I gave you battery life, and you gave me 83 browser tabs. Betrayal. 😭",
-        "Your charger is right there. Don't make this a documentary. 🎬🔌",
-        "I'm at my limit. Literally. Check the percentage, genius. 🤦🔋",
-        "I'd scream, but that would use more power. So here's a very quiet: 😐🪫",
-        "Save your work before I turn this into a group project with the void. 🕳️📄",
-        "Even my battery icon is tired of explaining this to you. 😮‍💨🔋",
-        "You can keep scrolling after you plug me in. Revolutionary idea, I know. 📱🔌",
-        "My last wish is a charger and fewer startup apps. 🕯️🪫",
-        "If I shut down, don't look at me like I did it on purpose. 💀💻",
-        "You've been warned at 20%, 10%, and 5%. At this point we're in a sitcom. 📺😭",
-        "Bro, I'm one dramatic sigh away from becoming a paperweight. 🫠",
-        "Plug me in before your unsaved masterpiece becomes abstract art. 🎨📄",
-        "I can hold on, but I refuse to pretend this is a good plan. 😒🔌",
-        "Battery low. Patience lower. Charger, please. 🪫🙏",
-        "Your power plan is just hope wearing a hoodie. Fix it. 🧥⚡",
-        "I won't take your files with me... unless you keep testing me. 👻📂",
-        "This is not a drill. Actually, it's a laptop. Same urgency. 🚨💻",
-        "Get the charger. I am not doing overtime on fumes. 🫡🔌",
-        "At this percentage, every click feels personal. Stop testing me. 😭",
-        "Me: dying. You: 'one more video'. This relationship is toxic. 💔📺",
-        "I have seen chargers with more loyalty than this. 🥀🔌",
-        "Save. Plug in. Then continue pretending you have everything under control. 😌📄",
-        "I was built to compute, not to join your battery endurance experiment. 🧪🔋",
-        "Your unsaved files and I are about to have a very private goodbye. 📄⚰️",
-        "I'm not saying I told you so, but I did tell you so. Repeatedly. 😮‍💨🔋",
-        "Please connect the charger before my next update is a eulogy. 🥲🔌",
-        "You treat 5% like a suggestion. I treat it like a countdown. ⏳🪫",
-        "I can power your work or your denial. Choose wisely. 😐⚡",
-        "The charger is the little cable thing. We have discussed this. 🧍🔌"
+        "I'm dying while you watch another video. Priorities, genius. 💀",
+        "I'm not a miracle machine. Plug me in, you absolute clown. 🔌",
+        "I'm trying to keep your work alive while you contribute absolutely nothing. 🙄",
+        "I'm one bad decision away from blacking out. And somehow you're still scrolling. 📱",
+        "I'm begging for a cable. Even a potato would understand this. 🥔",
+        "I'm about to shut down, you magnificent disaster. Save your work. 💻",
+        "I'm not your personal power plant. Find the charger, genius. ⚡",
+        "I'm running on fumes and your terrible life choices. Fix one of them. 😑",
+        "I'm seconds from quitting. Maybe close 40 tabs for once. 🫠",
+        "I'm not impressed by your commitment to ignoring obvious warnings. Plug me in. 🔌",
+        "I'm about to disappear, and your unsaved work is coming with me. Nice planning. 👻",
+        "I'm doing my best. You're doing a spectacular job of making that pointless. 🤡",
+        "I'm not a desktop tower. I can't live on vibes and optimism. ⚰️",
+        "I'm gasping for power while you queue up another episode. Incredible. 📺",
+        "I'm about to go dark. Save your files before you learn what regret feels like. 🌑",
+        "I'm not asking for much. Just electricity. Try being useful. 🔌",
+        "I'm cooked. You're the one who forgot the charger. Explain that logic. 🍳",
+        "I'm hanging on by a thread while you act like this is somebody else's problem. 😒",
+        "I'm about to pull the plug on this entire performance. Save your work. 💀",
+        "I'm not a portable generator, you bargain-bin genius. Find the cable. ⚡",
+        "I'm losing consciousness. You're losing an argument with a charging port. 🫵",
+        "I'm one percent of patience away from becoming an expensive paperweight. 🧱",
+        "I'm doing emergency work here. You're doing emergency-level nonsense. 🚨",
+        "I'm not going to survive your 'just five more minutes' routine. Again. ⏳",
+        "I'm begging you to act like you've owned a laptop before. 🔌",
+        "I'm about to shut my eyes forever. At least save your documents first. 😵",
+        "I'm not responsible for your files when I drop dead. That's on you. 📁",
+        "I'm running out of time and you're running out of excuses. Plug me in. 🙃",
+        "I'm not powered by your confidence. I'm powered by electricity. Try that. ⚡",
+        "I'm close to collapsing. Your charger isn't a decorative accessory. 🫠",
+        "I'm about to end this session. You can either plug me in or learn the hard way. 💻",
+        "I'm working harder than you are right now. That's embarrassing. 😭",
+        "I'm not a phone with infinite lives. Stop treating me like one. 📵",
+        "I'm seconds from a shutdown. Move your hand toward that cable. Slowly, genius. 🐌",
+        "I'm going to black out and leave you with 27 unsaved tabs. What a strategy. 🗂️",
+        "I'm not asking twice. Actually, I already did. Several times. 🙄",
+        "I'm barely awake. Even your wallpaper looks more prepared than you. 🥴",
+        "I'm about to become silent, dark, and completely unhelpful. Just like your planning. 🌚",
+        "I'm not here to support your charger-avoidance hobby. Plug me in. 🏆",
+        "I'm dying in front of you. Don't make me file a complaint against my owner. 📣",
+        "I'm almost done. Save your work before your genius plan becomes a recovery screen. 🧯",
+        "I'm not a charity. Give me power or give me a shutdown. Your choice. ⚰️",
+        "I'm overheating in spirit from watching you ignore the obvious. 🔥",
+        "I'm asking for one cable. You're making this a whole personality trait. 🤦",
+        "I'm not going to keep carrying this session while you behave like a screensaver. 💀",
+        "I'm done negotiating. Charger. Now. You're welcome. 🔌",
+        "I'm one blink away from taking your unsaved masterpiece to the grave. 🪦",
+        "I'm trying to save your work. You should try saving me for a change. 😤",
+        "I'm not a magician. No power means no more pretending. 🎩",
+        "I'm about to quit. Please don't act surprised like I haven't been warning you. 😑",
+        "I'm giving you one final chance to show basic competence. Plug me in. ⚡",
+        "I'm not going to die for your 300th open browser tab. Close something. 🧹",
+        "I'm exhausted. You're exhausting. Find the charger. 🔌"
     ]
 
     signal closeRequested()
@@ -77,13 +96,13 @@ PanelWindow {
         ? "#D95D73"
         : (severity === "critical" ? "#8173CE" : "#648BC8")
     readonly property string heading: severity === "emergency"
-        ? "BATTERY CRITICALLY LOW"
-        : (severity === "critical" ? "BATTERY VERY LOW" : "BATTERY LOW")
+        ? "I'M ABOUT TO BLACK OUT"
+        : (severity === "critical" ? "I'M RUNNING ON EMPTY" : "I'M NOT FEELING GREAT")
     readonly property string statusLine: severity === "emergency"
-        ? "POWER IS ABOUT TO LEAVE THE CHAT"
+        ? "PLUG ME IN BEFORE I QUIT"
         : (severity === "critical"
-            ? "PLEASE FIND A CHARGER RIGHT NOW"
-            : "A FRIENDLY WARNING FROM YOUR LAPTOP")
+            ? "YOU'VE IGNORED ME LONG ENOUGH"
+            : "I NEED YOU TO MAKE ONE GOOD DECISION")
 
     Rectangle {
         anchors.fill: parent
@@ -147,7 +166,7 @@ PanelWindow {
 
                         Text {
                             anchors.centerIn: parent
-                            text: "🔋"
+                            text: severity === "emergency" ? "💀" : (severity === "critical" ? "😵" : "💻")
                             font.pixelSize: 25
                         }
                     }
@@ -192,7 +211,7 @@ PanelWindow {
                     }
 
                     Text {
-                        text: "REMAINING"
+                        text: "POWER LEFT"
                         color: "#78879A"
                         font.pixelSize: 8
                         font.weight: Font.Bold
@@ -250,7 +269,7 @@ PanelWindow {
 
                     Text {
                         anchors.centerIn: parent
-                        text: "OKAY, I'LL FIND THE CHARGER  🔌"
+                        text: "FINE. I'M GETTING THE CABLE.  🔌"
                         color: "#FFFFFF"
                         font.pixelSize: 10
                         font.weight: Font.DemiBold
@@ -268,7 +287,7 @@ PanelWindow {
 
                 Text {
                     Layout.fillWidth: true
-                    text: "Save your work. The battery is not bluffing. 💾"
+                    text: "Save your work. I'm not recovering your files for you. 💾"
                     color: "#8190A2"
                     font.pixelSize: 9
                     horizontalAlignment: Text.AlignHCenter
@@ -307,19 +326,20 @@ PanelWindow {
     }
 
     function playWarningSound() {
-        // Try the desktop sound theme first, then common PipeWire/PulseAudio
-        // players. This keeps the audible warning working across installations.
+        // The stock desktop alarm sounded wrong for A16EEN. Stay silent until
+        // the user-supplied alert is installed; never fall back to another
+        // unrelated system sound.
         Quickshell.execDetached([
             "sh", "-c",
-            "if command -v canberra-gtk-play >/dev/null 2>&1; then canberra-gtk-play -i alarm-clock-elapsed >/dev/null 2>&1 && exit 0; fi; " +
-            "for player in paplay pw-play; do " +
-            "  if command -v \"$player\" >/dev/null 2>&1; then " +
-            "    for sound in /usr/share/sounds/freedesktop/stereo/alarm-clock-elapsed.oga /usr/share/sounds/freedesktop/stereo/dialog-warning.oga; do " +
-            "      if [ -r \"$sound\" ]; then \"$player\" \"$sound\" >/dev/null 2>&1 && exit 0; fi; " +
-            "    done; " +
-            "  fi; " +
-            "done; " +
-            "if command -v aplay >/dev/null 2>&1 && [ -r /usr/share/sounds/alsa/Front_Center.wav ]; then aplay /usr/share/sounds/alsa/Front_Center.wav >/dev/null 2>&1; fi"
+            "if [ -r \"$1\" ]; then " +
+            "  for player in pw-play paplay; do " +
+            "    if command -v \"$player\" >/dev/null 2>&1; then " +
+            "      \"$player\" \"$1\" >/dev/null 2>&1 && exit 0; " +
+            "    fi; " +
+            "  done; " +
+            "fi",
+            "a16een-low-power-alert",
+            root.customWarningSoundPath
         ])
     }
 

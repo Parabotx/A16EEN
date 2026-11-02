@@ -170,7 +170,7 @@ if command -v git >/dev/null 2>&1 && git -C "$ROOT_DIR" rev-parse HEAD >/dev/nul
     SOURCE_COMMIT=$(git -C "$ROOT_DIR" rev-parse HEAD)
 fi
 
-mkdir -p "$NIRI_DIR" "$QS_DIR/ui" "$QS_DIR/assets/wallpapers" "$QS_DIR/assets/animated" "$QS_DIR/assets/music-elements" "$QS_DIR/assets/calendar" "$BACKUP_ROOT" "$USER_WALLPAPER_DIR" "$USER_WALLPAPER_DIR/animated" "$USER_WALLPAPER_DIR/music-elements"
+mkdir -p "$NIRI_DIR" "$QS_DIR/ui" "$QS_DIR/assets/wallpapers" "$QS_DIR/assets/animated" "$QS_DIR/assets/music-elements" "$QS_DIR/assets/sounds" "$QS_DIR/assets/calendar" "$BACKUP_ROOT" "$USER_WALLPAPER_DIR" "$USER_WALLPAPER_DIR/animated" "$USER_WALLPAPER_DIR/music-elements"
 # Event file used by the lightweight volume/brightness OSD watcher.
 # It is intentionally separate from Quickshell's private state directory.
 printf '%s\n' "" > "$STATE_DIR/control-indicator"
@@ -215,7 +215,7 @@ else
     }
     trap cleanup_deploy EXIT INT TERM
 
-    mkdir -p "$TMP_DEPLOY/ui" "$TMP_DEPLOY/assets/wallpapers" "$TMP_DEPLOY/assets/animated" "$TMP_DEPLOY/assets/music-elements" "$TMP_DEPLOY/assets/calendar" "$TMP_DEPLOY/assets/icons"
+    mkdir -p "$TMP_DEPLOY/ui" "$TMP_DEPLOY/assets/wallpapers" "$TMP_DEPLOY/assets/animated" "$TMP_DEPLOY/assets/music-elements" "$TMP_DEPLOY/assets/sounds" "$TMP_DEPLOY/assets/calendar" "$TMP_DEPLOY/assets/icons"
     cp "$ROOT_DIR/niri/config.kdl" "$TMP_DEPLOY/config.kdl"
     cp "$ROOT_DIR/quickshell/a16een/shell.qml" "$TMP_DEPLOY/shell.qml"
     cp "$ROOT_DIR/quickshell/a16een/ui/"*.qml "$TMP_DEPLOY/ui/"
@@ -281,6 +281,22 @@ else
         )
     fi
 
+    # Ship optional repository-managed notification and power-warning sounds.
+    # Existing local sounds are preserved; matching repository filenames update them.
+    BUILTIN_SOUNDS_SOURCE_DIR="$ROOT_DIR/quickshell/a16een/assets/sounds"
+    if [ -d "$BUILTIN_SOUNDS_SOURCE_DIR" ]; then
+        while IFS= read -r -d '' sound_file; do
+            relative="${sound_file#"$BUILTIN_SOUNDS_SOURCE_DIR"/}"
+            destination="$TMP_DEPLOY/assets/sounds/$relative"
+            mkdir -p "$(dirname "$destination")"
+            cp "$sound_file" "$destination"
+        done < <(
+            find "$BUILTIN_SOUNDS_SOURCE_DIR" -type f \
+                \( -iname '*.ogg' -o -iname '*.oga' -o -iname '*.wav' \) \
+                -print0 | LC_ALL=C sort -z -f
+        )
+    fi
+
     # Compatibility migration for wallpapers added to the repository root
     # by the earlier wallpaper setup. Existing files are imported automatically.
     while IFS= read -r -d '' wallpaper; do
@@ -324,6 +340,11 @@ else
     mkdir -p "$QS_DIR/assets/music-elements"
     find "$QS_DIR/assets/music-elements" -type f -delete
     cp -a "$TMP_DEPLOY/assets/music-elements/." "$QS_DIR/assets/music-elements/"
+
+    # Keep optional user-supplied sounds outside the replaceable wallpaper/media
+    # libraries so local assets survive updates unless a same-named asset changes.
+    mkdir -p "$QS_DIR/assets/sounds"
+    cp -a "$TMP_DEPLOY/assets/sounds/." "$QS_DIR/assets/sounds/"
 
     mkdir -p "$QS_DIR/assets/icons" "$QS_DIR/assets" "$QS_DIR/assets/calendar"
     cp "$TMP_DEPLOY/assets/icons/"*.svg "$QS_DIR/assets/icons/"

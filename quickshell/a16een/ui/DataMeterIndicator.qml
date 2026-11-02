@@ -22,6 +22,7 @@ PanelWindow {
     signal openRequested()
 
     readonly property bool horizontalNavbar: root.navbarPosition === "top" || root.navbarPosition === "bottom"
+    readonly property bool isOffline: root.snapshot && root.snapshot.is_online === false
 
     function formatRate(value) {
         const rate = Math.max(0, Number(value) || 0)
@@ -89,9 +90,31 @@ PanelWindow {
             spacing: 5
 
             Rectangle {
+                id: offlineDot
+                width: 6
+                height: 6
+                radius: 3
+                anchors.verticalCenter: parent.verticalCenter
+                color: popupCardStyle.dangerColor
+                visible: root.isOffline
+            }
+
+            Text {
+                id: offlineLabel
+                text: "OFFLINE"
+                anchors.verticalCenter: parent.verticalCenter
+                color: popupCardStyle.textColor
+                font.pixelSize: 9
+                font.weight: Font.DemiBold
+                font.letterSpacing: 0.7
+                visible: root.isOffline
+            }
+
+            Rectangle {
                 id: directionBadge
                 width: 22
                 height: 22
+                visible: !root.isOffline
                 radius: 7
                 anchors.verticalCenter: parent.verticalCenter
                 color: root.showingDownload ? popupCardStyle.selectedSurfaceColor : popupCardStyle.subtleSurfaceColor
@@ -157,6 +180,7 @@ PanelWindow {
 
             Item {
                 id: speedValueGroup
+                visible: !root.isOffline
                 width: speedNumber.implicitWidth + speedUnit.implicitWidth + 3
                 height: 22
 

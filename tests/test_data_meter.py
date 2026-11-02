@@ -31,8 +31,19 @@ class DataMeterTests(unittest.TestCase):
         self.assertEqual(output["today_download_bytes"], 0)
         self.assertEqual(output["month_download_bytes"], 0)
         self.assertEqual(output["connection_name"], "Home Wi-Fi")
+        self.assertTrue(output["is_online"])
         self.assertEqual(state["date"], "2026-10-10")
         self.assertEqual(state["month"], "2026-10")
+
+    def test_offline_state_when_no_default_route_exists(self):
+        _, output = METER.update_usage(
+            {}, [sample(1000, 500, is_default=False)], "2026-10-10", 10000
+        )
+        self.assertFalse(output["is_online"])
+        self.assertEqual(output["active_interface"], "")
+        self.assertEqual(output["connection_name"], "Offline")
+        self.assertEqual(output["download_bytes_per_second"], 0)
+        self.assertEqual(output["upload_bytes_per_second"], 0)
 
     def test_daily_usage_and_speed(self):
         state, _ = METER.update_usage({}, [sample(1000, 500)], "2026-10-10", 10000)
