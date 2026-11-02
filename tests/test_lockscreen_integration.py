@@ -27,7 +27,7 @@ assert "auth      include     system-auth" in pam
 assert "account   include     system-auth" in pam
 assert "password  include     system-auth" in pam
 assert "session   include     system-auth" in pam
-assert "auth sufficient" in installer
+assert "PAM_RULE=" in installer
 assert "/usr/local/bin/a16een-lockscreen-auth" in installer
 assert "PAM_BACKUP" in installer
 
