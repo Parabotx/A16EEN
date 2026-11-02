@@ -49,4 +49,29 @@ assert "lockWatcherRecoveryTimer.restart()" in shell
 assert 'args.push("before-sleep", "a16een-lockscreen prepare-sleep")' in shell
 assert 'args.push("after-resume", "qs ipc call lock-screen request")' in shell
 
-print("A16EEN lockscreen and PAM integration checks passed.")
+# Native GTKLock modules are loaded only when their official Arch package files exist.
+lock_script = (ROOT / "scripts/a16een-lock").read_text(encoding="utf-8")
+lock_ini = (ROOT / "lockscreen/gtklock.ini").read_text(encoding="utf-8")
+lock_css = (ROOT / "lockscreen/gtklock.css").read_text(encoding="utf-8")
+action = (ROOT / "scripts/a16een-lockscreen-action").read_text(encoding="utf-8")
+niri_config = (ROOT / "niri/config.kdl").read_text(encoding="utf-8")
+
+assert "gtklock-playerctl-module" in installer
+assert "gtklock-powerbar-module" in installer
+assert "playerctl-module.so" in lock_script
+assert "powerbar-module.so" in lock_script
+assert "[playerctl]" in lock_ini and "position=under-clock" in lock_ini
+assert "[powerbar]" in lock_ini and "show-labels=true" in lock_ini
+assert "logout-command=/usr/local/bin/a16een-lockscreen-action logout" in lock_ini
+assert "reboot-command=/usr/local/bin/a16een-lockscreen-action reboot" in lock_ini
+assert "poweroff-command=/usr/local/bin/a16een-lockscreen-action poweroff" in lock_ini
+assert "suspend-command=/usr/local/bin/a16een-lockscreen-action suspend" in lock_ini
+assert "playerctl stop" in action
+assert "niri msg action quit" in action
+assert "systemctl reboot" in action
+assert "systemctl poweroff" in action
+assert "systemctl suspend" in action
+assert "XF86AudioStop allow-when-locked=true" in niri_config
+assert "#playerctl-box" in lock_css and "#powerbar-box" in lock_css
+
+print("A16EEN lockscreen, PAM, media, and power integration checks passed.")
