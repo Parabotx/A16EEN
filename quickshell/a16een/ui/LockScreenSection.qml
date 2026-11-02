@@ -951,7 +951,7 @@ Item {
 
             Rectangle {
                 width: parent.width
-                height: 214
+                height: 240
                 radius: 16
                 color: root.tile
                 border.width: 1
@@ -1058,7 +1058,7 @@ Item {
                             width: 108
                             height: parent.height
                             verticalAlignment: Text.AlignVCenter
-                            text: "SUCCESSFUL USES"
+                            text: "USES (1–100)"
                             color: root.textSecondary
                             font.pixelSize: 8
                             font.weight: Font.DemiBold
