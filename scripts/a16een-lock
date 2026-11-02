@@ -100,6 +100,22 @@ if command -v gtklock >/dev/null 2>&1; then
         --time-format '%H:%M'
         --date-format '%A, %d %B %Y'
     )
+
+    # Load optional official GTKLock modules only when their ABI-matched
+    # Arch packages are installed. Missing modules never prevent locking.
+    GTKLOCK_MODULE_DIR="/usr/lib/gtklock"
+    if [[ -r "$GTKLOCK_MODULE_DIR/playerctl-module.so" ]]; then
+        GTKLOCK_ARGS+=(--modules playerctl-module.so)
+        log "Enabled GTKLock MPRIS media controls."
+    else
+        log "GTKLock media controls are unavailable; install gtklock-playerctl-module."
+    fi
+    if [[ -r "$GTKLOCK_MODULE_DIR/powerbar-module.so" ]]; then
+        GTKLOCK_ARGS+=(--modules powerbar-module.so)
+        log "Enabled GTKLock power and logout controls."
+    else
+        log "GTKLock power controls are unavailable; install gtklock-powerbar-module."
+    fi
     if [[ -s "$LOCK_IMAGE" ]]; then
         GTKLOCK_ARGS+=(--background "$LOCK_IMAGE")
     fi
