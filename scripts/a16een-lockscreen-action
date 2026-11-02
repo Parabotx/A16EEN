@@ -1,0 +1,60 @@
+#!/usr/bin/env bash
+set -Eeuo pipefail
+
+# Fixed actions exposed by GTKLock while the A16EEN session is locked.
+# Never accept arbitrary command strings from the lock screen.
+action="${1:-}"
+
+case "$action" in
+    logout)
+        command -v niri >/dev/null 2>&1 || {
+            echo "Niri is unavailable; cannot log out." >&2
+            exit 127
+        }
+        exec niri msg action quit
+        ;;
+    reboot)
+        command -v systemctl >/dev/null 2>&1 || {
+            echo "systemctl is unavailable; cannot reboot." >&2
+            exit 127
+        }
+        exec systemctl reboot
+        ;;
+    poweroff)
+        command -v systemctl >/dev/null 2>&1 || {
+            echo "systemctl is unavailable; cannot power off." >&2
+            exit 127
+        }
+        exec systemctl poweroff
+        ;;
+    suspend)
+        command -v systemctl >/dev/null 2>&1 || {
+            echo "systemctl is unavailable; cannot suspend." >&2
+            exit 127
+        }
+        exec systemctl suspend
+        ;;
+    media-stop)
+        command -v playerctl >/dev/null 2>&1 || {
+            echo "playerctl is unavailable; cannot stop media." >&2
+            exit 127
+        }
+        exec playerctl stop
+        ;;
+    -h|--help|help)
+        cat <<'EOF'
+A16EEN lock-screen actions
+
+Usage:
+  a16een-lockscreen-action logout
+  a16een-lockscreen-action reboot
+  a16een-lockscreen-action poweroff
+  a16een-lockscreen-action suspend
+  a16een-lockscreen-action media-stop
+EOF
+        ;;
+    *)
+        echo "Usage: a16een-lockscreen-action {logout|reboot|poweroff|suspend|media-stop}" >&2
+        exit 2
+        ;;
+esac
