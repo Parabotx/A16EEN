@@ -53,6 +53,13 @@ These additional methods apply only to A16EEN's GTKLock PAM service. The normal 
 
 Automatic locking is handled before suspend and checked again after resume. A16EEN also installs a systemd-logind drop-in so closing the lid suspends on battery, external power, and while docked; the logind configuration is reloaded without restarting the login manager. If the lid switch or sleep behavior is customized elsewhere, review `/etc/systemd/logind.conf.d/99-a16een-lid.conf`. General idle/sleep preferences remain in `~/.config/a16een/lockscreen.conf`.
 
+The lock screen itself also includes two optional GTKLock modules installed from Arch's official repositories:
+
+- **Media controls** appear below the clock only when an MPRIS-compatible player is present. The card shows track artwork and metadata with previous, play/pause, and next controls. The keyboard's **XF86AudioStop** media key stops the current player even while locked.
+- **Power controls** sit along the bottom edge and provide **Log out**, **Suspend**, **Restart**, and **Power off**. Log out sends Niri's `quit` action; the other buttons use fixed systemd actions. These controls never unlock or expose the desktop.
+
+The media and power modules are `gtklock-playerctl-module` and `gtklock-powerbar-module`. If either module is unavailable, GTKLock still starts with its normal password screen.
+
 ## Clipboard history
 
 The navbar utilities panel includes a searchable clipboard history for copied text. A16EEN watches the Wayland text clipboard, moves repeated items back to the top, and removes entries after 24 hours. Each row shows a single-line preview; click an item to copy it back, or remove one item or clear the history.
@@ -263,6 +270,8 @@ wireplumber
 upower
 swaylock
 gtklock
+gtklock-playerctl-module
+gtklock-powerbar-module
 ffmpeg
 xwayland-satellite
 xdg-desktop-portal-gtk
@@ -417,6 +426,7 @@ Super + H/J/K/L        Navigate
 Super + 1..6           Workspaces
 Super + Shift + 1..6  Move window to workspace
 Super + Alt + L        Lock screen
+XF86AudioStop           Stop media (also works while locked)
 ```
 
 ## Architecture
