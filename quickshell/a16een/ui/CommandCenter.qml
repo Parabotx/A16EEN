@@ -16,6 +16,7 @@ PanelWindow {
     property bool navbarViewOpen: false
     property bool workspacePresetViewOpen: false
     property bool lockScreenViewOpen: false
+    property bool transparencyViewOpen: false
     property bool lockIdleEnabled: true
     property int lockIdleMinutes: 5
     property bool lockOnSleepEnabled: true
@@ -86,7 +87,7 @@ PanelWindow {
 
     // The expanded command-center card becomes a light card for navbar mode.
     // The card itself is bounded; this does not create a screen-wide cover.
-    readonly property color surface: root.navbarViewOpen ? "#DFFFFFFF" : root.widgetViewOpen || root.controlViewOpen || root.iconThemeViewOpen || root.workspacePresetViewOpen || root.lockScreenViewOpen ? "#FFFFFF" : "#000000"
+    readonly property color surface: root.navbarViewOpen ? "#DFFFFFFF" : root.widgetViewOpen || root.controlViewOpen || root.iconThemeViewOpen || root.workspacePresetViewOpen || root.lockScreenViewOpen || root.transparencyViewOpen ? "#FFFFFF" : "#000000"
     readonly property color borderColor: "#1A1A1A"
     readonly property color fieldBackground: "#0A0A0A"
     readonly property color fieldBorder: "#1C1C1C"
@@ -102,7 +103,7 @@ PanelWindow {
         && !root.iconThemeViewOpen
         && !root.workspacePresetViewOpen
         && !root.navbarViewOpen
-        && !root.lockScreenViewOpen
+        && !root.lockScreenViewOpen && !root.transparencyViewOpen
 
     readonly property var commands: [
         // First-run suggestions are common, useful actions; usage history
@@ -110,6 +111,7 @@ PanelWindow {
         { id: "launcher", name: "launcher", keywords: ["launcher", "applications", "apps"] },
         { id: "setting", name: "setting", keywords: ["setting", "settings", "system settings", "preferences", "desktop settings"] },
         { id: "lockscreen", name: "lockscreen", keywords: ["lockscreen", "lock screen", "screen lock", "idle lock", "sleep lock", "lid close"] },
+        { id: "transparency", name: "transparency", keywords: ["transparency", "transparent", "opacity", "window opacity", "see through"] },
         { id: "controls", name: "controls", keywords: ["controls", "control center", "quick controls"] },
         { id: "wallpaper", name: "wallpaper", keywords: ["wallpaper", "background", "image"] },
         { id: "screenshot", name: "screenshot", keywords: ["screenshot", "screen", "capture", "snapshot", "area", "window"] },
@@ -455,6 +457,31 @@ PanelWindow {
         Qt.callLater(() => search.forceActiveFocus())
     }
 
+    function openTransparencyView() {
+        root.widgetsCloseRequested()
+        root.powerViewOpen = false
+        root.workspacePresetViewOpen = false
+        root.controlViewOpen = false
+        root.controlDetail = ""
+        root.iconThemeViewOpen = false
+        root.navbarViewOpen = false
+        root.lockScreenViewOpen = false
+        root.transparencyViewOpen = true
+        root.commandText = "/transparency"
+        root.selectedCommandIndex = 0
+        Qt.callLater(() => {
+            if (root.transparencyViewOpen)
+                transparencySection.forceActiveFocus()
+        })
+    }
+
+    function closeTransparencyView() {
+        root.transparencyViewOpen = false
+        root.commandText = "/"
+        root.selectedCommandIndex = 0
+        Qt.callLater(() => search.forceActiveFocus())
+    }
+
     function openControlDetail(key) {
         root.powerViewOpen = false
         root.widgetViewOpen = false
@@ -667,14 +694,14 @@ PanelWindow {
         id: card
         width: root.navbarViewOpen
             ? Math.min(800, parent.width - 48)
-            : root.powerViewOpen || root.widgetViewOpen || root.controlViewOpen || root.iconThemeViewOpen || root.workspacePresetViewOpen || root.lockScreenViewOpen
+            : root.powerViewOpen || root.widgetViewOpen || root.controlViewOpen || root.iconThemeViewOpen || root.workspacePresetViewOpen || root.lockScreenViewOpen || root.transparencyViewOpen
                 ? Math.min(940, parent.width - 72)
                 : Math.min(500, parent.width - 48)
         height: root.plainCommandView
             ? 210
             : root.navbarViewOpen
                 ? Math.min(560, parent.height - 72)
-                : root.powerViewOpen || root.widgetViewOpen || root.controlViewOpen || root.iconThemeViewOpen || root.workspacePresetViewOpen || root.lockScreenViewOpen
+                : root.powerViewOpen || root.widgetViewOpen || root.controlViewOpen || root.iconThemeViewOpen || root.workspacePresetViewOpen || root.lockScreenViewOpen || root.transparencyViewOpen
                     ? Math.min(640, parent.height - 80)
                     : 280
         anchors.centerIn: parent
@@ -683,11 +710,11 @@ PanelWindow {
             : 0
         anchors.verticalCenterOffset: root.plainCommandView
             ? Math.min(215, Math.max(190, parent.height * 0.27))
-            : root.powerViewOpen || root.widgetViewOpen || root.controlViewOpen || root.iconThemeViewOpen || root.workspacePresetViewOpen || root.navbarViewOpen || root.lockScreenViewOpen ? 0 : 185
-        radius: root.plainCommandView ? 0 : root.powerViewOpen || root.controlViewOpen || root.iconThemeViewOpen || root.workspacePresetViewOpen || root.navbarViewOpen || root.lockScreenViewOpen ? 26 : 18
+            : root.powerViewOpen || root.widgetViewOpen || root.controlViewOpen || root.iconThemeViewOpen || root.workspacePresetViewOpen || root.navbarViewOpen || root.lockScreenViewOpen || root.transparencyViewOpen ? 0 : 185
+        radius: root.plainCommandView ? 0 : root.powerViewOpen || root.controlViewOpen || root.iconThemeViewOpen || root.workspacePresetViewOpen || root.navbarViewOpen || root.lockScreenViewOpen || root.transparencyViewOpen ? 26 : 18
         color: root.plainCommandView ? "transparent" : root.surface
         border.width: root.plainCommandView ? 0 : 1
-        border.color: root.widgetViewOpen || root.controlViewOpen || root.iconThemeViewOpen || root.workspacePresetViewOpen || root.navbarViewOpen || root.lockScreenViewOpen ? "#E1E6EC" : "#202020"
+        border.color: root.widgetViewOpen || root.controlViewOpen || root.iconThemeViewOpen || root.workspacePresetViewOpen || root.navbarViewOpen || root.lockScreenViewOpen || root.transparencyViewOpen ? "#E1E6EC" : "#202020"
         clip: !root.plainCommandView
 
         Behavior on width {
@@ -898,6 +925,14 @@ PanelWindow {
             onBackRequested: root.closeLockScreenView()
             onSettingsRequested: (idleEnabled, idleMinutes, sleepLockEnabled) => root.lockScreenSettingsChanged(idleEnabled, idleMinutes, sleepLockEnabled)
             onLockNowRequested: root.lockNowRequested()
+        }
+
+        TransparencySection {
+            id: transparencySection
+            anchors.fill: parent
+            visible: root.transparencyViewOpen
+            active: root.transparencyViewOpen
+            onBackRequested: root.closeTransparencyView()
         }
 
         WidgetSection {
@@ -1471,6 +1506,8 @@ PanelWindow {
             root.closeWidgetView()
         else if (root.navbarViewOpen)
             root.closeNavbarView()
+        else if (root.transparencyViewOpen)
+            root.closeTransparencyView()
         else
             root.closeRequested()
     }
@@ -1698,6 +1735,9 @@ PanelWindow {
         case "lockscreen":
             root.openLockScreenView()
             break
+        case "transparency":
+            root.openTransparencyView()
+            break
         case "icons":
             root.openIconThemeView()
             break
@@ -1735,12 +1775,12 @@ PanelWindow {
             root.controlViewOpen = false
             root.controlDetail = ""
             Qt.callLater(() => widgetSection.forceActiveFocus())
-        } else if (root.opened && !root.powerViewOpen && !root.controlViewOpen && !root.iconThemeViewOpen && !root.workspacePresetViewOpen && !root.navbarViewOpen && !root.lockScreenViewOpen) {
+        } else if (root.opened && !root.powerViewOpen && !root.controlViewOpen && !root.iconThemeViewOpen && !root.workspacePresetViewOpen && !root.navbarViewOpen && !root.lockScreenViewOpen && !root.transparencyViewOpen) {
             Qt.callLater(() => {
                 if (root.opened && !root.widgetViewOpen && !root.powerViewOpen
                         && !root.controlViewOpen && !root.iconThemeViewOpen
                         && !root.workspacePresetViewOpen && !root.navbarViewOpen
-                        && !root.lockScreenViewOpen)
+                        && !root.lockScreenViewOpen && !root.transparencyViewOpen)
                     search.forceActiveFocus()
             })
         }
@@ -1757,6 +1797,7 @@ PanelWindow {
             root.workspacePresetViewOpen = false
             root.navbarViewOpen = false
             root.lockScreenViewOpen = false
+            root.transparencyViewOpen = false
             root.commandText = "/"
             root.selectedCommandIndex = 0
             return
@@ -1767,12 +1808,13 @@ PanelWindow {
         root.iconThemeViewOpen = false
         root.navbarViewOpen = false
         root.lockScreenViewOpen = false
+        root.transparencyViewOpen = false
         root.commandText = "/"
         root.selectedCommandIndex = 0
         search.text = "/"
 
         Qt.callLater(() => {
-            if (root.opened && !root.widgetViewOpen && !root.powerViewOpen && !root.controlViewOpen && !root.iconThemeViewOpen && !root.workspacePresetViewOpen && !root.navbarViewOpen && !root.lockScreenViewOpen)
+            if (root.opened && !root.widgetViewOpen && !root.powerViewOpen && !root.controlViewOpen && !root.iconThemeViewOpen && !root.workspacePresetViewOpen && !root.navbarViewOpen && !root.lockScreenViewOpen && !root.transparencyViewOpen)
                 search.forceActiveFocus()
         })
     }

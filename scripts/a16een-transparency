@@ -1,0 +1,354 @@
+#!/usr/bin/env python3
+"""Manage A16EEN window and shell-surface transparency through Niri rules."""
+
+from __future__ import annotations
+
+import json
+import os
+import re
+import shutil
+import subprocess
+import sys
+import tempfile
+from pathlib import Path
+from typing import Any
+
+
+MAX_TRANSPARENCY = 90
+DEFAULT_STATE: dict[str, Any] = {
+    "version": 1,
+    "global": {"enabled": False, "percent": 20},
+    "navbar": {"enabled": False, "percent": 10},
+    "focusedPercent": 25,
+    "apps": {},
+    "focusedOverrides": [],
+}
+
+
+def locations() -> tuple[Path, Path]:
+    home = Path.home()
+    state_root = Path(os.environ.get("XDG_STATE_HOME", home / ".local/state"))
+    state_dir = state_root / "a16een"
+    override = os.environ.get("A16EEN_NIRI_CONFIG_DIR")
+    if override:
+        config_dir = Path(override).expanduser()
+    else:
+        config_path = Path(
+            os.environ.get(
+                "NIRI_CONFIG",
+                home / ".config/a16een/niri/config.kdl",
+            )
+        ).expanduser()
+        config_dir = config_path.parent
+    return state_dir, config_dir
+
+
+def atomic_write(path: Path, content: str, mode: int = 0o600) -> None:
+    path.parent.mkdir(parents=True, exist_ok=True)
+    fd, temp_name = tempfile.mkstemp(prefix=f".{path.name}.", dir=path.parent)
+    try:
+        with os.fdopen(fd, "w", encoding="utf-8") as stream:
+            stream.write(content)
+            stream.flush()
+            os.fsync(stream.fileno())
+        os.chmod(temp_name, mode)
+        os.replace(temp_name, path)
+    except Exception:
+        try:
+            os.unlink(temp_name)
+        except OSError:
+            pass
+        raise
+
+
+def clamp_percent(value: Any) -> int:
+    try:
+        parsed = int(value)
+    except (TypeError, ValueError):
+        raise ValueError("transparency must be a whole number from 0 to 90")
+    if parsed < 0 or parsed > MAX_TRANSPARENCY:
+        raise ValueError("transparency must be between 0 and 90 percent")
+    return parsed
+
+
+def parse_bool(value: str) -> bool:
+    normalized = value.strip().lower()
+    if normalized in {"1", "true", "yes", "on", "enabled"}:
+        return True
+    if normalized in {"0", "false", "no", "off", "disabled"}:
+        return False
+    raise ValueError("expected on/off")
+
+
+def load_state(state_file: Path) -> dict[str, Any]:
+    if not state_file.exists():
+        state = json.loads(json.dumps(DEFAULT_STATE))
+        save_state(state_file, state)
+        return state
+
+    try:
+        loaded = json.loads(state_file.read_text(encoding="utf-8"))
+    except (OSError, json.JSONDecodeError) as error:
+        raise RuntimeError(f"cannot read transparency settings: {error}") from error
+
+    if not isinstance(loaded, dict):
+        raise RuntimeError("transparency settings must contain a JSON object")
+
+    state = json.loads(json.dumps(DEFAULT_STATE))
+    state.update(loaded)
+    for section in ("global", "navbar"):
+        value = state.get(section)
+        if not isinstance(value, dict):
+            value = {}
+        state[section] = {
+            "enabled": value.get("enabled") is True,
+            "percent": clamp_percent(value.get("percent", DEFAULT_STATE[section]["percent"])),
+        }
+
+    state["focusedPercent"] = clamp_percent(state.get("focusedPercent", 25))
+    apps = state.get("apps")
+    if not isinstance(apps, dict):
+        apps = {}
+    state["apps"] = {
+        str(app_id): clamp_percent(percent)
+        for app_id, percent in apps.items()
+        if str(app_id).strip()
+    }
+
+    overrides = state.get("focusedOverrides")
+    if not isinstance(overrides, list):
+        overrides = []
+    cleaned: list[dict[str, Any]] = []
+    for item in overrides:
+        if not isinstance(item, dict):
+            continue
+        app_id = str(item.get("app_id") or "").strip()
+        if not app_id:
+            continue
+        title = str(item.get("title") or "")
+        cleaned.append({
+            "app_id": app_id,
+            "title": title,
+            "percent": clamp_percent(item.get("percent", state["focusedPercent"])),
+        })
+    state["focusedOverrides"] = cleaned
+    state["version"] = 1
+    return state
+
+
+def save_state(state_file: Path, state: dict[str, Any]) -> None:
+    atomic_write(state_file, json.dumps(state, indent=2, ensure_ascii=False) + "\n")
+
+
+def kdl_string(value: str) -> str:
+    return json.dumps(value, ensure_ascii=False)
+
+
+def app_pattern(app_id: str) -> str:
+    return "^" + re.escape(app_id) + "$"
+
+
+def title_pattern(title: str) -> str:
+    return "^" + re.escape(title) + "$"
+
+
+def opacity_for(transparency_percent: int) -> str:
+    return f"{1.0 - clamp_percent(transparency_percent) / 100.0:.2f}"
+
+
+def render_rules(state: dict[str, Any], rules_file: Path) -> None:
+    lines = [
+        "// A16EEN Transparency — generated automatically; edit it from Command Center.",
+        "// Window rules affect normal application windows; layer rules affect A16EEN's shell.",
+        "",
+    ]
+
+    global_settings = state["global"]
+    if global_settings["enabled"]:
+        lines.extend([
+            "window-rule {",
+            f"    opacity {opacity_for(global_settings['percent'])}",
+            "}",
+            "",
+        ])
+
+    for app_id, percent in sorted(state["apps"].items(), key=lambda entry: entry[0].casefold()):
+        lines.extend([
+            "window-rule {",
+            f"    match app-id={kdl_string(app_pattern(app_id))}",
+            f"    opacity {opacity_for(percent)}",
+            "}",
+            "",
+        ])
+
+    for override in state["focusedOverrides"]:
+        app_id = str(override["app_id"])
+        title = str(override["title"])
+        match_parts = [f"app-id={kdl_string(app_pattern(app_id))}"]
+        if title:
+            match_parts.append(f"title={kdl_string(title_pattern(title))}")
+        match_parts.append("is-focused=true")
+        lines.extend([
+            "window-rule {",
+            "    match " + " ".join(match_parts),
+            f"    opacity {opacity_for(override['percent'])}",
+            "}",
+            "",
+        ])
+
+    navbar_settings = state["navbar"]
+    if navbar_settings["enabled"]:
+        lines.extend([
+            "layer-rule {",
+            '    match namespace="^a16een-"',
+            '    exclude namespace="^a16een-wallpaper"',
+            f"    opacity {opacity_for(navbar_settings['percent'])}",
+            "}",
+            "",
+        ])
+
+    content = "\n".join(lines)
+    if not rules_file.exists() or rules_file.read_text(encoding="utf-8") != content:
+        atomic_write(rules_file, content)
+
+
+def niri_windows() -> tuple[list[dict[str, Any]], bool]:
+    executable = shutil.which("niri")
+    if not executable:
+        return [], False
+    try:
+        result = subprocess.run(
+            [executable, "msg", "--json", "windows"],
+            check=True,
+            capture_output=True,
+            text=True,
+            timeout=4,
+        )
+        payload: Any = json.loads(result.stdout)
+    except (OSError, subprocess.SubprocessError, json.JSONDecodeError):
+        return [], False
+
+    if isinstance(payload, dict) and "Ok" in payload:
+        payload = payload["Ok"]
+    if isinstance(payload, dict):
+        payload = payload.get("Windows", payload.get("windows", []))
+    if not isinstance(payload, list):
+        return [], False
+
+    windows: list[dict[str, Any]] = []
+    for item in payload:
+        if not isinstance(item, dict):
+            continue
+        app_id = str(item.get("app_id") or "").strip()
+        if not app_id:
+            continue
+        windows.append({
+            "id": str(item.get("id") or ""),
+            "app_id": app_id,
+            "title": str(item.get("title") or ""),
+            "is_focused": item.get("is_focused") is True,
+        })
+    return windows, True
+
+
+def save_and_render(state_file: Path, rules_file: Path, state: dict[str, Any]) -> None:
+    save_state(state_file, state)
+    render_rules(state, rules_file)
+
+
+def main(argv: list[str]) -> int:
+    if not argv or argv[0] in {"help", "--help", "-h"}:
+        print(
+            "Usage: a16een-transparency get|list|set-global|set-navbar|"
+            "set-app|clear-app|set-focused-percent|toggle-focused"
+        )
+        return 0
+
+    state_dir, config_dir = locations()
+    state_file = state_dir / "transparency.json"
+    rules_file = config_dir / "transparency.kdl"
+    state = load_state(state_file)
+    render_rules(state, rules_file)
+
+    action = argv[0]
+    args = argv[1:]
+
+    if action == "get":
+        windows, available = niri_windows()
+        result = dict(state)
+        result["windows"] = windows
+        result["niriAvailable"] = available
+        print(json.dumps(result, ensure_ascii=False))
+        return 0
+
+    if action == "list":
+        windows, _ = niri_windows()
+        print(json.dumps(windows, ensure_ascii=False))
+        return 0
+
+    if action == "set-global" and len(args) == 2:
+        state["global"] = {
+            "enabled": parse_bool(args[0]),
+            "percent": clamp_percent(args[1]),
+        }
+    elif action == "set-navbar" and len(args) == 2:
+        state["navbar"] = {
+            "enabled": parse_bool(args[0]),
+            "percent": clamp_percent(args[1]),
+        }
+    elif action == "set-app" and len(args) == 2:
+        app_id = args[0].strip()
+        if not app_id or len(app_id) > 512 or any(ord(char) < 32 for char in app_id):
+            raise ValueError("application ID is invalid")
+        state["apps"][app_id] = clamp_percent(args[1])
+    elif action == "clear-app" and len(args) == 1:
+        state["apps"].pop(args[0], None)
+    elif action == "set-focused-percent" and len(args) == 1:
+        state["focusedPercent"] = clamp_percent(args[0])
+    elif action == "toggle-focused" and not args:
+        windows, available = niri_windows()
+        focused = next((window for window in windows if window["is_focused"]), None)
+        if not available or not focused:
+            raise RuntimeError("no focused application window is available")
+        app_id = focused["app_id"]
+        title = focused["title"]
+        existing = next(
+            (
+                index for index, item in enumerate(state["focusedOverrides"])
+                if item["app_id"] == app_id and item["title"] == title
+            ),
+            None,
+        )
+        if existing is None:
+            state["focusedOverrides"].append({
+                "app_id": app_id,
+                "title": title,
+                "percent": state["focusedPercent"],
+            })
+            message = f"Transparency enabled for {app_id}"
+        else:
+            current_percent = int(state["focusedOverrides"][existing]["percent"])
+            next_percent = state["focusedPercent"] if current_percent == 0 else 0
+            state["focusedOverrides"][existing]["percent"] = next_percent
+            message = (
+                f"Transparency enabled for {app_id}"
+                if next_percent > 0
+                else f"Transparency paused for {app_id}"
+            )
+        save_and_render(state_file, rules_file, state)
+        print(message)
+        return 0
+    else:
+        raise ValueError("invalid command or arguments; run a16een-transparency help")
+
+    save_and_render(state_file, rules_file, state)
+    print("Transparency settings saved.")
+    return 0
+
+
+if __name__ == "__main__":
+    try:
+        raise SystemExit(main(sys.argv[1:]))
+    except (ValueError, RuntimeError) as error:
+        print(f"A16EEN transparency: {error}", file=sys.stderr)
+        raise SystemExit(2)

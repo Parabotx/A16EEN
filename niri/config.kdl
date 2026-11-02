@@ -1,6 +1,9 @@
 // A16EEN — active desktop foundation
 // Compositor behavior stays here. Visual UI lives in Quickshell.
 
+// User-managed app and shell opacity rules are kept outside the base config.
+include "transparency.kdl"
+
 // Stable A16EEN workspaces. The UI represents these without numeric labels.
 // A16EEN WORKSPACES BEGIN
 workspace "home"
@@ -90,6 +93,8 @@ binds {
     // Super+Space opens the A16EEN application launcher.
     // Super+/ opens the A16EEN command center.
     Super+Space repeat=false hotkey-overlay-title="A16EEN Application Launcher" { spawn-sh "qs -c \"$HOME/.config/a16een/quickshell/a16een\" ipc call launcher open"; }
+    // Toggle transparency for the currently focused application window.
+    Super+Shift+T repeat=false hotkey-overlay-title="Toggle Focused Window Transparency" { spawn "a16een-transparency" "toggle-focused"; }
     Super+Slash repeat=false hotkey-overlay-title="A16EEN Command Center" { spawn-sh "qs -c \"$HOME/.config/a16een/quickshell/a16een\" ipc call command-center toggle"; }
     Mod+O repeat=false { toggle-overview; }
 

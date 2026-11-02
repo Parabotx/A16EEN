@@ -57,7 +57,8 @@ jobs:
           bash -n scripts/a16een-lockscreen-action
           bash -n tests/test_lockscreen_actions.sh
           bash tests/test_lockscreen_actions.sh
-          python3 -m py_compile scripts/a16een-clipboard scripts/a16een-app-stash scripts/a16een-system-monitor scripts/a16een-data-meter
+          python3 -m py_compile scripts/a16een-clipboard scripts/a16een-app-stash scripts/a16een-system-monitor scripts/a16een-data-meter scripts/a16een-transparency
+          python3 tests/test_transparency.py
           python3 tests/test_app_stash.py
           python3 tests/test_system_monitor.py
           python3 tests/test_data_meter.py
@@ -92,6 +93,10 @@ jobs:
           grep -Fq 'import Quickshell.Io' quickshell/a16een/ui/AppShelfWidget.qml
           grep -Fq 'App Locker' README.md
           grep -Fq 'a16een-workspace-preset' scripts/install.sh
+          grep -Fq 'a16een-transparency' scripts/install.sh
+          grep -Fq 'TransparencySection {' quickshell/a16een/ui/CommandCenter.qml
+          grep -Fq 'id: "transparency"' quickshell/a16een/ui/CommandCenter.qml
+          grep -Fq 'Super+Shift+T repeat=false hotkey-overlay-title="Toggle Focused Window Transparency"' niri/config.kdl
           grep -Fq 'a16een-mpv-theme' scripts/install.sh
           grep -Fq 'mpv theme status' scripts/a16een
           grep -Fq 'script=~~/../a16een/mpv/a16een-osc.lua' mpv/a16een.conf

@@ -217,6 +217,7 @@ else
 
     mkdir -p "$TMP_DEPLOY/ui" "$TMP_DEPLOY/assets/wallpapers" "$TMP_DEPLOY/assets/animated" "$TMP_DEPLOY/assets/music-elements" "$TMP_DEPLOY/assets/sounds" "$TMP_DEPLOY/assets/calendar" "$TMP_DEPLOY/assets/icons"
     cp "$ROOT_DIR/niri/config.kdl" "$TMP_DEPLOY/config.kdl"
+    cp "$ROOT_DIR/niri/transparency.kdl" "$TMP_DEPLOY/transparency.kdl"
     cp "$ROOT_DIR/quickshell/a16een/shell.qml" "$TMP_DEPLOY/shell.qml"
     cp "$ROOT_DIR/quickshell/a16een/ui/"*.qml "$TMP_DEPLOY/ui/"
     cp "$ROOT_DIR/quickshell/a16een/ui/"*.js "$TMP_DEPLOY/ui/"
@@ -323,6 +324,10 @@ else
 
     # Replace only after every staged file was copied and the compositor config validated.
     cp "$TMP_DEPLOY/config.kdl" "$NIRI_DIR/config.kdl"
+    # Keep generated user rules across updates; create the include only once.
+    if [ ! -f "$NIRI_DIR/transparency.kdl" ]; then
+        cp "$TMP_DEPLOY/transparency.kdl" "$NIRI_DIR/transparency.kdl"
+    fi
     cp "$TMP_DEPLOY/shell.qml" "$QS_DIR/shell.qml"
     # Remove components retired from the source so stale local copies are not kept deployed.
     rm -f "$QS_DIR/ui/ArtGlyph.qml" "$QS_DIR/ui/Dashboard.qml"
@@ -459,6 +464,11 @@ if command -v niri >/dev/null 2>&1; then
     fi
 fi
 
+# Initialize persistent transparency settings and regenerate the included Niri rules.
+if ! /usr/local/bin/a16een-transparency get >/dev/null; then
+    echo "WARNING: A16EEN transparency settings could not be initialized." >&2
+fi
+
 # Apply the deployed compositor configuration immediately when updating an
 # already-running A16EEN session. Without this, new keybindings would not take
 # effect until the next login.
@@ -496,6 +506,7 @@ sudo install -Dm755 "$ROOT_DIR/scripts/a16een-app-stash" /usr/local/bin/a16een-a
 sudo install -Dm755 "$ROOT_DIR/scripts/a16een-quick-tools" /usr/local/bin/a16een-quick-tools
 sudo install -Dm755 "$ROOT_DIR/scripts/a16een-system-monitor" /usr/local/bin/a16een-system-monitor
 sudo install -Dm755 "$ROOT_DIR/scripts/a16een-data-meter" /usr/local/bin/a16een-data-meter
+sudo install -Dm755 "$ROOT_DIR/scripts/a16een-transparency" /usr/local/bin/a16een-transparency
 sudo install -Dm755 "$ROOT_DIR/scripts/a16een-music" /usr/local/bin/a16een-music
 sudo install -Dm755 "$ROOT_DIR/scripts/a16een-music-diagnose" /usr/local/bin/a16een-music-diagnose
 sudo install -Dm755 "$ROOT_DIR/scripts/a16een-widget-settings" /usr/local/bin/a16een-widget-settings
