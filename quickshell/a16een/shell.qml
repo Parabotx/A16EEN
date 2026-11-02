@@ -606,8 +606,18 @@ ShellRoot {
         onTriggered: {
             if (root.notificationHistoryReady) {
                 notificationHistoryFile.setText(JSON.stringify({
-                    version: 1,
-                    notifications: root.notificationHistory
+                    version: 2,
+                    notifications: root.notificationHistory.map(item => ({
+                        id: String(item.id || ""),
+                        appName: String(item.appName || "Notification"),
+                        summary: String(item.summary || "Notification"),
+                        body: String(item.body || ""),
+                        appIcon: String(item.appIcon || ""),
+                        desktopEntry: String(item.desktopEntry || ""),
+                        image: String(item.image || ""),
+                        timestamp: Number(item.timestamp) || Date.now(),
+                        read: Boolean(item.read)
+                    }))
                 }))
             }
         }
@@ -1206,8 +1216,14 @@ ShellRoot {
                         summary: String(item.summary || "Notification"),
                         body: String(item.body || ""),
                         appIcon: String(item.appIcon || ""),
+                        desktopEntry: String(item.desktopEntry || ""),
+                        image: String(item.image || ""),
                         timestamp: Number(item.timestamp) || Date.now(),
-                        read: Boolean(item.read)
+                        read: Boolean(item.read),
+                        actions: [],
+                        notificationObject: null,
+                        hasInlineReply: false,
+                        inlineReplyPlaceholder: ""
                     }))
             }
         } catch (error) {
@@ -1233,14 +1249,31 @@ ShellRoot {
     }
 
     function rememberNotification(notification) {
+        const liveActions = []
+        try {
+            const sourceActions = notification && notification.actions ? notification.actions : []
+            for (let i = 0; sourceActions && i < sourceActions.length; i++)
+                liveActions.push(sourceActions[i])
+        } catch (error) {
+            console.warn("A16EEN could not retain notification actions:", error)
+        }
+
         const entry = {
             id: String(Date.now()) + "-" + String(root.notificationHistory.length),
             appName: String(notification.appName || "Notification"),
             summary: String(notification.summary || "Notification"),
             body: String(notification.body || ""),
             appIcon: String(notification.appIcon || ""),
+            desktopEntry: String(notification.desktopEntry || ""),
+            image: String(notification.image || ""),
             timestamp: Date.now(),
-            read: false
+            read: false,
+            // Keep the live notification/action objects in memory so buttons and
+            // inline replies remain callable from the notification center.
+            actions: liveActions,
+            notificationObject: notification || null,
+            hasInlineReply: Boolean(notification && notification.hasInlineReply),
+            inlineReplyPlaceholder: String(notification && notification.inlineReplyPlaceholder || "")
         }
         root.notificationHistory = [entry, ...root.notificationHistory].slice(0, 60)
         if (root.notificationHistoryReady)
@@ -1250,13 +1283,7 @@ ShellRoot {
     function markNotificationHistoryRead() {
         if (!root.notificationHistory.some(item => !Boolean(item.read)))
             return
-        root.notificationHistory = root.notificationHistory.map(item => ({
-            id: String(item.id),
-            appName: String(item.appName || "Notification"),
-            summary: String(item.summary || "Notification"),
-            body: String(item.body || ""),
-            appIcon: String(item.appIcon || ""),
-            timestamp: Number(item.timestamp) || Date.now(),
+        root.notificationHistory = root.notificationHistory.map(item => Object.assign({}, item, {
             read: true
         }))
         if (root.notificationHistoryReady)
@@ -1598,7 +1625,9 @@ ShellRoot {
         bodyMarkupSupported: false
         bodyHyperlinksSupported: false
         imageSupported: true
-        actionsSupported: false
+        actionIconsSupported: true
+        actionsSupported: true
+        inlineReplySupported: true
         persistenceSupported: false
 
         onNotification: notification => {

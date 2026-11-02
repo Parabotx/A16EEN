@@ -1,8 +1,8 @@
 import QtQuick
-import qs.ui
 import Quickshell
 import Quickshell.Wayland
 import Quickshell.Widgets
+import qs.ui
 
 PanelWindow {
     id: root
@@ -16,7 +16,8 @@ PanelWindow {
     required property string navbarPosition
     property bool opened: false
     property var history: []
-    property string searchText: ""
+    property var completedActionIds: []
+    property var repliedIds: []
 
     signal closeRequested()
     signal clearRequested()
@@ -26,18 +27,8 @@ PanelWindow {
         root.navbarPosition === "top" || root.navbarPosition === "bottom"
     readonly property real screenWidth: root.modelData ? root.modelData.width : 1920
     readonly property real screenHeight: root.modelData ? root.modelData.height : 1080
-    readonly property int popupWidth: 338
-    readonly property int popupHeight: 390
-    readonly property var filteredHistory: {
-        const needle = String(root.searchText || "").trim().toLowerCase()
-        const items = Array.isArray(root.history) ? root.history : []
-        if (!needle)
-            return items
-        return items.filter(item =>
-            String(item.appName || "").toLowerCase().includes(needle)
-            || String(item.summary || "").toLowerCase().includes(needle)
-            || String(item.body || "").toLowerCase().includes(needle))
-    }
+    readonly property int popupWidth: 378
+    readonly property int popupHeight: 510
 
     function ageLabel(timestamp) {
         const minutes = Math.max(0, Math.floor((Date.now() - Number(timestamp || 0)) / 60000))
@@ -54,6 +45,56 @@ PanelWindow {
 
     function previewText(value) {
         return String(value || "").replace(/\s+/g, " ").trim()
+    }
+
+    function appIconSource(entry) {
+        const fallback = Quickshell.iconPath("application-x-executable",
+            Quickshell.iconPath("dialog-information", "dialog-information"))
+        const desktopEntry = String(entry && entry.desktopEntry || "").trim()
+        const suppliedIcon = String(entry && entry.appIcon || "").trim()
+        const desktopFallback = desktopEntry.length
+            ? Quickshell.iconPath(desktopEntry, fallback) : fallback
+
+        if (!suppliedIcon.length)
+            return desktopFallback
+        if (/^(file|image|qrc|https?):/i.test(suppliedIcon) || suppliedIcon.startsWith("/"))
+            return suppliedIcon
+        return Quickshell.iconPath(suppliedIcon, desktopFallback)
+    }
+
+    function actionWasCompleted(id) {
+        return root.completedActionIds.indexOf(String(id)) !== -1
+    }
+
+    function replyWasSent(id) {
+        return root.repliedIds.indexOf(String(id)) !== -1
+    }
+
+    function invokeAction(entry, action) {
+        if (!entry || !action || typeof action.invoke !== "function")
+            return
+
+        const notification = entry.notificationObject
+        const resident = Boolean(notification && notification.resident)
+        try {
+            action.invoke()
+            if (!resident)
+                root.completedActionIds = root.completedActionIds.concat([String(entry.id)])
+        } catch (error) {
+            console.warn("A16EEN could not invoke a notification action:", error)
+        }
+    }
+
+    function sendInlineReply(entry, replyText) {
+        const message = String(replyText || "").trim()
+        if (!entry || !entry.notificationObject || !entry.hasInlineReply || !message.length)
+            return
+        try {
+            entry.notificationObject.sendInlineReply(message)
+            root.repliedIds = root.repliedIds.concat([String(entry.id)])
+        } catch (error) {
+            console.warn("A16EEN could not send an inline notification reply:", error)
+        }
     }
 
     readonly property real popupX: root.horizontalNavbar
@@ -113,7 +154,7 @@ PanelWindow {
 
         Rectangle {
             anchors.fill: parent
-            radius: 16
+            radius: 17
             color: popupCardStyle.backgroundColor
             border.width: 1
             border.color: popupCardStyle.borderColor
@@ -123,7 +164,7 @@ PanelWindow {
             Rectangle {
                 anchors.fill: parent
                 anchors.margins: -4
-                radius: 20
+                radius: 21
                 color: "#16000000"
                 z: -1
             }
@@ -144,13 +185,13 @@ PanelWindow {
 
                 Row {
                     width: parent.width
-                    height: 25
+                    height: 27
                     spacing: 8
 
                     NavbarIcon {
                         anchors.verticalCenter: parent.verticalCenter
-                        width: 16
-                        height: 16
+                        width: 17
+                        height: 17
                         iconName: "lucide-bell.svg"
                         iconColor: popupCardStyle.iconColor
                     }
@@ -168,13 +209,13 @@ PanelWindow {
                         }
 
                         Text {
-                            text: String(root.history.length) + " saved"
+                            text: String(root.history.length) + " saved on this device"
                             color: popupCardStyle.mutedTextColor
                             font.pixelSize: 8
                         }
                     }
 
-                    Item { width: Math.max(0, content.width - 205); height: 1 }
+                    Item { width: Math.max(0, content.width - 214); height: 1 }
 
                     Text {
                         text: "CLEAR"
@@ -187,7 +228,7 @@ PanelWindow {
                         MouseArea {
                             id: clearMouse
                             anchors.fill: parent
-                            anchors.margins: -6
+                            anchors.margins: -7
                             hoverEnabled: true
                             cursorShape: Qt.PointingHandCursor
                             onClicked: root.clearRequested()
@@ -195,79 +236,73 @@ PanelWindow {
                     }
                 }
 
-                Rectangle {
+                NotificationMediaCard {
+                    id: mediaCard
                     width: parent.width
-                    height: 30
-                    radius: 9
-                    color: popupCardStyle.subtleSurfaceColor
-                    border.width: 1
-                    border.color: searchInput.activeFocus ? popupCardStyle.focusBorderColor : popupCardStyle.fieldBorderColor
+                }
 
-                    Row {
-                        anchors.fill: parent
-                        anchors.leftMargin: 9
-                        anchors.rightMargin: 8
-                        spacing: 7
+                Row {
+                    width: parent.width
+                    height: 14
+                    spacing: 6
 
-                        NavbarIcon {
-                            width: 13
-                            height: 13
-                            anchors.verticalCenter: parent.verticalCenter
-                            iconPath: Qt.resolvedUrl("../assets/icons/search.svg")
-                            iconColor: popupCardStyle.iconColor
-                        }
+                    Text {
+                        text: "RECENT ACTIVITY"
+                        color: popupCardStyle.mutedTextColor
+                        font.pixelSize: 8
+                        font.weight: Font.DemiBold
+                        font.letterSpacing: 0.7
+                        anchors.verticalCenter: parent.verticalCenter
+                    }
 
-                        Item {
-                            width: parent.width - 24
-                            height: parent.height
+                    Rectangle {
+                        width: 20
+                        height: 14
+                        radius: 7
+                        color: popupCardStyle.subtleSurfaceColor
+                        visible: root.history.length > 0
+                        anchors.verticalCenter: parent.verticalCenter
 
-                            Text {
-                                anchors.fill: parent
-                                verticalAlignment: Text.AlignVCenter
-                                text: "Search notifications"
-                                color: popupCardStyle.mutedTextColor
-                                font.pixelSize: 10
-                                visible: searchInput.text.length === 0
-                            }
-
-                            TextInput {
-                                id: searchInput
-                                anchors.fill: parent
-                                verticalAlignment: TextInput.AlignVCenter
-                                text: root.searchText
-                                onTextChanged: root.searchText = text
-                                color: popupCardStyle.textColor
-                                selectionColor: popupCardStyle.selectedSurfaceColor
-                                selectedTextColor: popupCardStyle.textColor
-                                font.pixelSize: 10
-                                clip: true
-                                activeFocusOnTab: true
-                                Keys.onEscapePressed: root.closeRequested()
-                            }
+                        Text {
+                            anchors.centerIn: parent
+                            text: String(root.history.length)
+                            color: popupCardStyle.secondaryTextColor
+                            font.pixelSize: 8
+                            font.weight: Font.DemiBold
                         }
                     }
                 }
 
                 Item {
                     width: parent.width
-                    height: Math.max(0, parent.height - 25 - 30 - 18 - content.spacing * 3)
+                    height: Math.max(72, parent.height - 27 - mediaCard.height - 14
+                        - 10 - content.spacing * 4)
 
                     ListView {
                         id: historyList
                         anchors.fill: parent
                         clip: true
-                        spacing: 5
-                        model: root.filteredHistory
-                        visible: root.filteredHistory.length > 0
+                        spacing: 6
+                        model: root.history
+                        visible: root.history.length > 0
                         boundsBehavior: Flickable.StopAtBounds
 
                         delegate: Rectangle {
                             id: historyRow
                             required property var modelData
                             width: historyList.width
-                            height: 58
-                            radius: 9
-                            color: historyRowMouse.containsMouse ? popupCardStyle.hoverSurfaceColor : popupCardStyle.fieldColor
+                            readonly property int actionCount:
+                                modelData.actions && typeof modelData.actions.length === "number"
+                                    ? modelData.actions.length : 0
+                            readonly property bool showActions:
+                                actionCount > 0 && !root.actionWasCompleted(modelData.id)
+                            readonly property bool showReply:
+                                Boolean(modelData.hasInlineReply && modelData.notificationObject)
+                                    && !root.replyWasSent(modelData.id)
+                            height: 51 + (showActions ? 25 : 0) + (showReply ? 29 : 0)
+                            radius: 10
+                            color: historyRowMouse.containsMouse
+                                ? popupCardStyle.hoverSurfaceColor : popupCardStyle.fieldColor
                             border.width: 1
                             border.color: popupCardStyle.fieldBorderColor
 
@@ -279,113 +314,234 @@ PanelWindow {
                                 acceptedButtons: Qt.NoButton
                             }
 
-                            Row {
-                                z: 1
+                            Column {
                                 anchors.fill: parent
                                 anchors.margins: 7
-                                spacing: 7
+                                spacing: 4
+                                z: 1
 
-                                Rectangle {
-                                    width: 28
-                                    height: 28
-                                    radius: 8
-                                    color: popupCardStyle.subtleSurfaceColor
-                                    anchors.verticalCenter: parent.verticalCenter
+                                Row {
+                                    width: parent.width
+                                    height: 37
+                                    spacing: 8
 
-                                    IconImage {
-                                        anchors.centerIn: parent
-                                        width: 18
-                                        height: 18
-                                        source: historyRow.modelData.appIcon
-                                            ? historyRow.modelData.appIcon
-                                            : Quickshell.iconPath("dialog-information", "dialog-information")
+                                    Rectangle {
+                                        width: 30
+                                        height: 30
+                                        radius: 8
+                                        color: popupCardStyle.subtleSurfaceColor
+                                        anchors.verticalCenter: parent.verticalCenter
+                                        clip: true
+
+                                        IconImage {
+                                            anchors.centerIn: parent
+                                            width: 19
+                                            height: 19
+                                            source: root.appIconSource(historyRow.modelData)
+                                        }
                                     }
-                                }
 
-                                Column {
-                                    width: parent.width - 62
-                                    anchors.verticalCenter: parent.verticalCenter
-                                    spacing: 3
+                                    Column {
+                                        width: parent.width - 67
+                                        anchors.verticalCenter: parent.verticalCenter
+                                        spacing: 2
 
-                                    Row {
-                                        width: parent.width
-                                        height: 12
-                                        spacing: 4
+                                        Row {
+                                            width: parent.width
+                                            height: 11
+                                            spacing: 4
+
+                                            Text {
+                                                width: parent.width - 34
+                                                text: String(historyRow.modelData.appName || "Notification")
+                                                color: popupCardStyle.mutedTextColor
+                                                font.pixelSize: 8
+                                                elide: Text.ElideRight
+                                                verticalAlignment: Text.AlignVCenter
+                                            }
+
+                                            Text {
+                                                width: 30
+                                                text: root.ageLabel(historyRow.modelData.timestamp)
+                                                color: popupCardStyle.mutedTextColor
+                                                font.pixelSize: 8
+                                                horizontalAlignment: Text.AlignRight
+                                                verticalAlignment: Text.AlignVCenter
+                                            }
+                                        }
 
                                         Text {
-                                            width: parent.width - 34
-                                            text: String(historyRow.modelData.appName || "Notification")
-                                            color: popupCardStyle.mutedTextColor
+                                            width: parent.width
+                                            text: root.previewText(historyRow.modelData.summary || "Notification")
+                                            color: popupCardStyle.textColor
+                                            font.pixelSize: 10
+                                            font.weight: Font.DemiBold
+                                            elide: Text.ElideRight
+                                        }
+
+                                        Text {
+                                            width: parent.width
+                                            text: root.previewText(historyRow.modelData.body)
+                                            color: popupCardStyle.secondaryTextColor
                                             font.pixelSize: 8
                                             elide: Text.ElideRight
-                                            verticalAlignment: Text.AlignVCenter
-                                        }
-
-                                        Text {
-                                            width: 30
-                                            text: root.ageLabel(historyRow.modelData.timestamp)
-                                            color: popupCardStyle.mutedTextColor
-                                            font.pixelSize: 8
-                                            horizontalAlignment: Text.AlignRight
-                                            verticalAlignment: Text.AlignVCenter
+                                            maximumLineCount: 1
+                                            visible: text.length > 0
                                         }
                                     }
 
                                     Text {
-                                        width: parent.width
-                                        text: root.previewText(historyRow.modelData.summary || "Notification")
-                                        color: popupCardStyle.textColor
-                                        font.pixelSize: 10
-                                        font.weight: Font.DemiBold
-                                        elide: Text.ElideRight
-                                    }
+                                        width: 13
+                                        height: parent.height
+                                        text: "×"
+                                        color: removeMouse.containsMouse
+                                            ? popupCardStyle.textColor : popupCardStyle.mutedTextColor
+                                        font.pixelSize: 15
+                                        horizontalAlignment: Text.AlignHCenter
+                                        verticalAlignment: Text.AlignVCenter
 
-                                    Text {
-                                        width: parent.width
-                                        text: root.previewText(historyRow.modelData.body)
-                                        color: popupCardStyle.mutedTextColor
-                                        font.pixelSize: 8
-                                        elide: Text.ElideRight
-                                        maximumLineCount: 1
+                                        MouseArea {
+                                            id: removeMouse
+                                            anchors.fill: parent
+                                            anchors.margins: -4
+                                            hoverEnabled: true
+                                            cursorShape: Qt.PointingHandCursor
+                                            onClicked: {
+                                                mouse.accepted = true
+                                                root.removeRequested(String(historyRow.modelData.id))
+                                            }
+                                        }
                                     }
                                 }
 
-                                Text {
-                                    width: 13
-                                    height: parent.height
-                                    text: "×"
-                                    color: removeMouse.containsMouse ? popupCardStyle.textColor : popupCardStyle.mutedTextColor
-                                    font.pixelSize: 14
-                                    horizontalAlignment: Text.AlignHCenter
-                                    verticalAlignment: Text.AlignVCenter
+                                Row {
+                                    width: parent.width
+                                    height: 22
+                                    spacing: 5
+                                    visible: historyRow.showActions
 
-                                    MouseArea {
-                                        id: removeMouse
-                                        anchors.fill: parent
-                                        anchors.margins: -3
-                                        hoverEnabled: true
-                                        cursorShape: Qt.PointingHandCursor
-                                        onClicked: {
-                                            mouse.accepted = true
-                                            root.removeRequested(String(historyRow.modelData.id))
+                                    Repeater {
+                                        model: historyRow.modelData.actions || []
+
+                                        delegate: Rectangle {
+                                            id: actionButton
+                                            required property var modelData
+                                            width: Math.min(112, Math.max(52,
+                                                String(modelData.text || "Open").length * 6 + 20))
+                                            height: 22
+                                            radius: 7
+                                            color: actionMouse.containsMouse
+                                                ? popupCardStyle.selectedSurfaceColor
+                                                : popupCardStyle.subtleSurfaceColor
+                                            border.width: 1
+                                            border.color: popupCardStyle.fieldBorderColor
+
+                                            Text {
+                                                anchors.fill: parent
+                                                anchors.leftMargin: 7
+                                                anchors.rightMargin: 7
+                                                text: String(actionButton.modelData.text || "Open")
+                                                color: popupCardStyle.textColor
+                                                font.pixelSize: 8
+                                                font.weight: Font.DemiBold
+                                                elide: Text.ElideRight
+                                                horizontalAlignment: Text.AlignHCenter
+                                                verticalAlignment: Text.AlignVCenter
+                                            }
+
+                                            MouseArea {
+                                                id: actionMouse
+                                                anchors.fill: parent
+                                                hoverEnabled: true
+                                                cursorShape: Qt.PointingHandCursor
+                                                onClicked: root.invokeAction(historyRow.modelData, actionButton.modelData)
+                                            }
+                                        }
+                                    }
+                                }
+
+                                Row {
+                                    width: parent.width
+                                    height: 25
+                                    spacing: 5
+                                    visible: historyRow.showReply
+
+                                    Rectangle {
+                                        width: parent.width - 49
+                                        height: 25
+                                        radius: 7
+                                        color: popupCardStyle.subtleSurfaceColor
+                                        border.width: 1
+                                        border.color: replyInput.activeFocus
+                                            ? popupCardStyle.focusBorderColor : popupCardStyle.fieldBorderColor
+
+                                        Text {
+                                            anchors.fill: parent
+                                            anchors.leftMargin: 7
+                                            verticalAlignment: Text.AlignVCenter
+                                            text: String(historyRow.modelData.inlineReplyPlaceholder || "Write a reply…")
+                                            color: popupCardStyle.mutedTextColor
+                                            font.pixelSize: 8
+                                            visible: replyInput.text.length === 0
+                                        }
+
+                                        TextInput {
+                                            id: replyInput
+                                            anchors.fill: parent
+                                            anchors.leftMargin: 7
+                                            anchors.rightMargin: 6
+                                            verticalAlignment: TextInput.AlignVCenter
+                                            color: popupCardStyle.textColor
+                                            selectionColor: popupCardStyle.selectedSurfaceColor
+                                            selectedTextColor: popupCardStyle.textColor
+                                            font.pixelSize: 9
+                                            clip: true
+                                            Keys.onReturnPressed: {
+                                                root.sendInlineReply(historyRow.modelData, text)
+                                                text = ""
+                                            }
+                                        }
+                                    }
+
+                                    Rectangle {
+                                        width: 44
+                                        height: 25
+                                        radius: 7
+                                        color: sendMouse.containsMouse
+                                            ? popupCardStyle.actionHoverColor : popupCardStyle.actionColor
+
+                                        Text {
+                                            anchors.centerIn: parent
+                                            text: "SEND"
+                                            color: popupCardStyle.actionTextColor
+                                            font.pixelSize: 8
+                                            font.weight: Font.DemiBold
+                                        }
+
+                                        MouseArea {
+                                            id: sendMouse
+                                            anchors.fill: parent
+                                            hoverEnabled: true
+                                            cursorShape: Qt.PointingHandCursor
+                                            onClicked: {
+                                                root.sendInlineReply(historyRow.modelData, replyInput.text)
+                                                replyInput.text = ""
+                                            }
                                         }
                                     }
                                 }
                             }
-
                         }
                     }
 
                     Column {
                         anchors.centerIn: parent
                         spacing: 5
-                        visible: root.filteredHistory.length === 0
+                        visible: root.history.length === 0
 
                         Text {
                             anchors.horizontalCenter: parent.horizontalCenter
-                            text: root.searchText.trim().length
-                                ? "No matching notifications"
-                                : "You're all caught up"
+                            text: "You're all caught up"
                             color: popupCardStyle.secondaryTextColor
                             font.pixelSize: 10
                             font.weight: Font.DemiBold
@@ -393,9 +549,7 @@ PanelWindow {
 
                         Text {
                             anchors.horizontalCenter: parent.horizontalCenter
-                            text: root.searchText.trim().length
-                                ? "Try a different search"
-                                : "New notifications will appear here"
+                            text: "New notifications will appear here"
                             color: popupCardStyle.mutedTextColor
                             font.pixelSize: 8
                         }
@@ -405,18 +559,11 @@ PanelWindow {
                 Text {
                     width: parent.width
                     height: 10
-                    text: "Stored on this device"
+                    text: "Stored locally · latest 60 notifications"
                     color: popupCardStyle.mutedTextColor
                     font.pixelSize: 8
                 }
             }
-        }
-    }
-
-    onVisibleChanged: {
-        if (visible) {
-            root.searchText = ""
-            Qt.callLater(() => searchInput.forceActiveFocus())
         }
     }
 }

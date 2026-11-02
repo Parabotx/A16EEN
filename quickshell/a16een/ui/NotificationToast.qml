@@ -15,6 +15,19 @@ PanelWindow {
     required property var modelData
     property var notification: null
 
+    function appIconSource() {
+        const fallback = Quickshell.iconPath("application-x-executable",
+            Quickshell.iconPath("dialog-information", "dialog-information"))
+        const desktopEntry = String(root.notification && root.notification.desktopEntry || "").trim()
+        const suppliedIcon = String(root.notification && root.notification.appIcon || "").trim()
+        const desktopFallback = desktopEntry.length ? Quickshell.iconPath(desktopEntry, fallback) : fallback
+        if (!suppliedIcon.length)
+            return desktopFallback
+        if (/^(file|image|qrc|https?):/i.test(suppliedIcon) || suppliedIcon.startsWith("/"))
+            return suppliedIcon
+        return Quickshell.iconPath(suppliedIcon, desktopFallback)
+    }
+
     screen: modelData
     color: "transparent"
     visible: notification !== null
@@ -61,19 +74,9 @@ PanelWindow {
 
                 IconImage {
                     anchors.centerIn: parent
-                    implicitWidth: 18
-                    implicitHeight: 18
-                    visible: Boolean(root.notification && root.notification.appIcon)
-                    source: root.notification ? root.notification.appIcon : ""
-                }
-
-                NavbarIcon {
-                    anchors.centerIn: parent
-                    width: 18
-                    height: 18
-                    visible: !root.notification || !root.notification.appIcon
-                    iconName: "lucide-bell.svg"
-                    iconColor: popupCardStyle.iconColor
+                    implicitWidth: 19
+                    implicitHeight: 19
+                    source: root.appIconSource()
                 }
             }
 
