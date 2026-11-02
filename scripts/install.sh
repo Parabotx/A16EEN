@@ -352,6 +352,54 @@ install -m644 "$ROOT_DIR/lockscreen/gtklock.css" "$LOCKSCREEN_DIR/gtklock.css"
 install -m644 "$ROOT_DIR/lockscreen/gtklock.ui" "$LOCKSCREEN_DIR/gtklock.ui"
 install -m644 "$ROOT_DIR/lockscreen/gtklock.ini" "$LOCKSCREEN_DIR/gtklock.ini"
 
+# Install the local PAM verifier used only by A16EEN's GTKLock screen.
+# It never replaces the Linux account password: failed alternate codes continue
+# through the user's existing PAM authentication stack.
+echo "==> Configuring secure A16EEN lockscreen sign-in methods"
+sudo install -Dm755 "$ROOT_DIR/scripts/a16een-lockscreen-auth" /usr/local/bin/a16een-lockscreen-auth
+PAM_FILE="/etc/pam.d/gtklock"
+PAM_RULE="auth      sufficient  pam_exec.so expose_authtok quiet type=auth /usr/local/bin/a16een-lockscreen-auth verify"
+if [ -f "$PAM_FILE" ]; then
+    if ! grep -Fq "/usr/local/bin/a16een-lockscreen-auth verify" "$PAM_FILE"; then
+        PAM_BACKUP="$PAM_FILE.a16een-backup-$(date +%Y%m%d-%H%M%S)"
+        sudo cp -a "$PAM_FILE" "$PAM_BACKUP"
+        PAM_TEMP="$(mktemp)"
+        awk -v rule="$PAM_RULE" '
+            NR == 1 && $0 ~ /^#%PAM-1.0/ {
+                print
+                print "# A16EEN optional alternate lockscreen credentials"
+                print rule
+                next
+            }
+            NR == 1 {
+                print "# A16EEN optional alternate lockscreen credentials"
+                print rule
+            }
+            { print }
+        ' "$PAM_FILE" > "$PAM_TEMP"
+        sudo install -m644 "$PAM_TEMP" "$PAM_FILE"
+        rm -f "$PAM_TEMP"
+        echo "==> Preserved the previous GTKLock PAM stack at $PAM_BACKUP"
+    else
+        echo "==> A16EEN GTKLock authentication is already configured."
+    fi
+else
+    sudo install -Dm644 "$ROOT_DIR/lockscreen/gtklock.pam" "$PAM_FILE"
+    echo "==> Installed GTKLock PAM configuration with system-auth fallback."
+fi
+
+# Ensure lid closure actually suspends on AC power and while docked as well
+# as on battery. systemd-logind reloads this drop-in on SIGHUP without a restart.
+echo "==> Applying A16EEN laptop lid behavior"
+sudo install -Dm644 "$ROOT_DIR/systemd/99-a16een-lid.conf" /etc/systemd/logind.conf.d/99-a16een-lid.conf
+if command -v systemctl >/dev/null 2>&1 && systemctl is-active --quiet systemd-logind.service; then
+    if sudo systemctl kill --signal=HUP systemd-logind.service >/dev/null 2>&1; then
+        echo "==> systemd-logind reloaded the lid-close settings."
+    else
+        echo "WARNING: lid-close settings are installed and will apply after the next reboot." >&2
+    fi
+fi
+
 # Deploy MPV's A16EEN controls separately from the user's normal MPV settings.
 # Back up only A16EEN-owned theme files when an update replaces a changed file.
 echo "==> Deploying A16EEN MPV theme"
