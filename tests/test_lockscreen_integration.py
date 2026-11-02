@@ -72,6 +72,7 @@ assert "systemctl reboot" in action
 assert "systemctl poweroff" in action
 assert "systemctl suspend" in action
 assert "XF86AudioStop allow-when-locked=true" in niri_config
+assert "Super+Alt+M allow-when-locked=true" in niri_config
 assert "#playerctl-box" in lock_css and "#powerbar-box" in lock_css
 
 print("A16EEN lockscreen, PAM, media, and power integration checks passed.")
