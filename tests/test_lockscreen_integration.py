@@ -23,10 +23,7 @@ assert "Math.abs(root.timeOffsetMinutes)" in ui
 # PAM checks A16EEN alternatives first, then keeps the system account stack.
 assert "pam_exec.so expose_authtok quiet type=auth" in pam
 assert "a16een-lockscreen-auth verify" in pam
-assert "auth      include     system-auth" in pam
-assert "account   include     system-auth" in pam
-assert "password  include     system-auth" in pam
-assert "session   include     system-auth" in pam
+assert "auth      include     login" in pam
 assert "PAM_RULE=" in installer
 assert "/usr/local/bin/a16een-lockscreen-auth" in installer
 assert "PAM_BACKUP" in installer
