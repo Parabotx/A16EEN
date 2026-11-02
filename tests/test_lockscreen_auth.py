@@ -27,7 +27,7 @@ def run(env, *args, input_text=None, expect=0):
 
 with tempfile.TemporaryDirectory() as temp:
     env = os.environ.copy()
-    env["XDG_STATE_HOME"] = str(Path(temp) / "state")
+    env["A16EEN_LOCKSCREEN_STATE_HOME"] = str(Path(temp) / "state")
     env["PAM_USER"] = pwd.getpwuid(os.getuid()).pw_name
 
     initial = json.loads(run(env, "get").stdout)
@@ -87,7 +87,7 @@ with tempfile.TemporaryDirectory() as temp:
         "label": "Weak", "password": "123", "uses": 1
     }) + "\n", expect=1)
 
-    state_path = Path(env["XDG_STATE_HOME"]) / "a16een" / "lockscreen-auth.json"
+    state_path = Path(env["A16EEN_LOCKSCREEN_STATE_HOME"]) / "a16een" / "lockscreen-auth.json"
     assert state_path.stat().st_mode & 0o777 == 0o600
     assert state_path.parent.stat().st_mode & 0o777 == 0o700
 
