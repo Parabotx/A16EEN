@@ -427,6 +427,7 @@ Super + 1..6           Workspaces
 Super + Shift + 1..6  Move window to workspace
 Super + Alt + L        Lock screen
 XF86AudioStop           Stop media (also works while locked)
+Super + Alt + M         Stop media from the lock screen
 ```
 
 ## Architecture
