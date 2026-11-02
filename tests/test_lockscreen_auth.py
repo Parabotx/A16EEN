@@ -37,14 +37,11 @@ with tempfile.TemporaryDirectory() as temp:
 
     # The example in the feature brief: 11:53 minus 20 minutes = 11:33.
     now = dt.datetime(2026, 11, 2, 11, 53, tzinfo=dt.timezone.utc)
-    sys.path.insert(0, str(ROOT / "scripts"))
-    import importlib.util
-    spec = importlib.util.spec_from_file_location("a16een_lockscreen_auth", HELPER)
-    module = importlib.util.module_from_spec(spec)
-    spec.loader.exec_module(module)
-    assert module.time_code(-20, now) == "1133"
-    assert module.time_code(-20, dt.datetime(2026, 11, 2, 11, 13, tzinfo=dt.timezone.utc)) == "1053"
-    assert module.time_code(0, dt.datetime(2026, 11, 2, 0, 5, tzinfo=dt.timezone.utc)) == "1205"
+    import runpy
+    module = runpy.run_path(str(HELPER), run_name="a16een_lockscreen_auth")
+    assert module["time_code"](-20, now) == "1133"
+    assert module["time_code"](-20, dt.datetime(2026, 11, 2, 11, 13, tzinfo=dt.timezone.utc)) == "1053"
+    assert module["time_code"](0, dt.datetime(2026, 11, 2, 0, 5, tzinfo=dt.timezone.utc)) == "1205"
 
     run(env, "set-time", "true", "-20")
     changed = json.loads(run(env, "get").stdout)
