@@ -77,6 +77,7 @@ jobs:
           python3 tests/test_quick_tools.py
           python3 -m py_compile scripts/a16een-lockscreen-auth
           python3 tests/test_lockscreen_auth.py
+          python3 tests/test_lockscreen_integration.py
           python3 tests/test_shell_overlay_lifecycle.py
           grep -Fq 'a16een-quick-tools' scripts/install.sh
           grep -Fq 'QuickToolsWindow {' quickshell/a16een/shell.qml
