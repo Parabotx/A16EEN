@@ -43,7 +43,15 @@ Open the Command Center with **Super + /** and run:
 
     /lockscreen
 
-Choose whether to lock after inactivity and select a timeout of **1, 3, 5, 10, 15, or 30 minutes**. The page also controls locking around suspend/lid-close and resume. Before sleep, A16EEN requests its existing secure lock flow and waits for the locker's ready signal; after wake it requests the lock again as a fallback. Settings are stored in `~/.config/a16een/lockscreen.conf`.
+The lockscreen settings are organized into three tabs:
+
+- **Behavior** — configure idle locking (**1, 3, 5, 10, 15, or 30 minutes**), lock-on-suspend, and Lock Now.
+- **Dynamic key** — optionally enable a time-derived code. It uses local 12-hour `HHMM` time without AM/PM and supports adding or subtracting up to 720 minutes. It is **off by default**; for example, 11:53 minus 20 minutes becomes `1133`.
+- **Temporary** — create named passwords that expire after 1, 3, 5, 10, or a custom number of successful unlocks (up to 100). A maximum of 10 codes can be stored at once; expired codes can be removed from the same tab.
+
+These additional methods apply only to A16EEN's GTKLock PAM service. The normal Linux account password remains available as the fallback and is never replaced. Temporary passwords are stored as salted scrypt hashes, not plaintext, in `~/.local/state/a16een/lockscreen-auth.json` with owner-only permissions. The dynamic method is disabled until the user enables it.
+
+Automatic locking is handled before suspend and checked again after resume. A16EEN also installs a systemd-logind drop-in so closing the lid suspends on battery, external power, and while docked; the logind configuration is reloaded without restarting the login manager. If the lid switch or sleep behavior is customized elsewhere, review `/etc/systemd/logind.conf.d/99-a16een-lid.conf`. General idle/sleep preferences remain in `~/.config/a16een/lockscreen.conf`.
 
 ## Clipboard history
 
