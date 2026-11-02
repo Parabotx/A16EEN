@@ -54,6 +54,9 @@ jobs:
           bash -n tests/test_bluetooth_discovery.sh
           bash tests/test_bluetooth_discovery.sh
           bash -n scripts/a16een-lockscreen
+          bash -n scripts/a16een-lockscreen-action
+          bash -n tests/test_lockscreen_actions.sh
+          bash tests/test_lockscreen_actions.sh
           python3 -m py_compile scripts/a16een-clipboard scripts/a16een-app-stash scripts/a16een-system-monitor scripts/a16een-data-meter
           python3 tests/test_app_stash.py
           python3 tests/test_system_monitor.py
