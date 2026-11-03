@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-STATE_DIR="\${XDG_STATE_HOME:-$HOME/.local/state}/a16een"
+STATE_DIR="${XDG_STATE_HOME:-$HOME/.local/state}/a16een"
 STATE_FILE="$STATE_DIR/workspace-layouts.json"
 mkdir -p "$STATE_DIR"
 [[ -s "$STATE_FILE" ]] || printf '%s\n' '{"version":1,"profiles":{},"canvasWindows":{}}' > "$STATE_FILE"
@@ -61,7 +61,7 @@ apply_canvas() {
 
     while IFS= read -r id; do
         [[ -n "$id" ]] || continue
-        if printf '%s\n' "\${tracked_ids[@]:-}" | grep -Fxq "$id"; then continue; fi
+        if printf '%s\n' "${tracked_ids[@]:-}" | grep -Fxq "$id"; then continue; fi
         is_floating="$(jq -r --argjson id "$id" 'first((.[] | select(.id == $id)) | (.is_floating // false)) // false' <<<"$windows")"
         [[ "$is_floating" == "true" ]] && continue
         if send_action "$(jq -cn --argjson id "$id" '{Action:{MoveWindowToFloating:{id:$id}}}')"; then
@@ -69,7 +69,7 @@ apply_canvas() {
         fi
     done < <(jq -r --argjson ws "$workspace_id" '.[] | select(.workspace_id == $ws and (.is_floating // false) == false) | .id' <<<"$windows")
 
-    next="$(jq -c --arg workspace "$workspace" --argjson ids "$(printf '%s\n' "\${tracked_ids[@]:-}" | jq -R 'select(length>0)' | jq -s 'map(tonumber)')" '.canvasWindows[$workspace]=$ids' "$STATE_FILE")"
+    next="$(jq -c --arg workspace "$workspace" --argjson ids "$(printf '%s\n' "${tracked_ids[@]:-}" | jq -R 'select(length>0)' | jq -s 'map(tonumber)')" '.canvasWindows[$workspace]=$ids' "$STATE_FILE")"
     write_state "$next"
 }
 apply_tiled_widths() {
@@ -87,7 +87,7 @@ apply_tiled_widths() {
         ]
         | unique_by(.column) | sort_by(.column) | .[] | [.id,.column] | @tsv
     ' <<<"$windows")
-    count="\${#entries[@]}"
+    count="${#entries[@]}"
     (( count > 0 )) || return 0
 
     if [[ "$profile" == "adaptive" && "$count" -eq 1 ]]; then
@@ -98,7 +98,7 @@ apply_tiled_widths() {
         proportion="0.5"
     fi
 
-    for line in "\${entries[@]}"; do
+    for line in "${entries[@]}"; do
         IFS=$'\t' read -r id column <<<"$line"
         send_action "$(jq -cn --argjson id "$id" '{Action:{FocusWindow:{id:$id}}}')"
         send_action "$(jq -cn --argjson proportion "$proportion" '{Action:{SetColumnWidth:{change:{SetProportion:$proportion}}}}')"
@@ -137,7 +137,7 @@ get_profile() {
     profile_for "$workspace"
 }
 
-case "\${1:-help}" in
+case "${1:-help}" in
     get-profile)
         [[ $# -eq 2 ]] || die "usage: a16een-workspace-layout get-profile <workspace>"
         get_profile "$2"
@@ -147,15 +147,18 @@ case "\${1:-help}" in
         require_tools
         normalize_state
         set_profile "$2" "$3"
-        if [[ "$3" != "canvas" ]]; then
-            read_workspaces >/dev/null
-            workspace_id="$(read_workspaces | jq -r --arg name "$2" '.[] | select(.name == $name) | .id' | head -n 1)"
-            if [[ "$workspace_id" =~ ^[0-9]+$ ]]; then
+        workspaces="$(read_workspaces)" || die "could not read Niri workspaces."
+        target="$(jq -c --arg name "$2" '[.[] | select(.name == $name)][0] // empty' <<<"$workspaces")"
+        if [[ -n "$target" ]]; then
+            workspace_id="$(jq -r '.id' <<<"$target")"
+            is_focused="$(jq -r '.is_focused // false' <<<"$target")"
+            if [[ "$is_focused" == "true" ]]; then
+                apply_current_workspace "$workspace_id" "$2"
+            elif [[ "$3" != "canvas" ]]; then
+                # Restore only windows A16EEN floated for this workspace; defer sizing
+                # until the workspace becomes active so the user's current focus stays put.
                 restore_canvas_windows "$2"
-                apply_tiled_widths "$workspace_id" "$3"
             fi
-        else
-            auto_apply
         fi
         printf '%s\n' "$3"
         ;;
