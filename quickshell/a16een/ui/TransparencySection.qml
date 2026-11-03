@@ -127,7 +127,7 @@ Item {
             root.wallpaperThemeScheme = String(parsed.scheme || "")
             root.wallpaperThemeWallpaper = String(parsed.wallpaper || "")
             root.wallpaperThemeMessage = !root.wallpaperThemeAvailable
-                ? "MATUGEN NOT INSTALLED — RUN A16 -U"
+                ? "THEME DEPENDENCIES MISSING — RUN A16 -U"
                 : root.wallpaperThemeEnabled
                     ? "ACTIVE • " + (root.wallpaperThemeScheme || "GENERATING").toUpperCase() + " PALETTE"
                     : "DISABLED • YOUR CURRENT THEME IS UNCHANGED"
