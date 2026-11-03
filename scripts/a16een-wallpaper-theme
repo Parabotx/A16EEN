@@ -275,7 +275,7 @@ def qt6_environment_allowed(p: dict[str, Path]) -> bool:
     if not p["niri_main"].exists():
         return True
     source = p["niri_main"].read_text(encoding="utf-8")
-    match = re.search(r'(?m)^\\s*QT_QPA_PLATFORMTHEME\\s+"([^"]+)"', source)
+    match = re.search(r'(?m)^\s*QT_QPA_PLATFORMTHEME\s+"([^"]+)"', source)
     return not match or match.group(1) == "qt6ct"
 
 
