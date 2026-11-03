@@ -58,6 +58,9 @@ jobs:
           bash -n tests/test_lockscreen_actions.sh
           bash tests/test_lockscreen_actions.sh
           python3 -m py_compile scripts/a16een-clipboard scripts/a16een-app-stash scripts/a16een-system-monitor scripts/a16een-data-meter scripts/a16een-transparency
+          python3 -m py_compile scripts/a16een-wallpaper-theme
+          python3 tests/test_wallpaper_theme.py
+          python3 tests/test_wallpaper_theme_integration.py
           python3 tests/test_transparency.py
           python3 tests/test_app_stash.py
           python3 tests/test_system_monitor.py
