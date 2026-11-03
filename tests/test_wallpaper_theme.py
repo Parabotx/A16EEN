@@ -202,6 +202,9 @@ else:
         self.assertEqual(state["wallpaper"], str(self.wallpaper_light))
         self.assertEqual(state["qt6ctOriginal"], "/home/test/.config/qt6ct/colors/custom.conf")
         self.assertEqual(stat.S_IMODE(self.state_file.stat().st_mode), 0o600)
+        matugen_config = (self.home_config / "a16een/wallpaper-theme/matugen.toml").read_text(encoding="utf-8")
+        self.assertIn("reload_apps = false", matugen_config)
+        self.assertIn("set = false", matugen_config)
 
         foot = self.foot.read_text(encoding="utf-8")
         self.assertIn("font=monospace", foot)
