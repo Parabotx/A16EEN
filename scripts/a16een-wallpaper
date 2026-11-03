@@ -8,12 +8,17 @@ BUILTIN_ANIMATED_DIR="$CONFIG_DIR/quickshell/a16een/assets/animated"
 LEGACY_BUILTIN_DIR="$SOURCE_DIR"
 STATE_DIR="${XDG_STATE_HOME:-$HOME/.local/state}/a16een"
 STATE_FILE="$STATE_DIR/wallpaper"
+WORKSPACE_WALLPAPERS_FILE="$STATE_DIR/workspace-wallpapers.json"
 USER_WALLPAPER_DIR="$HOME/Pictures/a16een"
 USER_ANIMATED_DIR="$USER_WALLPAPER_DIR/animated"
 QUICKSHELL_CONFIG_DIR="$CONFIG_DIR/quickshell/a16een"
 SETTINGS_FILE="$CONFIG_DIR/wallpaper-settings"
 
 mkdir -p "$BUILTIN_DIR" "$BUILTIN_ANIMATED_DIR" "$USER_WALLPAPER_DIR" "$USER_ANIMATED_DIR" "$STATE_DIR"
+if [[ ! -s "$WORKSPACE_WALLPAPERS_FILE" ]]; then
+    printf '%s\n' '{}' > "$WORKSPACE_WALLPAPERS_FILE"
+    chmod 600 "$WORKSPACE_WALLPAPERS_FILE"
+fi
 
 usage() {
     cat <<'EOF'
@@ -32,7 +37,7 @@ Usage:
   a16een-wallpaper set-path <absolute-file-path>
   a16een-wallpaper preview-path <absolute-file-path>
   a16een-wallpaper clear-preview
-  a16een-wallpaper pick-file <set|morning|evening>
+  a16een-wallpaper pick-file <set|workspace|morning|evening>
   a16een-wallpaper settings show|set <key> <value>
   a16een-wallpaper auto-check
 
@@ -223,23 +228,78 @@ collect_entries() {
 }
 
 catalog() {
-    local source filename row_source row_filename row_display row_path row_type selected
+    local workspace_name="${1:-}" source filename row_source row_filename row_display row_path row_type selected selected_path=""
 
-    IFS=$'\t' read -r source filename < <(current_entry)
+    if [[ -n "$workspace_name" ]]; then
+        validate_workspace_name "$workspace_name"
+        selected_path="$(jq -r --arg workspace "$workspace_name" '.[$workspace] // ""' "$WORKSPACE_WALLPAPERS_FILE")"
+        if [[ -z "$selected_path" ]]; then
+            IFS=$'\t' read -r source filename < <(current_entry)
+            selected_path="$(find_wallpaper "$source" "$filename" 2>/dev/null || true)"
+        fi
+    else
+        IFS=$'\t' read -r source filename < <(current_entry)
+    fi
 
     while IFS=$'\t' read -r row_source row_filename row_display row_path row_type; do
         selected="0"
-        if [ "$row_source" = "$source" ] && [ "$row_filename" = "$filename" ]; then
+        if [[ -n "$workspace_name" ]]; then
+            [[ "$row_path" == "$selected_path" && -n "$selected_path" ]] && selected="1"
+        elif [[ "$row_source" == "$source" && "$row_filename" == "$filename" ]]; then
             selected="1"
         fi
-
-        printf '%s\t%s\t%s\t%s\t%s\t%s\n'             "$row_source" "$row_filename" "$row_display" "$row_path" "$selected" "$row_type"
+        printf '%s\t%s\t%s\t%s\t%s\t%s\n' "$row_source" "$row_filename" "$row_display" "$row_path" "$selected" "$row_type"
     done < <(collect_entries)
 
-    if [ "$source" = "external" ] && [ -f "$filename" ]; then
+    if [[ -n "$workspace_name" && "$selected_path" == /* && -f "$selected_path" ]]; then
+        if ! collect_entries | awk -F '\t' -v path="$selected_path" '$4 == path { found=1 } END { exit !found }'; then
+            printf '%s\t%s\t%s\t%s\t1\t%s\n' \
+                "external" "$selected_path" "$(display_name "${selected_path##*/}")" "$selected_path" "$(media_type "$selected_path" "$selected_path")"
+        fi
+    elif [[ -z "$workspace_name" && "$source" == "external" && -f "$filename" ]]; then
         printf '%s\t%s\t%s\t%s\t1\t%s\n' \
             "external" "$filename" "$(display_name "${filename##*/}")" "$filename" "$(media_type "$filename" "$filename")"
     fi
+}
+validate_workspace_name() {
+    local workspace="$1"
+    [[ "$workspace" =~ ^[a-z0-9][a-z0-9-]{0,27}$ && "$workspace" != "app-stash" ]] || {
+        echo "A16EEN: invalid workspace name." >&2
+        return 1
+    }
+}
+workspace_set() {
+    [[ $# -eq 2 ]] || { echo "Usage: a16een-wallpaper workspace-set <workspace> <absolute-path>" >&2; return 2; }
+    local workspace="$1" path="$2" tmp
+    validate_workspace_name "$workspace" || return 2
+    case "$path" in /*) ;; *) echo "A16EEN: wallpaper path must be absolute." >&2; return 2 ;; esac
+    if [[ "$path" == *$'\n'* || "$path" == *$'\t'* ]] || [[ ! -f "$path" ]] || ! is_supported "$path"; then
+        echo "A16EEN: unsupported or missing wallpaper file: $path" >&2
+        return 2
+    fi
+    exec 9>"$STATE_DIR/.workspace-wallpapers.lock"
+    flock -x 9
+    tmp="$(mktemp "$STATE_DIR/.workspace-wallpapers.XXXXXX")"
+    jq --arg workspace "$workspace" --arg path "$path" '.[$workspace]=$path' "$WORKSPACE_WALLPAPERS_FILE" > "$tmp"
+    chmod 600 "$tmp"
+    mv -f "$tmp" "$WORKSPACE_WALLPAPERS_FILE"
+    flock -u 9
+    exec 9>&-
+    printf 'A16EEN: wallpaper assigned to %s\n' "$workspace"
+}
+workspace_unset() {
+    [[ $# -eq 1 ]] || { echo "Usage: a16een-wallpaper workspace-unset <workspace>" >&2; return 2; }
+    local workspace="$1" tmp
+    validate_workspace_name "$workspace" || return 2
+    exec 9>"$STATE_DIR/.workspace-wallpapers.lock"
+    flock -x 9
+    tmp="$(mktemp "$STATE_DIR/.workspace-wallpapers.XXXXXX")"
+    jq --arg workspace "$workspace" 'del(.[$workspace])' "$WORKSPACE_WALLPAPERS_FILE" > "$tmp"
+    chmod 600 "$tmp"
+    mv -f "$tmp" "$WORKSPACE_WALLPAPERS_FILE"
+    flock -u 9
+    exec 9>&-
+    printf 'A16EEN: workspace wallpaper cleared for %s\n' "$workspace"
 }
 
 notify_shell() {
@@ -321,6 +381,12 @@ pick_file() {
     [ -n "$path" ] || return 0
     case "$purpose" in
         set) set_external_path "$path" >/dev/null ;;
+        workspace)
+            [[ "$path" == /* && -f "$path" ]] && is_supported "$path" || {
+                echo "A16EEN: selected wallpaper file is unsupported." >&2
+                return 1
+            }
+            ;;
         morning|evening) setting_set "${purpose}_path" "$path" ;;
         *) echo "A16EEN: unknown file-picker purpose '$purpose'." >&2; return 1 ;;
     esac
@@ -524,7 +590,7 @@ case "$command" in
         ;;
     auto-check) auto_check ;;
     pick-file)
-        [ "$#" -eq 3 ] || { echo "A16EEN: usage: a16een-wallpaper pick-file <set|morning|evening>" >&2; exit 1; }
+        [ "$#" -eq 3 ] || { echo "A16EEN: usage: a16een-wallpaper pick-file <set|workspace|morning|evening>" >&2; exit 1; }
         pick_file "$3"
         ;;
     set-path)
@@ -546,7 +612,24 @@ case "$command" in
         ;;
 
     catalog)
-        catalog
+        [[ $# -le 2 ]] || { echo "A16EEN: usage: a16een-wallpaper catalog [workspace]" >&2; exit 2; }
+        catalog "${2:-}"
+        ;;
+    workspace-list)
+        cat "$WORKSPACE_WALLPAPERS_FILE"
+        ;;
+    workspace-path)
+        [[ $# -eq 2 ]] || { echo "Usage: a16een-wallpaper workspace-path <workspace>" >&2; exit 2; }
+        validate_workspace_name "$2"
+        jq -r --arg workspace "$2" '.[$workspace] // ""' "$WORKSPACE_WALLPAPERS_FILE"
+        ;;
+    workspace-set)
+        shift
+        workspace_set "$@"
+        ;;
+    workspace-unset)
+        shift
+        workspace_unset "$@"
         ;;
 
     current)

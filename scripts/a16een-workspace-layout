@@ -1,0 +1,188 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+STATE_DIR="${XDG_STATE_HOME:-$HOME/.local/state}/a16een"
+STATE_FILE="$STATE_DIR/workspace-layouts.json"
+mkdir -p "$STATE_DIR"
+[[ -s "$STATE_FILE" ]] || printf '%s\n' '{"version":1,"profiles":{},"canvasWindows":{}}' > "$STATE_FILE"
+chmod 600 "$STATE_FILE"
+
+die() { printf 'A16EEN workspace layout: %s\n' "$*" >&2; exit 2; }
+require_tools() { command -v jq >/dev/null 2>&1 || die "jq is required."; command -v niri >/dev/null 2>&1 || die "niri is required."; }
+valid_workspace() { [[ "$1" =~ ^[a-z0-9][a-z0-9-]{0,27}$ ]] && [[ "$1" != "app-stash" ]]; }
+valid_profile() { case "$1" in adaptive|columns|canvas) return 0 ;; *) return 1 ;; esac; }
+normalize_state() {
+    jq -e '.version == 1 and (.profiles|type=="object") and (.canvasWindows|type=="object")' "$STATE_FILE" >/dev/null 2>&1 ||
+        die "state file is invalid: $STATE_FILE"
+}
+write_state() {
+    local next="$1" tmp
+    tmp="$(mktemp "$STATE_DIR/.workspace-layouts.XXXXXX")"
+    printf '%s\n' "$next" > "$tmp"
+    chmod 600 "$tmp"
+    mv -f "$tmp" "$STATE_FILE"
+}
+read_workspaces() {
+    niri msg --json workspaces 2>/dev/null | jq -c 'if type == "array" then . elif (.Ok.Workspaces? | type) == "array" then .Ok.Workspaces elif (.Workspaces? | type) == "array" then .Workspaces else error("unexpected Niri workspaces response") end'
+}
+read_windows() {
+    niri msg --json windows 2>/dev/null | jq -c 'if type == "array" then . elif (.Ok.Windows? | type) == "array" then .Ok.Windows elif (.Windows? | type) == "array" then .Windows else error("unexpected Niri windows response") end'
+}
+send_action() { printf '%s\n' "$1" | niri msg raw-request >/dev/null; }
+profile_for() { jq -r --arg workspace "$1" '.profiles[$workspace] // "adaptive"' "$STATE_FILE"; }
+set_profile() {
+    local workspace="$1" profile="$2" next
+    valid_workspace "$workspace" || die "invalid workspace name."
+    valid_profile "$profile" || die "profile must be adaptive, columns, or canvas."
+    normalize_state
+    next="$(jq -c --arg workspace "$workspace" --arg profile "$profile" '.profiles[$workspace]=$profile' "$STATE_FILE")"
+    write_state "$next"
+}
+restore_canvas_windows() {
+    local workspace="$1" windows workspaces workspace_id id is_floating tracked next
+    workspaces="$(read_workspaces)" || die "could not read Niri workspaces."
+    workspace_id="$(jq -r --arg workspace "$workspace" '.[] | select(.name == $workspace) | .id' <<<"$workspaces" | head -n 1)"
+    [[ "$workspace_id" =~ ^[0-9]+$ ]] || return 0
+    windows="$(read_windows)" || die "could not read Niri windows."
+    tracked="$(jq -r --arg workspace "$workspace" '.canvasWindows[$workspace][]? // empty' "$STATE_FILE")"
+    while IFS= read -r id; do
+        [[ -n "$id" ]] || continue
+        is_floating="$(jq -r --argjson id "$id" --argjson workspace_id "$workspace_id" 'first((.[] | select(.id == $id and .workspace_id == $workspace_id)) | (.is_floating // false)) // false' <<<"$windows")"
+        if [[ "$is_floating" == "true" ]]; then
+            send_action "$(jq -cn --argjson id "$id" '{Action:{MoveWindowToTiling:{id:$id}}}')"
+        fi
+    done <<<"$tracked"
+    next="$(jq -c --arg workspace "$workspace" '.canvasWindows[$workspace]=[]' "$STATE_FILE")"
+    write_state "$next"
+}
+arrange_canvas_window() {
+    local id="$1" slot="$2" base x y offset
+    local -a positions_x=(0.035 0.515 0.105 0.555)
+    local -a positions_y=(0.040 0.080 0.520 0.485)
+    local index=$((slot % 4))
+    local cycle=$((slot / 4))
+    offset="$(awk -v n="$cycle" 'BEGIN { value=n*0.025; if (value>0.075) value=0.075; printf "%.4f", value }')"
+    x="$(awk -v n="${positions_x[$index]}" -v o="$offset" 'BEGIN { printf "%.4f", n-o }')"
+    y="$(awk -v n="${positions_y[$index]}" -v o="$offset" 'BEGIN { printf "%.4f", n+o }')"
+
+    send_action "$(jq -cn --argjson id "$id" '{Action:{SetWindowWidth:{id:$id,change:{SetProportion:0.44}}}}')"
+    send_action "$(jq -cn --argjson id "$id" '{Action:{SetWindowHeight:{id:$id,change:{SetProportion:0.42}}}}')"
+    send_action "$(jq -cn --argjson id "$id" --argjson x "$x" --argjson y "$y" '{Action:{MoveFloatingWindow:{id:$id,x:{SetProportion:$x},y:{SetProportion:$y}}}}')"
+}
+apply_canvas() {
+    local workspace="$1" workspace_id="$2" windows id is_floating tracked next
+    windows="$(read_windows)" || die "could not read Niri windows."
+    tracked="$(jq -r --arg workspace "$workspace" '.canvasWindows[$workspace][]? // empty' "$STATE_FILE")"
+    local -a tracked_ids=()
+    while IFS= read -r id; do [[ -n "$id" ]] && tracked_ids+=("$id"); done <<<"$tracked"
+
+    while IFS= read -r id; do
+        [[ -n "$id" ]] || continue
+        if printf '%s\n' "${tracked_ids[@]:-}" | grep -Fxq "$id"; then continue; fi
+        is_floating="$(jq -r --argjson id "$id" 'first((.[] | select(.id == $id)) | (.is_floating // false)) // false' <<<"$windows")"
+        [[ "$is_floating" == "true" ]] && continue
+        if send_action "$(jq -cn --argjson id "$id" '{Action:{MoveWindowToFloating:{id:$id}}}')"; then
+            arrange_canvas_window "$id" "${#tracked_ids[@]}"
+            tracked_ids+=("$id")
+        fi
+    done < <(jq -r --argjson ws "$workspace_id" '.[] | select(.workspace_id == $ws and (.is_floating // false) == false) | .id' <<<"$windows")
+
+    next="$(jq -c --arg workspace "$workspace" --argjson ids "$(printf '%s\n' "${tracked_ids[@]:-}" | jq -R 'select(length>0)' | jq -s 'map(tonumber)')" '.canvasWindows[$workspace]=$ids' "$STATE_FILE")"
+    write_state "$next"
+}
+apply_tiled_widths() {
+    local workspace_id="$1" profile="$2" windows focused line id column count proportion
+    windows="$(read_windows)" || die "could not read Niri windows."
+    focused="$(jq -r --argjson ws "$workspace_id" '.[] | select(.workspace_id == $ws and .is_focused == true) | .id' <<<"$windows" | head -n 1)"
+    local -a entries=()
+    mapfile -t entries < <(jq -r --argjson ws "$workspace_id" '
+        [ .[]
+          | select(.workspace_id == $ws and (.is_floating // false) == false)
+          | {id:.id, column:(if (.layout.pos_in_scrolling_layout[0] // null) == null
+                            then "window:" + (.id|tostring)
+                            else "column:" + (.layout.pos_in_scrolling_layout[0]|tostring)
+                            end)}
+        ]
+        | unique_by(.column) | sort_by(.column) | .[] | [.id,.column] | @tsv
+    ' <<<"$windows")
+    count="${#entries[@]}"
+    (( count > 0 )) || return 0
+
+    if [[ "$profile" == "adaptive" && "$count" -eq 1 ]]; then
+        proportion="1.0"
+    elif [[ "$profile" == "adaptive" ]]; then
+        proportion="$(awk -v n="$count" 'BEGIN { printf "%.6f", 1 / n }')"
+    else
+        proportion="0.5"
+    fi
+
+    for line in "${entries[@]}"; do
+        IFS=$'\t' read -r id column <<<"$line"
+        send_action "$(jq -cn --argjson id "$id" '{Action:{FocusWindow:{id:$id}}}')"
+        send_action "$(jq -cn --argjson proportion "$proportion" '{Action:{SetColumnWidth:{change:{SetProportion:$proportion}}}}')"
+    done
+
+    if [[ "$focused" =~ ^[0-9]+$ ]]; then
+        send_action "$(jq -cn --argjson id "$focused" '{Action:{FocusWindow:{id:$id}}}')"
+    fi
+}
+apply_current_workspace() {
+    local workspace_id="$1" workspace="$2" profile
+    [[ "$workspace" != "app-stash" ]] || return 0
+    profile="$(profile_for "$workspace")"
+    case "$profile" in
+        canvas) apply_canvas "$workspace" "$workspace_id" ;;
+        adaptive|columns) restore_canvas_windows "$workspace"; apply_tiled_widths "$workspace_id" "$profile" ;;
+        *) die "unknown saved profile '$profile' for '$workspace'." ;;
+    esac
+}
+auto_apply() {
+    require_tools
+    normalize_state
+    local workspaces focused workspace_id workspace
+    workspaces="$(read_workspaces)" || die "could not read Niri workspaces."
+    focused="$(jq -c '[.[] | select(.is_focused == true)][0] // empty' <<<"$workspaces")"
+    [[ -n "$focused" ]] || exit 0
+    workspace_id="$(jq -r '.id' <<<"$focused")"
+    workspace="$(jq -r '.name // ""' <<<"$focused")"
+    [[ -n "$workspace_id" && "$workspace_id" != "null" && -n "$workspace" ]] || exit 0
+    apply_current_workspace "$workspace_id" "$workspace"
+}
+get_profile() {
+    local workspace="$1"
+    valid_workspace "$workspace" || die "invalid workspace name."
+    normalize_state
+    profile_for "$workspace"
+}
+
+case "${1:-help}" in
+    get-profile)
+        [[ $# -eq 2 ]] || die "usage: a16een-workspace-layout get-profile <workspace>"
+        get_profile "$2"
+        ;;
+    set-profile)
+        [[ $# -eq 3 ]] || die "usage: a16een-workspace-layout set-profile <workspace> <adaptive|columns|canvas>"
+        require_tools
+        normalize_state
+        set_profile "$2" "$3"
+        workspaces="$(read_workspaces)" || die "could not read Niri workspaces."
+        target="$(jq -c --arg name "$2" '[.[] | select(.name == $name)][0] // empty' <<<"$workspaces")"
+        if [[ -n "$target" ]]; then
+            workspace_id="$(jq -r '.id' <<<"$target")"
+            is_focused="$(jq -r '.is_focused // false' <<<"$target")"
+            if [[ "$is_focused" == "true" ]]; then
+                apply_current_workspace "$workspace_id" "$2"
+            elif [[ "$3" != "canvas" ]]; then
+                # Restore only windows A16EEN floated for this workspace; defer sizing
+                # until the workspace becomes active so the user's current focus stays put.
+                restore_canvas_windows "$2"
+            fi
+        fi
+        printf '%s\n' "$3"
+        ;;
+    auto)
+        [[ $# -eq 1 ]] || die "usage: a16een-workspace-layout auto"
+        auto_apply
+        ;;
+    *) die "usage: a16een-workspace-layout {get-profile <workspace>|set-profile <workspace> <adaptive|columns|canvas>|auto}" ;;
+esac

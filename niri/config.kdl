@@ -38,14 +38,17 @@ layout {
     gaps 12
     center-focused-column "on-overflow"
 
+    // Adaptive workspace mode starts a single tiled column at full width.
+    // A16EEN balances columns as additional windows appear.
     default-column-width {
-        proportion 0.5
+        proportion 1.0
     }
 
     preset-column-widths {
         proportion 0.33333
         proportion 0.5
         proportion 0.66667
+        proportion 1.0
     }
 
     focus-ring {
