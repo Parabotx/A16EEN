@@ -1,4 +1,5 @@
 import QtQuick
+import "../theme" as AdaptiveTheme
 
 Item {
     id: root
@@ -25,6 +26,19 @@ Item {
 
     readonly property string meridiem:
         root.now.getHours() >= 12 ? "PM" : "AM"
+
+    readonly property color timeColor: AdaptiveTheme.WallpaperTheme.enabled
+        && AdaptiveTheme.WallpaperTheme.paletteReady
+        ? AdaptiveTheme.WallpaperTheme.onSurface : "#FFFFFF"
+    readonly property color dayColor: AdaptiveTheme.WallpaperTheme.enabled
+        && AdaptiveTheme.WallpaperTheme.paletteReady
+        ? AdaptiveTheme.WallpaperTheme.onSurfaceVariant : "#EAF2FB"
+    readonly property color accentColor: AdaptiveTheme.WallpaperTheme.enabled
+        && AdaptiveTheme.WallpaperTheme.paletteReady
+        ? AdaptiveTheme.WallpaperTheme.primary : "#7DBBFF"
+    readonly property color accentSoftColor: AdaptiveTheme.WallpaperTheme.enabled
+        && AdaptiveTheme.WallpaperTheme.paletteReady
+        ? AdaptiveTheme.WallpaperTheme.secondary : "#8CC8FF"
 
     readonly property string dayText:
         root.weekdayNames[root.now.getDay()]
@@ -68,7 +82,7 @@ Item {
                 width: parent.width
                 horizontalAlignment: Text.AlignHCenter
                 text: root.dayText
-                color: "#EAF2FB"
+                color: root.dayColor
                 font.pixelSize: 11
                 font.weight: Font.DemiBold
                 font.letterSpacing: 5.0
@@ -82,7 +96,7 @@ Item {
 
                 Text {
                     text: root.timeText
-                    color: "#FFFFFF"
+                    color: root.timeColor
                     font.pixelSize: 88
                     font.weight: Font.Light
                     font.letterSpacing: -2.5
@@ -93,7 +107,7 @@ Item {
                     anchors.bottom: parent.bottom
                     anchors.bottomMargin: 18
                     text: root.meridiem
-                    color: "#7DBBFF"
+                    color: root.accentColor
                     font.pixelSize: 17
                     font.weight: Font.DemiBold
                     font.letterSpacing: 2.0
@@ -104,7 +118,7 @@ Item {
                 width: parent.width
                 horizontalAlignment: Text.AlignHCenter
                 text: root.dateText
-                color: "#7D91A5"
+                color: root.dayColor
                 font.pixelSize: 10
                 font.weight: Font.DemiBold
                 font.letterSpacing: 3.0
@@ -118,7 +132,7 @@ Item {
                     anchors.centerIn: parent
                     width: 240
                     height: 1
-                    color: "#49A7FF"
+                    color: root.accentColor
                     opacity: 0.9
                 }
 
@@ -126,7 +140,7 @@ Item {
                     anchors.centerIn: parent
                     width: 160
                     height: 1
-                    color: "#8CC8FF"
+                    color: root.accentSoftColor
                     opacity: 0.42
                 }
 
@@ -134,7 +148,7 @@ Item {
                     anchors.centerIn: parent
                     width: 92
                     height: 1
-                    color: "#C5E3FF"
+                    color: root.accentSoftColor
                     opacity: 0.24
                 }
             }
