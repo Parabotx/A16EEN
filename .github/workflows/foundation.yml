@@ -73,6 +73,9 @@ jobs:
           bash -n scripts/a16een-icon-theme
           luac5.4 -p mpv/a16een-osc.lua
           bash -n scripts/a16een-workspace-preset
+          bash -n scripts/a16een-workspace-layout
+          bash -n tests/test_workspace_layout.sh
+          bash tests/test_workspace_layout.sh
           python3 -m py_compile scripts/a16een-music scripts/a16een-music-diagnose scripts/a16een-widget-settings scripts/a16een-ai
           python3 tests/test_music_elements.py
           python3 tests/test_widget_settings.py
@@ -275,6 +278,13 @@ jobs:
           test -f quickshell/a16een/ui/UtilitiesPanel.qml
           test -f quickshell/a16een/ui/IconThemeSection.qml
           test -f quickshell/a16een/ui/WorkspacePresetsSection.qml
+          test -f quickshell/a16een/ui/WorkspaceManagerSection.qml
+          grep -Fq 'WorkspaceManagerSection {' quickshell/a16een/ui/CommandCenter.qml
+          grep -Fq 'id: "workspace"' quickshell/a16een/ui/CommandCenter.qml
+          grep -Fq 'targetWorkspaceName' quickshell/a16een/ui/WallpaperPicker.qml
+          grep -Fq 'workspace-list)' scripts/a16een-wallpaper
+          grep -Fq 'workspace-set)' scripts/a16een-wallpaper
+          grep -Fq 'a16een-workspace-layout' scripts/install.sh
           grep -Fq 'readonly property bool canSave' quickshell/a16een/ui/WorkspacePresetsSection.qml
           grep -Fq 'id: addMouse' quickshell/a16een/ui/WorkspacePresetsSection.qml
           grep -Fq 'acceptedButtons: Qt.LeftButton' quickshell/a16een/ui/WorkspacePresetsSection.qml
@@ -826,7 +836,7 @@ jobs:
           ! grep -Fq 'VideoOutput.PreserveAspectCrop' quickshell/a16een/ui/VideoWallpaperPreview.qml
           grep -Fq 'function apply(path: string): void' quickshell/a16een/shell.qml
           grep -Fq 'wallpaperPath: ""' quickshell/a16een/shell.qml
-          grep -Fq 'currentWallpaperPath: root.wallpaperPath' quickshell/a16een/shell.qml
+          grep -Fq 'currentWallpaperPath: root.effectiveWallpaperPath' quickshell/a16een/shell.qml
           ! grep -Fq 'wallpaperPathProcess' quickshell/a16een/ui/Wallpaper.qml
           grep -Fq 'function finishWallpaperTransition()' quickshell/a16een/ui/Wallpaper.qml
           grep -Fq 'WallpaperTransitionLayer {' quickshell/a16een/ui/Wallpaper.qml
