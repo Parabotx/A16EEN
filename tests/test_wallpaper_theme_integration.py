@@ -18,6 +18,10 @@ templates = ROOT / "wallpaper-theme/templates"
 
 # The feature is explicitly opt-in and has one source-of-truth palette file.
 assert '"enabled": False' in helper
+assert '"reload_apps = false"' not in helper  # config is composed as TOML at runtime
+assert '"reload_apps = false"' not in helper.split("def write_matugen_config", 1)[0]
+assert '"reload_apps = false"' not in helper.split("def write_matugen_config", 1)[1].split("def validate_palette", 1)[0]
+assert '"reload_apps = false"' in helper
 assert '"state": state_home() / "a16een/wallpaper-theme.json"' in helper
 assert '"/a16een/wallpaper-theme.json"' in theme
 assert "watchChanges: true" in theme
@@ -29,6 +33,8 @@ assert 'root.setWallpaperTheme(!root.wallpaperThemeEnabled)' in ui
 assert 'include "wallpaper-theme-generated.kdl"' in niri
 assert "a16een-wallpaper-theme" in installer
 assert "matugen" in installer
+assert '"reload_apps = false"' in helper
+assert '"set = false"' in helper
 assert "qt6ct" in installer
 assert 'cp "$ROOT_DIR/quickshell/a16een/theme/"* "$TMP_DEPLOY/theme/"' in installer
 assert 'cp "$TMP_DEPLOY/theme/"* "$QS_DIR/theme/"' in installer
