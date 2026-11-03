@@ -80,6 +80,8 @@ def default_state() -> dict[str, Any]:
         "palette": {},
         "qt6ctOriginal": None,
         "qt6ctConfigExisted": False,
+        "footConfigExisted": False,
+        "footConfigManaged": False,
         "qt6ctManaged": False,
     }
 
@@ -322,18 +324,32 @@ def reload_niri() -> None:
     )
 
 
-def generated_integrations(p: dict[str, Path]) -> None:
+def add_foot_include(path: Path, include_path: Path, state: dict[str, Any]) -> None:
+    existing = path.read_text(encoding="utf-8") if path.exists() else ""
+    if not state.get("footConfigManaged"):
+        state["footConfigExisted"] = path.exists()
+        state["footConfigManaged"] = True
+    existing = remove_block(existing, START, END)
+    block = f"{START}\ninclude={include_path}\n{END}\n"
+    section = re.search(r"(?m)^\\s*\\[main\\]\\s*$", existing)
+    if section:
+        insertion = section.end()
+        updated = existing[:insertion] + "\\n" + block + existing[insertion:].lstrip("\\n")
+    else:
+        updated = "[main]\\n" + block + ("\\n" if existing else "") + existing
+    atomic_write(path, updated)
+
+
+
+def generated_integrations(p: dict[str, Path], state: dict[str, Any]) -> None:
     generated = p["generated"]
     foot_ini = p["foot"]
     foot_include = generated / "foot.ini"
-    add_block(
-        foot_ini, START, END,
-        "[main]\ninclude=" + str(foot_include),
-    )
+    add_foot_include(p["foot"], generated / "foot.ini", state)
 
     add_block(
         p["fuzzel"], START, END,
-        "[main]\\ninclude=" + str(generated / "fuzzel.ini"),
+        "[main]\ninclude=" + str(generated / "fuzzel.ini"),
     )
 
     if p["kitty"].exists() or shutil.which("kitty"):
@@ -400,7 +416,7 @@ def generate(p: dict[str, Path], state: dict[str, Any], wallpaper: Path) -> dict
     atomic_write(kitty, kitty_text)
 
     # The palette file is the shared source for Quickshell and external apps.
-    generated_integrations(p)
+    generated_integrations(p, state)
     if qt6_environment_allowed(p):
         apply_qt6ct(p, state)
     write_niri_theme(p, scheme)
@@ -426,6 +442,11 @@ def current_wallpaper() -> Path:
 
 
 def disable(p: dict[str, Path], state: dict[str, Any]) -> None:
+    if state.get("footConfigManaged") and not state.get("footConfigExisted"):
+        foot_content = p["foot"].read_text(encoding="utf-8") if p["foot"].exists() else ""
+        if not re.sub(r"(?m)^\\s*(?:#.*|\\[main\\])?\\s*$", "", foot_content).strip():
+            p["foot"].unlink()
+
     remove_managed_block(p["foot"], START, END)
     remove_managed_block(p["fuzzel"], START, END)
     remove_managed_block(p["kitty"], START, END)
@@ -451,6 +472,8 @@ def disable(p: dict[str, Path], state: dict[str, Any]) -> None:
     state["palette"] = {}
     state["qt6ctOriginal"] = None
     state["qt6ctConfigExisted"] = False
+    state["footConfigExisted"] = False
+    state["footConfigManaged"] = False
     state["qt6ctManaged"] = False
     save_state(p, state)
     reload_niri()
