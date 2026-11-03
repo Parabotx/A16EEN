@@ -2,6 +2,7 @@ import QtQuick
 import Quickshell
 import Quickshell.Io
 import QtQuick.Layouts
+import "../theme" as AdaptiveTheme
 
 Item {
     id: root
@@ -47,14 +48,23 @@ Item {
 
 
     readonly property color page: "transparent"
-    readonly property color card: "#FFFFFF"
-    readonly property color cardHover: "#F3F4F6"
-    readonly property color border: "#E6E8EB"
-    readonly property color borderStrong: "#D4D8DE"
-    readonly property color textPrimary: "#111318"
-    readonly property color textSecondary: "#5C6673"
-    readonly property color textMuted: "#777B82"
-    readonly property color accent: "#303238"
+    readonly property color card: AdaptiveTheme.WallpaperTheme.enabled
+        ? AdaptiveTheme.WallpaperTheme.surface : "#FFFFFF"
+    readonly property color cardHover: AdaptiveTheme.WallpaperTheme.enabled
+        ? Qt.lighter(AdaptiveTheme.WallpaperTheme.surface, AdaptiveTheme.WallpaperTheme.scheme === "dark" ? 1.16 : 1.05)
+        : "#F3F4F6"
+    readonly property color border: AdaptiveTheme.WallpaperTheme.enabled
+        ? AdaptiveTheme.WallpaperTheme.outline : "#E6E8EB"
+    readonly property color borderStrong: AdaptiveTheme.WallpaperTheme.enabled
+        ? AdaptiveTheme.WallpaperTheme.primary : "#D4D8DE"
+    readonly property color textPrimary: AdaptiveTheme.WallpaperTheme.enabled
+        ? AdaptiveTheme.WallpaperTheme.onSurface : "#111318"
+    readonly property color textSecondary: AdaptiveTheme.WallpaperTheme.enabled
+        ? AdaptiveTheme.WallpaperTheme.onSurfaceVariant : "#5C6673"
+    readonly property color textMuted: AdaptiveTheme.WallpaperTheme.enabled
+        ? AdaptiveTheme.WallpaperTheme.onSurfaceVariant : "#777B82"
+    readonly property color accent: AdaptiveTheme.WallpaperTheme.enabled
+        ? AdaptiveTheme.WallpaperTheme.primary : "#303238"
 
     readonly property var slots: {
         if (root.workspaceRegistry && root.workspaceRegistry.length > 0) {
