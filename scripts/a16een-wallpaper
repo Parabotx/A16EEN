@@ -233,6 +233,10 @@ catalog() {
     if [[ -n "$workspace_name" ]]; then
         validate_workspace_name "$workspace_name"
         selected_path="$(jq -r --arg workspace "$workspace_name" '.[$workspace] // ""' "$WORKSPACE_WALLPAPERS_FILE")"
+        if [[ -z "$selected_path" ]]; then
+            IFS=$'\t' read -r source filename < <(current_entry)
+            selected_path="$(find_wallpaper "$source" "$filename" 2>/dev/null || true)"
+        fi
     else
         IFS=$'\t' read -r source filename < <(current_entry)
     fi
@@ -257,7 +261,6 @@ catalog() {
             "external" "$filename" "$(display_name "${filename##*/}")" "$filename" "$(media_type "$filename" "$filename")"
     fi
 }
-
 validate_workspace_name() {
     local workspace="$1"
     [[ "$workspace" =~ ^[a-z0-9][a-z0-9-]{0,27}$ && "$workspace" != "app-stash" ]] || {
