@@ -38,7 +38,7 @@ def paths() -> dict[str, Path]:
         "config": theme / "matugen.toml",
         "palette": theme / "generated/palette.json",
         "state": state_home() / "a16een/wallpaper-theme.json",
-        "niri": niri_config / "wallpaper-theme.kdl",
+        "niri": niri_config / "wallpaper-theme-generated.kdl",
         "niri_main": niri_config / "config.kdl",
         "foot": config / "foot/foot.ini",
         "kitty": config / "kitty/kitty.conf",
@@ -355,7 +355,7 @@ def generate(p: dict[str, Path], state: dict[str, Any], wallpaper: Path) -> dict
     write_matugen_config(p)
     run([
         shutil.which("matugen") or "matugen",
-        "--config", str(p["config"]),
+        "-c", str(p["config"]),
         "image", str(wallpaper),
         "-m", scheme,
     ], timeout=120)
@@ -367,13 +367,13 @@ def generate(p: dict[str, Path], state: dict[str, Any], wallpaper: Path) -> dict
     foot_text = foot.read_text(encoding="utf-8")
     foot_text = foot_text.replace("initial-color-theme=dark", f"initial-color-theme={scheme}")
     terminal_alpha = "0.97" if scheme == "light" else "0.93"
-    foot_text = re.sub(r"(?m)^alpha=0\\.94$", f"alpha={terminal_alpha}", foot_text)
+    foot_text = re.sub(r"(?m)^alpha=0\.94$", f"alpha={terminal_alpha}", foot_text)
     atomic_write(foot, foot_text)
 
     kitty = p["generated"] / "kitty.conf"
     kitty_text = kitty.read_text(encoding="utf-8")
     kitty_opacity = "0.97" if scheme == "light" else "0.93"
-    kitty_text = "background_opacity " + kitty_opacity + "\\n" + kitty_text
+    kitty_text = "background_opacity " + kitty_opacity + "\n" + kitty_text
     atomic_write(kitty, kitty_text)
 
     # The palette file is the shared source for Quickshell and external apps.
