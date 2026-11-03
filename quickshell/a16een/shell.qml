@@ -2345,10 +2345,9 @@ ShellRoot {
         modelData: root.primaryScreen
         opened: root.wallpaperPickerOpen
         targetWorkspaceName: root.wallpaperPickerWorkspaceName
-        onCloseRequested: {
-            root.wallpaperPickerOpen = false
-            root.wallpaperPickerWorkspaceName = ""
-        }
+        // Keep the target while the native file chooser temporarily hides
+        // this layer. Global /wallpaper clears it; a new workspace selection replaces it.
+        onCloseRequested: root.wallpaperPickerOpen = false
         onOpenRequested: root.wallpaperPickerOpen = true
     }
 
