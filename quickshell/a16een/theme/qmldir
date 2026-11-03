@@ -1,0 +1,2 @@
+module A16EEN.Theme
+singleton WallpaperTheme 1.0 WallpaperTheme.qml
