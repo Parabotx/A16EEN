@@ -496,6 +496,12 @@ ShellRoot {
         const workspace = root.workspaces.find(item => Number(item.id) === Number(root.focusedWorkspaceId))
         return workspace ? String(workspace.name || "") : ""
     }
+    readonly property string workspaceWallpaperStatePath: {
+        const stateHome = Quickshell.env("XDG_STATE_HOME")
+        const home = Quickshell.env("HOME") || ""
+        const base = stateHome && stateHome.length ? stateHome : home + "/.local/state"
+        return base + "/a16een/workspace-wallpapers.json"
+    }
     readonly property string effectiveWallpaperPath: {
         const assigned = String((root.workspaceWallpaperPaths || {})[root.focusedWorkspaceName] || "")
         return assigned.length ? assigned : root.wallpaperPath
@@ -801,7 +807,7 @@ ShellRoot {
 
     FileView {
         id: workspaceWallpaperFile
-        path: Quickshell.stateDir + "/workspace-wallpapers.json"
+        path: root.workspaceWallpaperStatePath
         watchChanges: true
         printErrors: false
         onFileChanged: workspaceWallpaperFile.reload()
