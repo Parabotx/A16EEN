@@ -76,6 +76,8 @@ jobs:
           bash -n scripts/a16een-workspace-layout
           bash -n tests/test_workspace_layout.sh
           bash tests/test_workspace_layout.sh
+          bash -n tests/test_workspace_wallpapers.sh
+          bash tests/test_workspace_wallpapers.sh
           python3 -m py_compile scripts/a16een-music scripts/a16een-music-diagnose scripts/a16een-widget-settings scripts/a16een-ai
           python3 tests/test_music_elements.py
           python3 tests/test_widget_settings.py
