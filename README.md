@@ -158,7 +158,7 @@ Workspace Studio lets you choose a layout profile independently for each named w
 
 - **Adaptive** — a single tiled column uses the full available workspace width. When another tiled column opens, A16EEN balances the visible columns so two apps sit side by side.
 - **Columns** — keeps tiled columns at a consistent half-width, with additional columns available in Niri's horizontally scrolling layout.
-- **Canvas** — moves tiled windows in that workspace into Niri's floating layer so they can be dragged and resized freely. A16EEN records only the windows it moved and restores those windows to tiling when you leave Canvas; windows that were already floating are left alone.
+- **Canvas** — moves tiled windows in that workspace into Niri's floating layer and starts them in a staggered 2×2 spread. Drag and resize the panels freely. A16EEN records only the windows it moved and restores those windows to tiling when you leave Canvas; windows that were already floating are left alone.
 
 The workspace rail selector offers **Vertical** and **Horizontal** placement. It uses the A16EEN navbar edge: left/right for a vertical rail and top/bottom for a horizontal rail. Niri itself keeps its workspace stack vertically ordered, so this changes the A16EEN rail placement rather than rotating Niri's internal workspace order.
 
