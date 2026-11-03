@@ -537,6 +537,8 @@ sudo install -Dm755 "$ROOT_DIR/scripts/a16een-mpv-theme" /usr/local/bin/a16een-m
 WALLPAPER_THEME_DIR="$CONFIG_DIR/wallpaper-theme"
 mkdir -p "$WALLPAPER_THEME_DIR/templates" "$WALLPAPER_THEME_DIR/generated"
 install -m644 "$ROOT_DIR/wallpaper-theme/templates/"* "$WALLPAPER_THEME_DIR/templates/"
+# Seed the disabled state before the Quickshell file watcher starts.
+a16een-wallpaper-theme status >/dev/null
 
 # Enable the MPV theme on first install/update, but respect an explicit user opt-out.
 /usr/local/bin/a16een-mpv-theme install
