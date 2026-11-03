@@ -35,7 +35,7 @@ Item {
     readonly property var layoutProfiles: [
         {id:"adaptive",title:"ADAPTIVE",subtitle:"Full width → balanced columns",description:"One window fills the workspace. When another opens, columns share the available width."},
         {id:"columns",title:"COLUMNS",subtitle:"Consistent side-by-side",description:"Keep tiled columns at half width, with more columns available by scrolling."},
-        {id:"canvas",title:"CANVAS",subtitle:"Freeform desktop",description:"Windows become floating panels. Move and resize them freely across the workspace."}
+        {id:"canvas",title:"CANVAS",subtitle:"Freeform desktop",description:"New windows land in a staggered 2×2 spread. Drag and resize every panel freely."}
     ]
 
     function selectWorkspace(name) {
