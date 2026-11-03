@@ -218,7 +218,7 @@ else:
         self.assertIn("a16een.conf", self.qt6.read_text(encoding="utf-8"))
 
         niri = self.generated_niri.read_text(encoding="utf-8")
-        self.assertIn("opacity 0.985", niri)
+        self.assertIn("opacity 0.96", niri)
         self.assertIn("background-effect", niri)
         self.assertIn("QT_QPA_PLATFORMTHEME", niri)
 
@@ -228,7 +228,7 @@ else:
         self.assertTrue(state["enabled"])
         self.assertEqual(state["scheme"], "dark")
         self.assertEqual(state["qt6ctOriginal"], "/home/test/.config/qt6ct/colors/custom.conf")
-        self.assertIn("opacity 0.955", self.generated_niri.read_text(encoding="utf-8"))
+        self.assertIn("opacity 0.92", self.generated_niri.read_text(encoding="utf-8"))
         self.assertIn(
             "initial-color-theme=dark",
             (self.home_config / "a16een/wallpaper-theme/generated/foot.ini").read_text(encoding="utf-8"),
@@ -268,6 +268,19 @@ else:
         self.assertEqual(
             self.qt6.read_text(encoding="utf-8"),
             "[Appearance]\ncolor_scheme_path=/home/test/.config/qt6ct/colors/custom.conf\n\n[Fonts]\nfixed=monospace\n",
+        )
+
+    def test_existing_qt_environment_variable_is_not_overridden(self) -> None:
+        custom_env = self.env.copy()
+        custom_env["QT_QPA_PLATFORMTHEME"] = "qt5ct"
+        self.run_helper("enable", str(self.wallpaper_light), env=custom_env)
+        state = json.loads(self.state_file.read_text(encoding="utf-8"))
+        self.assertFalse(state["qt6ctManaged"])
+        self.assertNotIn("QT_QPA_PLATFORMTHEME", self.generated_niri.read_text(encoding="utf-8"))
+        self.assertEqual(
+            self.qt6.read_text(encoding="utf-8"),
+            "[Appearance]\ncolor_scheme_path=/home/test/.config/qt6ct/colors/custom.conf\n\n"
+            "[Fonts]\nfixed=monospace\n",
         )
 
     def test_failed_generation_does_not_leave_feature_enabled(self) -> None:
