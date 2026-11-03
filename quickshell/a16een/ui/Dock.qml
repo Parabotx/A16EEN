@@ -4,6 +4,7 @@ import QtQuick.Layouts
 import Quickshell
 import Quickshell.Io
 import Quickshell.Wayland
+import "../theme" as AdaptiveTheme
 import Quickshell.Services.UPower
 import qs.ui
 
@@ -171,15 +172,23 @@ PanelWindow {
             return String(all.containerColor)
         if (item.containerEnabled === true && root.validAppearanceHex(item.containerColor))
             return String(item.containerColor)
+        if (AdaptiveTheme.WallpaperTheme.enabled && AdaptiveTheme.WallpaperTheme.paletteReady)
+            return AdaptiveTheme.WallpaperTheme.surface
         return (id === "ai" || id === "gaming") ? "#15171A" : "#FFFFFF"
     }
 
     function popupCardColorFor(id) {
-        return root.appearanceAll().applyPopupCardColor === true
-            ? root.containerColorFor(id) : "#FFFFFF"
+        if (root.appearanceAll().applyPopupCardColor === true)
+            return root.containerColorFor(id)
+        if (AdaptiveTheme.WallpaperTheme.enabled && AdaptiveTheme.WallpaperTheme.paletteReady)
+            return AdaptiveTheme.WallpaperTheme.surface
+        return "#FFFFFF"
     }
 
     function popupCardBorderColorFor(id) {
+        if (AdaptiveTheme.WallpaperTheme.enabled && AdaptiveTheme.WallpaperTheme.paletteReady
+            && root.popupCardColorFor(id) === AdaptiveTheme.WallpaperTheme.surface)
+            return AdaptiveTheme.WallpaperTheme.outline
         return root.appearanceLuminance(root.popupCardColorFor(id)) < 120
             ? "#3C424C" : "#D9DEE5"
     }
@@ -195,10 +204,16 @@ PanelWindow {
     }
 
     function contrastColorFor(value) {
+        if (AdaptiveTheme.WallpaperTheme.enabled && AdaptiveTheme.WallpaperTheme.paletteReady
+            && String(value).toLowerCase() === String(AdaptiveTheme.WallpaperTheme.surface).toLowerCase())
+            return AdaptiveTheme.WallpaperTheme.onSurface
         return root.appearanceLuminance(value) >= 145 ? "#111318" : "#FFFFFF"
     }
 
     function containerBorderColorFor(id) {
+        if (AdaptiveTheme.WallpaperTheme.enabled && AdaptiveTheme.WallpaperTheme.paletteReady
+            && root.containerColorFor(id) === AdaptiveTheme.WallpaperTheme.surface)
+            return AdaptiveTheme.WallpaperTheme.outline
         return root.appearanceLuminance(root.containerColorFor(id)) < 120
             ? "#3C424C" : "#D9DEE5"
     }
@@ -213,8 +228,12 @@ PanelWindow {
             desired = String(item.iconColor)
 
         const background = root.containerColorFor(id)
-        if (desired === "auto" || desired === "inherit" || !root.validAppearanceHex(desired))
+        if (desired === "auto" || desired === "inherit" || !root.validAppearanceHex(desired)) {
+            if (AdaptiveTheme.WallpaperTheme.enabled && AdaptiveTheme.WallpaperTheme.paletteReady
+                && background === AdaptiveTheme.WallpaperTheme.surface)
+                return AdaptiveTheme.WallpaperTheme.primary
             return root.contrastColorFor(background)
+        }
 
         const requested = desired.toUpperCase()
         if (Math.abs(root.appearanceLuminance(requested) - root.appearanceLuminance(background)) < 95)
