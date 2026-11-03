@@ -86,7 +86,7 @@ PanelWindow {
     signal timeUse24HourRequested(bool enabled)
     signal timeShowSecondsRequested(bool enabled)
     signal iconThemeChanged(string themeId)
-    signal navbarPositionChanged(string position)
+    signal navbarPositionRequested(string position)
     signal dataMeterToggleRequested(bool enabled)
     signal lockScreenSettingsChanged(bool idleEnabled, int idleMinutes, bool lockOnSleepEnabled)
     signal lockNowRequested()
@@ -818,7 +818,7 @@ PanelWindow {
             navbarPosition: root.navbarPosition
             wallpaperAssignments: root.wallpaperAssignments
             onBackRequested: root.closeWorkspaceManagerView()
-            onNavbarPositionRequested: position => root.navbarPositionChanged(position)
+            onNavbarPositionRequested: position => root.navbarPositionRequested(position)
             onWorkspaceWallpaperRequested: workspaceName => {
                 root.closeRequested()
                 root.workspaceWallpaperRequested(workspaceName)
