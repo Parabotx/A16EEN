@@ -101,7 +101,7 @@ Item {
         stderr: StdioCollector { onStreamFinished: { const message = String(text || "").trim(); if (message.length) root.statusMessage = message.toUpperCase() } }
         onExited: function(exitCode) {
             if (exitCode === 0) {
-                root.currentProfile = root.profileWriter.command[3] || "adaptive"
+                root.currentProfile = profileWriter.command[3] || "adaptive"
                 root.statusMessage = "LAYOUT SAVED FOR " + root.selectedLabel
             } else root.statusMessage = "LAYOUT CHANGE FAILED"
         }
@@ -209,6 +209,7 @@ Item {
                     Repeater {
                         model: root.layoutProfiles
                         delegate: Rectangle {
+                            id: profileCard
                             required property var modelData
                             width: (contentColumn.width-18)/3; height: 150; radius: 13
                             color: root.currentProfile === modelData.id ? "#F8F3E8" : "#F7F8FA"
@@ -229,9 +230,13 @@ Item {
                                             model: modelData.id === "canvas" ? 3 : 2
                                             delegate: Rectangle {
                                                 required property int index
-                                                width: (parent.width-4)/2; height: parent.height; radius: 4
-                                                color: modelData.id === "canvas" ? "#7D8A98" : (modelData.id === "adaptive" && index === 0 ? "#4C5968" : "#8C99A8")
-                                                opacity: modelData.id === "adaptive" && index === 1 ? 0.65 : 1
+                                                width: (parent.width - (profileCard.modelData.id === "canvas" ? 8 : 4)) / (profileCard.modelData.id === "canvas" ? 3 : 2)
+                                                height: parent.height
+                                                radius: 4
+                                                color: profileCard.modelData.id === "canvas"
+                                                    ? (index === 1 ? "#4C5968" : "#8C99A8")
+                                                    : (profileCard.modelData.id === "adaptive" && index === 0 ? "#4C5968" : "#8C99A8")
+                                                opacity: profileCard.modelData.id === "adaptive" && index === 1 ? 0.65 : 1
                                             }
                                         }
                                     }
