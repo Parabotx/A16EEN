@@ -60,7 +60,7 @@ QtObject {
         }
     }
 
-    FileView {
+    property var stateFileView: FileView {
         path: root.statePath
         watchChanges: true
         printErrors: false
