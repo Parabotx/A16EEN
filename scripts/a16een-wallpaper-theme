@@ -331,14 +331,13 @@ def add_foot_include(path: Path, include_path: Path, state: dict[str, Any]) -> N
         state["footConfigManaged"] = True
     existing = remove_block(existing, START, END)
     block = f"{START}\ninclude={include_path}\n{END}\n"
-    section = re.search(r"(?m)^\\s*\\[main\\]\\s*$", existing)
-    if section:
-        insertion = section.end()
-        updated = existing[:insertion] + "\\n" + block + existing[insertion:].lstrip("\\n")
+    main_section = re.search(r"(?m)^\s*\[main\]\s*$", existing)
+    if main_section:
+        insertion = main_section.end()
+        updated = existing[:insertion] + "\n" + block + existing[insertion:].lstrip("\n")
     else:
-        updated = "[main]\\n" + block + ("\\n" if existing else "") + existing
+        updated = "[main]\n" + block + ("\n" if existing else "") + existing
     atomic_write(path, updated)
-
 
 
 def generated_integrations(p: dict[str, Path], state: dict[str, Any]) -> None:
@@ -442,12 +441,12 @@ def current_wallpaper() -> Path:
 
 
 def disable(p: dict[str, Path], state: dict[str, Any]) -> None:
-    if state.get("footConfigManaged") and not state.get("footConfigExisted"):
-        foot_content = p["foot"].read_text(encoding="utf-8") if p["foot"].exists() else ""
-        if not re.sub(r"(?m)^\\s*(?:#.*|\\[main\\])?\\s*$", "", foot_content).strip():
+    remove_managed_block(p["foot"], START, END)
+    if state.get("footConfigManaged") and not state.get("footConfigExisted") and p["foot"].exists():
+        foot_content = p["foot"].read_text(encoding="utf-8")
+        if not re.sub(r"(?m)^\s*(?:#.*|\[main\])?\s*$", "", foot_content).strip():
             p["foot"].unlink()
 
-    remove_managed_block(p["foot"], START, END)
     remove_managed_block(p["fuzzel"], START, END)
     remove_managed_block(p["kitty"], START, END)
     remove_managed_block(p["gtk3"], CSS_START, CSS_END)
