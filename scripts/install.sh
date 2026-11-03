@@ -517,6 +517,7 @@ sudo install -Dm755 "$ROOT_DIR/scripts/a16een-navbar-appearance" /usr/local/bin/
 sudo install -Dm755 "$ROOT_DIR/scripts/a16een-navbar-layout" /usr/local/bin/a16een-navbar-layout
 sudo install -Dm755 "$ROOT_DIR/scripts/a16een-navbar-content" /usr/local/bin/a16een-navbar-content
 sudo install -Dm755 "$ROOT_DIR/scripts/a16een-workspaces" /usr/local/bin/a16een-workspaces
+sudo install -Dm755 "$ROOT_DIR/scripts/a16een-workspace-layout" /usr/local/bin/a16een-workspace-layout
 sudo install -Dm755 "$ROOT_DIR/scripts/a16een-focus-workspace" /usr/local/bin/a16een-focus-workspace
 sudo install -Dm755 "$ROOT_DIR/scripts/a16een-workspace-preset" /usr/local/bin/a16een-workspace-preset
 sudo install -Dm755 "$ROOT_DIR/scripts/a16een-mpv-theme" /usr/local/bin/a16een-mpv-theme
