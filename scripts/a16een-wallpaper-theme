@@ -510,6 +510,11 @@ def main(argv: list[str]) -> int:
     state = load_state(p)
 
     if action == "status":
+        # Create a stable disabled-by-default state file before Quickshell's
+        # FileView starts watching it. This avoids relying on watching a
+        # previously nonexistent path during the first enable operation.
+        if not p["state"].exists():
+            save_state(p, state)
         print_status(state)
         return 0
     if action in {"disable", "off"} and len(argv) == 1:
