@@ -15,8 +15,13 @@ PanelWindow {
     property bool iconThemeViewOpen: false
     property bool navbarViewOpen: false
     property bool workspacePresetViewOpen: false
+    property bool workspaceManagerViewOpen: false
     property bool lockScreenViewOpen: false
     property bool transparencyViewOpen: false
+    property var workspaceItems: []
+    property int focusedWorkspaceId: -1
+    property string navbarPosition: "right"
+    property var wallpaperAssignments: ({})
     property bool lockIdleEnabled: true
     property int lockIdleMinutes: 5
     property bool lockOnSleepEnabled: true
@@ -66,6 +71,7 @@ PanelWindow {
     signal widgetsRequested()
     signal widgetsCloseRequested()
     signal presetsRequested()
+    signal workspaceWallpaperRequested(string workspaceName)
     signal doNotDisturbRequested(bool enabled)
     signal editorialTimeWidgetEnabledRequested(bool enabled)
     signal musicWidgetEnabledRequested(bool enabled)
@@ -87,7 +93,7 @@ PanelWindow {
 
     // The expanded command-center card becomes a light card for navbar mode.
     // The card itself is bounded; this does not create a screen-wide cover.
-    readonly property color surface: root.navbarViewOpen ? "#DFFFFFFF" : root.widgetViewOpen || root.controlViewOpen || root.iconThemeViewOpen || root.workspacePresetViewOpen || root.lockScreenViewOpen || root.transparencyViewOpen ? "#FFFFFF" : "#000000"
+    readonly property color surface: root.navbarViewOpen ? "#DFFFFFFF" : root.widgetViewOpen || root.controlViewOpen || root.iconThemeViewOpen || root.workspacePresetViewOpen || root.workspaceManagerViewOpen || root.lockScreenViewOpen || root.transparencyViewOpen ? "#FFFFFF" : "#000000"
     readonly property color borderColor: "#1A1A1A"
     readonly property color fieldBackground: "#0A0A0A"
     readonly property color fieldBorder: "#1C1C1C"
@@ -102,6 +108,7 @@ PanelWindow {
         && !root.controlViewOpen
         && !root.iconThemeViewOpen
         && !root.workspacePresetViewOpen
+        && !root.workspaceManagerViewOpen
         && !root.navbarViewOpen
         && !root.lockScreenViewOpen && !root.transparencyViewOpen
 
@@ -118,6 +125,7 @@ PanelWindow {
         { id: "power", name: "power", keywords: ["power", "performance", "balanced", "energy", "eco", "power-saving", "power-saver"] },
         { id: "screenshot-settings", name: "screenshot settings", keywords: ["screenshot settings", "capture settings", "save", "clipboard", "pointer", "location"] },
         { id: "overview", name: "overview", keywords: ["overview", "workspaces", "windows"] },
+        { id: "workspace", name: "workspace", keywords: ["workspace", "workspaces", "layout", "tiling", "columns", "canvas", "floating", "horizontal"] },
         { id: "widgets", name: "widgets", keywords: ["widgets", "widget", "clock", "time", "day", "date", "desktop", "modules"] },
         { id: "presets", name: "workspace presets", keywords: ["workspace presets", "preset", "workspace setup", "app sets", "app group", "session setup", "launch setup"] },
         { id: "icons", name: "icons", keywords: ["icons", "icon theme", "icon themes", "app icons", "folder icons", "appearance"] },
@@ -512,6 +520,32 @@ PanelWindow {
         })
     }
 
+    function openWorkspaceManagerView() {
+        root.powerViewOpen = false
+        root.widgetViewOpen = false
+        root.controlViewOpen = false
+        root.controlDetail = ""
+        root.iconThemeViewOpen = false
+        root.navbarViewOpen = false
+        root.workspacePresetViewOpen = false
+        root.lockScreenViewOpen = false
+        root.transparencyViewOpen = false
+        root.workspaceManagerViewOpen = true
+        root.commandText = "/workspace"
+        root.selectedCommandIndex = 0
+        Qt.callLater(() => {
+            if (root.workspaceManagerViewOpen)
+                workspaceManagerSection.forceActiveFocus()
+        })
+    }
+
+    function closeWorkspaceManagerView() {
+        root.workspaceManagerViewOpen = false
+        root.commandText = "/"
+        root.selectedCommandIndex = 0
+        Qt.callLater(() => search.forceActiveFocus())
+    }
+
     function openNavbarView() {
         root.powerViewOpen = false
         root.workspacePresetViewOpen = false
@@ -694,14 +728,14 @@ PanelWindow {
         id: card
         width: root.navbarViewOpen
             ? Math.min(800, parent.width - 48)
-            : root.powerViewOpen || root.widgetViewOpen || root.controlViewOpen || root.iconThemeViewOpen || root.workspacePresetViewOpen || root.lockScreenViewOpen || root.transparencyViewOpen
+            : root.powerViewOpen || root.widgetViewOpen || root.controlViewOpen || root.iconThemeViewOpen || root.workspacePresetViewOpen || root.workspaceManagerViewOpen || root.lockScreenViewOpen || root.transparencyViewOpen
                 ? Math.min(940, parent.width - 72)
                 : Math.min(500, parent.width - 48)
         height: root.plainCommandView
             ? 210
             : root.navbarViewOpen
                 ? Math.min(560, parent.height - 72)
-                : root.powerViewOpen || root.widgetViewOpen || root.controlViewOpen || root.iconThemeViewOpen || root.workspacePresetViewOpen || root.lockScreenViewOpen || root.transparencyViewOpen
+                : root.powerViewOpen || root.widgetViewOpen || root.controlViewOpen || root.iconThemeViewOpen || root.workspacePresetViewOpen || root.workspaceManagerViewOpen || root.lockScreenViewOpen || root.transparencyViewOpen
                     ? Math.min(640, parent.height - 80)
                     : 280
         anchors.centerIn: parent
@@ -710,11 +744,11 @@ PanelWindow {
             : 0
         anchors.verticalCenterOffset: root.plainCommandView
             ? Math.min(215, Math.max(190, parent.height * 0.27))
-            : root.powerViewOpen || root.widgetViewOpen || root.controlViewOpen || root.iconThemeViewOpen || root.workspacePresetViewOpen || root.navbarViewOpen || root.lockScreenViewOpen || root.transparencyViewOpen ? 0 : 185
-        radius: root.plainCommandView ? 0 : root.powerViewOpen || root.controlViewOpen || root.iconThemeViewOpen || root.workspacePresetViewOpen || root.navbarViewOpen || root.lockScreenViewOpen || root.transparencyViewOpen ? 26 : 18
+            : root.powerViewOpen || root.widgetViewOpen || root.controlViewOpen || root.iconThemeViewOpen || root.workspacePresetViewOpen || root.workspaceManagerViewOpen || root.navbarViewOpen || root.lockScreenViewOpen || root.transparencyViewOpen ? 0 : 185
+        radius: root.plainCommandView ? 0 : root.powerViewOpen || root.controlViewOpen || root.iconThemeViewOpen || root.workspacePresetViewOpen || root.workspaceManagerViewOpen || root.navbarViewOpen || root.lockScreenViewOpen || root.transparencyViewOpen ? 26 : 18
         color: root.plainCommandView ? "transparent" : root.surface
         border.width: root.plainCommandView ? 0 : 1
-        border.color: root.widgetViewOpen || root.controlViewOpen || root.iconThemeViewOpen || root.workspacePresetViewOpen || root.navbarViewOpen || root.lockScreenViewOpen || root.transparencyViewOpen ? "#E1E6EC" : "#202020"
+        border.color: root.widgetViewOpen || root.controlViewOpen || root.iconThemeViewOpen || root.workspacePresetViewOpen || root.workspaceManagerViewOpen || root.navbarViewOpen || root.lockScreenViewOpen || root.transparencyViewOpen ? "#E1E6EC" : "#202020"
         clip: !root.plainCommandView
 
         Behavior on width {
@@ -749,7 +783,7 @@ PanelWindow {
         Rectangle {
             anchors.fill: parent
             anchors.margins: -5
-            radius: root.powerViewOpen || root.controlViewOpen || root.iconThemeViewOpen || root.workspacePresetViewOpen || root.navbarViewOpen ? 31 : 23
+            radius: root.powerViewOpen || root.controlViewOpen || root.iconThemeViewOpen || root.workspacePresetViewOpen || root.workspaceManagerViewOpen || root.navbarViewOpen ? 31 : 23
             color: "#16000000"
             z: -1
             visible: !root.plainCommandView
@@ -762,6 +796,23 @@ PanelWindow {
             active: root.workspacePresetViewOpen
             onBackRequested: root.closeWorkspacePresetView()
         }
+        WorkspaceManagerSection {
+            id: workspaceManagerSection
+            anchors.fill: parent
+            visible: root.workspaceManagerViewOpen
+            active: root.workspaceManagerViewOpen
+            workspaceItems: root.workspaceItems
+            focusedWorkspaceId: root.focusedWorkspaceId
+            navbarPosition: root.navbarPosition
+            wallpaperAssignments: root.wallpaperAssignments
+            onBackRequested: root.closeWorkspaceManagerView()
+            onNavbarPositionRequested: position => root.navbarPositionChanged(position)
+            onWorkspaceWallpaperRequested: workspaceName => {
+                root.closeRequested()
+                root.workspaceWallpaperRequested(workspaceName)
+            }
+        }
+
         IconThemeSection {
             id: iconThemeSection
             anchors.fill: parent
@@ -1725,6 +1776,9 @@ PanelWindow {
             root.closeRequested()
             Quickshell.execDetached(["niri", "msg", "action", "toggle-overview"])
             break
+        case "workspace":
+            root.openWorkspaceManagerView()
+            break
         case "power":
             root.openPowerView()
             break
@@ -1795,6 +1849,7 @@ PanelWindow {
             root.controlDetail = ""
             root.iconThemeViewOpen = false
             root.workspacePresetViewOpen = false
+            root.workspaceManagerViewOpen = false
             root.navbarViewOpen = false
             root.lockScreenViewOpen = false
             root.transparencyViewOpen = false
@@ -1806,6 +1861,7 @@ PanelWindow {
         root.powerViewOpen = false
         root.controlViewOpen = false
         root.iconThemeViewOpen = false
+        root.workspaceManagerViewOpen = false
         root.navbarViewOpen = false
         root.lockScreenViewOpen = false
         root.transparencyViewOpen = false
