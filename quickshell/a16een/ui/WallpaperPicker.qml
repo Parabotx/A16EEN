@@ -8,6 +8,7 @@ PanelWindow {
 
     required property var modelData
     property bool opened: false
+    property string targetWorkspaceName: ""
     property var wallpapers: []
     property bool settingsOpen: false
     property string fileDialogPurpose: "set"
@@ -242,9 +243,11 @@ PanelWindow {
             return
 
         root.runningWallpaperKey = key
-        wallpaperApplyProcess.command = entry.source === "external"
-            ? ["a16een-wallpaper", "set-path", entry.path]
-            : ["a16een-wallpaper", "set", entry.source, entry.name]
+        wallpaperApplyProcess.command = root.targetWorkspaceName.length
+            ? ["a16een-wallpaper", "workspace-set", root.targetWorkspaceName, entry.path]
+            : entry.source === "external"
+                ? ["a16een-wallpaper", "set-path", entry.path]
+                : ["a16een-wallpaper", "set", entry.source, entry.name]
         wallpaperApplyProcess.running = true
     }
 
@@ -274,7 +277,7 @@ PanelWindow {
 
     function launchFilePicker(purpose) {
         root.fileDialogPurpose = purpose
-        root.showSettingsAfterPicker = purpose !== "set"
+        root.showSettingsAfterPicker = purpose === "morning" || purpose === "evening"
         root.reopenAfterPicker = true
         root.pickerOutputReady = false
         root.pickerFinishHandled = false
@@ -298,6 +301,12 @@ PanelWindow {
                 root.morningPath = path
             else if (purpose === "evening")
                 root.eveningPath = path
+            else if (purpose === "workspace" && root.targetWorkspaceName.length) {
+                workspaceFileAssignProcess.command = ["a16een-wallpaper", "workspace-set", root.targetWorkspaceName, path]
+                workspaceFileAssignProcess.running = false
+                Qt.callLater(() => workspaceFileAssignProcess.running = true)
+                return
+            }
             if (purpose === "set")
                 root.showSettingsAfterPicker = false
         }
@@ -355,7 +364,9 @@ PanelWindow {
 
     Process {
         id: catalogProcess
-        command: ["a16een-wallpaper", "catalog"]
+        command: root.targetWorkspaceName.length
+            ? ["a16een-wallpaper", "catalog", root.targetWorkspaceName]
+            : ["a16een-wallpaper", "catalog"]
         running: false
 
         stdout: StdioCollector {
@@ -411,6 +422,29 @@ PanelWindow {
     }
 
     Process {
+        id: workspaceFileAssignProcess
+        command: []
+        running: false
+        stderr: StdioCollector {
+            onStreamFinished: {
+                const message = String(text || "").trim()
+                if (message.length)
+                    console.warn("A16EEN workspace wallpaper:", message)
+            }
+        }
+        onExited: function(exitCode) {
+            if (exitCode !== 0)
+                console.warn("A16EEN could not assign the selected wallpaper to the workspace.")
+            root.fileDialogPurpose = "set"
+            root.showSettingsAfterPicker = false
+            if (root.reopenAfterPicker) {
+                root.reopenAfterPicker = false
+                root.openRequested()
+            }
+        }
+    }
+
+    Process {
         id: wallpaperFilePickerProcess
         command: ["a16een-wallpaper", "pick-file", root.fileDialogPurpose]
         running: false
@@ -463,6 +497,28 @@ PanelWindow {
         }
         Behavior on opacity {
             NumberAnimation { duration: 200; easing.type: Easing.OutCubic }
+        }
+    }
+
+    Rectangle {
+        anchors.horizontalCenter: parent.horizontalCenter
+        anchors.top: parent.top
+        anchors.topMargin: 28
+        width: Math.min(320, parent.width - 48)
+        height: 34
+        radius: 10
+        color: "#990D1218"
+        border.width: 1
+        border.color: "#35FFFFFF"
+        visible: root.opened && root.targetWorkspaceName.length > 0
+        z: 3
+        Text {
+            anchors.centerIn: parent
+            text: "WALLPAPER FOR  /  " + root.targetWorkspaceName.replace(/-/g, " ").toUpperCase()
+            color: "#F5F7FA"
+            font.pixelSize: 9
+            font.weight: Font.DemiBold
+            font.letterSpacing: 0.8
         }
     }
 
@@ -811,7 +867,7 @@ PanelWindow {
                     MouseArea {
                         anchors.fill: parent
                         cursorShape: Qt.PointingHandCursor
-                        onClicked: root.launchFilePicker("set")
+                        onClicked: root.launchFilePicker(root.targetWorkspaceName.length ? "workspace" : "set")
                     }
                 }
 
@@ -1176,6 +1232,9 @@ PanelWindow {
 
         settingsProcess.running = false
         catalogProcess.running = false
+        catalogProcess.command = root.targetWorkspaceName.length
+            ? ["a16een-wallpaper", "catalog", root.targetWorkspaceName]
+            : ["a16een-wallpaper", "catalog"]
         Qt.callLater(function() {
             settingsProcess.running = true
             catalogProcess.running = true
