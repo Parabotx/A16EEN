@@ -389,7 +389,7 @@ pick_file() {
             ;;
         morning|evening) setting_set "${purpose}_path" "$path" ;;
         *) echo "A16EEN: unknown file-picker purpose '$purpose'." >&2; return 1 ;;
-    esac    esac
+    esac
     printf '%s\n' "$path"
 }
 
