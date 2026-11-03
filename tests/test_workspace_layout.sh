@@ -1,5 +1,6 @@
 #!/usr/bin/env bash
 set -euo pipefail
+trap 'status=$?; echo "Workspace layout test failed at line ${LINENO}: ${BASH_COMMAND} (exit ${status})" >&2; exit "$status"' ERR
 ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 TMP="$(mktemp -d)"
 trap 'rm -rf "$TMP"' EXIT
