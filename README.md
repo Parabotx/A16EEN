@@ -37,6 +37,24 @@ The project is being designed as a cohesive desktop product rather than a conven
 - Persistent user wallpaper collection with `a16 wallpaper`
 - Isolated configuration under `~/.config/a16een/`
 
+## Wallpaper Adaptive Appearance
+
+Open the Command Center with **Super + /** and run `/transparency`. The **Wallpaper Adaptive Appearance** switch at the top is **off by default**; nothing changes until you enable it.
+
+When enabled, A16EEN samples the current wallpaper, detects whether it is predominantly light or dark, and uses Matugen to generate one shared Material palette. The palette follows every wallpaper change automatically:
+
+- **Foot** terminal, **Fuzzel** launcher, and **Kitty** when installed.
+- **GTK 3 and GTK 4** application surfaces and text.
+- **Qt 6** applications through Qt6ct, unless you already selected a different Qt platform theme.
+- Core A16EEN Quickshell surfaces, including the launcher, navbar, Command Center, and popup cards.
+- Niri window opacity and background blur on **Niri 26.04 or newer**. Older Niri versions still get the generated palette and subtle opacity, but not the compositor blur effect.
+
+Light wallpapers choose a light palette with stronger window opacity for contrast; dark wallpapers choose a dark palette with a little more transparency. Foreground, selection, border, and accent colors are generated together rather than independently guessed. The generated palette is shared across the supported apps so their colors stay coordinated.
+
+Turn the switch off at any time to remove A16EEN's injected theme includes and restore the previous Qt color-scheme selection. Existing application windows may need to be restarted before GTK, Qt, terminal, or launcher changes are visible. Applications that draw their own interface or ignore GTK/Qt system themes may keep their own colors; this is not a forced per-app skin.
+
+Matugen, Qt6ct, and ImageMagick are installed with the normal Arch update workflow. The palette and preferences stay in your user configuration/state directories; A16EEN does not replace your wallpaper or modify the actual image.
+
 ## Lock screen
 
 Open the Command Center with **Super + /** and run:
