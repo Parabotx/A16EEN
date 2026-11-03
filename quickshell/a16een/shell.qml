@@ -780,8 +780,10 @@ ShellRoot {
         stdout: StdioCollector {
             onStreamFinished: {
                 const path = text.trim()
-                if (path.length)
+                if (path.length) {
                     root.wallpaperPath = path
+                    Quickshell.execDetached(["a16een-wallpaper-theme", "apply", path])
+                }
             }
         }
     }
@@ -1038,6 +1040,7 @@ ShellRoot {
                 // paths match this avoids a duplicate wallpaper reload.
                 root.wallpaperPath = path
                 root.wallpaperPreviewPath = ""
+                Quickshell.execDetached(["a16een-wallpaper-theme", "apply", path])
             }
         }
     }
