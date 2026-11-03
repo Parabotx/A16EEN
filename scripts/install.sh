@@ -530,6 +530,7 @@ sudo install -Dm755 "$ROOT_DIR/scripts/a16een-navbar-content" /usr/local/bin/a16
 sudo install -Dm755 "$ROOT_DIR/scripts/a16een-workspaces" /usr/local/bin/a16een-workspaces
 sudo install -Dm755 "$ROOT_DIR/scripts/a16een-focus-workspace" /usr/local/bin/a16een-focus-workspace
 sudo install -Dm755 "$ROOT_DIR/scripts/a16een-workspace-preset" /usr/local/bin/a16een-workspace-preset
+sudo install -Dm755 "$ROOT_DIR/scripts/a16een-workspace-layout" /usr/local/bin/a16een-workspace-layout
 sudo install -Dm755 "$ROOT_DIR/scripts/a16een-mpv-theme" /usr/local/bin/a16een-mpv-theme
 
 # Keep wallpaper palette templates under A16EEN's own config directory.
@@ -537,6 +538,8 @@ sudo install -Dm755 "$ROOT_DIR/scripts/a16een-mpv-theme" /usr/local/bin/a16een-m
 WALLPAPER_THEME_DIR="$CONFIG_DIR/wallpaper-theme"
 mkdir -p "$WALLPAPER_THEME_DIR/templates" "$WALLPAPER_THEME_DIR/generated"
 install -m644 "$ROOT_DIR/wallpaper-theme/templates/"* "$WALLPAPER_THEME_DIR/templates/"
+# Seed the disabled state before the Quickshell file watcher starts.
+a16een-wallpaper-theme status >/dev/null
 
 # Enable the MPV theme on first install/update, but respect an explicit user opt-out.
 /usr/local/bin/a16een-mpv-theme install
