@@ -1,6 +1,9 @@
 // A16EEN — active desktop foundation
 // Compositor behavior stays here. Visual UI lives in Quickshell.
 
+// Generated wallpaper palette / subtle glass rule is empty until enabled in Command Center.
+include "wallpaper-theme-generated.kdl"
+
 // User-managed app and shell opacity rules are kept outside the base config.
 include "transparency.kdl"
 
