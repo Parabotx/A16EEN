@@ -1,6 +1,7 @@
 import QtQuick
 import Quickshell
 import Quickshell.Io
+import "../theme" as AdaptiveTheme
 
 Item {
     id: root
@@ -96,17 +97,20 @@ Item {
                 return String(root.selectedContainer.containerColor)
             return "#FFFFFF"
         }
-        if (!root.popupCardColorEnabled)
-            return "#FFFFFF"
-        // The AI chat is deliberately independent from legacy/global navbar
-        // colors; it only uses a color explicitly configured for its own card.
-        if (!root.isolateAppearance
-            && root.allSettings.applyContainerColor === true
-            && root.validHexColor(root.allSettings.containerColor))
-            return String(root.allSettings.containerColor)
-        if (root.selectedContainer.containerEnabled === true
-            && root.validHexColor(root.selectedContainer.containerColor))
-            return String(root.selectedContainer.containerColor)
+        // Explicit navbar appearance choices always take priority over the
+        // wallpaper palette, so existing per-container customization survives.
+        if (root.popupCardColorEnabled) {
+            if (!root.isolateAppearance
+                && root.allSettings.applyContainerColor === true
+                && root.validHexColor(root.allSettings.containerColor))
+                return String(root.allSettings.containerColor)
+            if (root.selectedContainer.containerEnabled === true
+                && root.validHexColor(root.selectedContainer.containerColor))
+                return String(root.selectedContainer.containerColor)
+        }
+        if (AdaptiveTheme.WallpaperTheme.enabled
+            && AdaptiveTheme.WallpaperTheme.paletteReady)
+            return AdaptiveTheme.WallpaperTheme.surface
         return "#FFFFFF"
     }
     Behavior on backgroundColor {
@@ -117,18 +121,40 @@ Item {
     readonly property bool darkMode: root.contrastRatio("#F3F5F8", root.backgroundColor)
         > root.contrastRatio("#1B2027", root.backgroundColor)
 
-    property color textColor: root.darkMode ? "#F3F5F8" : "#1B2027"
-    property color secondaryTextColor: root.darkMode ? "#BAC3CE" : "#667180"
+    property color textColor: AdaptiveTheme.WallpaperTheme.enabled
+        && AdaptiveTheme.WallpaperTheme.paletteReady
+        && root.contrastRatio(AdaptiveTheme.WallpaperTheme.onSurface, root.backgroundColor) >= 4.5
+        ? AdaptiveTheme.WallpaperTheme.onSurface
+        : root.darkMode ? "#F3F5F8" : "#1B2027"
+    property color secondaryTextColor: AdaptiveTheme.WallpaperTheme.enabled
+        && root.contrastRatio(AdaptiveTheme.WallpaperTheme.onSurfaceVariant, root.backgroundColor) >= 3
+        ? AdaptiveTheme.WallpaperTheme.onSurfaceVariant
+        : root.darkMode ? "#BAC3CE" : "#667180"
     property color mutedTextColor: root.darkMode ? "#929BA8" : "#8A939E"
-    property color fieldColor: root.darkMode ? Qt.lighter(root.backgroundColor, 1.16) : "#FAFBFC"
-    property color subtleSurfaceColor: root.darkMode ? Qt.lighter(root.backgroundColor, 1.10) : "#F7F8FA"
-    property color hoverSurfaceColor: root.darkMode ? Qt.lighter(root.backgroundColor, 1.24) : "#EEF1F4"
-    property color selectedSurfaceColor: root.darkMode ? Qt.lighter(root.backgroundColor, 1.34) : "#E9EDF1"
-    property color fieldBorderColor: root.darkMode ? "#454D58" : "#E4E9EF"
-    property color focusBorderColor: root.darkMode ? "#728198" : "#B8C5D4"
-    property color actionColor: root.darkMode ? Qt.lighter(root.backgroundColor, 1.65) : "#242A32"
-    property color actionHoverColor: root.darkMode ? Qt.lighter(root.backgroundColor, 1.90) : "#171C23"
-    property color actionTextColor: "#F3F5F8"
+    property color fieldColor: AdaptiveTheme.WallpaperTheme.enabled
+        ? AdaptiveTheme.WallpaperTheme.surfaceVariant
+        : root.darkMode ? Qt.lighter(root.backgroundColor, 1.16) : "#FAFBFC"
+    property color subtleSurfaceColor: AdaptiveTheme.WallpaperTheme.enabled
+        ? Qt.lighter(root.backgroundColor, root.darkMode ? 1.14 : 1.04)
+        : root.darkMode ? Qt.lighter(root.backgroundColor, 1.10) : "#F7F8FA"
+    property color hoverSurfaceColor: AdaptiveTheme.WallpaperTheme.enabled
+        ? Qt.lighter(root.backgroundColor, root.darkMode ? 1.22 : 1.08)
+        : root.darkMode ? Qt.lighter(root.backgroundColor, 1.24) : "#EEF1F4"
+    property color selectedSurfaceColor: AdaptiveTheme.WallpaperTheme.enabled
+        ? AdaptiveTheme.WallpaperTheme.primaryContainer
+        : root.darkMode ? Qt.lighter(root.backgroundColor, 1.34) : "#E9EDF1"
+    property color fieldBorderColor: AdaptiveTheme.WallpaperTheme.enabled
+        ? AdaptiveTheme.WallpaperTheme.outline : root.darkMode ? "#454D58" : "#E4E9EF"
+    property color focusBorderColor: AdaptiveTheme.WallpaperTheme.enabled
+        ? AdaptiveTheme.WallpaperTheme.primary : root.darkMode ? "#728198" : "#B8C5D4"
+    property color actionColor: AdaptiveTheme.WallpaperTheme.enabled
+        ? AdaptiveTheme.WallpaperTheme.primary
+        : root.darkMode ? Qt.lighter(root.backgroundColor, 1.65) : "#242A32"
+    property color actionHoverColor: AdaptiveTheme.WallpaperTheme.enabled
+        ? Qt.lighter(AdaptiveTheme.WallpaperTheme.primary, 1.12)
+        : root.darkMode ? Qt.lighter(root.backgroundColor, 1.90) : "#171C23"
+    property color actionTextColor: AdaptiveTheme.WallpaperTheme.enabled
+        ? AdaptiveTheme.WallpaperTheme.onPrimary : "#F3F5F8"
 
     property color iconColor: {
         let desired = "inherit"
@@ -137,8 +163,12 @@ Item {
         else if (root.selectedContainer.iconColor)
             desired = String(root.selectedContainer.iconColor)
 
-        if (desired === "auto" || desired === "inherit" || !root.validHexColor(desired))
+        if (desired === "auto" || desired === "inherit" || !root.validHexColor(desired)) {
+            if (AdaptiveTheme.WallpaperTheme.enabled
+                && root.contrastRatio(AdaptiveTheme.WallpaperTheme.primary, root.backgroundColor) >= 3.0)
+                return AdaptiveTheme.WallpaperTheme.primary
             return root.textColor
+        }
         // Keep explicit icon accents only when they remain distinguishable
         // against this popup's actual background.
         if (root.contrastRatio(desired, root.backgroundColor) < 3.0)
@@ -146,9 +176,11 @@ Item {
         return desired
     }
 
-    property color dangerColor: root.darkMode ? "#FF827A" : "#B93832"
+    property color dangerColor: AdaptiveTheme.WallpaperTheme.enabled
+        ? AdaptiveTheme.WallpaperTheme.error : root.darkMode ? "#FF827A" : "#B93832"
     property color successColor: root.darkMode ? "#75D6A3" : "#327858"
-    property color borderColor: root.darkMode ? "#3C424C" : "#D9DEE5"
+    property color borderColor: AdaptiveTheme.WallpaperTheme.enabled
+        ? AdaptiveTheme.WallpaperTheme.outline : root.darkMode ? "#3C424C" : "#D9DEE5"
     Behavior on textColor { ColorAnimation { duration: 130; easing.type: Easing.OutCubic } }
     Behavior on secondaryTextColor { ColorAnimation { duration: 130; easing.type: Easing.OutCubic } }
     Behavior on mutedTextColor { ColorAnimation { duration: 130; easing.type: Easing.OutCubic } }
