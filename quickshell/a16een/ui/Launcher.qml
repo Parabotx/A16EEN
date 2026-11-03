@@ -4,6 +4,7 @@ import Quickshell
 import Quickshell.Io
 import Quickshell.Wayland
 import Quickshell.Widgets
+import "../theme" as AdaptiveTheme
 
 PanelWindow {
     id: root
@@ -24,15 +25,25 @@ PanelWindow {
     signal closeRequested()
     signal protectedAppRequested(string desktopId, string appName)
 
-    readonly property color accent: "#66717F"
-    readonly property color primaryText: "#E7E9ED"
-    readonly property color secondaryText: "#A4AAB4"
-    readonly property color mutedText: "#777F8A"
-    readonly property color tileBackground: "#171B22"
-    readonly property color tileHoverBackground: "#202630"
-    readonly property color tileSelectedBackground: "#252D38"
-    readonly property color tileBorder: "#303844"
-    readonly property color tileActiveBorder: "#465263"
+    readonly property color accent: AdaptiveTheme.WallpaperTheme.enabled
+        ? AdaptiveTheme.WallpaperTheme.primary : "#66717F"
+    readonly property color primaryText: AdaptiveTheme.WallpaperTheme.enabled
+        ? AdaptiveTheme.WallpaperTheme.onSurface : "#E7E9ED"
+    readonly property color secondaryText: AdaptiveTheme.WallpaperTheme.enabled
+        ? AdaptiveTheme.WallpaperTheme.onSurfaceVariant : "#A4AAB4"
+    readonly property color mutedText: AdaptiveTheme.WallpaperTheme.enabled
+        ? AdaptiveTheme.WallpaperTheme.onSurfaceVariant : "#777F8A"
+    readonly property color tileBackground: AdaptiveTheme.WallpaperTheme.enabled
+        ? AdaptiveTheme.WallpaperTheme.surface : "#171B22"
+    readonly property color tileHoverBackground: AdaptiveTheme.WallpaperTheme.enabled
+        ? Qt.lighter(AdaptiveTheme.WallpaperTheme.surface, AdaptiveTheme.WallpaperTheme.scheme === "dark" ? 1.16 : 1.05)
+        : "#202630"
+    readonly property color tileSelectedBackground: AdaptiveTheme.WallpaperTheme.enabled
+        ? AdaptiveTheme.WallpaperTheme.primaryContainer : "#252D38"
+    readonly property color tileBorder: AdaptiveTheme.WallpaperTheme.enabled
+        ? AdaptiveTheme.WallpaperTheme.outline : "#303844"
+    readonly property color tileActiveBorder: AdaptiveTheme.WallpaperTheme.enabled
+        ? AdaptiveTheme.WallpaperTheme.primary : "#465263"
     readonly property int navigationColumns: Math.max(1, Math.floor(appGrid.width / appGrid.cellWidth))
     readonly property string selectedAppDescription: {
         const item = appGrid.currentItem
