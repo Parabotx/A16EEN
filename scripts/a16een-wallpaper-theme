@@ -151,7 +151,14 @@ def write_matugen_config(p: dict[str, Path]) -> None:
         "gtk": ("gtk.css", p["generated"] / "gtk.css"),
         "qt6ct": ("qt6ct.conf", p["qt6_palette"]),
     }
-    lines = ["[config]", ""]
+    lines = [
+        "[config]",
+        "reload_apps = false",
+        "",
+        "[config.wallpaper]",
+        "set = false",
+        "",
+    ]
 
     for name, (template, output) in templates.items():
         input_file = p["templates"] / template
