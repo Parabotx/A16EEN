@@ -243,8 +243,7 @@ Item {
 
         onExited: function(exitCode) {
             if (exitCode === 0) {
-                root.wallpaperThemeMessage = root.wallpaperThemeEnabled
-                    ? "WALLPAPER THEME DISABLED" : "WALLPAPER THEME UPDATED"
+                root.wallpaperThemeMessage = "THEME SETTINGS SAVED"
             } else {
                 root.wallpaperThemeMessage = "COULD NOT APPLY THEME — CHECK THE STATUS"
             }
@@ -401,6 +400,96 @@ Item {
                 id: contentColumn
                 width: contentFlickable.width
                 spacing: 12
+
+                Rectangle {
+                    width: parent.width
+                    height: 112
+                    radius: 17
+                    color: root.tile
+                    border.width: 1
+                    border.color: root.border
+
+                    Row {
+                        anchors.fill: parent
+                        anchors.margins: 16
+                        spacing: 14
+
+                        Rectangle {
+                            width: 44
+                            height: 44
+                            radius: 13
+                            color: AdaptiveTheme.WallpaperTheme.enabled
+                                ? AdaptiveTheme.WallpaperTheme.primaryContainer : "#EEE8DC"
+                            anchors.verticalCenter: parent.verticalCenter
+
+                            Text {
+                                anchors.centerIn: parent
+                                text: "◐"
+                                color: AdaptiveTheme.WallpaperTheme.enabled
+                                    ? AdaptiveTheme.WallpaperTheme.onPrimaryContainer : "#8C6D38"
+                                font.pixelSize: 25
+                            }
+                        }
+
+                        Column {
+                            anchors.verticalCenter: parent.verticalCenter
+                            spacing: 5
+                            width: parent.width - 44 - 62 - 28
+
+                            Text {
+                                text: "WALLPAPER ADAPTIVE APPEARANCE"
+                                color: root.textPrimary
+                                font.pixelSize: 10
+                                font.weight: Font.DemiBold
+                                font.letterSpacing: 0.6
+                            }
+                            Text {
+                                width: parent.width
+                                text: "Match Foot, Kitty, GTK, Qt and A16EEN to your wallpaper. Light wallpapers create light app surfaces; dark wallpapers create dark ones."
+                                color: root.textSecondary
+                                font.pixelSize: 8
+                                wrapMode: Text.WordWrap
+                            }
+                            Text {
+                                width: parent.width
+                                text: root.wallpaperThemeMessage
+                                color: root.wallpaperThemeEnabled ? root.accent : root.textMuted
+                                font.pixelSize: 7
+                                font.weight: Font.DemiBold
+                                elide: Text.ElideRight
+                            }
+                        }
+
+                        Rectangle {
+                            width: 42
+                            height: 24
+                            radius: 12
+                            color: root.wallpaperThemeEnabled ? root.accent : "#D9DEE4"
+                            anchors.verticalCenter: parent.verticalCenter
+
+                            Rectangle {
+                                width: 18
+                                height: 18
+                                radius: 9
+                                y: 3
+                                x: root.wallpaperThemeEnabled ? 21 : 3
+                                color: "#FFFFFF"
+                                Behavior on x {
+                                    NumberAnimation {
+                                        duration: 150
+                                        easing.type: Easing.OutCubic
+                                    }
+                                }
+                            }
+                            MouseArea {
+                                anchors.fill: parent
+                                enabled: !wallpaperThemeWriter.running && root.wallpaperThemeAvailable
+                                cursorShape: enabled ? Qt.PointingHandCursor : Qt.ArrowCursor
+                                onClicked: root.setWallpaperTheme(!root.wallpaperThemeEnabled)
+                            }
+                        }
+                    }
+                }
 
                 Row {
                     width: parent.width
