@@ -2,6 +2,7 @@ import QtQuick
 import QtQuick.Controls
 import Quickshell
 import Quickshell.Io
+import "../theme" as AdaptiveTheme
 
 Item {
     id: root
@@ -14,19 +15,32 @@ Item {
     property var appOverrides: ({})
     property var windows: []
     property string statusMessage: "READY"
+    property bool wallpaperThemeEnabled: false
+    property bool wallpaperThemeAvailable: true
+    property string wallpaperThemeScheme: ""
+    property string wallpaperThemeWallpaper: ""
+    property string wallpaperThemeMessage: "OFF BY DEFAULT"
     property var pendingActions: ({})
     property var activeAction: []
 
     signal backRequested()
 
-    readonly property color page: "#FFFFFF"
-    readonly property color tile: "#F7F8FA"
-    readonly property color tileHover: "#EEF1F4"
-    readonly property color border: "#E1E5EA"
-    readonly property color textPrimary: "#111318"
-    readonly property color textSecondary: "#66707C"
-    readonly property color textMuted: "#8A939E"
-    readonly property color accent: "#B18B3F"
+    readonly property color page: AdaptiveTheme.WallpaperTheme.enabled
+        ? AdaptiveTheme.WallpaperTheme.surface : "#FFFFFF"
+    readonly property color tile: AdaptiveTheme.WallpaperTheme.enabled
+        ? AdaptiveTheme.WallpaperTheme.surfaceVariant : "#F7F8FA"
+    readonly property color tileHover: AdaptiveTheme.WallpaperTheme.enabled
+        ? Qt.lighter(AdaptiveTheme.WallpaperTheme.surfaceVariant, 1.08) : "#EEF1F4"
+    readonly property color border: AdaptiveTheme.WallpaperTheme.enabled
+        ? AdaptiveTheme.WallpaperTheme.outline : "#E1E5EA"
+    readonly property color textPrimary: AdaptiveTheme.WallpaperTheme.enabled
+        ? AdaptiveTheme.WallpaperTheme.onSurface : "#111318"
+    readonly property color textSecondary: AdaptiveTheme.WallpaperTheme.enabled
+        ? AdaptiveTheme.WallpaperTheme.onSurfaceVariant : "#66707C"
+    readonly property color textMuted: AdaptiveTheme.WallpaperTheme.enabled
+        ? AdaptiveTheme.WallpaperTheme.onSurfaceVariant : "#8A939E"
+    readonly property color accent: AdaptiveTheme.WallpaperTheme.enabled
+        ? AdaptiveTheme.WallpaperTheme.primary : "#B18B3F"
 
     readonly property var appRows: {
         const discovered = []
@@ -102,6 +116,41 @@ Item {
         if (!root.active || stateReader.running)
             return
         stateReader.running = true
+        root.refreshWallpaperTheme()
+    }
+
+    function acceptWallpaperTheme(rawText) {
+        try {
+            const parsed = JSON.parse(String(rawText || "{}"))
+            root.wallpaperThemeEnabled = parsed.enabled === true
+            root.wallpaperThemeAvailable = parsed.available !== false
+            root.wallpaperThemeScheme = String(parsed.scheme || "")
+            root.wallpaperThemeWallpaper = String(parsed.wallpaper || "")
+            root.wallpaperThemeMessage = !root.wallpaperThemeAvailable
+                ? "MATUGEN NOT INSTALLED — RUN A16 -U"
+                : root.wallpaperThemeEnabled
+                    ? "ACTIVE • " + (root.wallpaperThemeScheme || "GENERATING").toUpperCase() + " PALETTE"
+                    : "DISABLED • YOUR CURRENT THEME IS UNCHANGED"
+        } catch (error) {
+            root.wallpaperThemeMessage = "COULD NOT READ THEME STATUS"
+        }
+    }
+
+    function refreshWallpaperTheme() {
+        if (!root.active || wallpaperThemeReader.running)
+            return
+        wallpaperThemeReader.running = true
+    }
+
+    function setWallpaperTheme(enabled) {
+        if (wallpaperThemeWriter.running)
+            return
+        root.wallpaperThemeMessage = enabled ? "GENERATING PALETTE…" : "RESTORING NORMAL APPEARANCE…"
+        wallpaperThemeWriter.command = [
+            "a16een-wallpaper-theme",
+            enabled ? "enable" : "disable"
+        ]
+        wallpaperThemeWriter.running = true
     }
 
     function queueAction(key, args) {
@@ -162,10 +211,44 @@ Item {
         if (root.active) {
             root.statusMessage = "READING SETTINGS"
             root.refresh()
+            root.refreshWallpaperTheme()
             refreshTimer.start()
             Qt.callLater(() => root.forceActiveFocus())
         } else {
             refreshTimer.stop()
+        }
+    }
+
+    Process {
+        id: wallpaperThemeReader
+        command: ["a16een-wallpaper-theme", "status"]
+        running: false
+
+        stdout: StdioCollector {
+            onStreamFinished: root.acceptWallpaperTheme(text)
+        }
+    }
+
+    Process {
+        id: wallpaperThemeWriter
+        command: ["a16een-wallpaper-theme", "status"]
+        running: false
+
+        stderr: StdioCollector {
+            onStreamFinished: {
+                if (text.trim().length)
+                    root.wallpaperThemeMessage = text.trim()
+            }
+        }
+
+        onExited: function(exitCode) {
+            if (exitCode === 0) {
+                root.wallpaperThemeMessage = root.wallpaperThemeEnabled
+                    ? "WALLPAPER THEME DISABLED" : "WALLPAPER THEME UPDATED"
+            } else {
+                root.wallpaperThemeMessage = "COULD NOT APPLY THEME — CHECK THE STATUS"
+            }
+            root.refreshWallpaperTheme()
         }
     }
 
