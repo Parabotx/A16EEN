@@ -2190,7 +2190,7 @@ ShellRoot {
         onLockScreenSettingsChanged: root.applyLockSettings(idleEnabled, idleMinutes, lockOnSleepEnabled, true)
         onLockNowRequested: root.requestLockScreen(false)
 
-        onNavbarPositionChanged: {
+        onNavbarPositionRequested: {
             if (["left", "right", "top", "bottom"].includes(position))
                 root.navbarPosition = position
         }
