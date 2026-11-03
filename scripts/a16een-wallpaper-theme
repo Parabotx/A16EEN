@@ -423,7 +423,7 @@ def disable(p: dict[str, Path], state: dict[str, Any]) -> None:
     remove_managed_block(p["gtk3"], CSS_START, CSS_END)
     remove_managed_block(p["gtk4"], CSS_START, CSS_END)
 
-    if state.get("_qt6ctSnapshotTaken"):
+    if state.get("qt6ctManaged"):
         set_qt6ct_scheme(p["qt6"], state.get("qt6ctOriginal"))
         if not state.get("qt6ctConfigExisted") and p["qt6"].exists():
             content = p["qt6"].read_text(encoding="utf-8")
