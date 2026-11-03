@@ -209,6 +209,7 @@ else:
         foot = self.foot.read_text(encoding="utf-8")
         self.assertIn("font=monospace", foot)
         self.assertIn("A16EEN WALLPAPER THEME", foot)
+        self.assertEqual(foot.count("[main]"), 1)
         self.assertIn("initial-color-theme=light", (self.home_config / "a16een/wallpaper-theme/generated/foot.ini").read_text(encoding="utf-8"))
         self.assertIn("alpha=0.97", (self.home_config / "a16een/wallpaper-theme/generated/foot.ini").read_text(encoding="utf-8"))
 
@@ -216,6 +217,7 @@ else:
         self.assertIn("font_size 12", kitty)
         self.assertIn("A16EEN WALLPAPER THEME", kitty)
         self.assertTrue((self.home_config / "fuzzel/fuzzel.ini").read_text(encoding="utf-8").find("A16EEN WALLPAPER THEME") >= 0)
+        self.assertEqual(self.fuzzel.read_text(encoding="utf-8").count("[main]"), 1)
         self.assertIn("button { padding: 4px; }", self.gtk3.read_text(encoding="utf-8"))
         self.assertIn("label { font-weight: 500; }", self.gtk4.read_text(encoding="utf-8"))
         self.assertIn("a16een.conf", self.qt6.read_text(encoding="utf-8"))
