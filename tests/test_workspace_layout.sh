@@ -50,6 +50,9 @@ grep -q '"FocusWindow":{"id":11}' "$MOCK_NIRI_LOG"
 : > "$MOCK_NIRI_LOG"
 bash "$SCRIPT" set-profile home canvas >/dev/null
 grep -q '"MoveWindowToFloating":{"id":11}' "$MOCK_NIRI_LOG"
+grep -q '"SetWindowWidth":{"id":11,"change":{"SetProportion":0.44}}' "$MOCK_NIRI_LOG"
+grep -q '"SetWindowHeight":{"id":11,"change":{"SetProportion":0.42}}' "$MOCK_NIRI_LOG"
+grep -q '"MoveFloatingWindow":{"id":11,"x":{"SetProportion":0.035},"y":{"SetProportion":0.04}}' "$MOCK_NIRI_LOG"
 grep -q '"MoveWindowToFloating":{"id":12}' "$MOCK_NIRI_LOG"
 : > "$MOCK_NIRI_LOG"
 bash "$SCRIPT" set-profile home adaptive >/dev/null
