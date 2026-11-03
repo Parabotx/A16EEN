@@ -427,7 +427,7 @@ def disable(p: dict[str, Path], state: dict[str, Any]) -> None:
         set_qt6ct_scheme(p["qt6"], state.get("qt6ctOriginal"))
         if not state.get("qt6ctConfigExisted") and p["qt6"].exists():
             content = p["qt6"].read_text(encoding="utf-8")
-            if not re.sub(r"(?m)^\s*(?:#.*)?$", "", content).strip():
+            if not re.sub(r"(?m)^\s*(?:#.*|\[Appearance\])?\s*$", "", content).strip():
                 p["qt6"].unlink()
 
     if p["niri"].exists():
