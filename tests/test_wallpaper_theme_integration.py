@@ -14,6 +14,10 @@ popup = (ROOT / "quickshell/a16een/ui/PopupCardStyle.qml").read_text(encoding="u
 navbar = (ROOT / "quickshell/a16een/ui/NavbarManager.qml").read_text(encoding="utf-8")
 launcher = (ROOT / "quickshell/a16een/ui/Launcher.qml").read_text(encoding="utf-8")
 command_center = (ROOT / "quickshell/a16een/ui/CommandCenter.qml").read_text(encoding="utf-8")
+dock = (ROOT / "quickshell/a16een/ui/Dock.qml").read_text(encoding="utf-8")
+clock = (ROOT / "quickshell/a16een/ui/EditorialTimeWidget.qml").read_text(encoding="utf-8")
+media_card = (ROOT / "quickshell/a16een/ui/MediaCard.qml").read_text(encoding="utf-8")
+quick_tools = (ROOT / "quickshell/a16een/ui/QuickToolsPage.qml").read_text(encoding="utf-8")
 templates = ROOT / "wallpaper-theme/templates"
 
 # The feature is explicitly opt-in and has one source-of-truth palette file.
@@ -43,7 +47,7 @@ assert shell.count('Quickshell.execDetached(["a16een-wallpaper-theme", "apply", 
 assert 'if not state["enabled"]:' in helper
 
 # The shared Material palette is consumed by core Quickshell surfaces.
-for content in (popup, navbar, launcher, command_center, ui):
+for content in (popup, navbar, launcher, command_center, ui, dock, clock, media_card, quick_tools):
     assert 'import "../theme" as AdaptiveTheme' in content
     assert "AdaptiveTheme.WallpaperTheme" in content
 
