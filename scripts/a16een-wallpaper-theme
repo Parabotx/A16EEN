@@ -82,6 +82,8 @@ def default_state() -> dict[str, Any]:
         "qt6ctConfigExisted": False,
         "footConfigExisted": False,
         "footConfigManaged": False,
+        "fuzzelConfigExisted": False,
+        "fuzzelConfigManaged": False,
         "qt6ctManaged": False,
     }
 
@@ -334,11 +336,13 @@ def reload_niri() -> None:
     )
 
 
-def add_foot_include(path: Path, include_path: Path, state: dict[str, Any]) -> None:
+def add_ini_include(path: Path, include_path: Path, state: dict[str, Any], key: str) -> None:
     existing = path.read_text(encoding="utf-8") if path.exists() else ""
-    if not state.get("footConfigManaged"):
-        state["footConfigExisted"] = path.exists()
-        state["footConfigManaged"] = True
+    managed_key = f"{key}ConfigManaged"
+    existed_key = f"{key}ConfigExisted"
+    if not state.get(managed_key):
+        state[existed_key] = path.exists()
+        state[managed_key] = True
     existing = remove_block(existing, START, END)
     block = f"{START}\ninclude={include_path}\n{END}\n"
     main_section = re.search(r"(?m)^\s*\[main\]\s*$", existing)
@@ -352,14 +356,8 @@ def add_foot_include(path: Path, include_path: Path, state: dict[str, Any]) -> N
 
 def generated_integrations(p: dict[str, Path], state: dict[str, Any]) -> None:
     generated = p["generated"]
-    foot_ini = p["foot"]
-    foot_include = generated / "foot.ini"
-    add_foot_include(p["foot"], generated / "foot.ini", state)
-
-    add_block(
-        p["fuzzel"], START, END,
-        "[main]\ninclude=" + str(generated / "fuzzel.ini"),
-    )
+    add_ini_include(p["foot"], generated / "foot.ini", state, "foot")
+    add_ini_include(p["fuzzel"], generated / "fuzzel.ini", state, "fuzzel")
 
     if p["kitty"].exists() or shutil.which("kitty"):
         add_block(
@@ -451,13 +449,14 @@ def current_wallpaper() -> Path:
 
 
 def disable(p: dict[str, Path], state: dict[str, Any]) -> None:
-    remove_managed_block(p["foot"], START, END)
-    if state.get("footConfigManaged") and not state.get("footConfigExisted") and p["foot"].exists():
-        foot_content = p["foot"].read_text(encoding="utf-8")
-        if not re.sub(r"(?m)^\s*(?:#.*|\[main\])?\s*$", "", foot_content).strip():
-            p["foot"].unlink()
+    for key in ("foot", "fuzzel"):
+        path = p[key]
+        remove_managed_block(path, START, END)
+        if state.get(f"{key}ConfigManaged") and not state.get(f"{key}ConfigExisted") and path.exists():
+            content = path.read_text(encoding="utf-8")
+            if not re.sub(r"(?m)^\s*(?:#.*|\[main\])?\s*$", "", content).strip():
+                path.unlink()
 
-    remove_managed_block(p["fuzzel"], START, END)
     remove_managed_block(p["kitty"], START, END)
     remove_managed_block(p["gtk3"], CSS_START, CSS_END)
     remove_managed_block(p["gtk4"], CSS_START, CSS_END)
@@ -483,6 +482,8 @@ def disable(p: dict[str, Path], state: dict[str, Any]) -> None:
     state["qt6ctConfigExisted"] = False
     state["footConfigExisted"] = False
     state["footConfigManaged"] = False
+    state["fuzzelConfigExisted"] = False
+    state["fuzzelConfigManaged"] = False
     state["qt6ctManaged"] = False
     save_state(p, state)
     reload_niri()
