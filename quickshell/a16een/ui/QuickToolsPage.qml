@@ -1,6 +1,7 @@
 import QtQuick
 import Quickshell
 import Quickshell.Io
+import "../theme" as AdaptiveTheme
 import qs.ui
 
 Item {
@@ -32,7 +33,9 @@ Item {
     readonly property color surfaceColor: root.palette && root.palette.fieldColor ? root.palette.fieldColor : "#F7F7F7"
     readonly property color subtleColor: root.palette && root.palette.subtleSurfaceColor ? root.palette.subtleSurfaceColor : "#F0F0F0"
     readonly property color hoverColor: root.palette && root.palette.hoverSurfaceColor ? root.palette.hoverSurfaceColor : "#EAEAEA"
-    readonly property color accentColor: "#C69A50"
+    readonly property color accentColor: AdaptiveTheme.WallpaperTheme.enabled
+        && AdaptiveTheme.WallpaperTheme.paletteReady
+        ? AdaptiveTheme.WallpaperTheme.primary : "#C69A50"
     readonly property var systemPackages: root.updateData && root.updateData.system && Array.isArray(root.updateData.system.packages)
         ? root.updateData.system.packages : []
     readonly property var filteredApps: root.lockerApps.filter(app => {
