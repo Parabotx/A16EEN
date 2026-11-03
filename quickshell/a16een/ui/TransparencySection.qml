@@ -16,10 +16,10 @@ Item {
     property var windows: []
     property string statusMessage: "READY"
     property bool wallpaperThemeEnabled: false
-    property bool wallpaperThemeAvailable: true
+    property bool wallpaperThemeAvailable: false
     property string wallpaperThemeScheme: ""
     property string wallpaperThemeWallpaper: ""
-    property string wallpaperThemeMessage: "OFF BY DEFAULT"
+    property string wallpaperThemeMessage: "CHECKING THEME SERVICE…"
     property var pendingActions: ({})
     property var activeAction: []
 
