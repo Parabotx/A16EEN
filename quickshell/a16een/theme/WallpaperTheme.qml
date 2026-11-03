@@ -13,7 +13,12 @@ QtObject {
     property string wallpaper: ""
     property var palette: ({})
 
-    readonly property string statePath: Quickshell.stateDir + "/wallpaper-theme.json"
+    readonly property string statePath: {
+        const stateHome = Quickshell.env("XDG_STATE_HOME")
+        const home = Quickshell.env("HOME") || ""
+        return (stateHome && stateHome.length ? stateHome : home + "/.local/state")
+            + "/a16een/wallpaper-theme.json"
+    }
 
     readonly property color background: root.color("background", "#10141B")
     readonly property color foreground: root.color("foreground", "#E8ECF2")
