@@ -1,0 +1,469 @@
+#!/usr/bin/env python3
+"""Generate and apply A16EEN's optional wallpaper-adaptive desktop palette."""
+
+from __future__ import annotations
+
+import json
+import os
+import re
+import shutil
+import subprocess
+import sys
+import tempfile
+from pathlib import Path
+from typing import Any
+
+START = "# >>> A16EEN WALLPAPER THEME"
+END = "# <<< A16EEN WALLPAPER THEME"
+CSS_START = "/* >>> A16EEN WALLPAPER THEME */"
+CSS_END = "/* <<< A16EEN WALLPAPER THEME */"
+
+
+def config_home() -> Path:
+    return Path(os.environ.get("XDG_CONFIG_HOME", Path.home() / ".config")).expanduser()
+
+
+def state_home() -> Path:
+    return Path(os.environ.get("XDG_STATE_HOME", Path.home() / ".local/state")).expanduser()
+
+
+def paths() -> dict[str, Path]:
+    config = config_home()
+    theme = config / "a16een/wallpaper-theme"
+    niri_config = Path(os.environ.get("A16EEN_NIRI_CONFIG_DIR", config / "a16een/niri")).expanduser()
+    return {
+        "theme": theme,
+        "templates": theme / "templates",
+        "generated": theme / "generated",
+        "config": theme / "matugen.toml",
+        "palette": theme / "generated/palette.json",
+        "state": state_home() / "a16een/wallpaper-theme.json",
+        "niri": niri_config / "wallpaper-theme.kdl",
+        "niri_main": niri_config / "config.kdl",
+        "foot": config / "foot/foot.ini",
+        "kitty": config / "kitty/kitty.conf",
+        "gtk3": config / "gtk-3.0/gtk.css",
+        "gtk4": config / "gtk-4.0/gtk.css",
+        "qt6": config / "qt6ct/qt6ct.conf",
+        "qt6_palette": config / "qt6ct/colors/a16een.conf",
+    }
+
+
+def atomic_write(path: Path, text: str, mode: int = 0o644) -> None:
+    path.parent.mkdir(parents=True, exist_ok=True)
+    fd, temporary = tempfile.mkstemp(prefix=f".{path.name}.", dir=path.parent)
+    try:
+        with os.fdopen(fd, "w", encoding="utf-8") as stream:
+            stream.write(text)
+            stream.flush()
+            os.fsync(stream.fileno())
+        os.chmod(temporary, mode)
+        os.replace(temporary, path)
+    except Exception:
+        try:
+            os.unlink(temporary)
+        except OSError:
+            pass
+        raise
+
+
+def default_state() -> dict[str, Any]:
+    return {
+        "version": 1,
+        "enabled": False,
+        "mode": "auto",
+        "scheme": "",
+        "wallpaper": "",
+        "updatedAt": 0,
+        "palette": {},
+        "qt6ctOriginal": None,
+        "qt6ctConfigExisted": False,
+    }
+
+
+def load_state(p: dict[str, Path]) -> dict[str, Any]:
+    if not p["state"].exists():
+        return default_state()
+    try:
+        state = json.loads(p["state"].read_text(encoding="utf-8"))
+    except (OSError, json.JSONDecodeError) as error:
+        raise RuntimeError(f"cannot read wallpaper theme state: {error}") from error
+    if not isinstance(state, dict):
+        raise RuntimeError("wallpaper theme state must be a JSON object")
+    result = default_state()
+    result.update(state)
+    result["enabled"] = result.get("enabled") is True
+    result["scheme"] = result.get("scheme") if result.get("scheme") in {"light", "dark"} else ""
+    result["palette"] = result.get("palette") if isinstance(result.get("palette"), dict) else {}
+    return result
+
+
+def save_state(p: dict[str, Path], state: dict[str, Any]) -> None:
+    state["updatedAt"] = int(__import__("time").time())
+    atomic_write(p["state"], json.dumps(state, indent=2, ensure_ascii=False) + "\n")
+
+
+def run(command: list[str], *, check: bool = True, timeout: int = 60) -> subprocess.CompletedProcess[str]:
+    return subprocess.run(command, check=check, capture_output=True, text=True, timeout=timeout)
+
+
+def detect_scheme(image: Path) -> str:
+    if not image.is_file():
+        raise RuntimeError(f"wallpaper does not exist: {image}")
+    suffix = image.suffix.lower()
+    if suffix in {".mp4", ".webm", ".mov", ".m4v", ".mkv"}:
+        command = [
+            "ffmpeg", "-v", "error", "-i", str(image),
+            "-vf", "scale=1:1:flags=area,format=gray",
+            "-frames:v", "1", "-f", "rawvideo", "-pix_fmt", "gray", "pipe:1",
+        ]
+        result = subprocess.run(command, check=True, capture_output=True, timeout=30)
+        if not result.stdout:
+            raise RuntimeError("could not sample the video wallpaper")
+        brightness = result.stdout[0] / 255.0
+    else:
+        result = run([
+            "magick", f"{image}[0]", "-auto-orient", "-resize", "1x1!",
+            "-colorspace", "Gray", "-format", "%[fx:mean]", "info:",
+        ], timeout=30)
+        try:
+            brightness = float(result.stdout.strip())
+        except ValueError as error:
+            raise RuntimeError("ImageMagick returned an invalid wallpaper brightness") from error
+    return "light" if brightness >= 0.52 else "dark"
+
+
+def toml_quote(value: str) -> str:
+    return json.dumps(value, ensure_ascii=False)
+
+
+def write_matugen_config(p: dict[str, Path]) -> None:
+    templates = {
+        "palette": ("palette.json", p["palette"]),
+        "foot": ("foot.ini", p["generated"] / "foot.ini"),
+        "kitty": ("kitty.conf", p["generated"] / "kitty.conf"),
+        "gtk": ("gtk.css", p["generated"] / "gtk.css"),
+        "qt6ct": ("qt6ct.conf", p["qt6_palette"]),
+    }
+    lines = ["[config]", ""]
+
+    for name, (template, output) in templates.items():
+        input_file = p["templates"] / template
+        if not input_file.is_file():
+            raise RuntimeError(f"theme template is missing: {input_file}")
+        lines.extend([
+            f"[templates.{name}]",
+            f"input_path = {toml_quote(str(input_file))}",
+            f"output_path = {toml_quote(str(output))}",
+            "",
+        ])
+    atomic_write(p["config"], "\n".join(lines))
+
+
+def validate_palette(path: Path) -> dict[str, str]:
+    try:
+        palette = json.loads(path.read_text(encoding="utf-8"))
+    except (OSError, json.JSONDecodeError) as error:
+        raise RuntimeError(f"Matugen did not produce a readable palette: {error}") from error
+    required = (
+        "background", "foreground", "surface", "onSurface", "primary",
+        "onPrimary", "secondary", "tertiary", "outline", "error",
+    )
+    if not isinstance(palette, dict) or any(
+        not isinstance(palette.get(key), str)
+        or not re.fullmatch(r"#[0-9a-fA-F]{6}", palette[key])
+        for key in required
+    ):
+        raise RuntimeError("Matugen generated an incomplete color palette")
+    return palette
+
+
+def remove_block(text: str, start: str, end: str) -> str:
+    pattern = re.compile(
+        r"(?ms)^\s*" + re.escape(start) + r"\s*$.*?^\s*" + re.escape(end) + r"\s*$\n?"
+    )
+    return pattern.sub("", text)
+
+
+def add_block(path: Path, start: str, end: str, body: str, *, prepend: bool = False) -> None:
+    existing = path.read_text(encoding="utf-8") if path.exists() else ""
+    existing = remove_block(existing, start, end).lstrip("\n")
+    block = f"{start}\n{body.rstrip()}\n{end}\n"
+    result = block + ("\n" if existing else "") + existing if prepend else existing.rstrip() + ("\n\n" if existing.strip() else "") + block
+    atomic_write(path, result)
+
+
+def remove_managed_block(path: Path, start: str, end: str) -> None:
+    if not path.exists():
+        return
+    content = remove_block(path.read_text(encoding="utf-8"), start, end)
+    if content.strip():
+        atomic_write(path, content.lstrip("\n"))
+    else:
+        path.unlink()
+
+
+def qt6ct_current_scheme(path: Path) -> str | None:
+    if not path.exists():
+        return None
+    inside_appearance = False
+    for line in path.read_text(encoding="utf-8").splitlines():
+        section = re.match(r"\s*\[([^]]+)\]\s*$", line)
+        if section:
+            inside_appearance = section.group(1).strip().lower() == "appearance"
+        elif inside_appearance:
+            match = re.match(r"\s*color_scheme_path\s*=\s*(.*?)\s*$", line)
+            if match:
+                return match.group(1)
+    return None
+
+
+def set_qt6ct_scheme(path: Path, value: str | None) -> None:
+    original = path.read_text(encoding="utf-8").splitlines() if path.exists() else []
+    output: list[str] = []
+    in_appearance = False
+    found_section = False
+    found_key = False
+
+    for line in original:
+        section = re.match(r"\s*\[([^]]+)\]\s*$", line)
+        if section:
+            if in_appearance and not found_key and value is not None:
+                output.append(f"color_scheme_path={value}")
+                found_key = True
+            in_appearance = section.group(1).strip().lower() == "appearance"
+            found_section = found_section or in_appearance
+            output.append(line)
+            continue
+        if in_appearance and re.match(r"\s*color_scheme_path\s*=", line):
+            if value is not None:
+                output.append(f"color_scheme_path={value}")
+            found_key = True
+        else:
+            output.append(line)
+
+    if in_appearance and not found_key and value is not None:
+        output.append(f"color_scheme_path={value}")
+        found_key = True
+    if not found_section and value is not None:
+        if output and output[-1].strip():
+            output.append("")
+        output.extend(["[Appearance]", f"color_scheme_path={value}"])
+
+    if output:
+        atomic_write(path, "\n".join(output).rstrip() + "\n")
+    elif path.exists():
+        path.unlink()
+
+
+def niri_supports_background_effect() -> bool:
+    executable = shutil.which("niri")
+    if not executable:
+        return False
+    try:
+        version = run([executable, "--version"], timeout=4).stdout
+    except (OSError, subprocess.SubprocessError):
+        return False
+    match = re.search(r"(\d{2})\.(\d{2})", version)
+    return bool(match and (int(match.group(1)), int(match.group(2))) >= (26, 4))
+
+
+def niri_rule(p: dict[str, Path], scheme: str) -> str:
+    # A tiny amount of compositor opacity makes the wallpaper subtly visible
+    # without washing text out. Lighter wallpapers get slightly more opacity.
+    opacity = "0.985" if scheme == "light" else "0.955"
+    lines = [
+        "// Generated by A16EEN. Disable Wallpaper Adaptive Theme to clear this file.",
+        "environment {",
+        '    QT_QPA_PLATFORMTHEME "qt6ct"',
+        "}",
+        "",
+        "window-rule {",
+        f"    opacity {opacity}",
+    ]
+    if niri_supports_background_effect():
+        lines.extend([
+            "    background-effect {",
+            "        blur true",
+            "        xray true",
+            "        noise 0.02",
+            "        saturation 1.12",
+            "    }",
+        ])
+    lines.extend(["}", ""])
+    return "\n".join(lines)
+
+
+def reload_niri() -> None:
+    executable = shutil.which("niri")
+    if not executable:
+        return
+    subprocess.run(
+        [executable, "msg", "action", "load-config-file"],
+        capture_output=True, text=True, timeout=8, check=False,
+    )
+
+
+def generated_integrations(p: dict[str, Path]) -> None:
+    generated = p["generated"]
+    foot_ini = p["foot"]
+    foot_include = generated / "foot.ini"
+    add_block(
+        foot_ini, START, END,
+        "[main]\ninclude=" + str(foot_include),
+    )
+
+    if p["kitty"].exists():
+        add_block(
+            p["kitty"], START, END,
+            "include " + str(generated / "kitty.conf"),
+        )
+
+    gtk_import = '@import url("' + (generated / "gtk.css").as_uri() + '");'
+    add_block(p["gtk3"], CSS_START, CSS_END, gtk_import, prepend=True)
+    add_block(p["gtk4"], CSS_START, CSS_END, gtk_import, prepend=True)
+
+
+def apply_qt6ct(p: dict[str, Path], state: dict[str, Any]) -> None:
+    if not state.get("_qt6ctSnapshotTaken"):
+        state["qt6ctConfigExisted"] = p["qt6"].exists()
+        state["qt6ctOriginal"] = qt6ct_current_scheme(p["qt6"])
+        state["_qt6ctSnapshotTaken"] = True
+    set_qt6ct_scheme(p["qt6"], str(p["qt6_palette"]))
+
+
+def write_niri_theme(p: dict[str, Path], scheme: str) -> None:
+    content = niri_rule(p, scheme)
+    previous = p["niri"].read_text(encoding="utf-8") if p["niri"].exists() else ""
+    if content != previous:
+        atomic_write(p["niri"], content)
+
+
+def generate(p: dict[str, Path], state: dict[str, Any], wallpaper: Path) -> dict[str, Any]:
+    if not wallpaper.is_file():
+        raise RuntimeError(f"wallpaper does not exist: {wallpaper}")
+    if not shutil.which("matugen"):
+        raise RuntimeError("Matugen is not installed. Run a16 -u to install the wallpaper theme dependency.")
+    if not shutil.which("magick"):
+        raise RuntimeError("ImageMagick is required to detect light and dark wallpaper modes.")
+
+    scheme = detect_scheme(wallpaper)
+    p["generated"].mkdir(parents=True, exist_ok=True)
+    write_matugen_config(p)
+    run([
+        shutil.which("matugen") or "matugen",
+        "--config", str(p["config"]),
+        "image", str(wallpaper),
+        "-m", scheme,
+    ], timeout=120)
+    palette = validate_palette(p["palette"])
+
+    # The palette file is the shared source for Quickshell and external apps.
+    generated_integrations(p)
+    apply_qt6ct(p, state)
+    write_niri_theme(p, scheme)
+
+    state["enabled"] = True
+    state["scheme"] = scheme
+    state["wallpaper"] = str(wallpaper)
+    state["palette"] = palette
+    state.pop("_qt6ctSnapshotTaken", None)
+    save_state(p, state)
+    reload_niri()
+    return state
+
+
+def current_wallpaper() -> Path:
+    executable = shutil.which("a16een-wallpaper")
+    if not executable:
+        raise RuntimeError("a16een-wallpaper is unavailable")
+    result = run([executable, "current-path"], timeout=8)
+    path = result.stdout.strip()
+    if not path:
+        raise RuntimeError("A16EEN could not determine the current wallpaper")
+    return Path(path).expanduser()
+
+
+def disable(p: dict[str, Path], state: dict[str, Any]) -> None:
+    remove_managed_block(p["foot"], START, END)
+    remove_managed_block(p["kitty"], START, END)
+    remove_managed_block(p["gtk3"], CSS_START, CSS_END)
+    remove_managed_block(p["gtk4"], CSS_START, CSS_END)
+
+    if state.get("_qt6ctSnapshotTaken"):
+        set_qt6ct_scheme(p["qt6"], state.get("qt6ctOriginal"))
+        if not state.get("qt6ctConfigExisted") and p["qt6"].exists():
+            content = p["qt6"].read_text(encoding="utf-8")
+            if not re.sub(r"(?m)^\s*(?:#.*)?$", "", content).strip():
+                p["qt6"].unlink()
+
+    if p["niri"].exists():
+        atomic_write(
+            p["niri"],
+            "// A16EEN Wallpaper Adaptive Theme is disabled by default.\n",
+        )
+
+    state["enabled"] = False
+    state["scheme"] = ""
+    state["wallpaper"] = ""
+    state["palette"] = {}
+    state.pop("_qt6ctSnapshotTaken", None)
+    state["qt6ctOriginal"] = None
+    state["qt6ctConfigExisted"] = False
+    save_state(p, state)
+    reload_niri()
+
+
+def print_status(state: dict[str, Any]) -> None:
+    safe = {
+        "enabled": state["enabled"],
+        "mode": state.get("mode", "auto"),
+        "scheme": state.get("scheme", ""),
+        "wallpaper": state.get("wallpaper", ""),
+        "available": shutil.which("matugen") is not None,
+        "paletteReady": bool(state.get("palette")),
+    }
+    print(json.dumps(safe, ensure_ascii=False))
+
+
+def main(argv: list[str]) -> int:
+    if not argv or argv[0] in {"help", "--help", "-h"}:
+        print("Usage: a16een-wallpaper-theme status|enable|disable|apply [wallpaper]")
+        return 0
+    p = paths()
+    action = argv[0]
+    state = load_state(p)
+
+    if action == "status":
+        print_status(state)
+        return 0
+    if action in {"disable", "off"} and len(argv) == 1:
+        disable(p, state)
+        print_status(state)
+        return 0
+    if action in {"enable", "on"} and len(argv) in {1, 2}:
+        wallpaper = Path(argv[1]).expanduser() if len(argv) == 2 else current_wallpaper()
+        try:
+            generate(p, state, wallpaper)
+        except Exception:
+            # Enabling is transactional from the user's perspective: never
+            # leave a half-enabled state when palette generation fails.
+            disable(p, state)
+            raise
+        print_status(state)
+        return 0
+    if action == "apply" and len(argv) in {1, 2}:
+        if not state["enabled"]:
+            return 0
+        wallpaper = Path(argv[1]).expanduser() if len(argv) == 2 else current_wallpaper()
+        generate(p, state, wallpaper)
+        return 0
+    raise ValueError("invalid command; run a16een-wallpaper-theme help")
+
+
+if __name__ == "__main__":
+    try:
+        raise SystemExit(main(sys.argv[1:]))
+    except (OSError, ValueError, RuntimeError, subprocess.SubprocessError) as error:
+        print(f"A16EEN wallpaper theme: {error}", file=sys.stderr)
+        raise SystemExit(2)
