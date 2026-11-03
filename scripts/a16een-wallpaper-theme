@@ -155,10 +155,10 @@ def write_matugen_config(p: dict[str, Path]) -> None:
     }
     lines = [
         "[config]",
-        "reload_apps = false",
         "",
         "[config.wallpaper]",
         "set = false",
+        'command = ""',
         "",
     ]
 
