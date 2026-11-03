@@ -227,6 +227,8 @@ else:
         niri = self.generated_niri.read_text(encoding="utf-8")
         self.assertIn("opacity 0.96", niri)
         self.assertIn("background-effect", niri)
+        self.assertIn("layer-rule {", niri)
+        self.assertIn('match namespace="^launcher$"', niri)
         self.assertIn("QT_QPA_PLATFORMTHEME", niri)
 
         self.env["A16_TEST_BRIGHTNESS"] = "0.1"
