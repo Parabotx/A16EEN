@@ -33,6 +33,8 @@ assert 'root.setWallpaperTheme(!root.wallpaperThemeEnabled)' in ui
 
 # A16EEN loads generated palette rules before its user-configurable opacity rules.
 assert 'include "wallpaper-theme-generated.kdl"' in niri
+assert 'layer-rule {' in helper
+assert 'match namespace="^launcher$"' in helper
 assert "a16een-wallpaper-theme" in installer
 assert "matugen" in installer
 assert '"set = false"' in helper
