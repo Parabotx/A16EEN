@@ -14,6 +14,8 @@ ShellRoot {
     property bool launcherOpen: false
     property bool commandCenterOpen: false
     property bool wallpaperPickerOpen: false
+    property string wallpaperPickerWorkspaceName: ""
+    property var workspaceWallpaperPaths: ({})
     property bool screenshotCenterOpen: false
     property bool screenshotSettingsOpen: false
     property bool screenshotPreviewOpen: false
@@ -489,6 +491,15 @@ ShellRoot {
     property var windows: []
     property int focusedWorkspaceId: -1
     property int focusedWindowId: -1
+    property bool workspaceLayoutPending: false
+    readonly property string focusedWorkspaceName: {
+        const workspace = root.workspaces.find(item => Number(item.id) === Number(root.focusedWorkspaceId))
+        return workspace ? String(workspace.name || "") : ""
+    }
+    readonly property string effectiveWallpaperPath: {
+        const assigned = String((root.workspaceWallpaperPaths || {})[root.focusedWorkspaceName] || "")
+        return assigned.length ? assigned : root.wallpaperPath
+    }
     readonly property bool focusedWindowFullscreen: ToplevelManager.activeToplevel
         ? ToplevelManager.activeToplevel.fullscreen
         : false
@@ -786,6 +797,24 @@ ShellRoot {
         }
     }
 
+    FileView {
+        id: workspaceWallpaperFile
+        path: Quickshell.stateDir + "/workspace-wallpapers.json"
+        watchChanges: true
+        printErrors: false
+        onFileChanged: workspaceWallpaperFile.reload()
+        onLoaded: root.loadWorkspaceWallpaperPaths(workspaceWallpaperFile.text())
+    }
+
+    Process {
+        id: workspaceWallpaperStateProcess
+        command: ["a16een-wallpaper", "workspace-list"]
+        running: true
+        stdout: StdioCollector {
+            onStreamFinished: root.loadWorkspaceWallpaperPaths(text)
+        }
+    }
+
     Process {
         id: powerProfileProcess
         command: ["powerprofilesctl", "get"]
@@ -816,6 +845,56 @@ ShellRoot {
         }
     }
 
+    function loadWorkspaceWallpaperPaths(raw) {
+        try {
+            const parsed = JSON.parse(String(raw || "{}"))
+            root.workspaceWallpaperPaths = parsed && typeof parsed === "object" && !Array.isArray(parsed)
+                ? parsed
+                : ({})
+        } catch (error) {
+            console.warn("A16EEN could not read per-workspace wallpaper assignments.")
+            root.workspaceWallpaperPaths = ({})
+        }
+    }
+
+    function scheduleWorkspaceLayout() {
+        root.workspaceLayoutPending = true
+        workspaceLayoutDebounce.restart()
+    }
+
+    Timer {
+        id: workspaceLayoutDebounce
+        interval: 260
+        repeat: false
+        onTriggered: {
+            if (workspaceLayoutProcess.running) {
+                root.workspaceLayoutPending = true
+                return
+            }
+            root.workspaceLayoutPending = false
+            workspaceLayoutProcess.running = true
+        }
+    }
+
+    Process {
+        id: workspaceLayoutProcess
+        command: ["a16een-workspace-layout", "auto"]
+        running: false
+        stderr: StdioCollector {
+            onStreamFinished: {
+                const message = String(text || "").trim()
+                if (message.length)
+                    console.warn("A16EEN workspace layout:", message)
+            }
+        }
+        onExited: {
+            if (root.workspaceLayoutPending) {
+                root.workspaceLayoutPending = false
+                workspaceLayoutDebounce.restart()
+            }
+        }
+    }
+
     function consumeNiriEvent(raw) {
         const line = String(raw).trim()
         if (!line.length) return
@@ -831,6 +910,7 @@ ShellRoot {
                 )
                 if (focused)
                     root.focusedWorkspaceId = focused.id
+                root.scheduleWorkspaceLayout()
 
                 return
             }
@@ -840,6 +920,7 @@ ShellRoot {
                 const focused = root.windows.find(window => window.is_focused === true)
                 if (focused)
                     root.focusedWindowId = focused.id
+                root.scheduleWorkspaceLayout()
                 return
             }
 
@@ -850,6 +931,7 @@ ShellRoot {
                 root.windows = next
                 if (incoming.is_focused)
                     root.focusedWindowId = incoming.id
+                root.scheduleWorkspaceLayout()
                 return
             }
 
@@ -858,6 +940,7 @@ ShellRoot {
                 if (root.focusedWindowId === event.WindowClosed.id) {
                     root.focusedWindowId = -1
                 }
+                root.scheduleWorkspaceLayout()
                 return
             }
 
@@ -898,6 +981,7 @@ ShellRoot {
             if (event.WorkspaceActivated) {
                 if (event.WorkspaceActivated.focused === true) {
                     root.focusedWorkspaceId = event.WorkspaceActivated.id
+                    root.scheduleWorkspaceLayout()
                 }
                 return
             }
@@ -1740,7 +1824,7 @@ ShellRoot {
 
         Wallpaper {
             modelData: modelData
-            currentWallpaperPath: root.wallpaperPath
+            currentWallpaperPath: root.effectiveWallpaperPath
             previewWallpaperPath: root.wallpaperPreviewPath
             desktopAnimationAllowed: root.wallpaperAnimationAllowed
             editorialTimeWidgetEnabled: root.editorialTimeWidgetEnabled
@@ -2060,6 +2144,10 @@ ShellRoot {
         modelData: root.primaryScreen
         dataMeterEnabled: root.dataMeterEnabled
         opened: root.commandCenterOpen
+        workspaceItems: root.workspaces
+        focusedWorkspaceId: root.focusedWorkspaceId
+        navbarPosition: root.navbarPosition
+        wallpaperAssignments: root.workspaceWallpaperPaths
         lockIdleEnabled: root.lockIdleEnabled
         lockIdleMinutes: root.lockIdleMinutes
         lockOnSleepEnabled: root.lockOnSleepEnabled
@@ -2105,6 +2193,13 @@ ShellRoot {
         }
 
         onWallpaperRequested: {
+            root.wallpaperPickerWorkspaceName = ""
+            root.commandCenterOpen = false
+            root.wallpaperPickerOpen = true
+        }
+
+        onWorkspaceWallpaperRequested: workspaceName => {
+            root.wallpaperPickerWorkspaceName = String(workspaceName || "")
             root.commandCenterOpen = false
             root.wallpaperPickerOpen = true
         }
@@ -2249,7 +2344,11 @@ ShellRoot {
     WallpaperPicker {
         modelData: root.primaryScreen
         opened: root.wallpaperPickerOpen
-        onCloseRequested: root.wallpaperPickerOpen = false
+        targetWorkspaceName: root.wallpaperPickerWorkspaceName
+        onCloseRequested: {
+            root.wallpaperPickerOpen = false
+            root.wallpaperPickerWorkspaceName = ""
+        }
         onOpenRequested: root.wallpaperPickerOpen = true
     }
 
