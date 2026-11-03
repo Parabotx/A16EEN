@@ -183,12 +183,13 @@ else:
     def status(self) -> dict:
         return json.loads(self.run_helper("status").stdout)
 
-    def test_theme_is_disabled_by_default_and_status_is_read_only(self) -> None:
+    def test_theme_is_disabled_by_default_and_status_initializes_state(self) -> None:
         status = self.status()
         self.assertFalse(status["enabled"])
         self.assertTrue(status["available"])
         self.assertFalse(status["paletteReady"])
-        self.assertFalse(self.state_file.exists())
+        self.assertTrue(self.state_file.exists())
+        self.assertFalse(json.loads(self.state_file.read_text(encoding="utf-8"))["enabled"])
         self.assertEqual(self.foot.read_text(encoding="utf-8"), "[main]\nfont=monospace\n")
         self.assertFalse(self.generated_niri.exists())
 
