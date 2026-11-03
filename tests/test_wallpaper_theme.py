@@ -42,7 +42,7 @@ print(os.environ.get("A16_TEST_BRIGHTNESS", "0.8"))
         )
         self._write_stub(
             "matugen",
-            """#!/usr/bin/env python3
+            r"""#!/usr/bin/env python3
 import json
 import re
 import sys
