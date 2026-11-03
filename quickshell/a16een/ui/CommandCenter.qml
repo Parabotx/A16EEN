@@ -1,6 +1,7 @@
 import QtQuick
 import Quickshell
 import Quickshell.Io
+import "../theme" as AdaptiveTheme
 import Quickshell.Wayland
 
 PanelWindow {
@@ -87,15 +88,26 @@ PanelWindow {
 
     // The expanded command-center card becomes a light card for navbar mode.
     // The card itself is bounded; this does not create a screen-wide cover.
-    readonly property color surface: root.navbarViewOpen ? "#DFFFFFFF" : root.widgetViewOpen || root.controlViewOpen || root.iconThemeViewOpen || root.workspacePresetViewOpen || root.lockScreenViewOpen || root.transparencyViewOpen ? "#FFFFFF" : "#000000"
-    readonly property color borderColor: "#1A1A1A"
-    readonly property color fieldBackground: "#0A0A0A"
-    readonly property color fieldBorder: "#1C1C1C"
-    readonly property color fieldFocusBorder: "#333333"
-    readonly property color primaryText: "#FFFFFF"
-    readonly property color secondaryText: "#6F6F6F"
-    readonly property color mutedText: "#3F3F3F"
-    readonly property color selectedBackground: "#111111"
+    readonly property color surface: AdaptiveTheme.WallpaperTheme.enabled
+        ? AdaptiveTheme.WallpaperTheme.surface
+        : root.navbarViewOpen ? "#DFFFFFFF"
+            : root.widgetViewOpen || root.controlViewOpen || root.iconThemeViewOpen || root.workspacePresetViewOpen || root.lockScreenViewOpen || root.transparencyViewOpen ? "#FFFFFF" : "#000000"
+    readonly property color borderColor: AdaptiveTheme.WallpaperTheme.enabled
+        ? AdaptiveTheme.WallpaperTheme.outline : "#1A1A1A"
+    readonly property color fieldBackground: AdaptiveTheme.WallpaperTheme.enabled
+        ? AdaptiveTheme.WallpaperTheme.surfaceVariant : "#0A0A0A"
+    readonly property color fieldBorder: AdaptiveTheme.WallpaperTheme.enabled
+        ? AdaptiveTheme.WallpaperTheme.outline : "#1C1C1C"
+    readonly property color fieldFocusBorder: AdaptiveTheme.WallpaperTheme.enabled
+        ? AdaptiveTheme.WallpaperTheme.primary : "#333333"
+    readonly property color primaryText: AdaptiveTheme.WallpaperTheme.enabled
+        ? AdaptiveTheme.WallpaperTheme.onSurface : "#FFFFFF"
+    readonly property color secondaryText: AdaptiveTheme.WallpaperTheme.enabled
+        ? AdaptiveTheme.WallpaperTheme.onSurfaceVariant : "#6F6F6F"
+    readonly property color mutedText: AdaptiveTheme.WallpaperTheme.enabled
+        ? AdaptiveTheme.WallpaperTheme.onSurfaceVariant : "#3F3F3F"
+    readonly property color selectedBackground: AdaptiveTheme.WallpaperTheme.enabled
+        ? AdaptiveTheme.WallpaperTheme.primaryContainer : "#111111"
     readonly property bool plainCommandView:
         !root.powerViewOpen
         && !root.widgetViewOpen
