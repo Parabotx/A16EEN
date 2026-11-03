@@ -84,12 +84,12 @@ for item in config["templates"].values():
 
     def replace(match):
         token = match.group(1)
-        key_match = re.search(r"colors\\.([a-z_]+)\\.", token)
+        key_match = re.search(r"colors\.([a-z_]+)\.", token)
         key = key_match.group(1) if key_match else "primary"
         value = colors.get(key, "#808080")
         return value[1:] if token.endswith("hex_stripped") else value
 
-    output = re.sub(r"\\{\\{([^}]+)\\}\\}", replace, template)
+    output = re.sub(r"\{\{([^}]+)\}\}", replace, template)
     destination.parent.mkdir(parents=True, exist_ok=True)
     destination.write_text(output, encoding="utf-8")
 """,
@@ -148,7 +148,7 @@ else:
 
         self.niri_main = self.niri_config / "config.kdl"
         self.niri_main.write_text(
-            'environment {\\n    XDG_CURRENT_DESKTOP "A16EEN"\\n}\\n',
+            'environment {\n    XDG_CURRENT_DESKTOP "A16EEN"\n}\n',
             encoding="utf-8",
         )
         for source in TEMPLATE_ROOT.glob("*"):
