@@ -78,6 +78,7 @@ def default_state() -> dict[str, Any]:
         "palette": {},
         "qt6ctOriginal": None,
         "qt6ctConfigExisted": False,
+        "qt6ctManaged": False,
     }
 
 
@@ -325,10 +326,12 @@ def generated_integrations(p: dict[str, Path]) -> None:
 
 
 def apply_qt6ct(p: dict[str, Path], state: dict[str, Any]) -> None:
-    if not state.get("_qt6ctSnapshotTaken"):
+    # Persist the original selection once, so later wallpaper changes never
+    # replace the value we need to restore when the feature is disabled.
+    if not state.get("qt6ctManaged"):
         state["qt6ctConfigExisted"] = p["qt6"].exists()
         state["qt6ctOriginal"] = qt6ct_current_scheme(p["qt6"])
-        state["_qt6ctSnapshotTaken"] = True
+        state["qt6ctManaged"] = True
     set_qt6ct_scheme(p["qt6"], str(p["qt6_palette"]))
 
 
@@ -358,6 +361,21 @@ def generate(p: dict[str, Path], state: dict[str, Any], wallpaper: Path) -> dict
     ], timeout=120)
     palette = validate_palette(p["palette"])
 
+    # Material You generates both schemes from the image. Select the matching
+    # terminal variant and tune opacity by wallpaper brightness.
+    foot = p["generated"] / "foot.ini"
+    foot_text = foot.read_text(encoding="utf-8")
+    foot_text = foot_text.replace("initial-color-theme=dark", f"initial-color-theme={scheme}")
+    terminal_alpha = "0.97" if scheme == "light" else "0.93"
+    foot_text = re.sub(r"(?m)^alpha=0\\.94$", f"alpha={terminal_alpha}", foot_text)
+    atomic_write(foot, foot_text)
+
+    kitty = p["generated"] / "kitty.conf"
+    kitty_text = kitty.read_text(encoding="utf-8")
+    kitty_opacity = "0.97" if scheme == "light" else "0.93"
+    kitty_text = "background_opacity " + kitty_opacity + "\\n" + kitty_text
+    atomic_write(kitty, kitty_text)
+
     # The palette file is the shared source for Quickshell and external apps.
     generated_integrations(p)
     apply_qt6ct(p, state)
@@ -367,7 +385,6 @@ def generate(p: dict[str, Path], state: dict[str, Any], wallpaper: Path) -> dict
     state["scheme"] = scheme
     state["wallpaper"] = str(wallpaper)
     state["palette"] = palette
-    state.pop("_qt6ctSnapshotTaken", None)
     save_state(p, state)
     reload_niri()
     return state
@@ -410,6 +427,7 @@ def disable(p: dict[str, Path], state: dict[str, Any]) -> None:
     state.pop("_qt6ctSnapshotTaken", None)
     state["qt6ctOriginal"] = None
     state["qt6ctConfigExisted"] = False
+    state["qt6ctManaged"] = False
     save_state(p, state)
     reload_niri()
 
