@@ -41,6 +41,7 @@ def paths() -> dict[str, Path]:
         "niri": niri_config / "wallpaper-theme-generated.kdl",
         "niri_main": niri_config / "config.kdl",
         "foot": config / "foot/foot.ini",
+        "fuzzel": config / "fuzzel/fuzzel.ini",
         "kitty": config / "kitty/kitty.conf",
         "gtk3": config / "gtk-3.0/gtk.css",
         "gtk4": config / "gtk-4.0/gtk.css",
@@ -143,6 +144,7 @@ def write_matugen_config(p: dict[str, Path]) -> None:
     templates = {
         "palette": ("palette.json", p["palette"]),
         "foot": ("foot.ini", p["generated"] / "foot.ini"),
+        "fuzzel": ("fuzzel.ini", p["generated"] / "fuzzel.ini"),
         "kitty": ("kitty.conf", p["generated"] / "kitty.conf"),
         "gtk": ("gtk.css", p["generated"] / "gtk.css"),
         "qt6ct": ("qt6ct.conf", p["qt6_palette"]),
@@ -329,6 +331,11 @@ def generated_integrations(p: dict[str, Path]) -> None:
         "[main]\ninclude=" + str(foot_include),
     )
 
+    add_block(
+        p["fuzzel"], START, END,
+        "[main]\\ninclude=" + str(generated / "fuzzel.ini"),
+    )
+
     if p["kitty"].exists() or shutil.which("kitty"):
         add_block(
             p["kitty"], START, END,
@@ -420,6 +427,7 @@ def current_wallpaper() -> Path:
 
 def disable(p: dict[str, Path], state: dict[str, Any]) -> None:
     remove_managed_block(p["foot"], START, END)
+    remove_managed_block(p["fuzzel"], START, END)
     remove_managed_block(p["kitty"], START, END)
     remove_managed_block(p["gtk3"], CSS_START, CSS_END)
     remove_managed_block(p["gtk4"], CSS_START, CSS_END)
