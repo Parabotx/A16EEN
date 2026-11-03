@@ -39,18 +39,35 @@ set_profile() {
     write_state "$next"
 }
 restore_canvas_windows() {
-    local workspace="$1" windows id is_floating tracked next
+    local workspace="$1" windows workspaces workspace_id id is_floating tracked next
+    workspaces="$(read_workspaces)" || die "could not read Niri workspaces."
+    workspace_id="$(jq -r --arg workspace "$workspace" '.[] | select(.name == $workspace) | .id' <<<"$workspaces" | head -n 1)"
+    [[ "$workspace_id" =~ ^[0-9]+$ ]] || return 0
     windows="$(read_windows)" || die "could not read Niri windows."
     tracked="$(jq -r --arg workspace "$workspace" '.canvasWindows[$workspace][]? // empty' "$STATE_FILE")"
     while IFS= read -r id; do
         [[ -n "$id" ]] || continue
-        is_floating="$(jq -r --argjson id "$id" 'first((.[] | select(.id == $id)) | (.is_floating // false)) // false' <<<"$windows")"
+        is_floating="$(jq -r --argjson id "$id" --argjson workspace_id "$workspace_id" 'first((.[] | select(.id == $id and .workspace_id == $workspace_id)) | (.is_floating // false)) // false' <<<"$windows")"
         if [[ "$is_floating" == "true" ]]; then
             send_action "$(jq -cn --argjson id "$id" '{Action:{MoveWindowToTiling:{id:$id}}}')"
         fi
     done <<<"$tracked"
     next="$(jq -c --arg workspace "$workspace" '.canvasWindows[$workspace]=[]' "$STATE_FILE")"
     write_state "$next"
+}
+arrange_canvas_window() {
+    local id="$1" slot="$2" base x y offset
+    local -a positions_x=(0.035 0.515 0.105 0.555)
+    local -a positions_y=(0.040 0.080 0.520 0.485)
+    local index=$((slot % 4))
+    local cycle=$((slot / 4))
+    offset="$(awk -v n="$cycle" 'BEGIN { value=n*0.025; if (value>0.075) value=0.075; printf "%.4f", value }')"
+    x="$(awk -v n="${positions_x[$index]}" -v o="$offset" 'BEGIN { printf "%.4f", n-o }')"
+    y="$(awk -v n="${positions_y[$index]}" -v o="$offset" 'BEGIN { printf "%.4f", n+o }')"
+
+    send_action "$(jq -cn --argjson id "$id" '{Action:{SetWindowWidth:{id:$id,change:{SetProportion:0.44}}}}')"
+    send_action "$(jq -cn --argjson id "$id" '{Action:{SetWindowHeight:{id:$id,change:{SetProportion:0.42}}}}')"
+    send_action "$(jq -cn --argjson id "$id" --argjson x "$x" --argjson y "$y" '{Action:{MoveFloatingWindow:{id:$id,x:{SetProportion:$x},y:{SetProportion:$y}}}}')"
 }
 apply_canvas() {
     local workspace="$1" workspace_id="$2" windows id is_floating tracked next
@@ -65,6 +82,7 @@ apply_canvas() {
         is_floating="$(jq -r --argjson id "$id" 'first((.[] | select(.id == $id)) | (.is_floating // false)) // false' <<<"$windows")"
         [[ "$is_floating" == "true" ]] && continue
         if send_action "$(jq -cn --argjson id "$id" '{Action:{MoveWindowToFloating:{id:$id}}}')"; then
+            arrange_canvas_window "$id" "${#tracked_ids[@]}"
             tracked_ids+=("$id")
         fi
     done < <(jq -r --argjson ws "$workspace_id" '.[] | select(.workspace_id == $ws and (.is_floating // false) == false) | .id' <<<"$windows")
