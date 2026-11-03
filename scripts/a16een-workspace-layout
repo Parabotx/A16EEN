@@ -23,10 +23,10 @@ write_state() {
     mv -f "$tmp" "$STATE_FILE"
 }
 read_workspaces() {
-    niri msg --json workspaces 2>/dev/null | jq -c '(.Ok.Workspaces // .Workspaces // .)'
+    niri msg --json workspaces 2>/dev/null | jq -c 'if type == "array" then . elif (.Ok.Workspaces? | type) == "array" then .Ok.Workspaces elif (.Workspaces? | type) == "array" then .Workspaces else error("unexpected Niri workspaces response") end'
 }
 read_windows() {
-    niri msg --json windows 2>/dev/null | jq -c '(.Ok.Windows // .Windows // .)'
+    niri msg --json windows 2>/dev/null | jq -c 'if type == "array" then . elif (.Ok.Windows? | type) == "array" then .Ok.Windows elif (.Windows? | type) == "array" then .Windows else error("unexpected Niri windows response") end'
 }
 send_action() { printf '%s\n' "$1" | niri msg raw-request >/dev/null; }
 profile_for() { jq -r --arg workspace "$1" '.profiles[$workspace] // "adaptive"' "$STATE_FILE"; }
