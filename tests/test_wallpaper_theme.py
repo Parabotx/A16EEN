@@ -7,6 +7,7 @@ import json
 import os
 import stat
 import subprocess
+import sys
 import tempfile
 import unittest
 from pathlib import Path
@@ -84,7 +85,7 @@ for item in config["templates"].values():
 
     def replace(match):
         token = match.group(1)
-        key_match = re.search(r"colors\.([a-z_]+)\.", token)
+        key_match = re.search(r"colors[.]([a-z_]+)[.]", token)
         key = key_match.group(1) if key_match else "primary"
         value = colors.get(key, "#808080")
         return value[1:] if token.endswith("hex_stripped") else value
@@ -172,7 +173,7 @@ else:
 
     def run_helper(self, *args: str, env: dict[str, str] | None = None, check: bool = True):
         return subprocess.run(
-            [os.fspath(HELPER), *args],
+            [sys.executable, os.fspath(HELPER), *args],
             env=env or self.env,
             check=check,
             capture_output=True,
