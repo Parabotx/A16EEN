@@ -322,6 +322,23 @@ def niri_rule(p: dict[str, Path], scheme: str) -> str:
             "        saturation 1.12",
             "    }",
         ])
+    lines.extend([
+        "}",
+        "",
+        "// Fuzzel is a Wayland layer surface, so it needs a layer rule as well.",
+        "layer-rule {",
+        '    match namespace="^launcher$"',
+        f"    opacity {opacity}",
+    ])
+    if niri_supports_background_effect():
+        lines.extend([
+            "    background-effect {",
+            "        blur true",
+            "        xray true",
+            "        noise 0.02",
+            "        saturation 1.12",
+            "    }",
+        ])
     lines.extend(["}", ""])
     return "\n".join(lines)
 
