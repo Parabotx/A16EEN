@@ -148,6 +148,24 @@ The CLI entry point is:
 
     a16 presets
 
+## Workspace Studio
+
+Open the Command Center with **Super + /** and run:
+
+    /workspace
+
+Workspace Studio lets you choose a layout profile independently for each named workspace:
+
+- **Adaptive** — a single tiled column uses the full available workspace width. When another tiled column opens, A16EEN balances the visible columns so two apps sit side by side.
+- **Columns** — keeps tiled columns at a consistent half-width, with additional columns available in Niri's horizontally scrolling layout.
+- **Canvas** — moves tiled windows in that workspace into Niri's floating layer so they can be dragged and resized freely. A16EEN records only the windows it moved and restores those windows to tiling when you leave Canvas; windows that were already floating are left alone.
+
+The workspace rail selector offers **Vertical** and **Horizontal** placement. It uses the A16EEN navbar edge: left/right for a vertical rail and top/bottom for a horizontal rail. Niri itself keeps its workspace stack vertically ordered, so this changes the A16EEN rail placement rather than rotating Niri's internal workspace order.
+
+The layout profile registry is stored locally in:
+
+    ~/.local/state/a16een/workspace-layouts.json
+
 ## Wallpaper
 
 A16EEN keeps two wallpaper collections.
@@ -181,6 +199,8 @@ Use **Super + /**, then choose:
 ```
 
 A16EEN opens a clean visual picker with minimal previews and the real image filenames. Select any wallpaper to make it active. Selecting `default.png` returns to the A16EEN default.
+
+Workspace Studio also lets you assign a different wallpaper to each named workspace. Open **/workspace**, choose a workspace, and use **Change** in its Workspace Wallpaper section. The picker shows the current workspace assignment; choosing **Reset** (the ↺ control) removes that assignment and falls back to the global wallpaper. Assignments are saved locally in `~/.local/state/a16een/workspace-wallpapers.json` and survive shell restarts and A16EEN updates.
 
 The wallpaper manager also supports:
 
